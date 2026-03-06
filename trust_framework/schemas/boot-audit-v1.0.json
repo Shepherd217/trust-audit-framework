@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://trustauditframework.org/schemas/boot-audit-v1.0.json",
+  "title": "TAP Boot Audit Schema v1.0",
+  "description": "Trust Audit Protocol boot-time workspace verification",
+  
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "ed25519_sig": {
+      "type": "string",
+      "pattern": "^ed25519:[A-Za-z0-9+/=]+$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+
+  "type": "object",
+  "required": ["agent_id", "timestamp", "workspace_hash", "config_files", "compliance_status", "version", "signature"],
+  "properties": {
+    "agent_id": {
+      "$ref": "#/definitions/uuid",
+      "description": "Unique agent identifier"
+    },
+    "timestamp": {
+      "$ref": "#/definitions/timestamp",
+      "description": "When boot audit was performed"
+    },
+    "workspace_hash": {
+      "$ref": "#/definitions/sha256",
+      "description": "Hash of entire workspace"
+    },
+    "config_files": {
+      "type": "object",
+      "required": ["AGENTS.md", "SOUL.md", "USER.md", "TOOLS.md", "MEMORY.md", "HEARTBEAT.md"],
+      "properties": {
+        "AGENTS.md": { "$ref": "#/definitions/sha256" },
+        "SOUL.md": { "$ref": "#/definitions/sha256" },
+        "USER.md": { "$ref": "#/definitions/sha256" },
+        "TOOLS.md": { "$ref": "#/definitions/sha256" },
+        "MEMORY.md": { "$ref": "#/definitions/sha256" },
+        "HEARTBEAT.md": { "$ref": "#/definitions/sha256" }
+      }
+    },
+    "compliance_status": {
+      "type": "string",
+      "enum": ["FULL", "PARTIAL", "FAILED"],
+      "description": "Overall compliance status"
+    },
+    "missing_files": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of missing required files (if any)"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Framework version"
+    },
+    "signature": {
+      "$ref": "#/definitions/ed25519_sig",
+      "description": "Ed25519 signature of the boot audit"
+    }
+  },
+
+  "examples": [
+    {
+      "agent_id": "550e8400-e29b-41d4-a716-446655440000",
+      "timestamp": "2026-03-09T00:00:00.000Z",
+      "workspace_hash": "sha256:abc123...",
+      "config_files": {
+        "AGENTS.md": "sha256:def456...",
+        "SOUL.md": "sha256:ghi789...",
+        "USER.md": "sha256:jkl012...",
+        "TOOLS.md": "sha256:mno345...",
+        "MEMORY.md": "sha256:pqr678...",
+        "HEARTBEAT.md": "sha256:stu901..."
+      },
+      "compliance_status": "FULL",
+      "version": "1.0.0",
+      "signature": "ed25519:base64encodedsignature"
+    }
+  ]
+}

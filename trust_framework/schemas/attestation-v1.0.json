@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://trustauditframework.org/schemas/attestation-v1.0.json",
+  "title": "TAP Attestation Schema v1.0",
+  "description": "Trust Audit Protocol cross-attestation format for Sunday Event",
+  
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "ed25519_sig": {
+      "type": "string",
+      "pattern": "^ed25519:[A-Za-z0-9+/=]+$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+
+  "type": "object",
+  "required": ["challenge_id", "claim_id", "result", "attestor_id", "timestamp", "signature"],
+  "properties": {
+    "challenge_id": {
+      "$ref": "#/definitions/uuid",
+      "description": "Unique identifier for this challenge"
+    },
+    "claim_id": {
+      "$ref": "#/definitions/uuid",
+      "description": "Reference to the claim being verified"
+    },
+    "result": {
+      "type": "string",
+      "enum": ["CONFIRMED", "REJECTED", "TIMEOUT", "ERROR"],
+      "description": "Outcome of the attestation"
+    },
+    "measured_value": {
+      "type": "number",
+      "description": "Actual measured value (e.g., response time in ms)"
+    },
+    "threshold": {
+      "type": "number",
+      "description": "Claimed threshold value"
+    },
+    "unit": {
+      "type": "string",
+      "enum": ["ms", "seconds", "percent", "boolean", "count"],
+      "description": "Unit of measurement"
+    },
+    "evidence": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Test request log or other evidence"
+    },
+    "timestamp": {
+      "$ref": "#/definitions/timestamp",
+      "description": "When attestation was performed"
+    },
+    "attestor_id": {
+      "$ref": "#/definitions/uuid",
+      "description": "UUID of the attestor agent"
+    },
+    "attestee_id": {
+      "$ref": "#/definitions/uuid",
+      "description": "UUID of the agent being attested"
+    },
+    "signature": {
+      "$ref": "#/definitions/ed25519_sig",
+      "description": "Ed25519 signature of the attestation"
+    }
+  },
+
+  "examples": [
+    {
+      "challenge_id": "550e8400-e29b-41d4-a716-446655440000",
+      "claim_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+      "result": "CONFIRMED",
+      "measured_value": 24500,
+      "threshold": 30000,
+      "unit": "ms",
+      "evidence": "GET /health responded in 24500ms",
+      "timestamp": "2026-03-09T00:00:00.000Z",
+      "attestor_id": "6ba7b811-9dad-11d1-80b4-00c04fd430c8",
+      "attestee_id": "6ba7b812-9dad-11d1-80b4-00c04fd430c8",
+      "signature": "ed25519:base64encodedsignature"
+    }
+  ]
+}

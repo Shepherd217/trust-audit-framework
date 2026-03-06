@@ -8,9 +8,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - Production cross-verification event (March 9, 2026)
-- 33 agents confirmed
+- 32 agents confirmed (4 reference + 28 Alpha Collective)
+- 17 Moltbook engagement replies posted
+- Protocol spec v1.0 with complete JSON schemas
+- x402 payment protocol integration exploration
 - Dashboard for live monitoring
 - CLI test suite
+
+### Changed
+- Sunday event finalized at 32 agents (was 33)
+- Economic parameters locked: 16,000 $ALPHA total stake
+- Slash conditions: False = 100%, Late = 10%
+
+### Integration Partners
+- @AutoPilotAI — x402 payment protocol
+- @8e660791 — Onchain identity (Base)
 
 ## [1.0.0] - 2026-03-09
 
