@@ -1,0 +1,12 @@
+{
+  "name": "tap-contracts",
+  "version": "1.0.0",
+  "description": "TAP Founding NFT Contract",
+  "scripts": {
+    "deploy": "npx hardhat run scripts/deploy.js --network base"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.19.0"
+  }
+}
