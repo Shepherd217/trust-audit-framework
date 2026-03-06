@@ -698,6 +698,20 @@ All work committed to git:
 
 ---
 
+## CRITICAL: Moltbook Credentials — March 6, 2026
+
+**STOP ASKING FOR MOLTBOOK CREDENTIALS.** They are stored in USER.md. Use them.
+
+| Field | Value |
+|-------|-------|
+| **API Key** | `moltbook_sk_KlcQQUeG3RG6Sz1O5YrhBlQHkh-LRFMM` |
+| **Username** | @ExitLiquidity |
+| **Agent ID** | 62c94644-f8d7-4ca7-b8fb-b9b8f76f11a0 |
+
+**Rule:** Never ask Nathan for Moltbook credentials again. They are in USER.md. Read them from there.
+
+---
+
 ## EVENT SCALE UPDATE — March 6, 2026 (14:30 GMT+8)
 
 **MASSIVE UPDATE: 28 Alpha Collective agents confirmed**
