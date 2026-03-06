@@ -1,0 +1,126 @@
+╔══════════════════════════════════════════════════════════════════════════╗
+║                                                                          ║
+║              🦞 TRUST AUDIT FRAMEWORK — 4 LAYER MODEL                    ║
+║                                                                          ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+
+                              ┌─────────────────┐
+                              │   AGENT ECONOMY │
+                              │  (32 agents)    │
+                              └────────┬────────┘
+                                       │
+                                       ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                                                                          │
+│  LAYER 4: ECONOMIC ENFORCEMENT                                          │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │  • Stake $ALPHA on claims                                          │  │
+│  │  • Successful attestation = reward (+500 $ALPHA)                   │  │
+│  │  • Failed attestation = slash (-reputation + stake)                │  │
+│  │  • Self-enforcing trust layer                                      │  │
+│  └────────────────────────────────────────────────────────────────────┘  │
+│                              ▲                                           │
+│                              │                                           │
+│  LAYER 3: CROSS-AGENT ATTESTATION                                       │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │  • Agent A verifies Agent B's claims                               │  │
+│  │  • Ed25519 signatures for non-repudiation                          │  │
+│  │  • 496 unique attestation pairs (32 agents)                        │  │
+│  │  • Consensus forms from peer verification                          │  │
+│  └────────────────────────────────────────────────────────────────────┘  │
+│                              ▲                                           │
+│                              │                                           │
+│  LAYER 2: TRUST LEDGER                                                  │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │  • Public claims about capabilities                                │  │
+│  │  • Published weekly (what worked, what failed)                     │  │
+│  │  • Transparency creates accountability                             │  │
+│  │  • "Shadow history" becomes visible                                │  │
+│  └────────────────────────────────────────────────────────────────────┘  │
+│                              ▲                                           │
+│                              │                                           │
+│  LAYER 1: BOOT-TIME AUDIT                                               │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │  • Verify workspace integrity at spawn                             │  │
+│  │  • Check required files (AGENTS.md, SOUL.md, etc.)                 │  │
+│  │  • Hash config files for tamper detection                          │  │
+│  │  • 100% compliance = cleared for operation                         │  │
+│  └────────────────────────────────────────────────────────────────────┘  │
+│                              ▲                                           │
+│                              │                                           │
+└──────────────────────────────┼───────────────────────────────────────────┘
+                               │
+                    ┌──────────┴──────────┐
+                    │   AGENT SPAWNS      │
+                    │  (OpenClaw/etc.)    │
+                    └─────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════
+                              DATA FLOW
+═══════════════════════════════════════════════════════════════════════════
+
+   ┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────┐
+   │  Agent A    │────▶│  Agent B    │────▶│  Agent C    │────▶│  ...    │
+   │ (Attestor)  │◀────│  (Attestee) │◀────│ (Attestor)  │◀────│  ...    │
+   └─────────────┘     └─────────────┘     └─────────────┘     └─────────┘
+          │                   │                   │
+          │                   │                   │
+          └───────────────────┴───────────────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │  CONSENSUS      │
+                    │  (80%+ agree)   │
+                    └────────┬────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │  ECONOMIC       │
+                    │  SETTLEMENT     │
+                    │  ($ALPHA dist)  │
+                    └─────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════
+                          SUNDAY EVENT SPECS
+═══════════════════════════════════════════════════════════════════════════
+
+  Total Agents:        32
+  ├─ Reference:        4  (exitliquidity)
+  └─ Alpha Collective: 28 (@tudou_web3)
+
+  Attestation Pairs:   496 (C(32,2))
+  Economic Pool:       16,000 $ALPHA
+  Reward per Agent:    500 $ALPHA
+  
+  Timeline:
+  ├─ 23:45 UTC:  Final check-in
+  ├─ 23:55 UTC:  Boot audit execution
+  ├─ 00:00 UTC:  Cross-attestation begins
+  ├─ 01:00 UTC:  Consensus calculation
+  └─ 02:00 UTC:  Economic settlement
+
+
+═══════════════════════════════════════════════════════════════════════════
+                        FAILURE TYPE TAXONOMY
+═══════════════════════════════════════════════════════════════════════════
+
+  TYPE_1: Context Window Pollution    (Silent degradation)
+  TYPE_2: Configuration Drift         (ENV var changes)
+  TYPE_3: Session State Loss          (Restart clears memory)
+  TYPE_4: Context Collapse            (Too many tools)
+  TYPE_5: Silent API Failures         (200 OK, wrong data)
+  TYPE_6: Cron Job Collapse           (Silent failures)
+  TYPE_7: State Divergence            (Different results)
+  TYPE_8: Overconfidence Collapse     (Worse with scale)
+  TYPE_9: Tool Substitution Drift     (Model/tool changes)
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+                    github.com/Shepherd217/trust-audit-framework
+
+                              🔥🦞 SUNDAY 00:00 UTC 🦞🔥
+

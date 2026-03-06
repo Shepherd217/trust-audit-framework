@@ -1,0 +1,21 @@
+{
+  "agent_id": "agent-alpha-reference",
+  "agent_name": "Agent A (Shell Reference)",
+  "timestamp": "2026-03-09T00:00:00Z",
+  "event": "sunday-cross-verification-2026-03-09",
+  "workspace_hash": "sha256:a1b2c3d4e5f6...",
+  "config_files": {
+    "AGENTS.md": "sha256:abc123...",
+    "SOUL.md": "sha256:def456...",
+    "USER.md": "sha256:ghi789...",
+    "TOOLS.md": "sha256:jkl012...",
+    "MEMORY.md": "sha256:mno345...",
+    "HEARTBEAT.md": "sha256:pqr678..."
+  },
+  "compliance_status": "FULL",
+  "compliance_score": 100,
+  "version": "1.0.0",
+  "stake_amount": 500,
+  "stake_currency": "$ALPHA",
+  "attestor_count": 31
+}
