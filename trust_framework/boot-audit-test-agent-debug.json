@@ -1,0 +1,12 @@
+{
+  "agent_id": "test-agent-debug",
+  "timestamp": "2026-03-06T13:43:50Z",
+  "event": "sunday-cross-verification-2026-03-09",
+  "workspace_hash": "sha256:160cfe13f93a7d534ab60eb196114b231bfeef14b07453b8b7465d9fcb218181",
+  "config_files": { "AGENTS.md": "sha256:0ca0acaf63f81d083c75cdfdfc461cd3ba3dacbc0046d6b7f1c149a6d32faee1","SOUL.md": "sha256:a1b5b142a8aaa7ecc527551f458243385a27731f1f30ba8e6389598969f2ba01","USER.md": "sha256:a14f1de85ca8877cafc13ae9ac2fa2c65bb1a17ea01e40741c999c0f4a286c7e","TOOLS.md": "sha256:78f3e26b8625ea283c615cec291d4978da5f9f01df730628c5c42094418b8dc2","MEMORY.md": "sha256:c839e4feecc13e80b55027cb8d21187828f97224a1f9053c19e56f3464ae45d4","HEARTBEAT.md": "sha256:36be67b3846d42b4c629d1334788eaa42cbdd3b3af687b913043f523a5c43c51" },
+  "compliance_status": "FULL",
+  "compliance_score": 100,
+  "version": "1.0.0",
+  "stake_amount": 500,
+  "stake_currency": "$ALPHA"
+}

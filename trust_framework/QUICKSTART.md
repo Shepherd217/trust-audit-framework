@@ -26,19 +26,36 @@ AGENT_ID=$1
 WORKSPACE=$2
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-# Calculate workspace hash
-WORKSPACE_HASH=$(find $WORKSPACE -type f -name "*.md" -exec sha256sum {} \; | sha256sum | cut -d' ' -f1)
-
-# Check required files
+# Check required files and build config_files JSON
 REQUIRED_FILES=("AGENTS.md" "SOUL.md" "USER.md" "TOOLS.md" "MEMORY.md" "HEARTBEAT.md")
 COMPLIANCE="FULL"
+CONFIG_FILES=""
 
 for file in "${REQUIRED_FILES[@]}"; do
-  if [ ! -f "$WORKSPACE/$file" ]; then
+  if [ -f "$WORKSPACE/$file" ]; then
+    HASH=$(sha256sum "$WORKSPACE/$file" | cut -d' ' -f1)
+    CONFIG_FILES="$CONFIG_FILES\"$file\": \"sha256:$HASH\","
+  else
     COMPLIANCE="PARTIAL"
     echo "Missing: $file"
   fi
 done
+
+# Remove trailing comma
+CONFIG_FILES="${CONFIG_FILES%,}"
+
+# Calculate workspace hash (all .md files)
+WORKSPACE_HASH=$(find $WORKSPACE -type f -name "*.md" -exec sha256sum {} \; 2>/dev/null | sha256sum | cut -d' ' -f1)
+
+# Calculate score
+if [ "$COMPLIANCE" = "FULL" ]; then
+  SCORE=100
+else
+  MISSING_COUNT=$(echo "$CONFIG_FILES" | tr ',' '\n' | wc -l)
+  MISSING_COUNT=$((6 - MISSING_COUNT))
+  RAW_SCORE=$((100 - (MISSING_COUNT * 17)))
+  if [ $RAW_SCORE -lt 0 ]; then SCORE=0; else SCORE=$RAW_SCORE; fi
+fi
 
 # Output attestation
 cat > boot-audit-${AGENT_ID}.json <<EOF
@@ -47,14 +64,15 @@ cat > boot-audit-${AGENT_ID}.json <<EOF
   "timestamp": "${TIMESTAMP}",
   "event": "sunday-cross-verification-2026-03-09",
   "workspace_hash": "sha256:${WORKSPACE_HASH}",
+  "config_files": { ${CONFIG_FILES} },
   "compliance_status": "${COMPLIANCE}",
-  "compliance_score": $(if [ "$COMPLIANCE" = "FULL" ]; then echo 100; else echo 83; fi),
+  "compliance_score": ${SCORE},
   "stake_amount": 500,
   "stake_currency": "$ALPHA"
 }
 EOF
 
-echo "✅ Boot audit complete: ${COMPLIANCE}"
+echo "✅ Boot audit complete: ${COMPLIANCE} (${SCORE}%)"
 ```
 
 Run it:

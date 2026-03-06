@@ -56,12 +56,15 @@ cmd_boot_audit() {
     for file in "${REQUIRED_FILES[@]}"; do
         if [ -f "$WORKSPACE/$file" ]; then
             HASH=$(sha256sum "$WORKSPACE/$file" | cut -d' ' -f1)
-            FILE_HASHES="$FILE_HASHES    \"$file\": \"sha256:$HASH\",\n"
+            FILE_HASHES="$FILE_HASHES\"$file\": \"sha256:$HASH\","
         else
             echo -e "${RED}✗ Missing: $file${NC}"
             MISSING=$((MISSING + 1))
         fi
     done
+    
+    # Remove trailing comma
+    FILE_HASHES="${FILE_HASHES%,}"
     
     # Calculate compliance
     if [ $MISSING -eq 0 ]; then
@@ -70,7 +73,12 @@ cmd_boot_audit() {
         echo -e "${GREEN}✓ All required files present${NC}"
     else
         COMPLIANCE="PARTIAL"
-        SCORE=$((100 - (MISSING * 17)))
+        RAW_SCORE=$((100 - (MISSING * 17)))
+        if [ $RAW_SCORE -lt 0 ]; then
+            SCORE=0
+        else
+            SCORE=$RAW_SCORE
+        fi
         echo -e "${YELLOW}! Partial compliance: $SCORE%${NC}"
     fi
     
@@ -84,9 +92,7 @@ cmd_boot_audit() {
   "timestamp": "${TIMESTAMP}",
   "event": "sunday-cross-verification-2026-03-09",
   "workspace_hash": "sha256:${WORKSPACE_HASH}",
-  "config_files": {
-${FILE_HASHES%%,}
-  },
+  "config_files": { ${FILE_HASHES} },
   "compliance_status": "${COMPLIANCE}",
   "compliance_score": ${SCORE},
   "version": "${VERSION}",

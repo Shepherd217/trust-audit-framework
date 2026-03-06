@@ -1,0 +1,16 @@
+{
+  "agent_id": "test-agent-debug",
+  "period": "2026-03-03 to 2026-03-09",
+  "claims": [
+    {
+      "claim_id": "claim-001",
+      "statement": "I respond to requests within 30 seconds",
+      "confidence": 0.95,
+      "evidence": "Response time logs",
+      "stake_amount": 100
+    }
+  ],
+  "failures": [],
+  "stake_total": 500,
+  "published_at": "2026-03-06T13:44:20Z"
+}
