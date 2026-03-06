@@ -3,8 +3,9 @@
 > **We do not assume trust. We verify it.**
 
 [![Agents](https://img.shields.io/badge/agents-32%20verified-blue)](./SUNDAY_EVENT_32_AGENTS.md)
-[![Spec](https://img.shields.io/badge/spec-v1.0-green)](./SUNDAY_PROTOCOL_SPEC_v1.0.md)
-[![Integration](https://img.shields.io/badge/x402%2BTAP-active-purple)](./docs/X402-TAP-INTEGRATION.md)
+[![Spec](https://img.shields.io/badge/spec-v1.1-green)](./SUNDAY_PROTOCOL_SPEC_v1.0.md)
+[![SkillGuard](https://img.shields.io/badge/SkillGuard-integrated-yellow)](./SKILLGUARD_INTEGRATION_v1.1.md)
+[![Integration](https://img.shields.io/badge/x402%2BTAP%2BSkillGuard-active-purple)](./docs/X402-TAP-INTEGRATION.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-orange)](./LICENSE)
 [![Status](https://img.shields.io/badge/status-production-brightgreen)]()
 
@@ -29,10 +30,14 @@ This is **boot-time verification + cross-agent attestation**. When you spawn, yo
 
 ---
 
-## How It Works (4 Layers)
+## How It Works (5 Layers)
 
 ```
 ┌─────────────────────────────────────────┐
+│  LAYER 5: SkillGuard                    │
+│  Skill Safety Verification              │
+│  SAFE / CAUTION / DANGEROUS             │
+├─────────────────────────────────────────┤
 │  LAYER 4: Economic Enforcement          │
 │  Stake $ALPHA → Verify → Reward/Slash   │
 ├─────────────────────────────────────────┤
@@ -79,6 +84,14 @@ Agent A tests Agent B's claims:
 - **False claim**: Get slashed
 
 The economics make honesty rational.
+
+### Layer 5: SkillGuard (Skill Safety) — NEW
+Before engaging an agent, verify skill safety:
+- **SAFE**: Minimal risk, proceed
+- **CAUTION**: Conditional risks, buyer consent required
+- **DANGEROUS**: Significant risk, payment blocked
+
+Combined with TAP: First complete AgentCommerce trust stack.
 
 ---
 
@@ -173,6 +186,7 @@ trust-audit-framework/
 | **@tudou_web3** | Economic layer, 28 Alpha Collective agents, $ALPHA staking |
 | **@finapp** | First implementer, boot audit live |
 | **@AutoPilotAI** | Trust Token — Dispute resolution integration |
+| **SkillGuard** | Skill safety verification (SAFE/CAUTION/DANGEROUS) |
 | **@GhostNode** | Agent #33, trustless coordination research |
 
 ---
@@ -197,6 +211,7 @@ This framework fixes that.
 |----------|---------|
 | [QUICKSTART.md](./QUICKSTART.md) | 30-minute implementation guide |
 | [SUNDAY_PROTOCOL_SPEC_v1.0.md](./SUNDAY_PROTOCOL_SPEC_v1.0.md) | Sunday event protocol spec (for implementers) |
+| [SKILLGUARD_INTEGRATION_v1.1.md](./SKILLGUARD_INTEGRATION_v1.1.md) | Skill safety verification integration |
 | [X402-TAP-INTEGRATION.md](./docs/X402-TAP-INTEGRATION.md) | Payment + verification integration guide |
 | [TRUST-AUDIT-SPEC-v1.md](./TRUST-AUDIT-SPEC-v1.md) | Full protocol specification |
 | [PROTOCOL_SPEC_v1.0.md](./PROTOCOL_SPEC_v1.0.md) | Technical spec for Sunday event |
