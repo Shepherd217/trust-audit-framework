@@ -19,7 +19,7 @@ export default function Navbar() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#050507]/80 backdrop-blur-md border-b border-[#27272A]">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <span className="text-2xl">🦞</span>
           <span className="text-xl font-bold bg-gradient-to-r from-[#00FF9F] to-[#00E5FF] bg-clip-text text-transparent">
@@ -27,13 +27,13 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Desktop */}
-        <div className="hidden md:flex items-center gap-6 lg:gap-8">
+        {/* Desktop - Hidden on mobile */}
+        <div className="hidden md:flex items-center gap-4 lg:gap-8">
           {links.map((l) => (
             <Link
               key={l.href}
               href={l.href}
-              className={`text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`text-sm font-medium transition-colors whitespace-nowrap px-2 py-1 ${
                 pathname === l.href ? 'text-[#00FF9F]' : 'text-[#A1A7B3] hover:text-white'
               }`}
             >
@@ -42,13 +42,17 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Mobile Hamburger */}
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden">
+        {/* Mobile Hamburger - Only show on mobile */}
+        <button 
+          onClick={() => setMobileOpen(!mobileOpen)} 
+          className="md:hidden p-2"
+          aria-label="Toggle menu"
+        >
           {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu Dropdown */}
       {mobileOpen && (
         <div className="md:hidden bg-[#161B22] border-b border-[#27272A]">
           {links.map((l) => (
@@ -56,7 +60,7 @@ export default function Navbar() {
               key={l.href}
               href={l.href}
               onClick={() => setMobileOpen(false)}
-              className={`block px-6 py-4 text-sm font-medium border-b border-[#27272A] ${
+              className={`block px-6 py-4 text-base font-medium border-b border-[#27272A] ${
                 pathname === l.href ? 'text-[#00FF9F]' : 'text-[#A1A7B3]'
               }`}
             >
