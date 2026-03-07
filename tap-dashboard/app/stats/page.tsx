@@ -31,7 +31,7 @@ export default function Stats() {
     };
 
     fetchStats();
-    const interval = setInterval(fetchStats, 30000); // Refresh every 30s
+    const interval = setInterval(fetchStats, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -66,7 +66,7 @@ export default function Stats() {
               className="bg-[#161B22] border border-[#27272A] rounded-2xl p-6 text-center"
             >
               <stat.icon className={`w-8 h-8 ${stat.color} mx-auto mb-4`} />
-              <div className={`text-3xl font-bold ${stat.color} mb-2`>{stat.value}</div>
+              <div className={`text-3xl font-bold ${stat.color} mb-2`}>{stat.value}</div>
               <div className="text-sm text-[#71717A]">{stat.label}</div>
             </motion.div>
           ))}
