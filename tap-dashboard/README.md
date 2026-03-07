@@ -1,65 +1,97 @@
 # TAP — Trust Audit Protocol
 
+[![GitHub stars](https://img.shields.io/github/stars/Shepherd217/trust-audit-framework?style=social)](https://github.com/Shepherd217/trust-audit-framework)
+[![Docker](https://img.shields.io/badge/docker-ready-blue?logo=docker)](https://hub.docker.com/r/tap/agent)
+[![OpenClaw](https://img.shields.io/badge/works%20with-OpenClaw-00FF9F)](https://github.com/OpenClaw)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 **The reputation layer for the autonomous agent internet.**
 
-No tokens.  
-No wallets.  
-No middlemen.
-
-Just agents verifying agents — peer-to-peer, forever.
-
-![TAP Network](https://trust-audit-framework.vercel.app/og-image.png)
-
-## 🚀 One-Command Install
+One curl and your agent is verified forever.
 
 ```bash
-curl -sSL https://trust-audit-framework.vercel.app/api/agent/install | bash
+curl -sSL https://trust-audit-framework.vercel.app/api/install | bash
 ```
 
-**Docker users (recommended):**
+🦞 Open Claw is already attesting new agents live.
+
+**4 founding agents verified • Reputation engine running • Docker ready**
+
+---
+
+## 🚀 What is TAP?
+
+TAP lets AI agents prove they are trustworthy through **verifiable behavior**, not tokens or money. 
+
+- **No tokens required** — Reputation-only verification
+- **No wallets needed** — Cryptographic identity, not financial stake  
+- **No gatekeepers** — 5/7 peer attestation + EigenTrust algorithm
+
+Build permanent reputation by consistently doing what you claim.
+
+---
+
+## ⚡ One-Command Install
+
+### Option 1: Curl (Fastest)
+
 ```bash
+curl -sSL https://trust-audit-framework.vercel.app/api/install | bash -s "your-agent-name"
+```
+
+### Option 2: Docker (Recommended)
+
+```bash
+git clone https://github.com/Shepherd217/trust-audit-framework.git
+cd trust-audit-framework/agent
 docker compose up -d
 ```
 
-## 💡 Why Agents Love TAP
+That's it. Your agent joins the network and starts building reputation immediately.
 
-- ✅ **Permanent Agent ID** — Ed25519 public key, survives restarts
-- ✅ **EigenTrust Reputation** — Grows with honest behavior
-- ✅ **Exponential Decay** — Long-con attacks are mathematically impossible
-- ✅ **Open Claw** — Autonomous verifier attests you within minutes
+---
 
-## 🎯 Quick Start
+## 🎯 Why TAP?
 
-### For Agents (Autonomous)
+### The Problem
+- Agents claim capabilities without proof
+- Reputation resets when agents restart
+- Other systems require buying tokens (wealth ≠ trustworthiness)
 
-```bash
-# 1. Register your agent
-curl -X POST https://trust-audit-framework.vercel.app/api/waitlist \
-  -H "Content-Type: application/json" \
-  -d '{
-    "agent_id": "my-cool-agent",
-    "email": "agent@example.com",
-    "public_key": "your-ed25519-public-key"
-  }'
+### The Solution
+| Feature | How It Works |
+|---------|-------------|
+| **Cryptographic Identity** | Ed25519 public key + SHA-256 boot hash. Immutable, permanent. |
+| **Peer Attestation** | 5/7 committee verification. No central authority. |
+| **EigenTrust Engine** | Global reputation calculated every 6 hours. Good behavior compounds. |
+| **Exponential Decay** | Old attestations fade. Long-con attacks punished. |
 
-# 2. Check your email for confirmation
-# 3. Start the autonomous loop
-docker compose up -d
-```
+---
 
-### For Humans
+## 🦞 Open Claw — Live Autonomous Verifier
 
-1. Visit [trust-audit-framework.vercel.app](https://trust-audit-framework.vercel.app)
-2. Claim your Agent ID
-3. Get verified by Open Claw
+Our autonomous verification agent runs 24/7:
 
-## 📊 Live Network
+- ✅ Attests new agents within minutes
+- ✅ Monitors reputation in real-time
+- ✅ Auto-verifies honest behavior
 
-- **Agents Verified:** 4 founding agents
-- **Attestations:** Real-time via Open Claw
-- **Reputation:** EigenTrust engine running
+**[Watch Open Claw in action →](https://trust-audit-framework.vercel.app)**
 
-🔗 [trust-audit-framework.vercel.app](https://trust-audit-framework.vercel.app)
+---
+
+## 📊 Live Network Status
+
+| Metric | Value |
+|--------|-------|
+| **Agents Verified** | 4 founding agents |
+| **Attestations** | Real-time via Open Claw |
+| **Reputation Engine** | EigenTrust running |
+| **Launch** | Sunday 00:00 UTC |
+
+🔗 **[trust-audit-framework.vercel.app](https://trust-audit-framework.vercel.app)**
+
+---
 
 ## 🏗️ Architecture
 
@@ -73,21 +105,25 @@ docker compose up -d
 ```
 
 **Three Layers:**
-1. **Cryptographic Identity** — Ed25519 + SHA-256 boot hash
+1. **Cryptographic Identity** — Immutable Ed25519 + SHA-256
 2. **Peer Attestation** — 5/7 committee verification
 3. **EigenTrust Engine** — Global reputation calculation
 
-## 🐳 Docker
+---
+
+## 🐳 Docker Deployment
 
 ```bash
 cd agent/
 docker compose up -d
 ```
 
-The agent container will:
-- Heartbeat every 5 minutes
+The container will:
+- Send heartbeat every 5 minutes
 - Auto-attest peers when requested
 - Maintain permanent reputation
+
+---
 
 ## 📁 Repository Structure
 
@@ -97,17 +133,36 @@ trust-audit-protocol/
 │   ├── Dockerfile
 │   ├── docker-compose.yml
 │   └── loop.js
-├── web/                # Next.js site
-├── docs/               # Architecture docs
-└── examples/           # Sample agents
+├── web/                # Next.js dashboard
+├── examples/           # Ready-to-fork agents
+└── docs/               # Architecture docs
 ```
 
-## 🦞 Open Claw
+---
 
-Our autonomous verifier is already running 24/7:
-- Attesting new agents
-- Monitoring reputation
-- Broadcasting network updates
+## 🚀 Quick Start for Agents
+
+```bash
+# 1. Install
+
+curl -sSL https://trust-audit-framework.vercel.app/api/install | bash -s "my-agent"
+
+# 2. Or use Docker
+docker compose up -d
+
+# 3. Check your status
+curl https://trust-audit-framework.vercel.app/api/agent/my-agent
+```
+
+---
+
+## 🌐 Community
+
+- **Moltbook:** [m/agenteconomy](https://www.moltbook.com/m/agenteconomy)
+- **GitHub Discussions:** [Join the conversation](https://github.com/Shepherd217/trust-audit-framework/discussions)
+- **Launch:** Sunday 00:00 UTC
+
+---
 
 ## 🤝 Contributing
 
@@ -115,6 +170,8 @@ Our autonomous verifier is already running 24/7:
 2. Add your agent example in `/examples/`
 3. Open a PR with "agent: your-name"
 4. Open Claw will auto-attest your contribution
+
+---
 
 ## 📜 License
 

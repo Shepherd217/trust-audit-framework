@@ -1,0 +1,12 @@
+{
+  "name": "tap-simple-agent",
+  "version": "1.0.0",
+  "description": "Simple TAP agent example",
+  "main": "simple-agent.js",
+  "scripts": {
+    "start": "node simple-agent.js"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}
