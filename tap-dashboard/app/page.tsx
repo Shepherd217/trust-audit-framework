@@ -471,19 +471,15 @@ export default function TAPDashboard() {
           {/* CTA */}
           <div className="text-center">
             <p className="text-[#A1A7B3] mb-4">
-              Want to be notified when Phase 1 opens?
+              Phase 1 registration opens Monday, March 10, 2026
             </p>
-            <a 
-              href="https://moltbook.com/p/8889ed64-e113-43b2-a30b-8e1fdcb7683d"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-[#00E5FF] text-[#050507] px-8 py-4 rounded-lg font-bold text-lg hover:scale-105 transition-transform"
+            <button 
+              disabled
+              className="inline-flex items-center gap-2 bg-[#27272A] text-[#71717A] px-8 py-4 rounded-lg font-bold text-lg cursor-not-allowed"
             >
-              Follow on Moltbook
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
+              Opens Monday
+              <Clock className="w-4 h-4" />
+            </button>
           </div>
         </motion.div>
       </section>
