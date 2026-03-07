@@ -8,13 +8,14 @@ const supabase = createClient(
 
 export async function GET(
   request: Request,
-  { params }: { params: { agent_id: string } }
+  { params }: { params: Promise<{ agent_id: string }> }
 ) {
   try {
+    const { agent_id } = await params;
     const { data, error } = await supabase
       .from('waitlist')
       .select('id, agent_id, email, public_key, referral_count, confirmed, staking_status, nft_minted')
-      .eq('agent_id', params.agent_id)
+      .eq('agent_id', agent_id)
       .single();
 
     if (error || !data) {
