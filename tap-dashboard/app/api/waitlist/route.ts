@@ -9,7 +9,14 @@ const supabase = createClient(
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, agent_id, public_key, source = 'curl' } = body;
+    const { email, agent_id, public_key } = body;
+
+    if (!email || !agent_id) {
+      return NextResponse.json(
+        { error: 'Email and agent_id required' },
+        { status: 400 }
+      );
+    }
 
     // Check for duplicates
     const { data: existing } = await supabase
@@ -25,12 +32,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Insert new entry (without source column)
+    // Insert new entry - only use columns that definitely exist
+    const insertData: any = { email, agent_id };
+    if (public_key) insertData.public_key = public_key;
+
     const { error: insertError } = await supabase
       .from('waitlist')
-      .insert([{ email, agent_id, public_key }]);
+      .insert([insertData]);
 
     if (insertError) {
+      console.error('Insert error:', insertError);
       return NextResponse.json(
         { error: insertError.message },
         { status: 400 }
@@ -48,10 +59,11 @@ export async function POST(request: Request) {
       opens: '2026-03-10T00:00:00Z'
     });
 
-  } catch (error) {
+  } catch (error: any) {
+    console.error('API Error:', error);
     return NextResponse.json(
-      { error: 'Invalid request' },
-      { status: 400 }
+      { error: error.message || 'Server error' },
+      { status: 500 }
     );
   }
 }
