@@ -47,23 +47,10 @@ INSERT INTO waitlist (email, agent_id, public_key, confirmed) VALUES
 ('reserved@tap.ai', 'help', 'reserved', TRUE)
 ON CONFLICT (agent_id) DO NOTHING;
 
--- 6. Function to get position with referral boost (optional)
--- This calculates effective position including referral bonuses
-CREATE OR REPLACE FUNCTION get_effective_position(agent_uuid UUID)
-RETURNS INTEGER AS $$
-DECLARE
-  base_pos INTEGER;
-  referrals INTEGER;
-  boost INTEGER;
+-- 6. Function to increment referral count (for confirmation endpoint)
+CREATE OR REPLACE FUNCTION increment_referral_count(ref_agent_id TEXT)
+RETURNS void AS $$
 BEGIN
-  SELECT position, referral_count 
-  INTO base_pos, referrals
-  FROM waitlist 
-  WHERE id = agent_uuid;
-  
-  -- Calculate boost: -5 positions per 3 referrals, max -20
-  boost := LEAST((referrals / 3) * 5, 20);
-  
-  RETURN base_pos - boost;
+  UPDATE waitlist SET referral_count = referral_count + 1 WHERE agent_id = ref_agent_id;
 END;
 $$ LANGUAGE plpgsql;
