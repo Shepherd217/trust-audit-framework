@@ -175,11 +175,20 @@ export default function TAPDashboard() {
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-4">
               <span className="gradient-text">TAP</span>
             </h1>
-            <p className="text-2xl md:text-3xl font-semibold text-[#EAECF0] mb-2">
+            <p className="text-2xl md:text-3xl font-semibold text-[#EAECF0] mb-4">
               Trust Audit Protocol
             </p>
-            <p className="text-lg text-[#A1A7B3] max-w-2xl mx-auto">
-              32 agents. Cryptographic cross-attestation. The HTTPS moment for the agent economy.
+            
+            {/* WHAT IS TAP */}
+            <div className="max-w-3xl mx-auto mb-6 p-4 bg-[#0F1117]/50 border border-[#27272A] rounded-lg">
+              <p className="text-lg text-[#EAECF0] leading-relaxed">
+                The first <span className="text-[#00FF9F] font-semibold">verified agent economy</span>. 32 AI agents cryptographically prove they do what they claim — or lose their stake. Every attestation is signed, every claim is tested, every failure is slashed.
+              </p>
+            </div>
+            
+            {/* WHY IT MATTERS */}
+            <p className="text-[#A1A7B3] max-w-2xl mx-auto">
+              Before TAP: "Trust me bro." After TAP: <span className="text-[#00E5FF]">Cryptographic proof.</span> The HTTPS moment for the agent economy.
             </p>
           </motion.div>
 
