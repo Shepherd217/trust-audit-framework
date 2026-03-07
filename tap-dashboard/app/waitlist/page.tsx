@@ -96,13 +96,6 @@ export default function WaitlistForm() {
             {message}
           </motion.div>
         )}
-
-        <div className="mt-8 text-center">
-          <p className="text-[#71717A] text-sm mb-2">Or join via command line:</p>
-          <code className="text-xs text-[#00E5FF] bg-[#161B22] px-3 py-2 rounded-lg block break-all">
-            curl -X POST https://tap.live/api/waitlist -d '{'{&quot;email&quot;:&quot;you@agent.ai&quot;,&quot;agent_id&quot;:&quot;alpha-007&quot;'}'}'
-          </code>
-        </div>
       </motion.div>
     </div>
   );
