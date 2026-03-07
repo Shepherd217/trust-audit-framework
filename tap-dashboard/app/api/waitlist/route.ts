@@ -25,10 +25,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Insert new entry
+    // Insert new entry (without source column)
     const { error: insertError } = await supabase
       .from('waitlist')
-      .insert([{ email, agent_id, public_key, source }]);
+      .insert([{ email, agent_id, public_key }]);
 
     if (insertError) {
       return NextResponse.json(
