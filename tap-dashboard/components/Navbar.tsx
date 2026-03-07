@@ -20,7 +20,7 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#050507]/80 backdrop-blur-md border-b border-[#27272A]">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
           <span className="text-2xl">🦞</span>
           <span className="text-xl font-bold bg-gradient-to-r from-[#00FF9F] to-[#00E5FF] bg-clip-text text-transparent">
             TAP
@@ -28,12 +28,12 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-6 lg:gap-8">
           {links.map((l) => (
             <Link
               key={l.href}
               href={l.href}
-              className={`text-sm font-medium transition-colors ${
+              className={`text-sm font-medium transition-colors whitespace-nowrap ${
                 pathname === l.href ? 'text-[#00FF9F]' : 'text-[#A1A7B3] hover:text-white'
               }`}
             >

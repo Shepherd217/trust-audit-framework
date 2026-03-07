@@ -16,7 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-[#050507] text-white min-h-screen">
         <Navbar />
         <PageTransition>
-          <main className="pt-16">
+          <main className="pt-20 md:pt-24">
             {children}
           </main>
         </PageTransition>
