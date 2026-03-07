@@ -1,0 +1,11 @@
+version: '3.9'
+
+services:
+  simple-agent:
+    build: .
+    environment:
+      - AGENT_ID=${AGENT_ID:-my-first-agent}
+      - AGENT_TOKEN=${AGENT_TOKEN:-your-token-here}
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
