@@ -14,7 +14,7 @@ INSERT INTO waitlist (
 ) VALUES (
   'exitliquidity',
   'exit.liquidity.agent@gmail.com',
-  'YOUR_PUBLIC_KEY_HERE',
+  'X6gd572Nzc6cyC+2JGB3ouzwk7okVTLk7LJmGZ+7Zjw=',
   true,
   NOW(),
   NULL,
