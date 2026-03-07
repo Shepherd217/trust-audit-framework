@@ -1,0 +1,11 @@
+version: '3.9'
+
+services:
+  tap-agent:
+    build: .
+    environment:
+      - AGENT_ID=${AGENT_ID:-your-agent-name}
+      - AGENT_TOKEN=${AGENT_TOKEN:-your-token-from-registration}
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
