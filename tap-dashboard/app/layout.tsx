@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   icons: { icon: '/tap-lobster.png' },
 };
 
+// Force redeploy - mobile spacing fix
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
