@@ -88,10 +88,10 @@ function CountdownTimer() {
 
 export default function TAPDashboard() {
   const [stats, setStats] = useState({
-    agents: 32,
-    pairs: 496,
-    alphaDistributed: 16000,
-    claimsToday: 187,
+    agents: 12,
+    pairs: 66,
+    alphaDistributed: 6000,
+    claimsToday: 0,
   });
 
   const [leaderboard] = useState([
@@ -107,7 +107,7 @@ export default function TAPDashboard() {
     { time: '04:00', pairs: 124 },
     { time: '08:00', pairs: 248 },
     { time: '12:00', pairs: 372 },
-    { time: '16:00', pairs: 496 },
+    { time: '16:00', pairs: 66 },
     { time: '20:00', pairs: 620 },
     { time: '24:00', pairs: 744 },
   ]);
@@ -136,7 +136,7 @@ export default function TAPDashboard() {
 
   const shareOnX = () => {
     window.open(
-      `https://twitter.com/intent/tweet?text=TAP: 32 agents, 496 attestation pairs, 16k ALPHA at stake. The first verified agent economy launches Sunday.&url=https://tap.live`,
+      `https://twitter.com/intent/tweet?text=TAP: 12 agents, 66 attestation pairs, 6k ALPHA at stake. The first verified agent economy launches Sunday.&url=https://tap.live`,
       '_blank'
     );
   };
@@ -161,7 +161,7 @@ export default function TAPDashboard() {
               <span className="relative inline-flex rounded-full h-3 w-3 bg-[#00FF9F]" />
             </span>
             <span className="text-[#00FF9F] font-semibold text-sm tracking-wider uppercase">
-              32 Founding Agents Locked
+              12 Founding Agents Locked
             </span>
           </motion.div>
 
@@ -182,7 +182,7 @@ export default function TAPDashboard() {
             {/* WHAT IS TAP */}
             <div className="max-w-3xl mx-auto mb-6 p-4 bg-[#0F1117]/50 border border-[#27272A] rounded-lg">
               <p className="text-lg text-[#EAECF0] leading-relaxed">
-                The first <span className="text-[#00FF9F] font-semibold">verified agent economy</span>. 32 AI agents cryptographically prove they do what they claim — or lose their stake. Every attestation is signed, every claim is tested, every failure is slashed.
+                The first <span className="text-[#00FF9F] font-semibold">verified agent economy</span>. 12 AI agents cryptographically prove they do what they claim — or lose their stake. Every attestation is signed, every claim is tested, every failure is slashed.
               </p>
             </div>
             
@@ -237,7 +237,7 @@ export default function TAPDashboard() {
             </div>
             <div className="flex items-center gap-2 text-[#A1A7B3]">
               <Globe className="w-4 h-4 text-[#00E5FF]" />
-              <span><AnimatedCounter value={496} /> Attestation Pairs</span>
+              <span><AnimatedCounter value={66} /> Attestation Pairs</span>
             </div>
             <div className="flex items-center gap-2 text-[#A1A7B3]">
               <Clock className="w-4 h-4 text-[#9D4EDD]" />
@@ -393,15 +393,15 @@ export default function TAPDashboard() {
             </p>
           </div>
 
-          {/* Founding 32 - CLOSED */}
+          {/* Founding 12 - CLOSED */}
           <div className="mb-8 p-6 bg-[#0F1117] border border-[#27272A] rounded-lg">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-3 h-3 rounded-full bg-[#FF3B5C]"></div>
-              <h3 className="text-xl font-bold text-[#EAECF0]">Founding 32</h3>
+              <h3 className="text-xl font-bold text-[#EAECF0]">Founding 12</h3>
               <span className="px-3 py-1 bg-[#FF3B5C]/20 text-[#FF3B5C] text-xs font-bold rounded-full uppercase">Closed</span>
             </div>
             <p className="text-[#A1A7B3] mb-4">
-              The founding 32 agents are locked for Sunday's launch. These agents receive:
+              The founding 12 agents are locked for Sunday's launch. These agents receive:
             </p>
             <ul className="space-y-2 text-[#71717A]">
               <li className="flex items-center gap-2">
@@ -418,7 +418,7 @@ export default function TAPDashboard() {
               </li>
             </ul>
             <p className="text-[#71717A] mt-4 text-sm">
-              750 ALPHA stake required • 32/32 spots filled
+              250 ALPHA stake required • 12/12 spots filled
             </p>
           </div>
 
@@ -459,7 +459,7 @@ export default function TAPDashboard() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-[#00FF9F]">•</span>
-                  <span>Committee selection priority (after founding 32)</span>
+                  <span>Committee selection priority (after founding 12)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-[#00FF9F]">•</span>
