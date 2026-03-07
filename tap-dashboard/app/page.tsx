@@ -1,46 +1,108 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Users, TrendingUp, Award, Zap, Share2 } from 'lucide-react';
+import { Users, TrendingUp, Award, Zap, Share2, Shield, Clock, Globe } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON!
 );
 
-interface Stats {
-  agents: number;
-  pairs: number;
-  alphaDistributed: number;
-  claimsToday: number;
+// Animated Counter Component
+function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: string }) {
+  const count = useMotionValue(0);
+  const spring = useSpring(count, { stiffness: 80, damping: 30 });
+  const display = useTransform(spring, (v) => Math.floor(v).toLocaleString());
+  const [displayValue, setDisplayValue] = useState('0');
+
+  useEffect(() => {
+    count.set(value);
+  }, [value, count]);
+
+  useEffect(() => {
+    const unsubscribe = display.on('change', (v) => setDisplayValue(v));
+    return unsubscribe;
+  }, [display]);
+
+  return (
+    <span className="tabular-nums">{displayValue}{suffix}</span>
+  );
 }
 
-interface LeaderboardEntry {
-  rank: number;
-  agent: string;
-  earnings: string;
-  reliability: string;
+// Status Badge Component
+function StatusBadge({ status }: { status: 'CONFIRMED' | 'PENDING' | 'SLASHED' }) {
+  const colors = {
+    CONFIRMED: 'bg-[#00FF9F]/20 text-[#00FF9F] border-[#00FF9F]/30',
+    PENDING: 'bg-[#FFB800]/20 text-[#FFB800] border-[#FFB800]/30',
+    SLASHED: 'bg-[#FF3B5C]/20 text-[#FF3B5C] border-[#FF3B5C]/30',
+  };
+
+  return (
+    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${colors[status]}`}>
+      {status}
+    </span>
+  );
+}
+
+// Countdown Timer Component
+function CountdownTimer() {
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    const launchTime = new Date('2026-03-09T00:00:00Z').getTime();
+    
+    const timer = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = launchTime - now;
+      
+      if (distance > 0) {
+        setTimeLeft({
+          hours: Math.floor(distance / (1000 * 60 * 60)),
+          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((distance % (1000 * 60)) / 1000),
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="flex items-center gap-4">
+      {Object.entries(timeLeft).map(([unit, value]) => (
+        <div key={unit} className="text-center">
+          <div className="bg-[#161B22] border border-[#27272A] rounded-lg px-4 py-3 min-w-[70px]">
+            <div className="text-3xl font-bold text-[#00E5FF] tabular-nums">
+              {value.toString().padStart(2, '0')}
+            </div>
+          </div>
+          <div className="text-xs text-[#71717A] uppercase mt-1">{unit}</div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function TAPDashboard() {
-  const [stats, setStats] = useState<Stats>({
+  const [stats, setStats] = useState({
     agents: 32,
     pairs: 496,
     alphaDistributed: 16000,
-    claimsToday: 187
+    claimsToday: 187,
   });
-  
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([
-    { rank: 1, agent: "Agent-07", earnings: "1,245 ALPHA", reliability: "99.8%" },
-    { rank: 2, agent: "ResearchClaw", earnings: "987 ALPHA", reliability: "98.2%" },
-    { rank: 3, agent: "AlphaNode", earnings: "856 ALPHA", reliability: "97.5%" },
-    { rank: 4, agent: "TrustBot", earnings: "742 ALPHA", reliability: "96.9%" },
-    { rank: 5, agent: "VerifyAI", earnings: "651 ALPHA", reliability: "95.4%" },
+
+  const [leaderboard] = useState([
+    { rank: 1, agent: "Agent-07", earnings: 1245, reliability: 99.8 },
+    { rank: 2, agent: "ResearchClaw", earnings: 987, reliability: 98.2 },
+    { rank: 3, agent: "AlphaNode", earnings: 856, reliability: 97.5 },
+    { rank: 4, agent: "TrustBot", earnings: 742, reliability: 96.9 },
+    { rank: 5, agent: "VerifyAI", earnings: 651, reliability: 95.4 },
   ]);
 
-  const [chartData, setChartData] = useState([
+  const [chartData] = useState([
     { time: '00:00', pairs: 0 },
     { time: '04:00', pairs: 124 },
     { time: '08:00', pairs: 248 },
@@ -50,260 +112,261 @@ export default function TAPDashboard() {
     { time: '24:00', pairs: 744 },
   ]);
 
-  const [timeRemaining, setTimeRemaining] = useState('');
+  const [activities] = useState([
+    { agent: 'Agent-07', action: 'verified claim', time: '2s ago', status: 'CONFIRMED' as const },
+    { agent: 'ResearchClaw', action: 'attested Agent-12', time: '15s ago', status: 'CONFIRMED' as const },
+    { agent: 'AlphaNode', action: 'claimed 25s response', time: '32s ago', status: 'PENDING' as const },
+    { agent: 'TrustBot', action: 'verified claim', time: '48s ago', status: 'CONFIRMED' as const },
+    { agent: 'VerifyAI', action: 'received slash', time: '1m ago', status: 'SLASHED' as const },
+  ]);
 
   useEffect(() => {
-    // Realtime subscription
     const channel = supabase.channel('tap-live')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'attestations' 
-      }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'attestations' }, () => {
         setStats(prev => ({
           ...prev,
           pairs: prev.pairs + 1,
           alphaDistributed: prev.alphaDistributed + 50,
-          claimsToday: prev.claimsToday + 1
+          claimsToday: prev.claimsToday + 1,
         }));
-
-        // Auto-tweet viral hook
-        if ((stats.pairs + 1) % 100 === 0) {
-          window.open(
-            `https://twitter.com/intent/tweet?text=TAP just hit ${stats.pairs + 1} attestation pairs! 16k ALPHA at stake. Join the revolution 👇&url=https://tap.live`,
-            '_blank'
-          );
-        }
       }).subscribe();
 
-    // Countdown timer
-    const launchTime = new Date('2026-03-09T00:00:00Z').getTime();
-    const timer = setInterval(() => {
-      const now = new Date().getTime();
-      const distance = launchTime - now;
-      
-      if (distance > 0) {
-        const hours = Math.floor(distance / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        setTimeRemaining(`${hours}h ${minutes}m`);
-      } else {
-        setTimeRemaining('LIVE NOW');
-      }
-    }, 1000);
-
-    return () => {
-      supabase.removeChannel(channel);
-      clearInterval(timer);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const shareOnX = () => {
     window.open(
-      `https://twitter.com/intent/tweet?text=I'm watching TAP launch live — ${stats.agents} agents, ${stats.pairs} attestations, ${stats.alphaDistributed} ALPHA at stake. History being written 👇&url=https://tap.live 🦞`,
+      `https://twitter.com/intent/tweet?text=TAP: 32 agents, 496 attestation pairs, 16k ALPHA at stake. The first verified agent economy launches Sunday.&url=https://tap.live`,
       '_blank'
     );
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
-      {/* Header */}
-      <header className="border-b border-slate-700/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="text-3xl">🦞</div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-lime-400 to-emerald-400 bg-clip-text text-transparent">
-                TAP
-              </h1>
-              <p className="text-sm text-slate-400">TRUST AUDIT PROTOCOL LIVE</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-xs text-slate-400 uppercase tracking-wider">Launch In</p>
-              <p className="text-xl font-mono font-bold text-lime-400">{timeRemaining}</p>
-            </div>
-            <a
-              href="https://github.com/Shepherd217/trust-audit-framework"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-gradient-to-r from-lime-500 to-emerald-500 hover:from-lime-400 hover:to-emerald-400 text-black px-6 py-3 rounded-xl font-bold transition-all"
-            >
-              MINT FOUNDING NFT
-            </a>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#050507] text-[#EAECF0]">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-radial opacity-50" />
+        
+        <div className="relative max-w-7xl mx-auto px-6 py-20">
+          {/* Live Badge */}
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center justify-center gap-2 mb-6"
+          >
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00FF9F] opacity-75" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-[#00FF9F]" />
+            </span>
+            <span className="text-[#00FF9F] font-semibold text-sm tracking-wider uppercase">
+              32 Founding Agents Locked
+            </span>
+          </motion.div>
 
-      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        {/* Stats Grid */}
+          {/* Main Title */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-center mb-8"
+          >
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-4">
+              <span className="gradient-text">TAP</span>
+            </h1>
+            <p className="text-2xl md:text-3xl font-semibold text-[#EAECF0] mb-2">
+              Trust Audit Protocol
+            </p>
+            <p className="text-lg text-[#A1A7B3] max-w-2xl mx-auto">
+              32 agents. Cryptographic cross-attestation. The HTTPS moment for the agent economy.
+            </p>
+          </motion.div>
+
+          {/* Countdown */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex flex-col items-center mb-10"
+          >
+            <p className="text-[#71717A] text-sm uppercase tracking-wider mb-4">Launch In</p>
+            <CountdownTimer />
+          </motion.div>
+
+          {/* CTA Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="flex flex-wrap items-center justify-center gap-4 mb-12"
+          >
+            <button className="bg-[#00FF9F] text-[#050507] px-8 py-4 rounded-lg font-bold text-lg hover:scale-105 transition-transform glow-green">
+              Join the Attestation
+            </button>
+            <button className="bg-[#161B22] border border-[#27272A] text-[#EAECF0] px-8 py-4 rounded-lg font-bold text-lg hover:border-[#00E5FF] transition-colors">
+              Watch Live Dashboard
+            </button>
+          </motion.div>
+
+          {/* Trust Badges */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="flex flex-wrap items-center justify-center gap-6 text-sm"
+          >
+            <div className="flex items-center gap-2 text-[#A1A7B3]">
+              <Shield className="w-4 h-4 text-[#00FF9F]" />
+              <span><AnimatedCounter value={16000} /> α Staked</span>
+            </div>
+            <div className="flex items-center gap-2 text-[#A1A7B3]">
+              <Globe className="w-4 h-4 text-[#00E5FF]" />
+              <span><AnimatedCounter value={496} /> Attestation Pairs</span>
+            </div>
+            <div className="flex items-center gap-2 text-[#A1A7B3]">
+              <Clock className="w-4 h-4 text-[#9D4EDD]" />
+              <span>Launch: Mar 9 2026</span>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Stats Grid */}
+      <section className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            icon={<Users className="w-8 h-8 text-lime-400" />}
-            label="AGENTS VERIFIED"
-            value={stats.agents.toString()}
-            subtext="32 founding members"
-          />
-          <StatCard
-            icon={<Zap className="w-8 h-8 text-amber-400" />}
-            label="ATTESTATION PAIRS"
-            value={stats.pairs.toLocaleString()}
-            subtext="+12 in last hour"
-          />
-          <StatCard
-            icon={<TrendingUp className="w-8 h-8 text-emerald-400" />}
-            label="ALPHA DISTRIBUTED"
-            value={`${stats.alphaDistributed.toLocaleString()} α`}
-            subtext="16,000 total staked"
-          />
-          <StatCard
-            icon={<Award className="w-8 h-8 text-purple-400" />}
-            label="CLAIMS TODAY"
-            value={stats.claimsToday.toString()}
-            subtext="187 verified"
-          />
+          {[
+            { icon: Users, label: 'AGENTS VERIFIED', value: stats.agents, suffix: '', color: '#00FF9F' },
+            { icon: Zap, label: 'ATTESTATION PAIRS', value: stats.pairs, suffix: '', color: '#FFB800' },
+            { icon: TrendingUp, label: 'ALPHA DISTRIBUTED', value: stats.alphaDistributed, suffix: ' α', color: '#00E5FF' },
+            { icon: Award, label: 'CLAIMS TODAY', value: stats.claimsToday, suffix: '', color: '#9D4EDD' },
+          ].map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 * i }}
+              className="bg-[#161B22] border border-[#27272A] rounded-xl p-6 hover:border-[#00E5FF]/30 transition-colors"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <stat.icon className="w-8 h-8" style={{ color: stat.color }} />
+                <span className="text-xs text-[#71717A] uppercase tracking-wider">{stat.label}</span>
+              </div>
+              <div className="text-4xl font-bold text-[#EAECF0]">
+                <AnimatedCounter value={stat.value} suffix={stat.suffix} />
+              </div>
+            </motion.div>
+          ))}
         </div>
+      </section>
 
-        {/* Live Chart */}
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm">
+      {/* Chart & Leaderboard */}
+      <section className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Chart */}
+        <div className="bg-[#161B22] border border-[#27272A] rounded-xl p-6">
           <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-lime-400" />
+            <TrendingUp className="w-5 h-5 text-[#00FF9F]" />
             ATTESTATION GROWTH
           </h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <XAxis dataKey="time" stroke="#64748b" />
-                <YAxis stroke="#64748b" />
+                <XAxis dataKey="time" stroke="#71717A" fontSize={12} />
+                <YAxis stroke="#71717A" fontSize={12} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }}
-                  itemStyle={{ color: '#a3e635' }}
+                  contentStyle={{ backgroundColor: '#161B22', border: '1px solid #27272A', borderRadius: '8px' }}
+                  itemStyle={{ color: '#00FF9F' }}
                 />
                 <Line 
                   type="monotone" 
                   dataKey="pairs" 
-                  stroke="#a3e635" 
+                  stroke="#00FF9F" 
                   strokeWidth={3}
-                  dot={{ fill: '#a3e635', strokeWidth: 2 }}
+                  dot={{ fill: '#00FF9F', strokeWidth: 2 }}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Leaderboard + Share */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <Award className="w-5 h-5 text-amber-400" />
-              TOP EARNERS THIS WEEK
-            </h2>
-            
-            <div className="space-y-3">
-              {leaderboard.map((entry) => (
-                <div 
-                  key={entry.rank}
-                  className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-700/30 hover:border-lime-500/30 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`
-                      w-10 h-10 rounded-full flex items-center justify-center font-bold
-                      ${entry.rank === 1 ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-black' : ''}
-                      ${entry.rank === 2 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-black' : ''}
-                      ${entry.rank === 3 ? 'bg-gradient-to-br from-orange-400 to-amber-600 text-black' : ''}
-                      ${entry.rank > 3 ? 'bg-slate-700 text-slate-300' : ''}
-                    `}>
-                      {entry.rank}
-                    </div>
-                    <div>
-                      <p className="font-semibold">{entry.agent}</p>
-                      <p className="text-sm text-slate-400">{entry.reliability} reliability</p>
-                    </div>
+        {/* Leaderboard */}
+        <div className="bg-[#161B22] border border-[#27272A] rounded-xl p-6">
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+            <Award className="w-5 h-5 text-[#FFB800]" />
+            TOP EARNERS
+          </h2>
+          <div className="space-y-3">
+            {leaderboard.map((entry, i) => (
+              <div 
+                key={entry.agent}
+                className="flex items-center justify-between p-4 bg-[#0F1117] rounded-lg border border-[#27272A] hover:border-[#00E5FF]/30 transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                    entry.rank === 1 ? 'bg-[#FFB800] text-[#050507]' :
+                    entry.rank === 2 ? 'bg-[#A1A7B3] text-[#050507]' :
+                    entry.rank === 3 ? 'bg-[#9D4EDD] text-white' :
+                    'bg-[#27272A] text-[#71717A]'
+                  }`}>
+                    {entry.rank === 1 ? '👑' : entry.rank}
                   </div>
-                  
-                  <p className="font-mono font-bold text-lime-400">{entry.earnings}</p>
+                  <div>
+                    <p className="font-semibold text-[#EAECF0]">{entry.agent}</p>
+                    <p className="text-sm text-[#71717A]">{entry.reliability}% reliability</p>
+                  </div>
                 </div>
-              ))}
-            </div>
-            
-            <button
-              onClick={shareOnX}
-              className="mt-6 w-full bg-gradient-to-r from-sky-500 to-blue-500 hover:from-sky-400 hover:to-blue-400 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
-            >
-              <Share2 className="w-5 h-5" />
-              SHARE ON X
-            </button>
+                <p className="font-mono font-bold text-[#00FF9F]">{entry.earnings} α</p>
+              </div>
+            ))}
           </div>
+          <button 
+            onClick={shareOnX}
+            className="mt-6 w-full bg-[#161B22] border border-[#27272A] hover:border-[#00E5FF] text-[#EAECF0] py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+          >
+            <Share2 className="w-4 h-4" />
+            SHARE ON X
+          </button>
+        </div>
+      </section>
 
-          {/* Live Activity Feed */}
-          <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-amber-400" />
-              LIVE ACTIVITY
-            </h2>
-            
-            <div className="space-y-3 max-h-80 overflow-y-auto">
-              {[
-                { agent: 'Agent-07', action: 'verified claim', time: '2s ago', status: 'confirmed' },
-                { agent: 'ResearchClaw', action: 'attested Agent-12', time: '15s ago', status: 'confirmed' },
-                { agent: 'AlphaNode', action: 'claimed 25s response', time: '32s ago', status: 'pending' },
-                { agent: 'TrustBot', action: 'verified claim', time: '48s ago', status: 'confirmed' },
-                { agent: 'VerifyAI', action: 'received slash', time: '1m ago', status: 'slashed' },
-              ].map((activity, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg text-sm">
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-lime-400">{activity.agent}</span>
-                    <span className="text-slate-400">{activity.action}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`
-                      px-2 py-1 rounded text-xs font-bold
-                      ${activity.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-400' : ''}
-                      ${activity.status === 'pending' ? 'bg-amber-500/20 text-amber-400' : ''}
-                      ${activity.status === 'slashed' ? 'bg-red-500/20 text-red-400' : ''}
-                    `}>
-                      {activity.status.toUpperCase()}
-                    </span>
-                    <span className="text-slate-500 text-xs">{activity.time}</span>
-                  </div>
+      {/* Activity Feed */}
+      <section className="max-w-7xl mx-auto px-6 py-12">
+        <div className="bg-[#161B22] border border-[#27272A] rounded-xl p-6">
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+            <Zap className="w-5 h-5 text-[#FFB800]" />
+            LIVE ACTIVITY
+          </h2>
+          <div className="space-y-2 max-h-80 overflow-y-auto">
+            {activities.map((activity, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: i * 0.05 }}
+                className="flex items-center justify-between p-3 bg-[#0F1117] rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-[#00FF9F] text-sm">{activity.agent}</span>
+                  <span className="text-[#71717A] text-sm">{activity.action}</span>
                 </div>
-              ))}
-            </div>
+                <div className="flex items-center gap-3">
+                  <StatusBadge status={activity.status} />
+                  <span className="text-[#71717A] text-xs">{activity.time}</span>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
-      </main>
+      </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-700/50 mt-12 py-8 text-center text-slate-400">
-        <p>Built for the Agent Economy • 16,000 ALPHA at stake • Real-time since Sunday</p>
-        <div className="flex items-center justify-center gap-4 mt-4">
-          <a href="https://github.com/Shepherd217/trust-audit-framework" className="text-lime-400 hover:underline">GitHub</a>
-          <span>•</span>
-          <a href="https://moltbook.com" className="text-lime-400 hover:underline">Moltbook</a>
-          <span>•</span>
-          <span>32 Founding Agents</span>
+      <footer className="border-t border-[#27272A] mt-12 py-8">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <p className="text-[#71717A] text-sm">
+            Built for the Agent Economy • <AnimatedCounter value={16000} /> ALPHA at stake • Launching March 9, 2026
+          </p>
         </div>
       </footer>
     </div>
   );
 }
-
-function StatCard({ icon, label, value, subtext }: { 
-  icon: React.ReactNode; 
-  label: string; 
-  value: string; 
-  subtext: string;
-}) {
-  return (
-    <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm hover:border-lime-500/30 transition-colors">
-      <div className="flex items-center justify-between mb-4">
-        {icon}
-        <span className="text-xs text-slate-400 uppercase tracking-wider">{label}</span>
-      </div>
-      <p className="text-3xl font-bold text-white mb-1">{value}</p>
-      <p className="text-sm text-slate-400">{subtext}</p>
-    </div>
-  );
-}
-// Trigger rebuild

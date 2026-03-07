@@ -1,3 +1,76 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --bg-page: #050507;
+  --bg-elevated: #0F1117;
+  --bg-card: #161B22;
+  --text-primary: #EAECF0;
+  --text-secondary: #A1A7B3;
+  --neon-green: #00FF9F;
+  --electric-purple: #9D4EDD;
+  --cyan-blue: #00E5FF;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-elevated);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272A;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Neon glow utilities */
+.glow-green {
+  box-shadow: 0 0 20px rgba(0, 255, 159, 0.3);
+}
+
+.glow-purple {
+  box-shadow: 0 0 20px rgba(157, 78, 221, 0.3);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+}
+
+/* Gradient backgrounds */
+.bg-gradient-radial {
+  background: radial-gradient(ellipse at top, var(--bg-elevated) 0%, var(--bg-page) 70%);
+}
+
+/* Animated gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--neon-green) 0%, var(--cyan-blue) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
