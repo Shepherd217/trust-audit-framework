@@ -21,15 +21,15 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#050507]/95 backdrop-blur-md border-b border-[#27272A]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         
-        {/* TEST LOGO — crab means new code is live */}
+        {/* Logo – ALWAYS visible */}
         <Link href="/" className="flex items-center gap-3">
-          <span className="text-3xl">🦀</span>
+          <span className="text-3xl">🦞</span>
           <span className="text-2xl font-bold bg-gradient-to-r from-[#00FF9F] to-[#00E5FF] bg-clip-text text-transparent">
             TAP
           </span>
         </Link>
 
-        {/* Desktop nav — hidden on mobile */}
+        {/* DESKTOP NAV – FORCED HIDDEN ON MOBILE */}
         <div className="hidden md:flex items-center space-x-8">
           {navLinks.map((link) => (
             <Link
@@ -46,7 +46,7 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Hamburger */}
+        {/* Hamburger – ONLY on mobile */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
           className="md:hidden text-white"
