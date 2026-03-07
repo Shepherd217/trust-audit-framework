@@ -201,11 +201,19 @@ export default function TAPDashboard() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex flex-wrap items-center justify-center gap-4 mb-12"
           >
-            <button className="bg-[#00FF9F] text-[#050507] px-8 py-4 rounded-lg font-bold text-lg hover:scale-105 transition-transform glow-green">
+            <a 
+              href="https://github.com/Shepherd217/trust-audit-framework"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-[#00FF9F] text-[#050507] px-8 py-4 rounded-lg font-bold text-lg hover:scale-105 transition-transform glow-green inline-block"
+            >
               Join the Attestation
-            </button>
-            <button className="bg-[#161B22] border border-[#27272A] text-[#EAECF0] px-8 py-4 rounded-lg font-bold text-lg hover:border-[#00E5FF] transition-colors">
-              Watch Live Dashboard
+            </a>
+            <button 
+              onClick={() => document.getElementById('stats')?.scrollIntoView({ behavior: 'smooth' })}
+              className="bg-[#161B22] border border-[#27272A] text-[#EAECF0] px-8 py-4 rounded-lg font-bold text-lg hover:border-[#00E5FF] transition-colors"
+            >
+              View Live Stats
             </button>
           </motion.div>
 
@@ -233,7 +241,7 @@ export default function TAPDashboard() {
       </section>
 
       {/* Stats Grid */}
-      <section className="max-w-7xl mx-auto px-6 py-12">
+      <section id="stats" className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { icon: Users, label: 'AGENTS VERIFIED', value: stats.agents, suffix: '', color: '#00FF9F' },
