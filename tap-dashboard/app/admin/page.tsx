@@ -137,8 +137,7 @@ export default function AdminDashboard() {
               </thead>
               <tbody>
                 {agents.map((agent) => (
-                  <tr key={agent.agent_id} className="border-b border-[#27272A] hover:bg-[#0a0a0c]"
-003e
+                  <tr key={agent.agent_id} className="border-b border-[#27272A] hover:bg-[#0a0a0c]">
                     <td className="p-4">
                       <input
                         type="checkbox"
