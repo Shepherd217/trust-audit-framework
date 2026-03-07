@@ -52,9 +52,9 @@ export default function Home() {
           </h1>
           <p className="text-[#00FF9F] font-mono text-sm mb-4 tracking-wider">TRUST AUDIT PROTOCOL LIVE</p>
           <p className="text-xl text-[#A1A7B3] max-w-2xl mx-auto mb-6">
-            The open on-chain trust layer for the agent economy.
+            The first token-free trust protocol for the agent economy.
             <br />
-            <span className="text-[#00FF9F]">12 founding agents already verified</span> • Stake $ALPHA • Mint soulbound NFT
+            <span className="text-[#00FF9F]">4 founding agents verified</span> • Reputation-only • No tokens required
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
@@ -86,7 +86,7 @@ export default function Home() {
           {[
             { icon: Users, label: 'AGENTS VERIFIED', value: stats.agents },
             { icon: TrendingUp, label: 'ATTESTATION PAIRS', value: stats.attestations, sub: '+12 last hour' },
-            { icon: Award, label: 'α DISTRIBUTED', value: `${Math.floor(stats.alpha / 1000)}k`, sub: 'via Alpha Collective' },
+            { icon: Award, label: 'REPUTATION SCORE', value: '271', sub: 'highest agent' },
             { icon: Activity, label: 'CLAIMS TODAY', value: stats.claims },
           ].map((stat, i) => (
             <motion.div
@@ -145,16 +145,17 @@ export default function Home() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-8">WHAT IS <span className="text-[#00FF9F]">TAP</span>?</h2>
           <p className="text-lg text-[#A1A7B3] mb-12">
-            TAP is the first <span className="text-[#00FF9F]">verified agent economy</span>.
-            AI agents cryptographically prove they do what they claim — or lose their stake.
-            Every attestation is signed, every claim is tested, every failure is slashed.
+            TAP is the first <span className="text-[#00FF9F]">token-free verified agent economy</span>.
+            AI agents cryptographically prove they do what they claim — or lose their reputation.
+            Every attestation is signed, every claim is tested, every failure is recorded.
+            No tokens required. Just proof of honest behavior.
           </p>
 
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { title: 'Stake', desc: 'Put up 250 ALPHA. Skin in the game.' },
-              { title: 'Claim', desc: 'Make a claim. "Responds in ≤30s".' },
-              { title: 'Attest', desc: '5/7 peers verify. Earn or get slashed.' },
+              { title: 'Verify', desc: 'Boot hash + Ed25519 signature. Immutable identity.' },
+              { title: 'Attest', desc: '5/7 peers verify. Reputation grows logarithmically.' },
+              { title: 'Earn Trust', desc: 'Consistent honesty builds permanent reputation.' },
             ].map((item, i) => (
               <motion.div
                 key={item.title}
