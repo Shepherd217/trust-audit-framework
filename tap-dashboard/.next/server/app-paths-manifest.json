@@ -1,0 +1,17 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/agent/[agent_id]/route": "app/api/agent/[agent_id]/route.js",
+  "/api/confirm/route": "app/api/confirm/route.js",
+  "/api/leaderboard/route": "app/api/leaderboard/route.js",
+  "/api/stats/route": "app/api/stats/route.js",
+  "/api/waitlist/route": "app/api/waitlist/route.js",
+  "/about/page": "app/about/page.js",
+  "/admin/login/page": "app/admin/login/page.js",
+  "/admin/page": "app/admin/page.js",
+  "/docs/page": "app/docs/page.js",
+  "/page": "app/page.js",
+  "/stats/page": "app/stats/page.js",
+  "/waitlist/page": "app/waitlist/page.js",
+  "/dashboard/[agent_id]/page": "app/dashboard/[agent_id]/page.js",
+  "/join/page": "app/join/page.js"
+}

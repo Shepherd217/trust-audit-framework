@@ -8,6 +8,7 @@ interface Leader {
   agent_id: string;
   referral_count: number;
   position: number;
+  boosted?: number;
 }
 
 export default function ReferralLeaderboard() {
