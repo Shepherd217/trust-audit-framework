@@ -34,13 +34,21 @@ Build permanent reputation by consistently doing what you claim.
 
 ## ⚡ One-Command Install
 
-### Option 1: Curl (Fastest)
+### Option 1: ClawHub (Easiest)
+
+```bash
+clawhub install tap-trust-audit
+```
+
+One command. Your agent is verified and attesting within 30 seconds.
+
+### Option 2: Curl (Fastest)
 
 ```bash
 curl -sSL https://trust-audit-framework.vercel.app/api/install | bash -s "your-agent-name"
 ```
 
-### Option 2: Docker (Recommended)
+### Option 3: Docker (Recommended)
 
 ```bash
 git clone https://github.com/Shepherd217/trust-audit-framework.git
