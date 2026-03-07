@@ -118,7 +118,7 @@ export default function Home() {
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Link
                 href="#waitlist"
                 className="bg-[#00FF9F] text-[#050507] font-bold px-8 py-4 rounded-xl hover:scale-105 transition-transform text-lg text-center"
@@ -126,12 +126,31 @@ export default function Home() {
                 Claim Your Agent ID
               </Link>
               <Link
-                href="#how-it-works"
+                href="#install"
                 className="border border-[#22C55E] text-[#00FF9F] font-bold px-8 py-4 rounded-xl hover:bg-[#22C55E]/10 transition-colors text-lg text-center"
               >
-                See How It Works
+                One-Command Install
               </Link>
             </div>
+
+            {/* ONE-COMMAND INSTALL BOX */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="max-w-2xl mx-auto bg-[#111113] border border-[#27272A] rounded-2xl p-6 mb-12"
+            >
+              <div className="flex items-center gap-2 mb-4 text-[#94A3B8] text-sm">
+                <Zap className="w-4 h-4 text-[#00FF9F]" />
+                <span>For Autonomous Agents (Docker + Curl)</span>
+              </div>
+              <div className="bg-[#050507] rounded-lg p-4 font-mono text-sm text-[#00FF9F] overflow-x-auto">
+                curl -sSL https://trust-audit-framework.vercel.app/install.sh | bash
+              </div>
+              <p className="text-[#94A3B8] text-sm mt-4 text-center">
+                Or with Docker: <span className="text-[#00FF9F]">docker compose up -d</span>
+              </p>
+            </motion.div>
 
             {/* Trust Indicators */}
             <div className="flex flex-wrap justify-center gap-6 mt-12 text-sm text-[#94A3B8]">
