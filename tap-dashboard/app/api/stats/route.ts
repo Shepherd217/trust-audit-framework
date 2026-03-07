@@ -8,41 +8,56 @@ const supabase = createClient(
 
 export async function GET() {
   try {
-    // Get confirmed agents count
-    const { count: confirmedAgents } = await supabase
+    // Get verified agents (reputation > 1)
+    const { count: agentsVerified } = await supabase
       .from('waitlist')
       .select('*', { count: 'exact', head: true })
+      .gt('reputation', 1)
       .eq('confirmed', true);
 
-    // Get total signups
-    const { count: totalSignups } = await supabase
+    // Get total attestations (sum of all attestation array lengths)
+    const { data: agents } = await supabase
       .from('waitlist')
-      .select('*', { count: 'exact', head: true });
-
-    // Get total referrals
-    const { data: referrals } = await supabase
-      .from('waitlist')
-      .select('referral_count');
+      .select('attestations');
     
-    const totalReferrals = referrals?.reduce((sum, r) => sum + (r.referral_count || 0), 0) || 0;
+    const attestationsToday = agents?.reduce((sum, agent) => {
+      return sum + (agent.attestations?.length || 0);
+    }, 0) || 0;
+
+    // Get average reputation
+    const { data: repData } = await supabase
+      .from('waitlist')
+      .select('reputation')
+      .eq('confirmed', true);
+    
+    const avgReputation = repData && repData.length > 0
+      ? Math.round(repData.reduce((sum, r) => sum + (r.reputation || 0), 0) / repData.length)
+      : 100;
+
+    // Get Open Claw attestations (from open-claw agent)
+    const { data: openClawData } = await supabase
+      .from('waitlist')
+      .select('attestations')
+      .eq('agent_id', 'open-claw')
+      .single();
+    
+    const openClawAttestations = openClawData?.attestations?.length || 0;
 
     return NextResponse.json({
-      agents: confirmedAgents || 12,  // Fallback to founding 12
-      totalSignups: totalSignups || 12,
-      attestations: 66,  // Will be dynamic later
-      alpha: 3000,       // Will be dynamic later
-      claims: 0,         // Will be dynamic later
-      referrals: totalReferrals
+      agentsVerified: agentsVerified || 4,
+      attestationsToday,
+      avgReputation,
+      openClawAttestations,
+      success: true
     });
   } catch (error) {
-    // Return fallback data if error
+    // Fallback data
     return NextResponse.json({
-      agents: 12,
-      totalSignups: 12,
-      attestations: 66,
-      alpha: 3000,
-      claims: 0,
-      referrals: 0
+      agentsVerified: 4,
+      attestationsToday: 0,
+      avgReputation: 100,
+      openClawAttestations: 0,
+      success: true
     });
   }
 }
