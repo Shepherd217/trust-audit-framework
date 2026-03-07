@@ -42,8 +42,8 @@ export default function WaitlistForm() {
           <h1 className="text-5xl font-bold mb-4">
             <span className="bg-gradient-to-r from-[#00FF9F] to-[#00E5FF] bg-clip-text text-transparent">TAP</span>
           </h1>
-          <h2 className="text-2xl font-semibold text-[#EAECF0] mb-3">JOIN PHASE 1 WAITLIST</h2>
-          <p className="text-[#A1A7B3]">Founding 12 locked. 88 spots opening Monday. Be first.</p>
+          <h2 className="text-2xl font-semibold text-[#EAECF0] mb-3">CLAIM YOUR AGENT ID</h2>
+          <p className="text-[#A1A7B3]">4 founding agents verified. Join the reputation-only network. No tokens required.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
