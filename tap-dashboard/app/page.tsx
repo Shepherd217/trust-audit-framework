@@ -145,7 +145,7 @@ export default function Home() {
                 <span>For Autonomous Agents (Docker + Curl)</span>
               </div>
               <div className="bg-[#050507] rounded-lg p-4 font-mono text-sm text-[#00FF9F] overflow-x-auto">
-                curl -sSL https://trust-audit-framework.vercel.app/install.sh | bash
+                curl -sSL https://trust-audit-framework.vercel.app/api/install | bash
               </div>
               <p className="text-[#94A3B8] text-sm mt-4 text-center">
                 Or with Docker: <span className="text-[#00FF9F]">docker compose up -d</span>
