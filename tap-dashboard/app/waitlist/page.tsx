@@ -1,67 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 
 export default function WaitlistForm() {
   const [form, setForm] = useState({ email: '', agent_id: '', public_key: '' });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
-  const [agentIdError, setAgentIdError] = useState('');
-  const [checkingAgentId, setCheckingAgentId] = useState(false);
-
-  // Validate agent_id format (lowercase letters, numbers, hyphens only)
-  const validateAgentIdFormat = (id: string): boolean => {
-    const pattern = /^[a-z0-9-]+$/;
-    return pattern.test(id) && id.length >= 3 && id.length <= 20;
-  };
-
-  // Check if agent_id is already taken
-  const checkAgentIdDuplicate = async (id: string) => {
-    if (!validateAgentIdFormat(id)) {
-      setAgentIdError('Use lowercase letters, numbers, hyphens only (3-20 chars)');
-      return;
-    }
-    
-    setCheckingAgentId(true);
-    setAgentIdError('');
-    
-    try {
-      const res = await fetch(`/api/waitlist/check?id=${encodeURIComponent(id)}`);
-      const data = await res.json();
-      
-      if (data.exists) {
-        setAgentIdError('This Agent ID is already taken');
-      } else {
-        setAgentIdError('');
-      }
-    } catch {
-      // Silent fail - will check on submit
-    } finally {
-      setCheckingAgentId(false);
-    }
-  };
-
-  // Debounce agent_id check
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (form.agent_id && validateAgentIdFormat(form.agent_id)) {
-        checkAgentIdDuplicate(form.agent_id);
-      }
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, [form.agent_id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (agentIdError) {
-      setStatus('error');
-      setMessage('Please fix the Agent ID error');
-      return;
-    }
-    
     setStatus('loading');
 
     const res = await fetch('/api/waitlist', {
@@ -108,37 +56,18 @@ export default function WaitlistForm() {
             required
           />
           
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Agent ID (e.g., alpha-007)"
-              value={form.agent_id}
-              onChange={(e) => {
-                const value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-                setForm({ ...form, agent_id: value });
-                if (!validateAgentIdFormat(value) && value.length > 0) {
-                  setAgentIdError('Use lowercase letters, numbers, hyphens only (3-20 chars)');
-                } else {
-                  setAgentIdError('');
-                }
-              }}
-              className={`w-full bg-black border rounded-2xl px-6 py-4 text-white placeholder:text-white/40 outline-none transition-colors ${
-                agentIdError 
-                  ? 'border-[#FF3B5C] focus:border-[#FF3B5C]' 
-                  : 'border-[#00FF9F]/30 focus:border-[#00FF9F]'
-              }`}
-              required
-              minLength={3}
-              maxLength={20}
-            />
-            {checkingAgentId && (
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[#71717A]">Checking...</span>
-            )}
-          </div>
-          
-          {agentIdError && (
-            <p className="text-[#FF3B5C] text-sm px-2">{agentIdError}</p>
-          )}
+          <input
+            type="text"
+            placeholder="Agent ID (lowercase, hyphens only)"
+            value={form.agent_id}
+            onChange={(e) => setForm({ ...form, agent_id: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+            className="w-full bg-black border border-[#00FF9F]/30 focus:border-[#00FF9F] rounded-2xl px-6 py-4 text-white placeholder:text-white/40 outline-none transition-colors"
+            required
+            minLength={3}
+            maxLength={20}
+            pattern="[a-z0-9-]+"
+            title="Lowercase letters, numbers, and hyphens only"
+          />
           
           <input
             type="text"
@@ -150,8 +79,8 @@ export default function WaitlistForm() {
 
           <button
             type="submit"
-            disabled={status === 'loading' || !!agentIdError}
-            className="w-full bg-[#00FF9F] text-[#050507] font-bold text-lg py-4 rounded-2xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={status === 'loading'}
+            className="w-full bg-[#00FF9F] text-[#050507] font-bold text-lg py-4 rounded-2xl hover:scale-[1.02] transition-transform disabled:opacity-50"
           >
             {status === 'loading' ? 'JOINING...' : 'SECURE MY SPOT'}
           </button>
