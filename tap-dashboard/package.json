@@ -25,7 +25,7 @@
     "resend": "^6.9.3",
     "uuid": "^13.0.0",
     "viem": "^2.47.0",
-    "wagmi": "^3.5.0",
+    "wagmi": "^2.9.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
