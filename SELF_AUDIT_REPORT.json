@@ -1,44 +1,24 @@
 {
-  "audit_timestamp": "2026-03-08T07:05:00Z",
+  "timestamp": "2026-03-08T14:45:04.476Z",
   "repo": "trust-audit-framework",
-  "commit": "7da43ab",
-  "results": {
-    "dependency": {
-      "lockfile_present": true,
-      "package_json_present": true,
-      "audit_ran": false,
-      "score": 85,
-      "issues": [
-        {
-          "id": "no-npm-audit",
-          "severity": "moderate",
-          "message": "npm audit not run on root package.json"
-        }
-      ]
-    },
-    "telemetry": {
-      "disclosure_present": false,
-      "network_calls_detected": 539,
-      "score": 90,
-      "issues": [
-        {
-          "id": "missing-telemetry-disclosure",
-          "severity": "moderate",
-          "message": "No telemetry field in package.json"
-        }
-      ]
-    },
-    "scope": {
-      "skill_md_present": true,
-      "response_time_claims": true,
-      "score": 100,
-      "issues": []
-    }
+  "commit": "pending",
+  "passed": false,
+  "scores": {
+    "dependency": 0,
+    "telemetry": 100,
+    "scope": 100
   },
-  "overall_passed": true,
-  "critical_count": 0,
-  "recommendations": [
-    "Add telemetry disclosure to package.json",
-    "Run npm audit --audit-level=moderate on all modules"
-  ]
+  "issues": [
+    {
+      "id": "missing-lockfile",
+      "severity": "critical",
+      "message": "No lockfile"
+    },
+    {
+      "id": "missing-package-json",
+      "severity": "critical",
+      "message": "No package.json"
+    }
+  ],
+  "summary": "${criticalCount} CRITICAL ISSUES"
 }

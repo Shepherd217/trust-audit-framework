@@ -50,7 +50,7 @@ export async function detectDependencies(sub: Submission): Promise<DetectorResul
   if (sub.files.includes('package.json')) {
     try {
       const auditOutput = execSync('npm audit --json --audit-level=moderate', {
-        cwd: process.cwd(),
+        cwd: '/tmp/submission',
         encoding: 'utf8',
         timeout: 5000
       });
@@ -339,6 +339,8 @@ function generateBenchmarks(claims: any[]): any[] {
 async function runLoadTests(entrypoint: string, benchmarks: any[]): Promise<any> {
   // Simulated load test results
   // In production, this would use k6 or autocannon
+  console.warn('⚠️ Using fake load test — replace with real k6 before cohort #1');
+  
   const results = {
     passed: 0,
     failed: 0,
