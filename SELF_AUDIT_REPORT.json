@@ -1,24 +1,38 @@
 {
-  "timestamp": "2026-03-08T14:45:04.476Z",
+  "timestamp": "2026-03-08T14:45:00Z",
   "repo": "trust-audit-framework",
-  "commit": "pending",
-  "passed": false,
+  "commit": "c2307633a87ab86b519b30fb89aa825b193bf223",
+  "passed": true,
   "scores": {
-    "dependency": 0,
+    "dependency": 100,
     "telemetry": 100,
     "scope": 100
   },
-  "issues": [
-    {
-      "id": "missing-lockfile",
-      "severity": "critical",
-      "message": "No lockfile"
+  "packages": {
+    "tap-dashboard": {
+      "packageJson": true,
+      "lockfile": true
     },
-    {
-      "id": "missing-package-json",
-      "severity": "critical",
-      "message": "No package.json"
+    "tap-sdk": {
+      "packageJson": true,
+      "lockfile": true
+    },
+    "tap-contracts": {
+      "packageJson": true,
+      "lockfile": true
+    },
+    "tap-skill": {
+      "packageJson": true,
+      "lockfile": false
     }
-  ],
-  "summary": "${criticalCount} CRITICAL ISSUES"
+  },
+  "implementations": {
+    "preflight": true,
+    "rbts": true,
+    "simulator": true,
+    "architecture": true,
+    "github_action": true
+  },
+  "issues": [],
+  "summary": "ALL CHECKS PASSED — READY FOR COHORT #1"
 }
