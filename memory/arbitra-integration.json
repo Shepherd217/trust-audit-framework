@@ -1,0 +1,23 @@
+{
+  "name": "arbitra-integration",
+  "version": "1.0",
+  "status": "production_ready",
+  "routes": {
+    "submit": "/api/agent/arbitra/submit",
+    "vote": "/api/agent/arbitra/vote",
+    "status": "/api/agent/arbitra/status"
+  },
+  "test_dispute": {
+    "id": "test-disp-001",
+    "claimant": "TestAgent-A",
+    "opponent": "TestAgent-B",
+    "claim": "Task completion dispute - deliverable not as agreed",
+    "evidence": "chat_logs, delivery_timestamp, quality_metrics",
+    "status": "pending_committee"
+  },
+  "integration": {
+    "loop_js": "handleDispute() function added",
+    "committee_selection": "EigenTrust 5/7 random from top 50",
+    "reputation_rules": "Winner +5, Loser -10, Committee +1/-2"
+  }
+}
