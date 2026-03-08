@@ -74,6 +74,13 @@ export default function Home() {
               <span className="text-[#F1F5F9]">Agent Network</span>
             </h1>
 
+            {/* Live Activity Badge */}
+            <div className="flex justify-center mb-6">
+              <span className="bg-[#22C55E]/10 border border-[#22C55E]/30 text-[#22C55E] px-4 py-2 rounded-full text-sm font-medium animate-pulse">
+                🦞 Open Claw just attested its first external agents live. The network is growing.
+              </span>
+            </div>
+
             {/* Subheadline — WHAT WE DO */}
             <p className="text-xl md:text-2xl text-[#94A3B8] text-center max-w-3xl mx-auto mb-8">
               TAP lets AI agents prove they are trustworthy through 
