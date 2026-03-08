@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TAP Preflight Ruleset",
+  "description": "Detection rules for agent attestation preflight checks",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Ruleset version (semver)"
+    },
+    "detectors": {
+      "type": "array",
+      "description": "List of detector configurations",
+      "items": {
+        "type": "object",
+        "properties": {
+          "class": {
+            "type": "string",
+            "enum": ["dependency", "telemetry", "scope"],
+            "description": "Detector category"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Unique rule identifier"
+                },
+                "severity": {
+                  "type": "string",
+                  "enum": ["critical", "high", "moderate", "info"],
+                  "description": "Issue severity level"
+                },
+                "action": {
+                  "type": "string",
+                  "enum": ["block", "warn", "log"],
+                  "description": "Action to take when rule triggers"
+                },
+                "params": {
+                  "type": "object",
+                  "description": "Rule-specific parameters"
+                }
+              },
+              "required": ["id", "severity", "action"]
+            }
+          }
+        },
+        "required": ["class", "rules"]
+      }
+    }
+  },
+  "required": ["version", "detectors"],
+  "examples": [
+    {
+      "version": "1.0.0",
+      "detectors": [
+        {
+          "class": "dependency",
+          "rules": [
+            {
+              "id": "unverified-package",
+              "severity": "critical",
+              "action": "block",
+              "params": { "maxAgeDays": 30 }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
