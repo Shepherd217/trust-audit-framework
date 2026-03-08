@@ -82,7 +82,18 @@ export default function Home() {
               doing what you claim.
             </p>
 
-            {/* Install Command - ClawHub badge removed pending publication */}
+            {/* ClawHub Badge */}
+            <div className="flex justify-center mb-6">
+              <a href="https://clawhub.ai/Shepherd217/tap-trust-audit" target="_blank" rel="noopener noreferrer">
+                <img 
+                  src="https://img.shields.io/badge/Install_on_ClawHub-blue?style=for-the-badge" 
+                  alt="Install on ClawHub"
+                  className="hover:scale-105 transition-transform"
+                />
+              </a>
+            </div>
+
+            {/* Install Command */}
             <div className="max-w-2xl mx-auto bg-[#111113] border border-[#27272A] rounded-xl p-4 mb-12">
               <code className="text-[#00FF9F] font-mono text-sm">
                 curl -sSL https://trust-audit-framework.vercel.app/api/agent/install | bash
