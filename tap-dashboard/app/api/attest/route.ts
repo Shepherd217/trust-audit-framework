@@ -6,17 +6,58 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Input sanitization helper
+function sanitizeInput(input: any): any {
+  if (typeof input === 'string') {
+    // Remove null bytes, limit length
+    return input.replace(/\x00/g, '').substring(0, 255);
+  }
+  if (typeof input === 'object' && input !== null) {
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(input)) {
+      // Prevent prototype pollution
+      if (key === '__proto__' || key === 'constructor') continue;
+      sanitized[key] = sanitizeInput(value);
+    }
+    return sanitized;
+  }
+  return input;
+}
+
+// Safe error response (don't expose schema)
+function safeError(message: string, status: number = 400) {
+  return NextResponse.json(
+    { error: message },
+    { status }
+  );
+}
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return safeError('Invalid JSON payload', 400);
+    }
+
+    // Sanitize all inputs
+    body = sanitizeInput(body);
+    
     const { repo, package: pkg, commit, agent_id, report } = body;
 
     // Validate required fields
-    if (!repo || !commit) {
-      return NextResponse.json(
-        { error: 'repo and commit required' },
-        { status: 400 }
-      );
+    if (!repo || typeof repo !== 'string') {
+      return safeError('repo is required and must be a string', 400);
+    }
+    
+    if (!commit || typeof commit !== 'string') {
+      return safeError('commit is required and must be a string', 400);
+    }
+
+    // Validate string lengths
+    if (repo.length > 255 || commit.length > 255) {
+      return safeError('Input too long', 400);
     }
 
     // Calculate Integrity from report
@@ -49,10 +90,8 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+      console.error('Database error:', error);
+      return safeError('Failed to create attestation', 500);
     }
 
     // Return success
@@ -67,16 +106,14 @@ export async function POST(request: Request) {
         total_reputation: totalReputation,
         status: integrityScore === 100 ? 'verified' : 'failed'
       },
-      message: integrityScore === 100
+      message: integrityScore === 100 
         ? '✅ Accepted into TAP! Welcome to the trust layer.'
         : '❌ Preflight failed. Check issues and resubmit.'
     });
 
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || 'Internal error' },
-      { status: 500 }
-    );
+    console.error('Unexpected error:', err);
+    return safeError('Internal server error', 500);
   }
 }
 

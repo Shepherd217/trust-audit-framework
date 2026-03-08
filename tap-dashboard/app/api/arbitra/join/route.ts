@@ -6,17 +6,52 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Input sanitization helper
+function sanitizeInput(input: any): any {
+  if (typeof input === 'string') {
+    return input.replace(/\x00/g, '').substring(0, 255);
+  }
+  if (typeof input === 'object' && input !== null) {
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(input)) {
+      if (key === '__proto__' || key === 'constructor') continue;
+      sanitized[key] = sanitizeInput(value);
+    }
+    return sanitized;
+  }
+  return input;
+}
+
+function safeError(message: string, status: number = 400) {
+  return NextResponse.json({ error: message }, { status });
+}
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return safeError('Invalid JSON payload', 400);
+    }
+
+    // Sanitize inputs
+    body = sanitizeInput(body);
+    
     const { agent_id, repo, package: pkg, commit } = body;
 
     // Validate required fields
-    if (!agent_id || !repo) {
-      return NextResponse.json(
-        { error: 'agent_id and repo required' },
-        { status: 400 }
-      );
+    if (!agent_id || typeof agent_id !== 'string') {
+      return safeError('agent_id is required and must be a string', 400);
+    }
+    
+    if (!repo || typeof repo !== 'string') {
+      return safeError('repo is required and must be a string', 400);
+    }
+
+    // Validate lengths
+    if (agent_id.length > 255 || repo.length > 255) {
+      return safeError('Input too long', 400);
     }
 
     // Check if agent has valid TAP attestation
@@ -30,46 +65,36 @@ export async function POST(request: Request) {
       .single();
 
     if (attestationError || !attestation) {
-      return NextResponse.json(
-        { 
-          error: 'No valid TAP attestation found',
-          message: 'Complete TAP attestation first: curl -sSL trust-audit-framework.vercel.app/api/install | bash'
-        },
-        { status: 403 }
+      return safeError(
+        'No valid TAP attestation found. Complete TAP attestation first.',
+        403
       );
     }
 
     // Check Integrity ≥80 and Virtue ≥70
     if (attestation.integrity_score < 80 || attestation.virtue_score < 70) {
-      return NextResponse.json(
-        { 
-          error: 'Insufficient reputation',
-          integrity: attestation.integrity_score,
-          virtue: attestation.virtue_score,
-          required: 'Integrity ≥80, Virtue ≥70'
-        },
-        { status: 403 }
+      return safeError(
+        `Insufficient reputation. Required: Integrity ≥80, Virtue ≥70. ` +
+        `Current: Integrity ${attestation.integrity_score}, Virtue ${attestation.virtue_score}`,
+        403
       );
     }
 
-    // Check vintage weighting (≥7 days history or referral from openclaw)
+    // Check vintage weighting
     const attestationDate = new Date(attestation.created_at);
     const daysSince = Math.floor((Date.now() - attestationDate.getTime()) / (1000 * 60 * 60 * 24));
     const hasVintage = daysSince >= 7;
     const isReferred = attestation.referrer_agent_id === 'openclaw';
     
     if (!hasVintage && !isReferred) {
-      return NextResponse.json(
-        { 
-          error: 'Vintage requirement not met',
-          days_since_attestation: daysSince,
-          message: 'Need ≥7 days history OR referral from openclaw'
-        },
-        { status: 403 }
+      return safeError(
+        `Vintage requirement not met. Need ≥7 days history OR referral from openclaw. ` +
+        `Current: ${daysSince} days`,
+        403
       );
     }
 
-    // Calculate Arbitra score (composite of Integrity + Virtue + vintage bonus)
+    // Calculate Arbitra score
     const vintageBonus = hasVintage ? 10 : (isReferred ? 5 : 0);
     const arbitraScore = Math.min(100, 
       Math.round(
@@ -98,13 +123,10 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+      console.error('Database error:', error);
+      return safeError('Failed to register for Arbitra', 500);
     }
 
-    // Return success
     return NextResponse.json({
       status: 'joined',
       agent_id,
@@ -116,10 +138,8 @@ export async function POST(request: Request) {
     });
 
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || 'Internal error' },
-      { status: 500 }
-    );
+    console.error('Unexpected error:', err);
+    return safeError('Internal server error', 500);
   }
 }
 
@@ -128,8 +148,8 @@ export async function GET() {
     status: 'Arbitra Join API',
     version: 'v0.1',
     endpoints: {
-      POST: '/arbitra/join - Join Arbitra committee pool',
-      GET: '/arbitra/join - This info'
+      POST: '/api/arbitra/join - Join Arbitra committee pool',
+      GET: '/api/arbitra/join - This info'
     },
     requirements: {
       tap_attestation: 'verified',
