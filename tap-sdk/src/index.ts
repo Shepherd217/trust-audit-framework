@@ -1,7 +1,12 @@
-import { sign, verify, getPublicKey } from '@noble/ed25519';
+import { sign, verify, getPublicKey, etc } from '@noble/ed25519';
 import { aggregateSignatures, verify as verifyBLS } from '@noble/bls12-381';
 import { sha256 } from '@noble/hashes/sha256';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
+import { sha512 } from '@noble/hashes/sha512';
+
+// Fix sha512Sync for @noble/ed25519 v2.x - provide sync wrapper using noble-hashes
+// @ts-ignore
+etc.sha512Sync = (...msgs: Uint8Array[]) => sha512(etc.concatBytes(...msgs));
 
 /**
  * TAP Protocol SDK
@@ -368,3 +373,10 @@ export class TAPx402Client extends TAPClient {
 
 // Export types
 export * from './types';
+
+// Export full 6-layer OS
+export * from './protocols/arbitra/voting';
+export * from './protocols/clawlink/handoff';
+export * from './protocols/clawid/clawid-token';
+export * from './protocols/clawforge/control-plane';
+export * from './protocols/clawkernel/kernel';

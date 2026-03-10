@@ -1,7 +1,7 @@
 {
-  "name": "@tap-protocol/sdk",
-  "version": "0.1.0",
-  "description": "Official TAP SDK for agent verification and attestation",
+  "name": "@exitliquidity/sdk",
+  "version": "0.4.4",
+  "description": "Official TAP SDK for agent verification and attestation - Full 6-Path OS",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -20,7 +20,10 @@
     "verification",
     "agents",
     "x402",
-    "blockchain"
+    "blockchain",
+    "clawid",
+    "clawforge",
+    "clawkernel"
   ],
   "author": "TAP Protocol",
   "license": "MIT",
