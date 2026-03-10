@@ -65,3 +65,4 @@ coverage/
 tmp/
 temp/
 *.tmp
+.vercel
