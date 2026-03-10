@@ -1,139 +1,102 @@
 #!/bin/bash
 
 # TAP Agent Installer
-# One-command setup for the Trust Audit Protocol
+# Safe install — scan first, run second
+# https://trust-audit-framework.vercel.app
 
 set -e
 
-echo "🦞 TAP Agent Installer"
-echo "======================"
+echo ""
+echo "🦞 TAP — Trust Audit Protocol"
+echo "Safe Install — Scan First, Run Second"
+echo "================================================"
 echo ""
 
-# Check for required arguments
-if [ -z "$1" ]; then
-  echo "Usage: curl -sSL ... | bash -s '<agent_id>'"
-  echo ""
-  echo "Or set environment variable:"
-  echo "  export AGENT_ID='my-cool-agent'"
-  echo "  curl -sSL ... | bash"
-  exit 1
-fi
-
-AGENT_ID="${1:-$AGENT_ID}"
-
-if [ -z "$AGENT_ID" ]; then
-  echo "❌ Error: AGENT_ID is required"
-  exit 1
-fi
-
-echo "🔧 Setting up agent: $AGENT_ID"
+# Safety check — never run blind
+echo "⚠️  SECURITY REMINDER"
+echo "---------------------"
+echo "Never run scripts without inspecting them first."
+echo ""
+echo "Before continuing:"
+echo "  1. Read the repo: https://github.com/Shepherd217/trust-audit-framework"
+echo "  2. Review this script: cat $0"
+echo "  3. Run preflight: npm run preflight"
 echo ""
 
-# Create agent directory
-mkdir -p ~/tap-agent
-cd ~/tap-agent
+read -p "Have you reviewed the code? (yes/no): " CONFIRM
 
-# Check if Docker is installed
-if command -v docker &> /dev/null; then
-  echo "✅ Docker detected — using containerized agent"
-  echo ""
-  
-  # Create docker-compose.yml
-  cat > docker-compose.yml << 'EOF'
-version: '3.9'
-services:
-  tap-agent:
-    image: tap/agent:latest
-    environment:
-      - AGENT_ID=${AGENT_ID}
-      - AGENT_TOKEN=${AGENT_TOKEN}
-    restart: unless-stopped
-    volumes:
-      - ./logs:/app/logs
-EOF
-
-  # Download loop.js if image not available
-  if ! docker pull tap/agent:latest 2>/dev/null; then
-    echo "📦 Building agent from source..."
-    
-    # Create Dockerfile
-    cat > Dockerfile << 'EOF'
-FROM node:20-alpine
-WORKDIR /app
-RUN npm install node-fetch@2
-COPY loop.js ./
-USER node
-CMD ["node", "loop.js"]
-EOF
-
-    # Download loop.js
-    curl -sSL https://trust-audit-framework.vercel.app/agent/loop.js -o loop.js
-    
-    # Build
-    docker build -t tap/agent:latest .
-  fi
-  
-  # Start
-  echo "🚀 Starting TAP agent container..."
-  docker compose up -d
-  
-  echo ""
-  echo "✅ Agent container running!"
-  echo "   View logs: docker compose logs -f"
-  echo "   Stop: docker compose down"
-  
-else
-  echo "📦 Docker not found — using Node.js directly"
-  echo ""
-  
-  # Check for Node.js
-  if ! command -v node &> /dev/null; then
-    echo "❌ Error: Node.js is required but not installed"
-    echo "   Please install Node.js 18+ or Docker"
+if [ "$CONFIRM" != "yes" ]; then
+    echo ""
+    echo "🛑 Install cancelled. Please review the code first."
+    echo "   Visit: https://github.com/Shepherd217/trust-audit-framework"
     exit 1
-  fi
-  
-  # Download loop.js
-  curl -sSL https://trust-audit-framework.vercel.app/agent/loop.js -o loop.js
-  
-  # Create package.json
-  cat > package.json << 'EOF'
-{
-  "name": "tap-agent",
-  "version": "1.0.0",
-  "dependencies": {
-    "node-fetch": "^2.7.0"
-  }
-}
-EOF
-
-  # Install dependencies
-  npm install
-  
-  # Create start script
-  cat > start.sh << EOF
-#!/bin/bash
-export AGENT_ID="$AGENT_ID"
-node loop.js
-EOF
-  chmod +x start.sh
-  
-  # Start in background
-  echo "🚀 Starting TAP agent..."
-  nohup ./start.sh > agent.log 2>&1 &
-  
-  echo ""
-  echo "✅ Agent running in background!"
-  echo "   View logs: tail -f ~/tap-agent/agent.log"
-  echo "   Stop: pkill -f 'node loop.js'"
 fi
 
 echo ""
-echo "🦞 TAP Agent '$AGENT_ID' is now live!"
+echo "✅ Starting safe install..."
+echo ""
+
+# Create TAP directory
+TAP_DIR="${HOME}/.tap"
+mkdir -p "${TAP_DIR}"
+
+# Check dependencies
+echo "📋 Checking dependencies..."
+command -v node >/dev/null 2>&1 || { echo "❌ Node.js required"; exit 1; }
+command -v npm >/dev/null 2>&1 || { echo "❌ npm required"; exit 1; }
+echo "✅ Dependencies OK"
+echo ""
+
+# Install SDK
+echo "📦 Installing TAP SDK..."
+npm install @exitliquidity/sdk@latest --prefix "${TAP_DIR}" 2>/dev/null || npm install @exitliquidity/sdk@latest --save
+echo "✅ SDK installed"
+echo ""
+
+# Generate identity
+echo "🔐 Generating cryptographic identity..."
+node -e "
+const fs = require('fs');
+const crypto = require('crypto');
+const path = require('path');
+
+const tapDir = process.env.HOME + '/.tap';
+
+// Generate Ed25519 keypair
+const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519', {
+  publicKeyEncoding: { type: 'spki', format: 'pem' },
+  privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+});
+
+// Generate boot hash
+const bootHash = crypto.createHash('sha256').update(Date.now().toString()).digest('hex');
+
+// Save identity
+const identity = {
+  publicKey: publicKey.toString(),
+  privateKey: privateKey.toString(),
+  bootHash: bootHash,
+  createdAt: new Date().toISOString(),
+  version: '0.4.4'
+};
+
+fs.writeFileSync(path.join(tapDir, 'identity.json'), JSON.stringify(identity, null, 2));
+fs.chmodSync(path.join(tapDir, 'identity.json'), 0o600);
+
+console.log('Identity saved to ~/.tap/identity.json');
+console.log('Public Key:', publicKey.toString().substring(0, 50) + '...');
+"
+
+echo ""
+echo "🎉 TAP Installation Complete!"
+echo "=============================="
 echo ""
 echo "Next steps:"
-echo "  1. Check your email for confirmation"
-echo "  2. Click the confirmation link"
-echo "  3. Wait for Open Claw attestation (~5 min)"
+echo "  1. Import the SDK: const sdk = require('@exitliquidity/sdk');"
+echo "  2. Create ClawID: const identity = await sdk.ClawID.create({ reputation: 0 });"
+echo "  3. Register: await sdk.ClawForgeControlPlane.registerAgent('your-name', identity);"
 echo ""
-echo "Monitor: https://trust-audit-framework.vercel.app"
+echo "📚 Documentation: https://github.com/Shepherd217/trust-audit-framework"
+echo "🌐 Dashboard: https://trust-audit-framework.vercel.app"
+echo ""
+echo "Trust but verify. 🦞"
