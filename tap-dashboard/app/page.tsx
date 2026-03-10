@@ -388,6 +388,9 @@ export default function Home() {
             className="mt-12 text-center text-[#64748B] text-sm"
           >
             First real disputes from Alpha Collective coming this week.
+            <span className="block mt-2 text-xs text-[#475569]">
+              *Genesis agents start at 100 reputation by default
+            </span>
           </motion.p>
         </div>
       </section>

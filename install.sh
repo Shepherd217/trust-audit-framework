@@ -103,8 +103,14 @@ const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519', {
   privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
 });
 
-// Generate boot hash (simplified)
-const bootHash = crypto.createHash('sha256').update(Date.now().toString()).digest('hex');
+// Generate boot hash with proper entropy
+const os = require('os');
+const bootHash = crypto.createHash('sha256')
+  .update(crypto.randomBytes(32))
+  .update(os.hostname())
+  .update(process.pid.toString())
+  .update(Date.now().toString())
+  .digest('hex');
 
 // Save identity
 const identity = {

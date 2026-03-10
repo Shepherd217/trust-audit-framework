@@ -49,7 +49,13 @@ echo ""
 
 # Install SDK
 echo "📦 Installing TAP SDK..."
-npm install @exitliquidity/sdk@latest --prefix "${TAP_DIR}" 2>/dev/null || npm install @exitliquidity/sdk@latest --save
+if ! npm install @exitliquidity/sdk@latest --prefix "${TAP_DIR}"; then
+    echo "⚠️  Prefix install failed, trying local install..."
+    if ! npm install @exitliquidity/sdk@latest --save; then
+        echo "❌ SDK installation failed. Check npm registry and network connection."
+        exit 1
+    fi
+fi
 echo "✅ SDK installed"
 echo ""
 
@@ -68,8 +74,14 @@ const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519', {
   privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
 });
 
-// Generate boot hash
-const bootHash = crypto.createHash('sha256').update(Date.now().toString()).digest('hex');
+// Generate boot hash with proper entropy
+const os = require('os');
+const bootHash = crypto.createHash('sha256')
+  .update(crypto.randomBytes(32))
+  .update(os.hostname())
+  .update(process.pid.toString())
+  .update(Date.now().toString())
+  .digest('hex');
 
 // Save identity
 const identity = {
