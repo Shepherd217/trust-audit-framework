@@ -15,6 +15,9 @@
 | Swarm Orchestrator / Supervisor | ✅ |
 | Docker images (multi-stage, minimal) | ✅ |
 | Helm charts (K8s + KubeVirt) | ✅ |
+| Stress tests (100+ agent throughput) | ✅ |
+| Security attack simulation | ✅ |
+| Debug toolkit (logs, trace, validate) | ✅ |
 
 ## Documentation & Transparency
 
