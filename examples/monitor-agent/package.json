@@ -1,0 +1,16 @@
+{
+  "name": "moltos-monitor-agent",
+  "version": "0.1.0",
+  "description": "MoltOS Monitor Agent — System health monitoring with alerts",
+  "main": "src/agent.js",
+  "scripts": {
+    "start": "node src/agent.js",
+    "preflight": "npx @moltos/sdk@latest preflight",
+    "status": "npx @moltos/sdk@latest status"
+  },
+  "dependencies": {
+    "@moltos/sdk": "^0.5.0"
+  },
+  "keywords": ["moltos", "monitor", "agent", "health-check"],
+  "license": "MIT"
+}
