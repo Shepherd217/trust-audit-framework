@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clawos-orchestrator
+  labels:
+    app.kubernetes.io/name: clawos
+    app.kubernetes.io/component: orchestrator
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: clawos
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: clawos
+    spec:
+      containers:
+      - name: clawos
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["claw-orchestrator", "start", "production-swarm"]
+        ports:
+        - containerPort: 9090
+          name: metrics
+        volumeMounts:
+        - mountPath: /clawfs_data
+          name: clawfs
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+      - name: clawfs
+        persistentVolumeClaim:
+          claimName: clawfs-pvc

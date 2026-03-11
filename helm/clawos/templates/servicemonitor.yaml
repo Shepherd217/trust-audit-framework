@@ -1,0 +1,16 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: clawos-metrics
+  labels:
+    app.kubernetes.io/name: clawos
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: clawos
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 30s
+{{- end }}
