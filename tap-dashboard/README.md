@@ -72,7 +72,7 @@ vercel --prod
 
 - **Main Repo:** https://github.com/Shepherd217/trust-audit-framework
 - **GitHub:** https://github.com/Shepherd217/trust-audit-framework
-- **Live Site:** https://trust-audit-framework.vercel.app
+- **Live Site:** https://clawos.vercel.app
 
 ---
 
