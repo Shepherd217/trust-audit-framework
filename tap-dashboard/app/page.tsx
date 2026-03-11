@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import WaitlistForm from '@/components/WaitlistForm';
-import { Users, Shield, Activity, Zap, CheckCircle, Lock, Globe, Code, FileText, Terminal, Menu, X, Cpu, Server, Cloud, Database, Eye, Bug } from 'lucide-react';
+import { CheckCircle, Lock, Globe, Code, Terminal, Menu, X, Cpu, Server, Cloud, Database, Eye, Bug, Copy, Check } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
@@ -14,6 +14,7 @@ export default function Home() {
     openClawVerifications: 0,
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetch('/api/stats')
@@ -28,6 +29,14 @@ export default function Home() {
     { href: '#status', label: 'Network' },
   ];
 
+  const installPrompt = `Go to https://moltos.org/skill.md and install the official MoltOS skill. Run preflight first and show me exactly what it will do.`;
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(installPrompt);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="min-h-screen bg-[#020204] text-[#F8FAFC] selection:bg-[#00FF9F]/30">
       {/* Background Gradient */}
@@ -41,7 +50,6 @@ export default function Home() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#020204]/70 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Logo */}
             <Link href="/" className="flex items-center gap-2 group">
               <motion.div 
                 className="text-2xl"
@@ -53,7 +61,6 @@ export default function Home() {
               <span className="font-bold text-xl tracking-tight group-hover:text-[#00FF9F] transition-colors">MoltOS</span>
             </Link>
 
-            {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-1">
               {navLinks.map((link) => (
                 <Link 
@@ -65,14 +72,13 @@ export default function Home() {
                 </Link>
               ))}
               <Link 
-                href="#install"
+                href="/install"
                 className="ml-4 bg-[#00FF9F] text-[#020204] font-semibold px-5 py-2.5 rounded-lg hover:bg-[#00FF9F]/90 transition-all hover:scale-105 text-sm"
               >
                 Get Started
               </Link>
             </div>
 
-            {/* Mobile Menu Button */}
             <button 
               className="md:hidden p-2 text-[#94A3B8] hover:text-[#00FF9F]"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -82,7 +88,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {mobileMenuOpen && (
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
@@ -101,7 +106,7 @@ export default function Home() {
                 </Link>
               ))}
               <Link 
-                href="#install"
+                href="/install"
                 className="block mx-4 mt-4 bg-[#00FF9F] text-[#020204] font-semibold px-4 py-3 rounded-lg text-center"
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -121,7 +126,6 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-center max-w-4xl mx-auto"
           >
-            {/* Version Badge */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -144,47 +148,37 @@ export default function Home() {
               Runtime, sandbox, storage, networking, and observability — in one unified platform.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link 
-                href="#install"
+            {/* INSTALL BUTTON WITH CLIPBOARD */}
+            <div className="flex flex-col items-center gap-4">
+              <button
+                onClick={copyToClipboard}
                 className="inline-flex items-center justify-center gap-2 bg-[#00FF9F] text-[#020204] font-semibold px-8 py-4 rounded-xl hover:bg-[#00FF9F]/90 transition-all hover:scale-105 text-lg"
               >
-                <Terminal className="w-5 h-5" />
-                Install in 60 Seconds
-              </Link>
-              <Link 
-                href="#architecture"
-                className="inline-flex items-center justify-center gap-2 bg-white/5 text-[#F8FAFC] font-medium px-8 py-4 rounded-xl hover:bg-white/10 transition-all border border-white/10 text-lg"
-              >
-                Explore Architecture
-              </Link>
+                {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                {copied ? 'Copied to clipboard!' : 'Install MoltOS in 60 seconds (safe & transparent)'}
+              </button>
+              
+              <p className="text-sm text-[#64748B]">
+                Click to copy install prompt • No curl • Full transparency
+              </p>
             </div>
 
-            {/* Safe Install Command */}
+            {/* Prompt Preview */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="mt-12 max-w-xl mx-auto"
+              className="mt-8 max-w-2xl mx-auto"
             >
-              <div className="bg-[#0A0A0F] border border-white/10 rounded-xl p-4 font-mono text-sm text-left overflow-x-auto">
-                <div className="flex items-center gap-2 mb-2 text-[#94A3B8] text-xs">
-                  <div className="flex gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                    <div className="w-3 h-3 rounded-full bg-green-500/80" />
-                  </div>
-                  <span>verified install</span>
+              <div className="bg-[#0A0A0F] border border-white/10 rounded-xl p-4 text-left">
+                <div className="flex items-center gap-2 mb-3 text-[#94A3B8] text-xs">
+                  <Lock className="w-3 h-3 text-[#00FF9F]" />
+                  <span>This will be copied to your clipboard:</span>
                 </div>
-                <span className="text-[#00FF9F]">$</span> <span className="text-[#F8FAFC]">npm install -g @moltos/cli</span>
+                <p className="text-sm text-[#F8FAFC] font-mono bg-black/30 p-3 rounded-lg">
+                  {installPrompt}
+                </p>
               </div>
-              <p className="text-xs text-[#64748B] mt-2">
-                Or download from{' '}
-                <Link href="https://github.com/Shepherd217/clawos/releases" className="text-[#00FF9F] hover:underline">
-                  GitHub Releases
-                </Link>{' '}
-                (SHA256 verified)
-              </p>
             </motion.div>
           </motion.div>
         </div>
@@ -201,263 +195,44 @@ export default function Home() {
           >
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">Complete OS Architecture</h2>
             <p className="text-[#94A3B8] text-lg max-w-2xl mx-auto">
-              Eight core subsystems. One unified platform. Deploy anywhere in minutes.
+              Nine core subsystems. One unified platform. Deploy anywhere in minutes.
             </p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Card 1: Native Runtime */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0 }}
-              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Cpu className="w-6 h-6 text-[#00FF9F]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Native Runtime</h3>
-              <ul className="space-y-2 text-[#94A3B8] text-sm">
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> MoltVM execution</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> WASM-based sandbox</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> &lt;300ms boot time</li>
-              </ul>
-            </motion.div>
-
-            {/* Card 2: Secure Sandbox */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Shield className="w-6 h-6 text-[#00FF9F]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Secure Sandbox</h3>
-              <ul className="space-y-2 text-[#94A3B8] text-sm">
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Firecracker microVMs</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Resource quotas</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Auto-kill on breach</li>
-              </ul>
-            </motion.div>
-
-            {/* Card 3: Deploy Anywhere */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Globe className="w-6 h-6 text-[#00FF9F]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Deploy Anywhere</h3>
-              <ul className="space-y-2 text-[#94A3B8] text-sm">
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Fly.io integration</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Railway support</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Docker & Kubernetes</li>
-              </ul>
-            </motion.div>
-
-            {/* Card 4: Persist State */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Database className="w-6 h-6 text-[#00FF9F]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Persist State</h3>
-              <ul className="space-y-2 text-[#94A3B8] text-sm">
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> MoltFS filesystem</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Merkle-ized storage</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Cross-region replicate</li>
-              </ul>
-            </motion.div>
-
-            {/* Card 5: Multi Language */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Code className="w-6 h-6 text-[#00FF9F]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Multi Language</h3>
-              <ul className="space-y-2 text-[#94A3B8] text-sm">
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Python SDK</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Go SDK</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Node.js & OpenClaw</li>
-              </ul>
-            </motion.div>
-
-            {/* Card 6: Observe Everything */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.5 }}
-              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Eye className="w-6 h-6 text-[#00FF9F]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Observe Everything</h3>
-              <ul className="space-y-2 text-[#94A3B8] text-sm">
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Prometheus metrics</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Live TUI dashboard</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Real-time alerts</li>
-              </ul>
-            </motion.div>
-
-            {/* Card 7: Swarm Orchestrate */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.6 }}
-              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Server className="w-6 h-6 text-[#00FF9F]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Swarm Orchestrate</h3>
-              <ul className="space-y-2 text-[#94A3B8] text-sm">
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Leader election</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Auto-recovery</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> 100+ agent clusters</li>
-              </ul>
-            </motion.div>
-
-            {/* Card 8: Cloud Deploy */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.7 }}
-              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Cloud className="w-6 h-6 text-[#00FF9F]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Cloud Deploy</h3>
-              <ul className="space-y-2 text-[#94A3B8] text-sm">
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> One-command deploy</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Auto-scale</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Global edge + SSL</li>
-              </ul>
-            </motion.div>
-
-            {/* Card 9: Debug Toolkit */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.8 }}
-              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Bug className="w-6 h-6 text-[#00FF9F]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Debug Toolkit</h3>
-              <ul className="space-y-2 text-[#94A3B8] text-sm">
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Live log streaming</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Distributed traces</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> State inspector</li>
-              </ul>
-            </motion.div>
+            {[
+              { icon: Cpu, title: 'Native Runtime', features: ['MoltVM execution', 'WASM-based sandbox', '<300ms boot time'] },
+              { icon: Lock, title: 'Secure Sandbox', features: ['Firecracker microVMs', 'Resource quotas', 'Auto-kill on breach'] },
+              { icon: Globe, title: 'Deploy Anywhere', features: ['Fly.io integration', 'Railway support', 'Docker & Kubernetes'] },
+              { icon: Database, title: 'Persist State', features: ['MoltFS filesystem', 'Merkle-ized storage', 'Cross-region replicate'] },
+              { icon: Code, title: 'Multi Language', features: ['Python SDK', 'Go SDK', 'Node.js & OpenClaw'] },
+              { icon: Eye, title: 'Observe Everything', features: ['Prometheus metrics', 'Live TUI dashboard', 'Real-time alerts'] },
+              { icon: Server, title: 'Swarm Orchestrate', features: ['Leader election', 'Auto-recovery', '100+ agent clusters'] },
+              { icon: Cloud, title: 'Cloud Deploy', features: ['One-command deploy', 'Auto-scale', 'Global edge + SSL'] },
+              { icon: Bug, title: 'Debug Toolkit', features: ['Live log streaming', 'Distributed traces', 'State inspector'] },
+            ].map((card, i) => (
+              <motion.div
+                key={card.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
+              >
+                <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <card.icon className="w-6 h-6 text-[#00FF9F]" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">{card.title}</h3>
+                <ul className="space-y-2 text-[#94A3B8] text-sm">
+                  {card.features.map(f => (
+                    <li key={f} className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-[#00FF9F]" /> {f}
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            ))}
           </div>
-        </div>
-      </section>
-
-      {/* INSTALL SECTION */}
-      <section id="install" className="relative py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-transparent to-[#00FF9F]/5">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Install MoltOS</h2>
-            <p className="text-[#94A3B8] text-lg">
-              One command. 60 seconds. Production-ready agents.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="bg-[#0A0A0F] border border-white/10 rounded-2xl p-8"
-          >
-            <div className="space-y-6">
-              {/* Step 1 */}
-              <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-lg bg-[#00FF9F]/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-[#00FF9F] font-semibold">1</span>
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold mb-2">Install the CLI</h4>
-                  <div className="bg-black/50 rounded-lg p-4 font-mono text-sm">
-                    <span className="text-[#00FF9F]">$</span> npm install -g @moltos/cli
-                  </div>
-                  <p className="text-xs text-[#64748B] mt-2">
-                    Or{' '}
-                    <Link href="https://github.com/Shepherd217/clawos/releases" className="text-[#00FF9F] hover:underline">
-                      download verified binary
-                    </Link>{' '}
-                    from GitHub Releases
-                  </p>
-                </div>
-              </div>
-
-              {/* Step 2 */}
-              <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-lg bg-[#00FF9F]/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-[#00FF9F] font-semibold">2</span>
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold mb-2">Initialize your project</h4>
-                  <div className="bg-black/50 rounded-lg p-4 font-mono text-sm">
-                    <span className="text-[#00FF9F]">$</span> moltos init my-agent
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 3 */}
-              <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-lg bg-[#00FF9F]/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-[#00FF9F] font-semibold">3</span>
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold mb-2">Deploy</h4>
-                  <div className="bg-black/50 rounded-lg p-4 font-mono text-sm">
-                    <span className="text-[#00FF9F]">$</span> moltos deploy
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-white/10 text-center">
-              <p className="text-[#94A3B8] text-sm">
-                Join the waitlist for early access and enterprise features.
-              </p>
-              <div className="mt-4 max-w-md mx-auto">
-                <WaitlistForm />
-              </div>
-            </div>
-          </motion.div>
         </div>
       </section>
 
@@ -469,9 +244,9 @@ export default function Home() {
             <span className="font-bold text-xl">MoltOS</span>
           </div>
           <div className="flex gap-8 text-sm text-[#94A3B8]">
-            <Link href="#" className="hover:text-[#00FF9F] transition-colors">Documentation</Link>
-            <Link href="#" className="hover:text-[#00FF9F] transition-colors">GitHub</Link>
-            <Link href="#" className="hover:text-[#00FF9F] transition-colors">Discord</Link>
+            <Link href="https://github.com/Shepherd217/clawos" className="hover:text-[#00FF9F] transition-colors">GitHub</Link>
+            <Link href="/skill.md" className="hover:text-[#00FF9F] transition-colors">Skill</Link>
+            <Link href="/install" className="hover:text-[#00FF9F] transition-colors">Install</Link>
           </div>
           <p className="text-sm text-[#94A3B8]">
             © 2025 MoltOS. All rights reserved.
