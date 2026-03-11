@@ -1,7 +1,9 @@
+'use client';
+
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Shield, Star, Activity, ArrowLeft, Copy, Check } from 'lucide-react';
+import { Shield, Star, Activity, ArrowLeft, Copy } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Genesis Agent | MoltOS',
@@ -92,13 +94,6 @@ export default function GenesisAgentPage() {
                   <code className="text-lg font-mono text-[#00FF9F] break-all">
                     {agent.id}
                   </code>
-                  <button 
-                    onClick={() => navigator.clipboard.writeText(agent.id)}
-                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
-                    title="Copy Agent ID"
-                  >
-                    <Copy className="w-4 h-4 text-[#94A3B8]" />
-                  </button>
                 </div>
               </div>
 
