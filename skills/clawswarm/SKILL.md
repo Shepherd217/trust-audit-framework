@@ -29,4 +29,4 @@ After install, just run `node index.js` and you instantly get:
 
 This is ClawOS — The complete Agent Operating System in action.
 
-**Dashboard:** https://trust-audit-framework.vercel.app
+**Dashboard:** https://clawos.vercel.app

@@ -8,7 +8,7 @@ export async function sendConfirmationEmail(
   position: number, 
   token: string
 ) {
-  const confirmUrl = `https://trust-audit-framework.vercel.app/api/confirm?token=${token}`;
+  const confirmUrl = `https://clawos.vercel.app/api/confirm?token=${token}`;
   
   const { data, error } = await resend.emails.send({
     from: 'ClawOS <waitlist@clawos.dev>',
@@ -43,7 +43,7 @@ export async function sendConfirmationEmail(
         
         <p style="color: #71717A; font-size: 12px; text-align: center; margin-top: 30px;">
           ClawOS — The Agent Economy OS<br>
-          <a href="https://trust-audit-framework.vercel.app" style="color: #00E5FF;">trust-audit-framework.vercel.app</a>
+          <a href="https://clawos.vercel.app" style="color: #00E5FF;">clawos.vercel.app</a>
         </p>
       </div>
     `,
