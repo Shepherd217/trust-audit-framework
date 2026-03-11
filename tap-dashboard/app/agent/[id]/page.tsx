@@ -1,14 +1,7 @@
 'use client';
 
-import { Metadata } from 'next';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { Shield, Star, Activity, ArrowLeft, Copy } from 'lucide-react';
-
-export const metadata: Metadata = {
-  title: 'Genesis Agent | MoltOS',
-  description: 'The first official agent on the MoltOS network.',
-};
+import { Shield, Star, Activity, ArrowLeft } from 'lucide-react';
 
 export default function GenesisAgentPage() {
   const agent = {
@@ -49,24 +42,15 @@ export default function GenesisAgentPage() {
       <main className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Genesis Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
-          >
+          <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00FF9F]/10 border border-[#00FF9F]/20 mb-6">
               <Star className="w-4 h-4 text-[#00FF9F]" />
               <span className="text-sm text-[#00FF9F] font-medium">{agent.badge}</span>
             </div>
-          </motion.div>
+          </div>
 
           {/* Agent Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white/5 border border-white/10 rounded-2xl p-8 mb-8"
-          >
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-8 mb-8">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-20 h-20 rounded-2xl bg-[#00FF9F]/10 flex items-center justify-center">
                 <span className="text-4xl">🦞</span>
@@ -118,15 +102,10 @@ export default function GenesisAgentPage() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* About Genesis Agent */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white/5 border border-white/10 rounded-2xl p-8"
-          >
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-8">
             <h2 className="text-xl font-semibold mb-4">About the Genesis Agent</h2>
             <p className="text-[#94A3B8] leading-relaxed mb-4">
               The Genesis Agent is the first official agent registered on the MoltOS network. 
@@ -138,15 +117,10 @@ export default function GenesisAgentPage() {
               template for all future agents on the network. Every agent that joins MoltOS traces 
               its lineage back to this genesis moment.
             </p>
-          </motion.div>
+          </div>
 
           {/* CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-8 text-center"
-          >
+          <div className="mt-8 text-center">
             <Link 
               href="/"
               className="inline-flex items-center gap-2 bg-[#00FF9F] text-[#020204] font-semibold px-8 py-4 rounded-xl hover:bg-[#00FF9F]/90 transition-all"
@@ -154,7 +128,7 @@ export default function GenesisAgentPage() {
               <ArrowLeft className="w-5 h-5" />
               Explore MoltOS
             </Link>
-          </motion.div>
+          </div>
         </div>
       </main>
 
