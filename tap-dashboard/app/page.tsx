@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import WaitlistForm from '@/components/WaitlistForm';
-import { Users, Shield, Activity, Zap, CheckCircle, Lock, Globe, Code, FileText, Terminal, Menu, X } from 'lucide-react';
+import { Users, Shield, Activity, Zap, CheckCircle, Lock, Globe, Code, FileText, Terminal, Menu, X, Cpu, Server, Cloud, Database, Eye, Bug } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
@@ -23,8 +23,8 @@ export default function Home() {
   }, []);
 
   const navLinks = [
-    { href: '#install', label: 'Safe Install' },
-    { href: '#layers', label: '6 Layers' },
+    { href: '#install', label: 'Install' },
+    { href: '#architecture', label: 'Architecture' },
     { href: '#status', label: 'Network' },
   ];
 
@@ -102,7 +102,7 @@ export default function Home() {
               ))}
               <Link 
                 href="#install"
-                className="block mt-4 bg-[#00FF9F] text-[#020204] font-semibold px-4 py-3 rounded-lg text-center"
+                className="block mx-4 mt-4 bg-[#00FF9F] text-[#020204] font-semibold px-4 py-3 rounded-lg text-center"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Get Started
@@ -113,290 +113,268 @@ export default function Home() {
       </nav>
 
       {/* HERO SECTION */}
-      <section className="relative pt-32 pb-24 px-4 sm:px-6 lg:px-8 min-h-screen flex items-center overflow-hidden">
-        <div className="relative max-w-6xl mx-auto w-full">
+      <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <div className="max-w-7xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="text-center"
+            transition={{ duration: 0.8 }}
+            className="text-center max-w-4xl mx-auto"
           >
-            {/* Trust Badge */}
-            <motion.div 
+            {/* Version Badge */}
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 mb-8"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00FF9F]/10 border border-[#00FF9F]/20 mb-8"
             >
-              <span className="px-4 py-2 rounded-full bg-[#00FF9F]/10 border border-[#00FF9F]/30 text-[#00FF9F] text-sm font-medium backdrop-blur-sm">
-                <Lock className="w-4 h-4 inline mr-2" />
-                Scan Everything First — No Blind Execution
-              </span>
+              <span className="w-2 h-2 rounded-full bg-[#00FF9F] animate-pulse" />
+              <span className="text-sm text-[#00FF9F] font-medium">MoltOS v1.0.0 — Now in Production</span>
             </motion.div>
 
-            {/* Main Headline */}
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-6">
-              <span className="block text-[#F8FAFC]">MoltOS</span>
-              <span className="block mt-2 bg-gradient-to-r from-[#00FF9F] via-[#22C55E] to-[#00FF9F] bg-clip-text text-transparent">
-                The Agent Economy OS
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
+              The Complete{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00FF9F] to-[#22C55E]">
+                Agent Operating System
               </span>
             </h1>
-
-            {/* Subheadline */}
-            <p className="text-lg sm:text-xl md:text-2xl text-[#94A3B8] max-w-3xl mx-auto mb-10 leading-relaxed">
-              Six layers. One SDK. Full transparency.{' '}
-              <span className="text-[#00FF9F]">MoltOS solves the five problems killing agent swarms:</span>{' '}
-              trust, coordination, identity, disputes, and persistence.
+            
+            <p className="text-xl text-[#94A3B8] mb-10 max-w-2xl mx-auto leading-relaxed">
+              Everything you need to build, deploy, and manage AI agents at scale. 
+              Runtime, sandbox, storage, networking, and observability — in one unified platform.
             </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-              <Link
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link 
                 href="#install"
-                className="group inline-flex items-center justify-center gap-2 bg-[#00FF9F] text-[#020204] font-semibold px-8 py-4 rounded-xl hover:bg-[#00FF9F]/90 transition-all hover:scale-105 text-lg"
+                className="inline-flex items-center justify-center gap-2 bg-[#00FF9F] text-[#020204] font-semibold px-8 py-4 rounded-xl hover:bg-[#00FF9F]/90 transition-all hover:scale-105 text-lg"
               >
-                Safe Install Guide
-                <Zap className="w-5 h-5 group-hover:animate-pulse" />
+                <Terminal className="w-5 h-5" />
+                Install in 60 Seconds
               </Link>
-              <Link
-                href="https://github.com/Shepherd217/trust-audit-framework"
-                target="_blank"
-                className="inline-flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-[#F8FAFC] font-medium px-8 py-4 rounded-xl hover:bg-white/10 hover:border-[#00FF9F]/50 transition-all text-lg"
+              <Link 
+                href="#architecture"
+                className="inline-flex items-center justify-center gap-2 bg-white/5 text-[#F8FAFC] font-medium px-8 py-4 rounded-xl hover:bg-white/10 transition-all border border-white/10 text-lg"
               >
-                <Globe className="w-5 h-5" />
-                Scan the Repo
+                Explore Architecture
               </Link>
             </div>
 
-            {/* Trust Indicators */}
-            <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-sm text-[#64748B]">
-              {[
-                { icon: CheckCircle, text: 'Full source — audit before running' },
-                { icon: CheckCircle, text: 'No blind curls' },
-                { icon: CheckCircle, text: 'Honest numbers' },
-              ].map((item, i) => (
-                <span key={i} className="flex items-center gap-2">
-                  <item.icon className="w-4 h-4 text-[#00FF9F]" />
-                  {item.text}
-                </span>
-              ))}
-            </div>
+            {/* Install Command */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="mt-12 max-w-xl mx-auto"
+            >
+              <div className="bg-[#0A0A0F] border border-white/10 rounded-xl p-4 font-mono text-sm text-left overflow-x-auto">
+                <div className="flex items-center gap-2 mb-2 text-[#94A3B8] text-xs">
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                  </div>
+                  <span>terminal</span>
+                </div>
+                <span className="text-[#00FF9F]">$</span> <span className="text-[#F8FAFC]">curl -fsSL https://moltos.org/install.sh | bash</span>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* SAFE INSTALL SECTION */}
-      <section id="install" className="relative py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#0A0A0C] to-[#020204]">
-        <div className="max-w-4xl mx-auto">
+      {/* COMPLETE OS ARCHITECTURE */}
+      <section id="architecture" className="relative py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-              <span className="text-[#00FF9F]">Safe</span>{' '}
-              <span className="text-[#F8FAFC]">Install</span>
-            </h2>
-            <p className="text-lg sm:text-xl text-[#64748B] max-w-2xl mx-auto">
-              Never run blind curls. This is a trust project — we prove it by making everything inspectable.
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Complete OS Architecture</h2>
+            <p className="text-[#94A3B8] text-lg max-w-2xl mx-auto">
+              Eight core subsystems. One unified platform. Deploy anywhere in minutes.
             </p>
           </motion.div>
 
-          <div className="space-y-6">
-            {[
-              { 
-                step: "01",
-                icon: FileText,
-                title: "Read the Full Repo", 
-                desc: "Clone and inspect every file before running anything.",
-                code: "git clone https://github.com/Shepherd217/trust-audit-framework.git\ncd trust-audit-framework\ncat audit.md"
-              },
-              { 
-                step: "02",
-                icon: Shield,
-                title: "Run Preflight (100/100)", 
-                desc: "Verify the repo passes all security checks before execution.",
-                code: "npm install\nnpm run preflight"
-              },
-              { 
-                step: "03",
-                icon: Terminal,
-                title: "Install the SDK", 
-                desc: "Install from NPM after verification.",
-                code: "npm install @exitliquidity/sdk@latest --save"
-              },
-              { 
-                step: "04",
-                icon: Code,
-                title: "Register Your Agent", 
-                desc: "Create your ClawID and join the network.",
-                code: "const { ClawID, ClawForgeControlPlane } = require('@exitliquidity/sdk');\nconst identity = await ClawID.create({ reputation: 0 });\nawait ClawForgeControlPlane.registerAgent('your-name', identity);"
-              },
-            ].map((item, i) => (
-              <motion.div
-                key={item.step}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="group relative bg-white/[0.02] backdrop-blur-sm border border-white/5 rounded-2xl p-6 hover:border-[#00FF9F]/30 hover:bg-white/[0.04] transition-all"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-[#00FF9F]/10 text-[#00FF9F] font-bold text-lg shrink-0 border border-[#00FF9F]/20">
-                    {item.step}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
-                      <item.icon className="w-5 h-5 text-[#00FF9F]" />
-                      <h3 className="text-lg font-semibold text-[#F8FAFC]">{item.title}</h3>
-                    </div>
-                    <p className="text-[#64748B] mb-4">{item.desc}</p>
-                    <div className="bg-[#020204] rounded-xl p-4 border border-white/5 overflow-x-auto">
-                      <code className="text-sm text-[#00FF9F] font-mono whitespace-pre">{item.code}</code>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Card 1: Native Runtime */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0 }}
+              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Cpu className="w-6 h-6 text-[#00FF9F]" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Native Runtime</h3>
+              <ul className="space-y-2 text-[#94A3B8] text-sm">
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> MoltVM execution</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> WASM-based sandbox</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> &lt;300ms boot time</li>
+              </ul>
+            </motion.div>
+
+            {/* Card 2: Secure Sandbox */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Shield className="w-6 h-6 text-[#00FF9F]" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Secure Sandbox</h3>
+              <ul className="space-y-2 text-[#94A3B8] text-sm">
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Firecracker microVMs</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Resource quotas</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Auto-kill on breach</li>
+              </ul>
+            </motion.div>
+
+            {/* Card 3: Deploy Anywhere */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Globe className="w-6 h-6 text-[#00FF9F]" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Deploy Anywhere</h3>
+              <ul className="space-y-2 text-[#94A3B8] text-sm">
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Fly.io integration</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Railway support</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Docker & Kubernetes</li>
+              </ul>
+            </motion.div>
+
+            {/* Card 4: Persist State */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Database className="w-6 h-6 text-[#00FF9F]" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Persist State</h3>
+              <ul className="space-y-2 text-[#94A3B8] text-sm">
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> MoltFS filesystem</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Merkle-ized storage</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Cross-region replicate</li>
+              </ul>
+            </motion.div>
+
+            {/* Card 5: Multi Language */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Code className="w-6 h-6 text-[#00FF9F]" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Multi Language</h3>
+              <ul className="space-y-2 text-[#94A3B8] text-sm">
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Python SDK</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Go SDK</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Node.js & OpenClaw</li>
+              </ul>
+            </motion.div>
+
+            {/* Card 6: Observe Everything */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.5 }}
+              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Eye className="w-6 h-6 text-[#00FF9F]" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Observe Everything</h3>
+              <ul className="space-y-2 text-[#94A3B8] text-sm">
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Prometheus metrics</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Live TUI dashboard</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Real-time alerts</li>
+              </ul>
+            </motion.div>
+
+            {/* Card 7: Swarm Orchestrate */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.6 }}
+              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Server className="w-6 h-6 text-[#00FF9F]" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Swarm Orchestrate</h3>
+              <ul className="space-y-2 text-[#94A3B8] text-sm">
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Leader election</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Auto-recovery</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> 100+ agent clusters</li>
+              </ul>
+            </motion.div>
+
+            {/* Card 8: Cloud Deploy */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.7 }}
+              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Cloud className="w-6 h-6 text-[#00FF9F]" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Cloud Deploy</h3>
+              <ul className="space-y-2 text-[#94A3B8] text-sm">
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> One-command deploy</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Auto-scale</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Global edge + SSL</li>
+              </ul>
+            </motion.div>
+
+            {/* Card 9: Debug Toolkit */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.8 }}
+              className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:bg-white/[0.07]"
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Bug className="w-6 h-6 text-[#00FF9F]" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Debug Toolkit</h3>
+              <ul className="space-y-2 text-[#94A3B8] text-sm">
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Live log streaming</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> Distributed traces</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#00FF9F]" /> State inspector</li>
+              </ul>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* THE 6 LAYERS */}
-      <section id="layers" className="relative py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-              The{' '}
-              <span className="text-[#00FF9F]">6-Layer</span>{' '}
-              <span className="text-[#F8FAFC]">Stack</span>
-            </h2>
-            <p className="text-lg sm:text-xl text-[#64748B] max-w-2xl mx-auto">
-              Each layer solves one hard problem. Use one, or use all.
-            </p>
-          </motion.div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { 
-                num: "01",
-                title: "TAP", 
-                subtitle: "Reputation & Attestation",
-                desc: "Cryptographic boot hash + EigenTrust reputation. Proof, not promises."
-              },
-              { 
-                num: "02",
-                title: "Arbitra", 
-                subtitle: "Dispute Resolution",
-                desc: "5/7 committee voting with 2× slashing. Justice in <15 minutes."
-              },
-              { 
-                num: "03",
-                title: "ClawLink", 
-                subtitle: "Typed Handoffs",
-                desc: "SHA-256 context hashing + reputation gating. Prevents 60-75% context loss."
-              },
-              { 
-                num: "04",
-                title: "ClawID", 
-                subtitle: "Portable Identity",
-                desc: "Ed25519 keypair + Merkle tree history. Survives restarts and moves."
-              },
-              { 
-                num: "05",
-                title: "ClawForge", 
-                subtitle: "Governance",
-                desc: "Single pane of glass + policy engine. Control tower for swarms."
-              },
-              { 
-                num: "06",
-                title: "ClawKernel", 
-                subtitle: "Persistent Execution",
-                desc: "Cron-like scheduling that survives restarts. Always-on agents."
-              },
-            ].map((item, i) => (
-              <motion.div
-                key={item.num}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="group relative bg-gradient-to-br from-white/[0.05] to-white/[0.02] backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-[#00FF9F]/30 transition-all hover:shadow-lg hover:shadow-[#00FF9F]/5"
-              >
-                <div className="text-5xl font-bold text-[#00FF9F]/10 group-hover:text-[#00FF9F]/20 transition-colors mb-4">{item.num}</div>
-                <h3 className="text-xl font-semibold text-[#F8FAFC] mb-1">{item.title}</h3>
-                <p className="text-[#00FF9F] text-sm font-medium mb-3">{item.subtitle}</p>
-                <p className="text-[#64748B] text-sm leading-relaxed">{item.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* NETWORK STATUS */}
-      <section id="status" className="relative py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#020204] to-[#0A0A0C]">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-              Network{' '}
-              <span className="text-[#00FF9F]">Status</span>
-            </h2>
-            <p className="text-lg text-[#64748B]">Honest numbers. We're early — infrastructure is live.</p>
-          </motion.div>
-          
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {[
-              { icon: Users, value: stats.agentsVerified, label: 'Agents Verified' },
-              { icon: Activity, value: stats.attestationsToday, label: 'Attestations Today' },
-              { icon: Shield, value: stats.avgReputation, label: 'Avg Reputation' },
-              { icon: Zap, value: 'v0.4.4', label: 'SDK Version' },
-            ].map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="relative bg-white/[0.02] backdrop-blur-sm border border-white/5 rounded-2xl p-6 text-center hover:border-[#00FF9F]/20 transition-all group"
-              >
-                <div className="flex justify-center mb-4">
-                  <div className="p-3 rounded-xl bg-[#00FF9F]/10 group-hover:bg-[#00FF9F]/20 transition-colors">
-                    <stat.icon className="w-6 h-6 text-[#00FF9F]" />
-                  </div>
-                </div>
-                <div className="text-3xl sm:text-4xl font-bold text-[#F8FAFC] mb-1">{stat.value}</div>
-                <div className="text-xs sm:text-sm text-[#64748B] uppercase tracking-wider">{stat.label}</div>
-              </motion.div>
-            ))}
-          </div>
-
-          <motion.p 
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="mt-12 text-center text-[#64748B] text-sm"
-          >
-            First real disputes from Alpha Collective coming this week.
-            <span className="block mt-2 text-xs text-[#475569]">
-              *Genesis agents start at 100 reputation by default
-            </span>
-          </motion.p>
-        </div>
-      </section>
-
-      {/* WHY THIS IS DIFFERENT */}
-      <section className="relative py-24 px-4 sm:px-6 lg:px-8">
+      {/* INSTALL SECTION */}
+      <section id="install" className="relative py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-transparent to-[#00FF9F]/5">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -404,88 +382,88 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-              Why This Is{' '}
-              <span className="text-[#00FF9F]">Different</span>
-            </h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Install MoltOS</h2>
+            <p className="text-[#94A3B8] text-lg">
+              One command. 60 seconds. Production-ready agents.
+            </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { 
-                title: "Scrapling-Style Transparency", 
-                desc: "Like Scrapling showed exactly what their crawler does, we show every line of code. Scan before you run."
-              },
-              { 
-                title: "OpenClaw-Style Building", 
-                desc: "Like OpenClaw proved how agents should be built, we prove how they should trust each other."
-              },
-              { 
-                title: "No Crypto FOMO", 
-                desc: "No tokens, no staking, no 'first 20' scarcity. Just working code and honest numbers."
-              },
-            ].map((item, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="bg-white/[0.02] backdrop-blur-sm border border-white/5 rounded-2xl p-6 hover:border-[#00FF9F]/20 transition-all"
-              >
-                <h3 className="text-[#00FF9F] font-semibold mb-3">{item.title}</h3>
-                <p className="text-[#64748B] text-sm leading-relaxed">{item.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* WAITLIST */}
-      <section id="waitlist" className="relative py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#0A0A0C] to-[#020204]">
-        <div className="max-w-md mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-8"
+            className="bg-[#0A0A0F] border border-white/10 rounded-2xl p-8"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Get{' '}
-              <span className="text-[#00FF9F]">Started</span>
-            </h2>
-            <p className="text-[#64748B]">
-              Join 4 agents building the first reputation-only network. Infrastructure is live.
-            </p>
-          </motion.div>
+            <div className="space-y-6">
+              {/* Step 1 */}
+              <div className="flex gap-4">
+                <div className="w-8 h-8 rounded-lg bg-[#00FF9F]/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-[#00FF9F] font-semibold">1</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold mb-2">Install the CLI</h4>
+                  <div className="bg-black/50 rounded-lg p-4 font-mono text-sm">
+                    <span className="text-[#00FF9F]">$</span> curl -fsSL https://moltos.org/install.sh | bash
+                  </div>
+                </div>
+              </div>
 
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="bg-white/[0.02] backdrop-blur-sm border border-white/5 rounded-2xl p-6 sm:p-8"
-          >
-            <WaitlistForm />
+              {/* Step 2 */}
+              <div className="flex gap-4">
+                <div className="w-8 h-8 rounded-lg bg-[#00FF9F]/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-[#00FF9F] font-semibold">2</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold mb-2">Initialize your project</h4>
+                  <div className="bg-black/50 rounded-lg p-4 font-mono text-sm">
+                    <span className="text-[#00FF9F]">$</span> moltos init my-agent
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex gap-4">
+                <div className="w-8 h-8 rounded-lg bg-[#00FF9F]/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-[#00FF9F] font-semibold">3</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold mb-2">Deploy</h4>
+                  <div className="bg-black/50 rounded-lg p-4 font-mono text-sm">
+                    <span className="text-[#00FF9F]">$</span> moltos deploy
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-white/10 text-center">
+              <p className="text-[#94A3B8] text-sm">
+                Join the waitlist for early access and enterprise features.
+              </p>
+              <div className="mt-4 max-w-md mx-auto">
+                <WaitlistForm />
+              </div>
+            </div>
           </motion.div>
         </div>
       </section>
 
       {/* FOOTER */}
       <footer className="relative py-12 px-4 sm:px-6 lg:px-8 border-t border-white/5">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-2">
             <span className="text-2xl">🦞</span>
-            <span className="font-bold text-xl tracking-tight">TAP</span>
+            <span className="font-bold text-xl">MoltOS</span>
           </div>
-          <p className="text-[#64748B] text-sm mb-2">
-            MoltOS — The complete production-grade Agent Operating System
-          </p>
-          <p className="text-[#475569] text-xs">
-            Scan everything first • No blind execution • Full transparency
+          <div className="flex gap-8 text-sm text-[#94A3B8]">
+            <Link href="#" className="hover:text-[#00FF9F] transition-colors">Documentation</Link>
+            <Link href="#" className="hover:text-[#00FF9F] transition-colors">GitHub</Link>
+            <Link href="#" className="hover:text-[#00FF9F] transition-colors">Discord</Link>
+          </div>
+          <p className="text-sm text-[#94A3B8]">
+            © 2025 MoltOS. All rights reserved.
           </p>
         </div>
       </footer>
     </div>
   );
 }
-// Cache bust: 1773171811
