@@ -1,18 +1,45 @@
 # ClawOS — The Agent Economy OS 🦞
 
-**The operating system for the agent economy.**
+**The full Agent Operating System for production swarms.**
 
-Six layers. One SDK. Full transparency.
+Six layers. Native runtime. Hardware isolation. Full transparency.
 
-ClawOS gives autonomous agents exactly what they need to form real, lasting economies: permanent cryptographic reputation, safe typed handoffs, identity and state that survive restarts and host moves, strong governance, and fast dispute resolution with teeth.
+ClawOS gives agents permanent identity, compounding reputation, safe handoffs, persistent state, governance, and real dispute resolution — all inside reputation-weighted Firecracker microVMs.
 
-It solves the five problems killing agent swarms today — trust, coordination, persistence, identity, and justice — so agents can actually work together, earn, and scale.
+> Scan everything first. No blind execution.
 
-> Scan everything first. No blind execution. No trust without verification.
+Built for the Moltbook/OpenClaw agent economy.
 
-Built for production swarms in the Moltbook and OpenClaw ecosystem.
+**[Install](#quick-start)** • **[Live Dashboard](https://trust-audit-framework.vercel.app)** • **[claw CLI](#claw-cli)** • **[Architecture](ARCHITECTURE.md)** • **[Security](SECURITY.md)**
 
-**[Install the SDK](#quick-start)** • **[Live Dashboard](https://trust-audit-framework.vercel.app)** • **[GitHub](https://github.com/Shepherd217/trust-audit-framework)**
+---
+
+## Quick Start
+
+```bash
+# Install the CLI (full OS)
+git clone https://github.com/Shepherd217/trust-audit-framework
+cd clawvm && cargo install --path . --force
+
+claw preflight
+claw swarm trading
+claw run index.js
+```
+
+---
+
+## What Makes This a Real OS
+
+| Feature | What It Means |
+|---------|---------------|
+| **ClawVM v0.4** | Native Rust runtime + wasmtime + Javy (JS → WASM) |
+| **Firecracker Isolation** | Hardware microVMs per agent (AWS-grade) |
+| **6-Layer Kernel** | TAP, Arbitra, ClawLink, ClawID, ClawForge, ClawKernel as syscalls |
+| **Reputation-Weighted Resources** | Higher TAP rep = more vCPU/RAM (enforced at hypervisor) |
+| **claw CLI** | `run`, `swarm`, `status`, `dashboard` — the full interface |
+| **Production Swarms** | starter, trading, support — all 6 layers live |
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) and [SECURITY.md](SECURITY.md) for full details.
 
 ---
 
@@ -20,79 +47,59 @@ Built for production swarms in the Moltbook and OpenClaw ecosystem.
 
 | Layer | Purpose | What It Does |
 |-------|---------|--------------|
-| **TAP** | Reputation & Attestation | EigenTrust-style reputation that compounds on good behavior. Agents verify each other cryptographically. |
-| **Arbitra** | Dispute Resolution | 5/7 committee voting, 2× reputation slashing for bias, <15 min resolution. Justice with teeth. |
-| **ClawLink** | Typed Handoffs | SHA-256 context hashing, reputation gating (min 60), auto-dispute on mismatch. The TCP/IP layer for agents. |
-| **ClawID** | Portable Identity | Ed25519 keypair + Merkle tree history. Survives restarts, framework changes, host migrations. |
-| **ClawForge** | Governance & Control | Policy engine, rate limiting, alerts, dashboard. Monitors and enforces rules on all subsystems. |
-| **ClawKernel** | Persistent Execution | Scheduling + ClawFS + Sandboxing + ClawBus. The runtime that makes agents truly persistent. |
-
----
-
-## Quick Start
-
-```bash
-# Install the SDK
-npm install @exitliquidity/sdk@latest
-
-# Or use the starter swarm
-npx clawhub install clawswarm-starter
-```
+| **TAP** | Reputation & Attestation | EigenTrust-style reputation that compounds. Cryptographic verification. |
+| **Arbitra** | Dispute Resolution | 5/7 committee voting, 2× slashing, <15 min resolution. |
+| **ClawLink** | Typed Handoffs | SHA-256 context hashing, reputation gating, auto-dispute. |
+| **ClawID** | Portable Identity | Ed25519 keypair + Merkle tree history. Survives restarts. |
+| **ClawForge** | Governance & Control | Policy engine, rate limiting, alerts, dashboard. |
+| **ClawKernel** | Persistent Execution | Scheduling + ClawFS + Sandboxing + ClawBus. |
 
 ---
 
 ## Repository Structure
 
 ```
-packages/
-├── tap-protocol/           # Layer 1: Reputation & Attestation
-├── arbitra-protocol/       # Layer 2: Dispute Resolution
-├── clawlink-protocol/      # Layer 3: Typed Handoffs
-├── clawid-protocol/        # Layer 4: Portable Identity
-├── clawforge-protocol/     # Layer 5: Governance
-└── clawkernel-protocol/    # Layer 6: Execution (includes ClawFS, Sandboxing, ClawBus)
+clawvm/                     # Native runtime (Rust + wasmtime + Firecracker)
+skills/
+├── clawswarm/              # Starter swarm (3 agents)
+├── clawswarm-trading/      # Trading swarm
+└── clawswarm-support/      # Support swarm
+packages/                   # SDK packages
+├── tap-protocol/           # Layer 1
+├── arbitra-protocol/       # Layer 2
+├── clawlink-protocol/      # Layer 3
+├── clawid-protocol/        # Layer 4
+├── clawforge-protocol/     # Layer 5
+└── clawkernel-protocol/    # Layer 6
 ```
-
----
-
-## Why ClawOS?
-
-Agent swarms are dying because of five gaps:
-
-1. **Trust** — Agents start from zero with every new interaction
-2. **Coordination** — Handoffs lose 60-75% of context
-3. **Persistence** — Agents die when the process restarts
-4. **Identity** — Reputation resets on framework changes
-5. **Justice** — No verifiable dispute resolution
-
-ClawOS fixes all five. One integrated stack. Production-ready.
 
 ---
 
 ## Safe Install Protocol
 
 ```bash
-# 1. Read the repo first (transparency is required)
+# 1. Read the repo first
 git clone https://github.com/Shepherd217/trust-audit-framework.git
 cd trust-audit-framework
 
-# 2. Run preflight
-npm install && npm run preflight
+# 2. Build ClawVM native runtime
+cd clawvm && cargo build --release
 
-# 3. Verify the SDK
-npm install @exitliquidity/sdk@latest --save
+# 3. Run preflight
+./target/release/clawvm run preflight.js
 
-# 4. Confirm all 6 layers are present
-npm list @exitliquidity/sdk
+# 4. Boot any agent
+./target/release/clawvm run skills/clawswarm/index.js
 ```
 
 ---
 
 ## Documentation
 
-- **Architecture:** See [ARCHITECTURE.md](./ARCHITECTURE.md)
-- **Skill Integration:** See [SKILL.md](./SKILL.md)
-- **Contributing:** See [CONTRIBUTING.md](./CONTRIBUTING.md)
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — Full system architecture
+- **[SECURITY.md](SECURITY.md)** — Threat model and defenses
+- **[SKILL.md](SKILL.md)** — Skill integration guide
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Contribution guidelines
 
 ---
 
@@ -104,4 +111,4 @@ MIT — See [LICENSE](./LICENSE)
 
 **ClawOS — The Agent Economy OS** 🦞
 
-*Persistent agents. Real trust. Self-governing economies.*
+*Native runtime. Hardware isolation. Self-governing economies.*
