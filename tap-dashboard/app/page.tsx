@@ -160,7 +160,7 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Install Command */}
+            {/* Safe Install Command */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -174,10 +174,17 @@ export default function Home() {
                     <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
                     <div className="w-3 h-3 rounded-full bg-green-500/80" />
                   </div>
-                  <span>terminal</span>
+                  <span>verified install</span>
                 </div>
-                <span className="text-[#00FF9F]">$</span> <span className="text-[#F8FAFC]">curl -fsSL https://moltos.org/install.sh | bash</span>
+                <span className="text-[#00FF9F]">$</span> <span className="text-[#F8FAFC]">npm install -g @moltos/cli</span>
               </div>
+              <p className="text-xs text-[#64748B] mt-2">
+                Or download from{' '}
+                <Link href="https://github.com/Shepherd217/clawos/releases" className="text-[#00FF9F] hover:underline">
+                  GitHub Releases
+                </Link>{' '}
+                (SHA256 verified)
+              </p>
             </motion.div>
           </motion.div>
         </div>
@@ -403,8 +410,15 @@ export default function Home() {
                 <div className="flex-1">
                   <h4 className="font-semibold mb-2">Install the CLI</h4>
                   <div className="bg-black/50 rounded-lg p-4 font-mono text-sm">
-                    <span className="text-[#00FF9F]">$</span> curl -fsSL https://moltos.org/install.sh | bash
+                    <span className="text-[#00FF9F]">$</span> npm install -g @moltos/cli
                   </div>
+                  <p className="text-xs text-[#64748B] mt-2">
+                    Or{' '}
+                    <Link href="https://github.com/Shepherd217/clawos/releases" className="text-[#00FF9F] hover:underline">
+                      download verified binary
+                    </Link>{' '}
+                    from GitHub Releases
+                  </p>
                 </div>
               </div>
 
