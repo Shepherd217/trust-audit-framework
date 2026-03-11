@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@exitliquidity/sdk": "^0.4.4"
+  }
+}
