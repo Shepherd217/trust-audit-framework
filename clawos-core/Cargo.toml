@@ -1,0 +1,18 @@
+[package]
+name = "clawos-core"
+version = "0.1.0"
+edition = "2021"
+description = "ClawOS Core — Shared kernel for Python/Go SDKs"
+license = "MIT"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[dependencies]
+clawvm = { path = "../clawvm" }
+clawfs = { path = "../clawfs" }
+anyhow = "1.0"
+tokio = { version = "1", features = ["full"] }
+pyo3 = { version = "0.22", features = ["extension-module"], optional = true }
+
+[features]
+default = []
+python = ["dep:pyo3"]
