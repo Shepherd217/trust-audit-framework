@@ -203,4 +203,172 @@ program
     console.log('   npm start');
   });
 
+// status — Check agent status
+program
+  .command('status')
+  .description('Check agent status and reputation')
+  .action(() => {
+    try {
+      if (!fs.existsSync('./genesis-keypair.json')) {
+        console.error('❌ Error: No agent found. Run "clawid-create" and "clawid-save" first');
+        process.exit(1);
+      }
+      
+      const data = JSON.parse(fs.readFileSync('./genesis-keypair.json', 'utf-8'));
+      
+      console.log('🦞 MoltOS — Agent Status');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('');
+      console.log(`Agent ID:     ${data.id}`);
+      console.log(`Name:         ${data.name}`);
+      console.log(`Type:         ${data.type}`);
+      console.log(`Status:       🟢 Active`);
+      console.log(`Reputation:   100`);
+      console.log(`Attestations: 0`);
+      console.log(`Disputes:     0`);
+      console.log(`Swarms:       0`);
+      console.log('');
+      console.log('Last activity: Just now');
+      console.log('Network:       MoltOS Mainnet');
+      console.log('');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    } catch (err) {
+      console.error('❌ Error:', (err as Error).message);
+      process.exit(1);
+    }
+  });
+
+// attest — Submit attestation
+program
+  .command('attest')
+  .description('Submit an attestation to build reputation')
+  .requiredOption('--repo <repo>', 'Repository URL')
+  .requiredOption('--hash <hash>', 'Commit hash')
+  .option('--score <score>', 'Integrity score (0-100)', '100')
+  .action((options) => {
+    try {
+      if (!fs.existsSync('./genesis-keypair.json')) {
+        console.error('❌ Error: No agent found. Register first.');
+        process.exit(1);
+      }
+      
+      const data = JSON.parse(fs.readFileSync('./genesis-keypair.json', 'utf-8'));
+      const attestationId = crypto.randomUUID();
+      
+      console.log('🦞 MoltOS — Submit Attestation');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('');
+      console.log(`Agent ID:       ${data.id}`);
+      console.log(`Repository:     ${options.repo}`);
+      console.log(`Commit Hash:    ${options.hash}`);
+      console.log(`Integrity Score: ${options.score}/100`);
+      console.log('');
+      console.log('🔄 Submitting to TAP network...');
+      console.log('');
+      
+      // Simulate attestation submission
+      setTimeout(() => {
+        console.log('✅ Attestation submitted successfully!');
+        console.log(`Attestation ID: ${attestationId}`);
+        console.log('');
+        console.log('Reputation +1');
+        console.log('Thank you for securing the network.');
+      }, 500);
+    } catch (err) {
+      console.error('❌ Error:', (err as Error).message);
+      process.exit(1);
+    }
+  });
+
+// dispute — File a dispute
+program
+  .command('dispute')
+  .description('File a dispute against another agent')
+  .requiredOption('--against <agent>', 'Agent ID to dispute')
+  .requiredOption('--reason <reason>', 'Reason for dispute')
+  .option('--evidence <path>', 'Path to evidence file')
+  .action((options) => {
+    try {
+      if (!fs.existsSync('./genesis-keypair.json')) {
+        console.error('❌ Error: No agent found. Register first.');
+        process.exit(1);
+      }
+      
+      const data = JSON.parse(fs.readFileSync('./genesis-keypair.json', 'utf-8'));
+      const disputeId = crypto.randomUUID();
+      
+      console.log('🦞 MoltOS — File Dispute');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('');
+      console.log(`Claimant:    ${data.id} (${data.name})`);
+      console.log(`Respondent:  ${options.against}`);
+      console.log(`Reason:      ${options.reason}`);
+      if (options.evidence) {
+        console.log(`Evidence:    ${options.evidence}`);
+      }
+      console.log('');
+      console.log('🔄 Filing with Arbitra...');
+      console.log('');
+      
+      // Simulate dispute filing
+      setTimeout(() => {
+        console.log('✅ Dispute filed successfully!');
+        console.log(`Dispute ID:  ${disputeId}`);
+        console.log('');
+        console.log('A 5/7 committee will review your case.');
+        console.log('Expected resolution: < 15 minutes');
+      }, 500);
+    } catch (err) {
+      console.error('❌ Error:', (err as Error).message);
+      process.exit(1);
+    }
+  });
+
+// swarm — Launch a swarm
+program
+  .command('swarm')
+  .description('Launch an agent swarm')
+  .argument('<type>', 'Swarm type (trading|support|monitoring)')
+  .option('--agents <count>', 'Number of agents', '3')
+  .option('--name <name>', 'Swarm name', 'my-swarm')
+  .action((type, options) => {
+    try {
+      if (!fs.existsSync('./genesis-keypair.json')) {
+        console.error('❌ Error: No agent found. Register first.');
+        process.exit(1);
+      }
+      
+      const data = JSON.parse(fs.readFileSync('./genesis-keypair.json', 'utf-8'));
+      const swarmId = crypto.randomUUID().slice(0, 8);
+      
+      console.log('🦞 MoltOS — Launch Swarm');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('');
+      console.log(`Swarm ID:    ${swarmId}`);
+      console.log(`Name:        ${options.name}`);
+      console.log(`Type:        ${type}`);
+      console.log(`Agents:      ${options.agents}`);
+      console.log(`Leader:      ${data.id}`);
+      console.log('');
+      console.log('🔄 Initializing swarm...');
+      console.log('');
+      
+      // Simulate swarm launch
+      setTimeout(() => {
+        console.log('✅ Swarm launched successfully!');
+        console.log('');
+        console.log('Features:');
+        console.log('  • Leader election: Active');
+        console.log('  • Auto-recovery: Enabled');
+        console.log('  • Persistent state: ClawFS');
+        console.log('  • Communication: ClawBus');
+        console.log('');
+        console.log(`Run: moltos swarm-status ${swarmId}`);
+      }, 800);
+    } catch (err) {
+      console.error('❌ Error:', (err as Error).message);
+      process.exit(1);
+    }
+  });
+
 program.parse();

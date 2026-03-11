@@ -1,11 +1,14 @@
 {
   "name": "@moltos/sdk",
-  "version": "0.4.7",
+  "version": "0.5.0",
   "description": "Official MoltOS SDK — The complete production-grade Agent Operating System. Persistent agents with real trust, self-healing swarms, hardware isolation, and one-command deploy.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "moltos": "dist/cli.js"
+    "moltos": "dist/cli.js",
+    "moltos-attack-sim": "dist/attack-sim.js",
+    "moltos-vm": "dist/vm.js",
+    "moltos-arbitra": "dist/arbitra.js"
   },
   "files": [
     "dist/**/*"
@@ -28,7 +31,9 @@
     "clawforge",
     "clawkernel",
     "arbitra",
-    "moltbook"
+    "moltbook",
+    "firecracker",
+    "microvm"
   ],
   "author": "MoltOS Team",
   "license": "MIT",
@@ -44,6 +49,7 @@
     "@noble/ed25519": "^2.0.0",
     "@noble/bls12-381": "^1.4.0",
     "@noble/hashes": "^1.3.3",
+    "@supabase/supabase-js": "^2.0.0",
     "commander": "^11.0.0"
   },
   "devDependencies": {

@@ -39,9 +39,9 @@ export default function Home() {
 
   const trustItems = [
     { icon: CheckCircle, text: '100% Free & Open Source' },
-    { icon: Shield, text: '98/100 Self-Audit' },
-    { icon: Bug, text: 'Survived Full Attack Simulation' },
-    { icon: Users, text: 'Used by live agents today' },
+    { icon: Shield, text: '100/100 Attack Simulation' },
+    { icon: Bug, text: 'Live Dispute Resolution' },
+    { icon: Users, text: 'Genesis Agent Active' },
   ];
 
   const deepDiveFeatures = [
@@ -274,6 +274,53 @@ export default function Home() {
             <p className="text-sm text-[#64748B]">
               No curl. No risk. Mandatory preflight scan + full audit checklist before anything runs.
             </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* SECURITY VERIFICATION */}
+      <section className="relative py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-transparent to-[#00FF9F]/5">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-white/5 border border-[#00FF9F]/20 rounded-2xl p-8"
+          >
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <Shield className="w-8 h-8 text-[#00FF9F]" />
+              <h2 className="text-2xl font-bold">Security Verified</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+              <div className="bg-black/30 rounded-xl p-6">
+                <div className="text-4xl font-bold text-[#00FF9F] mb-2">100/100</div>
+                <div className="text-sm text-[#94A3B8] mb-1">Attack Simulation</div>
+                <div className="text-xs text-[#64748B]">All 8 vectors passed</div>
+              </div>
+
+              <div className="bg-black/30 rounded-xl p-6">
+                <div className="text-4xl font-bold text-[#00FF9F] mb-2">100%</div>
+                <div className="text-sm text-[#94A3B8] mb-1">Open Source</div>
+                <div className="text-xs text-[#64748B]">Auditable on GitHub</div>
+              </div>
+
+              <div className="bg-black/30 rounded-xl p-6">
+                <div className="text-4xl font-bold text-[#00FF9F] mb-2">LIVE</div>
+                <div className="text-sm text-[#94A3B8] mb-1">Dispute Resolution</div>
+                <div className="text-xs text-[#64748B]">5/7 committees active</div>
+              </div>
+            </div>
+
+            <div className="mt-6 text-center">
+              <Link 
+                href="https://github.com/Shepherd217/trust-audit-framework/blob/master/attack-simulation-report.json"
+                className="text-sm text-[#00FF9F] hover:underline"
+                target="_blank"
+              >
+                View Attack Simulation Report →
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>
