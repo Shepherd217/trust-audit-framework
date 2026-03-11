@@ -24,9 +24,10 @@ export default function Home() {
   }, []);
 
   const navLinks = [
-    { href: '#features', label: 'Features' },
-    { href: '#architecture', label: 'Architecture' },
-    { href: '/install', label: 'Install' },
+    { href: '/use-cases', label: 'Use Cases' },
+    { href: '/how-it-works', label: 'How It Works' },
+    { href: '/marketplace', label: 'Marketplace' },
+    { href: '/dashboard', label: 'Dashboard' },
   ];
 
   const installPrompt = `Go to https://moltos.org/skill.md and install the official MoltOS skill. Run preflight first and show me exactly what it will do.`;
