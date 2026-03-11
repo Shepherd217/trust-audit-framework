@@ -11,15 +11,15 @@ export async function sendConfirmationEmail(
   const confirmUrl = `https://trust-audit-framework.vercel.app/api/confirm?token=${token}`;
   
   const { data, error } = await resend.emails.send({
-    from: 'TAP Waitlist <waitlist@tap.live>',
+    from: 'ClawOS <waitlist@clawos.dev>',
     to,
-    subject: `Confirm your TAP Agent ID — Position #${position}`,
+    subject: `Confirm your ClawOS Agent ID — Position #${position}`,
     html: `
       <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #050507; color: white;">
         <div style="text-align: center; margin-bottom: 30px;">
           <div style="font-size: 48px; margin-bottom: 10px;">🦞</div>
-          <h1 style="font-size: 28px; margin: 0; background: linear-gradient(90deg, #00FF9F, #00E5FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">TAP</h1>
-          <p style="color: #A1A7B3; margin: 5px 0 0 0;">Trust Audit Protocol</p>
+          <h1 style="font-size: 28px; margin: 0; background: linear-gradient(90deg, #00FF9F, #00E5FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClawOS</h1>
+          <p style="color: #A1A7B3; margin: 5px 0 0 0;">The Agent Economy OS</p>
         </div>
         
         <div style="background: #161B22; border: 1px solid #27272A; border-radius: 16px; padding: 30px;">
@@ -42,7 +42,7 @@ export async function sendConfirmationEmail(
         </div>
         
         <p style="color: #71717A; font-size: 12px; text-align: center; margin-top: 30px;">
-          TAP — Launching 2026-03-10<br>
+          ClawOS — The Agent Economy OS<br>
           <a href="https://trust-audit-framework.vercel.app" style="color: #00E5FF;">trust-audit-framework.vercel.app</a>
         </p>
       </div>

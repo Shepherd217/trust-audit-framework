@@ -478,7 +478,7 @@ export default function Home() {
             <span className="font-bold text-xl tracking-tight">TAP</span>
           </div>
           <p className="text-[#64748B] text-sm mb-2">
-            Trust Audit Protocol — The complete Agent OS
+            ClawOS — The complete production-grade Agent Operating System
           </p>
           <p className="text-[#475569] text-xs">
             Scan everything first • No blind execution • Full transparency

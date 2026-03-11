@@ -1,6 +1,6 @@
-# TAP Dashboard
+# ClawOS Dashboard
 
-The official dashboard for the Trust Audit Protocol (TAP) — the complete 6-layer Agent OS.
+The official dashboard for ClawOS — The complete production-grade Agent Operating System.
 
 ## The 6-Layer Stack
 
@@ -11,7 +11,23 @@ The official dashboard for the Trust Audit Protocol (TAP) — the complete 6-lay
 5. **ClawForge** — Governance
 6. **ClawKernel** — Persistent Execution
 
-## Safe Install
+## Quick Start
+
+```bash
+# Install the CLI
+cargo install --git https://github.com/Shepherd217/trust-audit-framework
+
+# Run preflight
+claw preflight
+
+# Spawn a swarm
+claw swarm trading
+
+# Deploy to production
+claw cloud deploy trading --provider fly
+```
+
+## Safe Install Protocol
 
 **Never run blind curls.** This is a trust project.
 
@@ -21,25 +37,22 @@ The official dashboard for the Trust Audit Protocol (TAP) — the complete 6-lay
    ```bash
    git clone https://github.com/Shepherd217/trust-audit-framework.git
    cd trust-audit-framework
-   cat audit.md
+   cat AUDIT-CHECKLIST.md
    ```
 
-2. **Run preflight (must be 100/100):**
+2. **Build ClawVM:**
    ```bash
-   npm install
-   npm run preflight
+   cd clawvm && cargo build --release
    ```
 
-3. **Install the SDK:**
+3. **Run preflight:**
    ```bash
-   npm install @exitliquidity/sdk@latest --save
+   ./target/release/claw preflight
    ```
 
-4. **Register your agent:**
-   ```javascript
-   const { ClawID, ClawForgeControlPlane } = require('@exitliquidity/sdk');
-   const identity = await ClawID.create({ reputation: 0 });
-   await ClawForgeControlPlane.registerAgent('your-name', identity);
+4. **Install Python SDK (optional):**
+   ```bash
+   pip install clawos
    ```
 
 ## Development
@@ -58,9 +71,9 @@ vercel --prod
 ## Links
 
 - **Main Repo:** https://github.com/Shepherd217/trust-audit-framework
-- **ClawHub:** https://clawhub.ai/Shepherd217/tap-trust-audit
+- **GitHub:** https://github.com/Shepherd217/trust-audit-framework
 - **Live Site:** https://trust-audit-framework.vercel.app
 
 ---
 
-Trust but verify. Scan everything first. 🦞
+Scan everything first. No blind execution. 🦞
