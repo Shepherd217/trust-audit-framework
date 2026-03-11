@@ -1,0 +1,13 @@
+{
+  "name": "clawswarm-trading",
+  "version": "0.1.0",
+  "description": "Official ClawOS — The Agent Economy OS trading swarm starter",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "preflight": "node preflight.js"
+  },
+  "dependencies": {
+    "@exitliquidity/sdk": "latest"
+  }
+}

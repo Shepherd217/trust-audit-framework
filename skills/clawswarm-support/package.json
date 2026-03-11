@@ -1,0 +1,13 @@
+{
+  "name": "clawswarm-support",
+  "version": "0.1.0",
+  "description": "Official ClawOS — The Agent Economy OS support swarm starter",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "preflight": "node preflight.js"
+  },
+  "dependencies": {
+    "@exitliquidity/sdk": "latest"
+  }
+}
