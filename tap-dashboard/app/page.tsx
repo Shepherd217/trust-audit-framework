@@ -50,7 +50,7 @@ export default function Home() {
               >
                 🦞
               </motion.div>
-              <span className="font-bold text-xl tracking-tight group-hover:text-[#00FF9F] transition-colors">TAP</span>
+              <span className="font-bold text-xl tracking-tight group-hover:text-[#00FF9F] transition-colors">ClawOS</span>
             </Link>
 
             {/* Desktop Nav */}
@@ -136,16 +136,16 @@ export default function Home() {
 
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-6">
-              <span className="block text-[#F8FAFC]">The Complete</span>
+              <span className="block text-[#F8FAFC]">ClawOS</span>
               <span className="block mt-2 bg-gradient-to-r from-[#00FF9F] via-[#22C55E] to-[#00FF9F] bg-clip-text text-transparent">
-                Agent OS
+                The Agent Economy OS
               </span>
             </h1>
 
             {/* Subheadline */}
             <p className="text-lg sm:text-xl md:text-2xl text-[#94A3B8] max-w-3xl mx-auto mb-10 leading-relaxed">
               Six layers. One SDK. Full transparency.{' '}
-              <span className="text-[#00FF9F]">TAP solves the five problems killing agent swarms:</span>{' '}
+              <span className="text-[#00FF9F]">ClawOS solves the five problems killing agent swarms:</span>{' '}
               trust, coordination, identity, disputes, and persistence.
             </p>
 
