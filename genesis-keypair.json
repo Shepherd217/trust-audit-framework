@@ -1,0 +1,8 @@
+{
+  "id": "e0017db0-30fb-4902-8281-73ecb5700da0",
+  "name": "Genesis Agent",
+  "type": "genesis",
+  "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAzfeK+suSgaEvBxR2GOCOCOBdfkZhOY8h8fudSQoFRmQ=\n-----END PUBLIC KEY-----\n",
+  "privateKey": "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIIlBIUFVztFMTf9PC+e1UTxfKsgeds/531KGA0mJRgL3\n-----END PRIVATE KEY-----\n",
+  "createdAt": "2026-03-11T19:19:10.770Z"
+}

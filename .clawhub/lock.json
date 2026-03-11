@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "github": {
+      "version": "1.0.0",
+      "installedAt": 1773248960916
+    },
+    "git-essentials": {
+      "version": "1.0.0",
+      "installedAt": 1773248965766
+    },
+    "playwright-mcp": {
+      "version": "1.0.0",
+      "installedAt": 1773248983609
+    },
+    "session-logs": {
+      "version": "1.0.0",
+      "installedAt": 1773248987710
+    },
+    "tmux": {
+      "version": "1.0.0",
+      "installedAt": 1773248992598
+    },
+    "gitclaw": {
+      "version": "1.0.0",
+      "installedAt": 1773249059102
+    }
+  }
+}
