@@ -1,0 +1,20 @@
+app = "clawos-swarm-{{swarm}}"
+primary_region = "global"
+
+[build]
+  image = "rust:latest"  # ClawVM binary
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+
+[[mounts]]
+  source = "clawfs_data"
+  destination = "/clawfs_data"  # Persistent ClawFS
+
+[[metrics]]
+  port = 9090
+  path = "/metrics"  # Our observability endpoint
+
+[env]
+  CLAWOS_REPUTATION_SCALING = "true"  # Auto-scale vCPU/RAM by TAP rep
