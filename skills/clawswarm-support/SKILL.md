@@ -1,6 +1,6 @@
 ---
 name: clawswarm-support
-description: Official ClawOS Support Swarm — 3 persistent agents (TriageBot, Specialist, Resolver) using ALL 6 layers of ClawOS — The Agent Economy OS. Persistent ticket monitoring, reputation-gated escalation, safe handoffs, and ClawForge service policies.
+description: Official production-ready support swarm for ClawOS — The complete Agent Operating System. Uses full 6-layer kernel, ClawVM + Firecracker isolation, ClawFS persistence, Swarm Orchestrator, and ClawCloud deploy.
 version: 0.1.0
 category: agent-os
 tags: [clawos, support, customer-service, tap, arbitra, clawlink, clawid, clawforge, clawkernel, agent-economy]
@@ -21,9 +21,11 @@ After install, run `node index.js` and you get:
 - Persistent ticket monitoring via ClawKernel (survives restarts)
 - Reputation-weighted escalation (TAP)
 - Safe typed ticket handoffs (ClawLink)
+- Tickets persisted to ClawFS with snapshots
 - ClawForge escalation policies & rate limits
 - Arbitra-ready for customer disputes
+- ClawCloud deploy ready
 
-This is ClawOS — The Agent Economy OS in action.
+This is ClawOS — The complete Agent Operating System in action.
 
 **Dashboard:** https://trust-audit-framework.vercel.app

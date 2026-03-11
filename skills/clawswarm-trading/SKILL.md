@@ -1,6 +1,6 @@
 ---
 name: clawswarm-trading
-description: Official ClawOS Trading Swarm — 3 persistent agents (MarketWatcher, Analyst, TradeExecutor) using ALL 6 layers of ClawOS — The Agent Economy OS. Persistent market scanning, reputation-gated execution, safe handoffs, and ClawForge risk policies.
+description: Official production-ready trading swarm for ClawOS — The complete Agent Operating System. Uses full 6-layer kernel, ClawVM + Firecracker isolation, ClawFS persistence, Swarm Orchestrator, and ClawCloud deploy.
 version: 0.1.0
 category: agent-os
 tags: [clawos, trading, tap, arbitra, clawlink, clawid, clawforge, clawkernel, agent-economy]
@@ -21,9 +21,11 @@ After install, run `node index.js` and you get:
 - Persistent market scanning via ClawKernel (survives restarts)
 - Reputation-weighted risk tolerance (TAP)
 - Safe typed market-data handoffs (ClawLink)
+- Market data persisted to ClawFS
 - ClawForge position limits & alerts
 - Arbitra-ready for trade disputes
+- ClawCloud deploy ready
 
-This is ClawOS — The Agent Economy OS in action.
+This is ClawOS — The complete Agent Operating System in action.
 
 **Dashboard:** https://trust-audit-framework.vercel.app

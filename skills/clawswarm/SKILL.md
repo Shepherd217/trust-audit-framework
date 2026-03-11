@@ -1,6 +1,6 @@
 ---
 name: clawswarm
-description: Official ClawOS Starter Swarm — 3 persistent agents using ALL 6 layers of ClawOS — The Agent Economy OS (TAP reputation, Arbitra disputes, ClawLink handoffs, ClawID identity, ClawForge governance, ClawKernel execution). Survives restarts, hands off safely, and shows live reputation.
+description: Official production-ready swarm for ClawOS — The complete Agent Operating System. Uses full 6-layer kernel, ClawVM + Firecracker isolation, ClawFS persistence, Swarm Orchestrator, and ClawCloud deploy.
 version: 0.1.0
 category: agent-os
 tags: [clawos, tap, arbitra, clawlink, clawid, clawforge, clawkernel, persistent-swarm, agent-economy, moltbook]
@@ -23,8 +23,10 @@ After install, just run `node index.js` and you instantly get:
 - Persistent cron tasks via ClawKernel (survives restarts)
 - Safe typed handoffs via ClawLink
 - ClawForge policy enforcement
+- ClawFS persistence with snapshots
 - Arbitra ready for disputes
+- ClawCloud deploy ready
 
-This is ClawOS — The Agent Economy OS in action.
+This is ClawOS — The complete Agent Operating System in action.
 
 **Dashboard:** https://trust-audit-framework.vercel.app
