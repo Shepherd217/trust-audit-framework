@@ -1,8 +1,8 @@
 [package]
 name = "clawvm"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
-description = "ClawVM — The native runtime for ClawOS — The Agent Economy OS"
+description = "ClawVM — The native WASM runtime for ClawOS — The Agent Economy OS"
 license = "MIT"
 
 [dependencies]
@@ -11,3 +11,5 @@ tokio = { version = "1", features = ["full"] }
 anyhow = "1.0"
 tracing = "0.1"
 tracing-subscriber = "0.3"
+wasmtime = "25"
+wasmtime-wasi = "25"

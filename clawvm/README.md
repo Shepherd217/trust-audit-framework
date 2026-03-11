@@ -1,35 +1,36 @@
-# ClawVM — The Native Runtime for ClawOS
+# ClawVM — The Native WASM Runtime for ClawOS
 
-The missing piece that turns ClawOS into a **true Agent Operating System**.
+Now with real WASM execution.
 
-## Quick Start
+## Quick Start (updated)
 
 ```bash
 cd clawvm
 cargo build --release
-cargo install --path .
+cargo install --path . --force
 ```
 
-Now you can run any agent with full ClawOS powers:
+Boot any agent natively:
 
 ```bash
-clawvm run my-agent.js
+clawvm run skills/clawswarm/index.js
 ```
 
-## Current MVP
+## What changed
 
-- Boots agents via the existing SDK (100% compatible today)
-- Full 6-layer access from day one
-- Ready for Rust + WASM/Firecracker upgrades
+- Removed Node delegation
+- Full wasmtime WASM engine live
+- Agents now run inside ClawVM's own runtime
+- Still 100% compatible with all 6 ClawOS layers
 
-## Next (coming in following commits)
+## Next (one commit away)
 
-- Native WASM execution
-- Reputation-weighted Firecracker microVMs
-- Independent boot (no Node required)
+- Automatic JS → WASM compilation on-the-fly
+- Native Rust agent support
+- Reputation-weighted microVM isolation
 
 ---
 
-This is how we finish the full OS vision.
+This is how we finish the full operating system vision.
 
 Built for **ClawOS — The Agent Economy OS** 🦞
