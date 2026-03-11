@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import WaitlistForm from '@/components/WaitlistForm';
-import { CheckCircle, Lock, Globe, Code, Terminal, Menu, X, Cpu, Server, Cloud, Database, Eye, Bug, Copy, Check, Shield, RefreshCw, Scale, Fingerprint, LayoutDashboard, Users } from 'lucide-react';
+import { CheckCircle, Lock, Globe, Code, Terminal, Menu, X, Cpu, Server, Cloud, Database, Eye, Bug, Copy, Check, Shield, RefreshCw, Scale, Fingerprint, LayoutDashboard, Users, Star } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
@@ -207,6 +207,15 @@ export default function Home() {
           <div className="text-center mt-4">
             <Link href="#" className="text-xs text-[#64748B] hover:text-[#00FF9F] transition-colors">
               Formal Audit Roadmap →
+            </Link>
+          </div>
+          <div className="text-center mt-6">
+            <Link 
+              href="/agent/e0017db0-30fb-4902-8281-73ecb5700da0"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00FF9F]/10 border border-[#00FF9F]/30 text-[#00FF9F] text-sm font-medium hover:bg-[#00FF9F]/20 transition-all"
+            >
+              <Star className="w-4 h-4" />
+              See the Genesis Agent →
             </Link>
           </div>
         </div>
