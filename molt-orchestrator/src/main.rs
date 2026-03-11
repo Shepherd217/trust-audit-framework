@@ -25,7 +25,7 @@ async fn main() -> Result<()> {
     match cli.cmd {
         Commands::Start { swarm } => {
             println!("🧠 Swarm Orchestrator starting for '{}'...", swarm);
-            let orch = claw_orchestrator::SwarmOrchestrator::new(swarm).await?;
+            let orch = molt_orchestrator::SwarmOrchestrator::new(swarm).await?;
             orch.start().await;
             
             println!("✅ Orchestrator running — leader election + auto-recovery active");
@@ -36,7 +36,7 @@ async fn main() -> Result<()> {
             println!("\n🛑 Orchestrator shutting down gracefully");
         }
         Commands::Leader { swarm } => {
-            let orch = claw_orchestrator::SwarmOrchestrator::new(swarm).await?;
+            let orch = molt_orchestrator::SwarmOrchestrator::new(swarm).await?;
             match orch.get_leader().await {
                 Some(id) => println!("👑 Current leader: agent {}", id),
                 None => println!("⏳ No leader elected yet"),

@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/shepherd217/clawos
+  repository: ghcr.io/shepherd217/moltos
   tag: orchestrator-latest
   pullPolicy: IfNotPresent
 

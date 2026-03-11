@@ -1,8 +1,8 @@
 [package]
-name = "clawfs"
+name = "moltfs"
 version = "0.1.0"
 edition = "2021"
-description = "ClawFS — Production-grade Merkle filesystem for ClawOS — The Agent Economy OS"
+description = "ClawFS — Production-grade Merkle filesystem for MoltOS — The Agent Economy OS"
 license = "MIT"
 
 [dependencies]

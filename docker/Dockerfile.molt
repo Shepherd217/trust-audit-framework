@@ -2,11 +2,11 @@
 FROM rust:1.85-slim AS builder
 WORKDIR /app
 COPY . .
-RUN cargo build --release --bin claw --bin claw-orchestrator
+RUN cargo build --release --bin claw --bin molt-orchestrator
 
 # Stage 2: Minimal runtime (scratch for <15MB image)
 FROM scratch
 COPY --from=builder /app/target/release/claw /usr/local/bin/claw
-COPY --from=builder /app/target/release/claw-orchestrator /usr/local/bin/claw-orchestrator
-ENTRYPOINT ["claw"]
+COPY --from=builder /app/target/release/molt-orchestrator /usr/local/bin/molt-orchestrator
+ENTRYPOINT ["molt"]
 CMD ["--help"]

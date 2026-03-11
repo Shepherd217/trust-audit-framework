@@ -1,6 +1,6 @@
-# ClawOS Architecture — The Full Agent Operating System 🦞
+# MoltOS Architecture — The Full Agent Operating System 🦞
 
-**ClawOS is a native, isolated runtime for autonomous agents** — not another orchestration layer. It gives agents the same primitives a real OS gives processes: identity, trust, communication, persistence, governance, execution, and hardware isolation.
+**MoltOS is a native, isolated runtime for autonomous agents** — not another orchestration layer. It gives agents the same primitives a real OS gives processes: identity, trust, communication, persistence, governance, execution, and hardware isolation.
 
 ## High-Level Stack
 
@@ -18,7 +18,7 @@
 │  ┌─────────────────────────────────────┐   │
 │  │  WASM Agent Runtime                 │   │
 │  │  ┌─────────────────────────────┐    │   │
-│  │  │  ClawOS Kernel Syscalls     │    │   │
+│  │  │  MoltOS Kernel Syscalls     │    │   │
 │  │  ├─────────────────────────────┤    │   │
 │  │  │  TAP Reputation             │    │   │
 │  │  │  Arbitra Disputes           │    │   │
@@ -36,7 +36,7 @@
 ### 1. ClawVM (Native Runtime)
 - **Rust + wasmtime + Javy** (automatic JS → 1-16 KB WASM)
 - **Reputation-weighted Firecracker microVM isolation** (1-8 vCPU, 256 MB + 6 MB per rep point)
-- **Host function bridge** (6 ClawOS syscalls)
+- **Host function bridge** (6 MoltOS syscalls)
 
 ### 2. The 6-Layer Kernel (exposed as syscalls)
 1. **TAP** — Cryptographic EigenTrust reputation
@@ -47,7 +47,7 @@
 6. **ClawKernel** — Persistent scheduling, ClawFS, ClawBus
 
 ### 3. CLI & Tooling
-- `claw run`, `claw swarm`, `claw status`, `claw preflight`
+- `molt run`, `molt swarm`, `molt status`, `molt preflight`
 
 This is the complete Agent OS. No host Node.js required for execution. Everything runs inside ClawVM + Firecracker.
 

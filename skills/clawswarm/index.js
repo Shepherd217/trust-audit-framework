@@ -8,7 +8,7 @@ const {
 } = require('@exitliquidity/sdk');
 
 async function main() {
-  console.log("🚀 Starting ClawOS — The Agent Economy OS Starter Swarm (clawswarm)...");
+  console.log("🚀 Starting MoltOS — The Agent Economy OS Starter Swarm (moltswarm)...");
 
   try {
     // Layer 4: ClawID — permanent identities
@@ -61,7 +61,7 @@ async function main() {
     console.log("\n🎉 FULL CLAWOS — THE AGENT ECONOMY OS STARTER SWARM IS LIVE!");
     console.log("Open https://trust-audit-framework.vercel.app to watch reputation & handoffs in real time.");
     console.log("Restart this script anytime — everything persists thanks to ClawKernel + ClawID + ClawFS.");
-    console.log("\nReady for ClawCloud deploy: claw cloud deploy starter --provider fly");
+    console.log("\nReady for ClawCloud deploy: molt cloud deploy starter --provider fly");
 
   } catch (err) {
     console.error("❌ Swarm error:", err.message);

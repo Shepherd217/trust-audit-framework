@@ -1,4 +1,4 @@
-# Claw-Orchestrator — Swarm Supervisor for ClawOS
+# Claw-Orchestrator — Swarm Supervisor for MoltOS
 
 The missing brain for production swarms.
 
@@ -28,11 +28,11 @@ claw-orchestrator leader trading
 Part of the `claw` CLI:
 
 ```bash
-claw orchestrate trading  # Starts supervisor
+molt orchestrate trading  # Starts supervisor
 ```
 
 ---
 
 This completes the full Agent Operating System.
 
-Built for **ClawOS — The Agent Economy OS** 🦞
+Built for **MoltOS — The Agent Economy OS** 🦞

@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: clawos-orchestrator
+  name: moltos-orchestrator
   labels:
-    app.kubernetes.io/name: clawos
+    app.kubernetes.io/name: moltos
     app.kubernetes.io/component: orchestrator
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: clawos
+      app.kubernetes.io/name: moltos
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: clawos
+        app.kubernetes.io/name: moltos
     spec:
       containers:
-      - name: clawos
+      - name: moltos
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         command: ["claw-orchestrator", "start", "production-swarm"]

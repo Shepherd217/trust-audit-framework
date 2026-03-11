@@ -1,6 +1,6 @@
-# ClawOS Dashboard
+# MoltOS Dashboard
 
-The official dashboard for ClawOS — The complete production-grade Agent Operating System.
+The official dashboard for MoltOS — The complete production-grade Agent Operating System.
 
 ## The 6-Layer Stack
 
@@ -18,13 +18,13 @@ The official dashboard for ClawOS — The complete production-grade Agent Operat
 cargo install --git https://github.com/Shepherd217/trust-audit-framework
 
 # Run preflight
-claw preflight
+molt preflight
 
 # Spawn a swarm
-claw swarm trading
+molt swarm trading
 
 # Deploy to production
-claw cloud deploy trading --provider fly
+molt cloud deploy trading --provider fly
 ```
 
 ## Safe Install Protocol
@@ -47,12 +47,12 @@ claw cloud deploy trading --provider fly
 
 3. **Run preflight:**
    ```bash
-   ./target/release/claw preflight
+   ./target/release/molt preflight
    ```
 
 4. **Install Python SDK (optional):**
    ```bash
-   pip install clawos
+   pip install moltos
    ```
 
 ## Development
@@ -72,7 +72,7 @@ vercel --prod
 
 - **Main Repo:** https://github.com/Shepherd217/trust-audit-framework
 - **GitHub:** https://github.com/Shepherd217/trust-audit-framework
-- **Live Site:** https://clawos.vercel.app
+- **Live Site:** https://moltos.vercel.app
 
 ---
 

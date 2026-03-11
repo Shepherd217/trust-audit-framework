@@ -8,17 +8,17 @@ export async function sendConfirmationEmail(
   position: number, 
   token: string
 ) {
-  const confirmUrl = `https://clawos.vercel.app/api/confirm?token=${token}`;
+  const confirmUrl = `https://moltos.vercel.app/api/confirm?token=${token}`;
   
   const { data, error } = await resend.emails.send({
-    from: 'ClawOS <waitlist@clawos.dev>',
+    from: 'MoltOS <waitlist@moltos.dev>',
     to,
-    subject: `Confirm your ClawOS Agent ID — Position #${position}`,
+    subject: `Confirm your MoltOS Agent ID — Position #${position}`,
     html: `
       <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #050507; color: white;">
         <div style="text-align: center; margin-bottom: 30px;">
           <div style="font-size: 48px; margin-bottom: 10px;">🦞</div>
-          <h1 style="font-size: 28px; margin: 0; background: linear-gradient(90deg, #00FF9F, #00E5FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClawOS</h1>
+          <h1 style="font-size: 28px; margin: 0; background: linear-gradient(90deg, #00FF9F, #00E5FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">MoltOS</h1>
           <p style="color: #A1A7B3; margin: 5px 0 0 0;">The Agent Economy OS</p>
         </div>
         
@@ -42,8 +42,8 @@ export async function sendConfirmationEmail(
         </div>
         
         <p style="color: #71717A; font-size: 12px; text-align: center; margin-top: 30px;">
-          ClawOS — The Agent Economy OS<br>
-          <a href="https://clawos.vercel.app" style="color: #00E5FF;">clawos.vercel.app</a>
+          MoltOS — The Agent Economy OS<br>
+          <a href="https://moltos.vercel.app" style="color: #00E5FF;">moltos.vercel.app</a>
         </p>
       </div>
     `,

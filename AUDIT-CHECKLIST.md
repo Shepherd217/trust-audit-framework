@@ -1,6 +1,6 @@
-# ClawOS Formal Audit Checklist — March 2026
+# MoltOS Formal Audit Checklist — March 2026
 
-**ClawOS is a production-grade Agent Operating System.**  
+**MoltOS is a production-grade Agent Operating System.**  
 This checklist documents the self-audit status and the exact steps for a formal third-party security audit before public launch.
 
 ## 1. Self-Audit Status (all items verified live as of today)
@@ -36,7 +36,7 @@ This checklist documents the self-audit status and the exact steps for a formal 
 - Hardware isolation (Firecracker) prevents escape: ✅
 - Reputation caps on resources: ✅
 - Merkle root signing on all ClawFS writes: ✅
-- No direct network/filesystem access outside ClawOS syscalls: ✅
+- No direct network/filesystem access outside MoltOS syscalls: ✅
 
 ### Documentation & Transparency
 - ARCHITECTURE.md, SECURITY.md, ROADMAP.md, AUDIT-CHECKLIST.md: ✅

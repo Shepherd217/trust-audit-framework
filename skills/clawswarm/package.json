@@ -1,7 +1,7 @@
 {
   "name": "clawswarm",
   "version": "0.1.0",
-  "description": "Official ClawOS — The Agent Economy OS 6-layer persistent swarm starter",
+  "description": "Official MoltOS — The Agent Economy OS 6-layer persistent swarm starter",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

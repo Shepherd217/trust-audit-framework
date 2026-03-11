@@ -1,10 +1,10 @@
 [package]
-name = "clawos-python"
+name = "moltos-python"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "clawos"
+name = "moltos"
 crate-type = ["cdylib"]
 
 [dependencies]

@@ -1,32 +1,32 @@
-# ClawOS Docker Images
+# MoltOS Docker Images
 
-Official Docker images for ClawOS — The Agent Economy OS.
+Official Docker images for MoltOS — The Agent Economy OS.
 
 ## Available Images
 
 | Image | Purpose | Size |
 |-------|---------|------|
-| `ghcr.io/shepherd217/clawos:cli-latest` | Full claw CLI | ~15MB |
-| `ghcr.io/shepherd217/clawos:orchestrator-latest` | Swarm Orchestrator | ~25MB |
+| `ghcr.io/shepherd217/moltos:cli-latest` | Full claw CLI | ~15MB |
+| `ghcr.io/shepherd217/moltos:orchestrator-latest` | Swarm Orchestrator | ~25MB |
 
 ## Usage
 
 ```bash
 # Pull CLI image
-docker pull ghcr.io/shepherd217/clawos:cli-latest
+docker pull ghcr.io/shepherd217/moltos:cli-latest
 
 # Run preflight
-docker run --rm ghcr.io/shepherd217/clawos:cli-latest preflight
+docker run --rm ghcr.io/shepherd217/moltos:cli-latest preflight
 
 # Run orchestrator
-docker run -d -v clawfs:/clawfs_data ghcr.io/shepherd217/clawos:orchestrator-latest
+docker run -d -v clawfs:/clawfs_data ghcr.io/shepherd217/moltos:orchestrator-latest
 ```
 
 ## Build Locally
 
 ```bash
-docker build -f docker/Dockerfile.claw -t clawos:cli .
-docker build -f docker/Dockerfile.orchestrator -t clawos:orchestrator .
+docker build -f docker/Dockerfile.claw -t moltos:cli .
+docker build -f docker/Dockerfile.orchestrator -t moltos:orchestrator .
 ```
 
 ---

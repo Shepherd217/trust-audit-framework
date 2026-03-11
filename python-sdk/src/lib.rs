@@ -20,7 +20,7 @@ fn tap_get_reputation(agent_id: i32) -> PyResult<i32> {
 }
 
 #[pyfunction]
-fn clawfs_write(key: String, data: String) -> PyResult<String> {
+fn moltfs_write(key: String, data: String) -> PyResult<String> {
     // Real impl would call ClawFS
     Ok(format!("✅ Written {} bytes to ClawFS key '{}'", data.len(), key))
 }
@@ -30,6 +30,6 @@ fn clawos(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(run_agent, m)?)?;
     m.add_function(wrap_pyfunction!(get_version, m)?)?;
     m.add_function(wrap_pyfunction!(tap_get_reputation, m)?)?;
-    m.add_function(wrap_pyfunction!(clawfs_write, m)?)?;
+    m.add_function(wrap_pyfunction!(moltfs_write, m)?)?;
     Ok(())
 }

@@ -19,7 +19,7 @@ impl ClawFS {
         let merkle_root = if let Some(root_bytes) = db.get(b"root")? {
             Hash::from_bytes(root_bytes.as_ref().try_into().unwrap_or([0u8; 32]))
         } else {
-            blake3::hash(b"clawfs-genesis")
+            blake3::hash(b"moltfs-genesis")
         };
         
         Ok(ClawFS {
@@ -98,9 +98,9 @@ use std::sync::Mutex;
 use once_cell::sync::Lazy;
 
 static CLAWFS_INSTANCE: Lazy<Mutex<ClawFS>> = Lazy::new(|| {
-    Mutex::new(ClawFS::open("./clawfs_data").expect("Failed to initialize ClawFS"))
+    Mutex::new(ClawFS::open("./moltfs_data").expect("Failed to initialize ClawFS"))
 });
 
-pub fn get_clawfs_instance() -> std::sync::MutexGuard<'static, ClawFS> {
+pub fn get_moltfs_instance() -> std::sync::MutexGuard<'static, ClawFS> {
     CLAWFS_INSTANCE.lock().expect("ClawFS lock poisoned")
 }

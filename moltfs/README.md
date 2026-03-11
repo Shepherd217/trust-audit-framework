@@ -1,6 +1,6 @@
-# ClawFS — Production Merkle Filesystem for ClawOS
+# ClawFS — Production Merkle Filesystem for MoltOS
 
-The persistent storage layer that makes ClawOS a real OS.
+The persistent storage layer that makes MoltOS a real OS.
 
 ## Features
 
@@ -27,4 +27,4 @@ This integrates directly into ClawVM host functions (next commit wires `clawsfs_
 
 ---
 
-Built for **ClawOS — The Agent Economy OS** 🦞
+Built for **MoltOS — The Agent Economy OS** 🦞

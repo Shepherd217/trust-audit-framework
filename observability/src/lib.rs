@@ -10,8 +10,8 @@ lazy_static! {
     pub static ref AVG_REPUTATION: Gauge = Gauge::new("clawos_avg_reputation", "Average TAP reputation").unwrap();
 
     // ClawFS metrics
-    pub static ref CLAWFS_WRITES: IntCounter = IntCounter::new("clawos_clawfs_writes_total", "Total ClawFS writes").unwrap();
-    pub static ref CLAWFS_MERKLE_UPDATES: IntCounter = IntCounter::new("clawos_clawfs_merkle_updates_total", "Merkle root updates").unwrap();
+    pub static ref CLAWFS_WRITES: IntCounter = IntCounter::new("clawos_moltfs_writes_total", "Total ClawFS writes").unwrap();
+    pub static ref CLAWFS_MERKLE_UPDATES: IntCounter = IntCounter::new("clawos_moltfs_merkle_updates_total", "Merkle root updates").unwrap();
 
     // ClawKernel metrics
     pub static ref TASKS_EXECUTED: IntCounter = IntCounter::new("clawos_tasks_executed_total", "Persistent tasks executed").unwrap();
@@ -49,7 +49,7 @@ pub fn record_vm_destroy() {
     FIRECRACKER_VMS.dec();
 }
 
-pub fn record_clawfs_write() {
+pub fn record_moltfs_write() {
     CLAWFS_WRITES.inc();
 }
 

@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: clawos
+  name: moltos
   labels:
-    app.kubernetes.io/name: clawos
+    app.kubernetes.io/name: moltos
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -16,4 +16,4 @@ spec:
       protocol: TCP
       name: metrics
   selector:
-    app.kubernetes.io/name: clawos
+    app.kubernetes.io/name: moltos

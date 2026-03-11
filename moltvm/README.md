@@ -8,7 +8,7 @@ Now with true hardware microVMs per agent.
 cd clawvm
 cargo build --release
 cargo install --path .
-clawvm run skills/clawswarm/index.js
+clawvm run skills/moltswarm/index.js
 ```
 
 You will see the Firecracker microVM spawn with resources scaled to the agent's reputation.

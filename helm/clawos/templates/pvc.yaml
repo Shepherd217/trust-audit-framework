@@ -4,7 +4,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: clawfs-pvc
   labels:
-    app.kubernetes.io/name: clawos
+    app.kubernetes.io/name: moltos
 spec:
   accessModes: ["ReadWriteOnce"]
   resources:

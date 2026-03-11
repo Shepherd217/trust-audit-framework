@@ -1,5 +1,5 @@
 pub mod bindings;
 
 // Re-export core functionality
-pub use clawvm::*;
-pub use clawfs::*;
+pub use moltvm::*;
+pub use moltfs::*;

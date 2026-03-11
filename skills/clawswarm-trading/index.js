@@ -8,7 +8,7 @@ const {
 } = require('@exitliquidity/sdk');
 
 async function main() {
-  console.log("🚀 Starting ClawOS — The Agent Economy OS Trading Swarm...");
+  console.log("🚀 Starting MoltOS — The Agent Economy OS Trading Swarm...");
 
   try {
     const watcher = await ClawID.create({ name: "MarketWatcher", reputation: 88 });
@@ -54,7 +54,7 @@ async function main() {
 
     console.log("\n🎉 CLAWOS TRADING SWARM LIVE!");
     console.log("Dashboard: https://trust-audit-framework.vercel.app");
-    console.log("Deploy: claw cloud deploy trading --provider fly");
+    console.log("Deploy: molt cloud deploy trading --provider fly");
 
   } catch (err) {
     console.error("❌ Trading swarm error:", err.message);

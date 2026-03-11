@@ -2,13 +2,13 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: clawos-metrics
+  name: moltos-metrics
   labels:
-    app.kubernetes.io/name: clawos
+    app.kubernetes.io/name: moltos
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: clawos
+      app.kubernetes.io/name: moltos
   endpoints:
   - port: metrics
     path: /metrics

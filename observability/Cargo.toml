@@ -2,7 +2,7 @@
 name = "observability"
 version = "0.1.0"
 edition = "2021"
-description = "Observability layer for ClawOS — The Agent Economy OS (Prometheus + live terminal UI)"
+description = "Observability layer for MoltOS — The Agent Economy OS (Prometheus + live terminal UI)"
 license = "MIT"
 
 [dependencies]

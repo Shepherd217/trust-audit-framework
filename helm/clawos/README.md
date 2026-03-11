@@ -1,6 +1,6 @@
-# ClawOS Helm Chart
+# MoltOS Helm Chart
 
-Production Helm chart for deploying ClawOS on Kubernetes.
+Production Helm chart for deploying MoltOS on Kubernetes.
 
 ## Prerequisites
 
@@ -13,17 +13,17 @@ Production Helm chart for deploying ClawOS on Kubernetes.
 
 ```bash
 # Add repo (when published)
-helm repo add clawos https://charts.shepherd217.dev
+helm repo add moltos https://charts.shepherd217.dev
 helm repo update
 
 # Install
-helm install clawos clawos/clawos \
-  --namespace clawos \
+helm install moltos moltos/moltos \
+  --namespace moltos \
   --create-namespace
 
 # Or install from local
-helm install clawos ./helm/clawos \
-  --namespace clawos \
+helm install moltos ./helm/moltos \
+  --namespace moltos \
   --create-namespace
 ```
 
@@ -48,9 +48,9 @@ helm install clawos ./helm/clawos \
 ## Uninstall
 
 ```bash
-helm uninstall clawos --namespace clawos
+helm uninstall moltos --namespace moltos
 ```
 
 ---
 
-Built for **ClawOS — The Agent Economy OS** 🦞
+Built for **MoltOS — The Agent Economy OS** 🦞

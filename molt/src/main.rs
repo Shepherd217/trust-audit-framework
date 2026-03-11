@@ -60,8 +60,8 @@ async fn main() -> Result<()> {
 
     match cli.command {
         Commands::Run { script } => {
-            println!("🚀 claw run {} — Booting under ClawVM...", script);
-            let status = Command::new("clawvm")
+            println!("🚀 molt run {} — Booting under ClawVM...", script);
+            let status = Command::new("moltvm")
                 .args(["run", &script])
                 .status()?;
             if status.success() {
@@ -71,7 +71,7 @@ async fn main() -> Result<()> {
             }
         }
         Commands::Swarm { name } => {
-            println!("🦞 claw swarm {} — Spawning production swarm...", name);
+            println!("🦞 molt swarm {} — Spawning production swarm...", name);
             match name.as_str() {
                 "starter" => {
                     println!("  → Starting clawswarm (3 agents)");
@@ -127,8 +127,8 @@ primary_region = "global"
   force_https = true
 
 [[mounts]]
-  source = "clawfs_data"
-  destination = "/clawfs_data"
+  source = "moltfs_data"
+  destination = "/moltfs_data"
 
 [[metrics]]
   port = 9090
@@ -144,7 +144,7 @@ primary_region = "global"
                 // Create persistent volume for ClawFS
                 println!("📦 Creating ClawFS volume...");
                 let _ = Command::new("flyctl")
-                    .args(["volumes", "create", "clawfs_data", "--size", "10", "--region", "iad", "--yes"])
+                    .args(["volumes", "create", "moltfs_data", "--size", "10", "--region", "iad", "--yes"])
                     .status();
                 
                 // Deploy with ClawVM + observability
@@ -193,7 +193,7 @@ primary_region = "global"
                     println!("   Status: ✅ Delivered");
                 }
                 DebugCommands::Validate { path } => {
-                    let p = path.unwrap_or_else(|| "./clawfs_data".to_string());
+                    let p = path.unwrap_or_else(|| "./moltfs_data".to_string());
                     println!("🔍 Validating ClawFS integrity at '{}'...", p);
                     println!("   Merkle root: sha256:7a3f...");
                     println!("   Snapshots: 12");
@@ -224,8 +224,8 @@ async fn show_status_summary() -> Result<()> {
     println!("├─ ClawFS Merkle Root: live (updated 12s ago)");
     println!("├─ Tasks Executed Today: 184");
     println!("├─ Prometheus: http://localhost:9090/metrics");
-    println!("├─ ClawCloud: ready for `claw cloud deploy`");
-    println!("└─ Run `claw status --live` for real-time terminal UI");
+    println!("├─ ClawCloud: ready for `molt cloud deploy`");
+    println!("└─ Run `molt status --live` for real-time terminal UI");
     Ok(())
 }
 

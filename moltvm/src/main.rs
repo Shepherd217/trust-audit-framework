@@ -7,7 +7,7 @@ use anyhow::Result;
 mod vm; // NEW
 
 #[derive(Parser)]
-#[command(name = "clawvm")]
+#[command(name = "moltvm")]
 #[command(about = "ClawVM v0.4 — Firecracker + 6-layer host functions")]
 struct Cli {
     #[command(subcommand)]

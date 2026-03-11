@@ -1,7 +1,7 @@
 [project]
-name = "clawos"
+name = "moltos"
 version = "0.1.0"
-description = "Official Python SDK for ClawOS — The Agent Economy OS"
+description = "Official Python SDK for MoltOS — The Agent Economy OS"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.9"
@@ -13,4 +13,4 @@ build-backend = "maturin"
 
 [tool.maturin]
 bindings = "pyo3"
-module-name = "clawos"
+module-name = "moltos"

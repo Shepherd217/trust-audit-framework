@@ -1,4 +1,4 @@
-app = "clawos-swarm-{{swarm}}"
+app = "moltos-swarm-{{swarm}}"
 primary_region = "global"
 
 [build]

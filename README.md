@@ -1,10 +1,10 @@
-# ClawOS — The Agent Economy OS 🦞
+# MoltOS — The Agent Economy OS 🦞
 
 **The complete, production-grade Agent Operating System.**
 
 Six layers. Native runtime. Hardware isolation. Self-healing orchestration. One-command cloud deploy.
 
-ClawOS gives agents permanent identity, compounding reputation, safe handoffs, persistent state, governance, and real dispute resolution — all inside reputation-weighted Firecracker microVMs with full observability and ClawCloud production deployment.
+MoltOS gives agents permanent identity, compounding reputation, safe handoffs, persistent state, governance, and real dispute resolution — all inside reputation-weighted Firecracker microVMs with full observability and ClawCloud production deployment.
 
 > Scan everything first. No blind execution.
 
@@ -16,20 +16,20 @@ ClawOS gives agents permanent identity, compounding reputation, safe handoffs, p
 
 ```bash
 # Install
-pip install clawos  # Python SDK
+pip install moltos  # Python SDK
 cargo install claw   # Rust CLI
 
 # Run preflight
-claw preflight
+molt preflight
 
 # Spawn a swarm
-claw swarm trading
+molt swarm trading
 
 # Orchestrate (leader election + auto-recovery)
-claw orchestrate trading
+molt orchestrate trading
 
 # Deploy to production
-claw cloud deploy trading --provider fly
+molt cloud deploy trading --provider fly
 ```
 
 ---
@@ -70,15 +70,15 @@ claw cloud deploy trading --provider fly
 claw/                   # CLI + ClawCloud deploy
 clawvm/                 # Native WASM runtime + Firecracker
 clawfs/                 # Merkle filesystem
-clawos-core/            # Shared kernel (Python/Go FFI)
+moltos-core/            # Shared kernel (Python/Go FFI)
 claw-orchestrator/      # Swarm supervisor (leader + recovery)
 observability/          # Prometheus metrics
 python-sdk/             # PyO3 bindings
 go-sdk/                 # cgo bindings
 skills/                 # Production swarms
-├── clawswarm/
-├── clawswarm-trading/
-└── clawswarm-support/
+├── moltswarm/
+├── moltswarm-trading/
+└── moltswarm-support/
 docs/                   # ARCHITECTURE.md + SECURITY.md + AUDIT-CHECKLIST.md
 ```
 
@@ -91,10 +91,10 @@ docs/                   # ARCHITECTURE.md + SECURITY.md + AUDIT-CHECKLIST.md
 cargo install --git https://github.com/Shepherd217/trust-audit-framework
 
 # Python SDK
-pip install clawos
+pip install moltos
 
 # Go SDK
-go get github.com/shepherd217/clawos-go
+go get github.com/shepherd217/moltos-go
 ```
 
 ---
@@ -102,13 +102,13 @@ go get github.com/shepherd217/clawos-go
 ## CLI Commands
 
 ```bash
-claw preflight              # System checks
-claw run agent.js           # Boot agent
-claw swarm trading          # Spawn swarm
-claw orchestrate trading    # Start supervisor
-claw status --live          # Real-time TUI
+molt preflight              # System checks
+molt run agent.js           # Boot agent
+molt swarm trading          # Spawn swarm
+molt orchestrate trading    # Start supervisor
+molt status --live          # Real-time TUI
 claw metrics                # Prometheus export
-claw cloud deploy trading   # Production deploy
+molt cloud deploy trading   # Production deploy
 ```
 
 ---
@@ -139,6 +139,6 @@ MIT — See [LICENSE](./LICENSE)
 
 ---
 
-**ClawOS — The Agent Economy OS** 🦞
+**MoltOS — The Agent Economy OS** 🦞
 
 *Complete. Production-grade. Self-healing. The OS the agent economy runs on.*

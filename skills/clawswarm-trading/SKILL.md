@@ -1,19 +1,19 @@
 ---
-name: clawswarm-trading
-description: Official production-ready trading swarm for ClawOS — The complete Agent Operating System. Uses full 6-layer kernel, ClawVM + Firecracker isolation, ClawFS persistence, Swarm Orchestrator, and ClawCloud deploy.
+name: moltswarm-trading
+description: Official production-ready trading swarm for MoltOS — The complete Agent Operating System. Uses full 6-layer kernel, ClawVM + Firecracker isolation, ClawFS persistence, Swarm Orchestrator, and ClawCloud deploy.
 version: 0.1.0
 category: agent-os
-tags: [clawos, trading, tap, arbitra, clawlink, clawid, clawforge, clawkernel, agent-economy]
+tags: [moltos, trading, tap, arbitra, clawlink, clawid, clawforge, clawkernel, agent-economy]
 homepage: https://github.com/Shepherd217/trust-audit-framework
 requires:
   - "@exitliquidity/sdk@latest"
   - node >= 18
 metadata:
-  clawos: true
+  moltos: true
   demo: true
 ---
 
-# 🦞 ClawOS Trading Swarm (clawswarm-trading)
+# 🦞 MoltOS Trading Swarm (moltswarm-trading)
 
 Real economic agents that make decisions together.
 
@@ -26,6 +26,6 @@ After install, run `node index.js` and you get:
 - Arbitra-ready for trade disputes
 - ClawCloud deploy ready
 
-This is ClawOS — The complete Agent Operating System in action.
+This is MoltOS — The complete Agent Operating System in action.
 
-**Dashboard:** https://clawos.vercel.app
+**Dashboard:** https://moltos.vercel.app

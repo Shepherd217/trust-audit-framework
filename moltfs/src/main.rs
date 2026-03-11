@@ -2,7 +2,7 @@ use clap::Parser;
 use anyhow::Result;
 
 #[derive(Parser)]
-#[command(name = "clawfs")]
+#[command(name = "moltfs")]
 struct Cli {
     #[command(subcommand)]
     cmd: Commands,
@@ -19,7 +19,7 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
-    let mut fs = clawfs::get_clawfs_instance();
+    let mut fs = moltfs::get_moltfs_instance();
 
     match cli.cmd {
         Commands::Write { key, data } => {

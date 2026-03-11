@@ -22,15 +22,15 @@ fn stress_orchestrator(c: &mut Criterion) {
     group.finish();
 }
 
-fn stress_clawfs(c: &mut Criterion) {
-    let mut group = c.benchmark_group("clawfs_throughput");
+fn stress_moltfs(c: &mut Criterion) {
+    let mut group = c.benchmark_group("moltfs_throughput");
     group.throughput(Throughput::Elements(10000));
     group.measurement_time(Duration::from_secs(30));
     
     group.bench_function("sustained_10k_writes", |b| {
         b.iter(|| {
             for _ in 0..10000 {
-                observability::record_clawfs_write();
+                observability::record_moltfs_write();
             }
         });
     });
@@ -64,5 +64,5 @@ fn stress_reputation_distribution(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, stress_orchestrator, stress_clawfs, stress_reputation_distribution);
+criterion_group!(benches, stress_orchestrator, stress_moltfs, stress_reputation_distribution);
 criterion_main!(benches);

@@ -1,4 +1,4 @@
-# ClawVM Spec v0.1 — The Native Runtime for ClawOS
+# ClawVM Spec v0.1 — The Native Runtime for MoltOS
 
 ## Goal
 Replace the current Node.js + WASM/Firecracker runtime with a true, lightweight Agent Operating System kernel that boots agents directly.
@@ -16,7 +16,7 @@ Replace the current Node.js + WASM/Firecracker runtime with a true, lightweight 
 3. **Edge / Hardware**: Run on Raspberry Pi, servers, GPUs
 
 ## Why this finishes the full OS vision
-Right now ClawOS rides on top of Node.js. ClawVM makes it the OS itself — independent boot, true kernel isolation, hardware abstraction. This is what turns "The Agent Economy OS" into the actual operating system the entire agent economy runs on.
+Right now MoltOS rides on top of Node.js. ClawVM makes it the OS itself — independent boot, true kernel isolation, hardware abstraction. This is what turns "The Agent Economy OS" into the actual operating system the entire agent economy runs on.
 
 ## First Ticket
 Create `clawvm` Rust crate + basic `clawvm run` binary.

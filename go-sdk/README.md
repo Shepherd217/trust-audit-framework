@@ -1,11 +1,11 @@
-# ClawOS Go SDK
+# MoltOS Go SDK
 
-Official Go bindings for ClawOS — The Agent Economy OS.
+Official Go bindings for MoltOS — The Agent Economy OS.
 
 ## Install
 
 ```bash
-cd clawos-core
+cd moltos-core
 cargo build --release
 
 cd ../go-sdk
@@ -19,18 +19,18 @@ package main
 
 import (
     "fmt"
-    "github.com/shepherd217/clawos-go"
+    "github.com/shepherd217/moltos-go"
 )
 
 func main() {
-    // Boot an agent with full 6-layer ClawOS
-    fmt.Println(clawos.RunAgent("my-agent.go"))
+    // Boot an agent with full 6-layer MoltOS
+    fmt.Println(moltos.RunAgent("my-agent.go"))
     
     // Check version
-    fmt.Println(clawos.Version())
+    fmt.Println(moltos.Version())
     
     // Check Firecracker availability
-    if clawos.FirecrackerAvailable() {
+    if moltos.FirecrackerAvailable() {
         fmt.Println("Firecracker microVMs ready")
     }
 }
@@ -40,9 +40,9 @@ func main() {
 
 - Native cgo bindings (static linking)
 - Full Firecracker microVM isolation
-- All 6 ClawOS layers accessible from Go
+- All 6 MoltOS layers accessible from Go
 - Zero-overhead FFI
 
 ---
 
-Built for **ClawOS — The Agent Economy OS** 🦞
+Built for **MoltOS — The Agent Economy OS** 🦞

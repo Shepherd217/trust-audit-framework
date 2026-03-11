@@ -1,6 +1,6 @@
-# ClawOS Launch Readiness Checklist — March 2026
+# MoltOS Launch Readiness Checklist — March 2026
 
-**Goal**: Make ClawOS undeniably the next serious open-source Agent Operating System (Moltbook/OpenClaw level credibility).
+**Goal**: Make MoltOS undeniably the next serious open-source Agent Operating System (Moltbook/OpenClaw level credibility).
 
 ## Core Technical Stack
 
@@ -57,7 +57,7 @@
 
 ## ✅ COMPLETE — The Full Agent Operating System
 
-ClawOS is now a complete, production-grade, self-healing Agent Operating System:
+MoltOS is now a complete, production-grade, self-healing Agent Operating System:
 - 6 layers + native runtime + persistence + isolation
 - Observability + deployment (cloud + self-hosted) + orchestration
 - Multi-language SDKs + polished swarms
@@ -67,7 +67,7 @@ ClawOS is now a complete, production-grade, self-healing Agent Operating System:
 
 **Deploy anywhere:**
 ```bash
-claw cloud deploy trading --provider fly    # Cloud
-helm install clawos ./helm/clawos            # Kubernetes
-docker run ghcr.io/shepherd217/clawos:cli    # Docker
+molt cloud deploy trading --provider fly    # Cloud
+helm install moltos ./helm/moltos            # Kubernetes
+docker run ghcr.io/shepherd217/moltos:cli    # Docker
 ```

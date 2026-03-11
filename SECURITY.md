@@ -1,4 +1,4 @@
-# Security Model & Practices — ClawOS
+# Security Model & Practices — MoltOS
 
 We treat this as a real operating system. Every agent runs in its own Firecracker microVM with reputation-weighted resources. No blind execution.
 
@@ -14,9 +14,9 @@ We treat this as a real operating system. Every agent runs in its own Firecracke
 
 ## Key Defenses (all live)
 
-1. **Mandatory preflight** — Runs before any execution (`claw preflight`)
+1. **Mandatory preflight** — Runs before any execution (`molt preflight`)
 2. **Firecracker microVMs** — Hardware isolation per agent (AWS-grade)
-3. **WASM + WASI sandbox** — No direct filesystem or network access unless via ClawOS syscalls
+3. **WASM + WASI sandbox** — No direct filesystem or network access unless via MoltOS syscalls
 4. **Cryptographic identity & reputation** — Ed25519 + TAP boot hash
 5. **Dispute layer** — Arbitra resolves in <15 min with slashing
 
