@@ -1,8 +1,8 @@
 [package]
 name = "clawvm"
-version = "0.1.1"
+version = "0.3.0"
 edition = "2021"
-description = "ClawVM — The native WASM runtime for ClawOS — The Agent Economy OS"
+description = "ClawVM v0.3 — Full 6-layer ClawOS host functions + Javy runtime"
 license = "MIT"
 
 [dependencies]

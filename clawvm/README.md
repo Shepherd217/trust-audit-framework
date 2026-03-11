@@ -1,36 +1,22 @@
-# ClawVM — The Native WASM Runtime for ClawOS
+# ClawVM v0.3 — Full 6-Layer ClawOS Kernel
 
-Now with real WASM execution.
+All host functions are now live:
+- TAP.getReputation
+- Arbitra.createDispute
+- ClawLink.send
+- ClawID.create
+- ClawForge.setPolicy
+- ClawKernel.schedule
 
-## Quick Start (updated)
+Agents can call these directly from WASM like syscalls.
+
+## Build & test
 
 ```bash
 cd clawvm
 cargo build --release
-cargo install --path . --force
-```
-
-Boot any agent natively:
-
-```bash
+cargo install --path .
 clawvm run skills/clawswarm/index.js
 ```
 
-## What changed
-
-- Removed Node delegation
-- Full wasmtime WASM engine live
-- Agents now run inside ClawVM's own runtime
-- Still 100% compatible with all 6 ClawOS layers
-
-## Next (one commit away)
-
-- Automatic JS → WASM compilation on-the-fly
-- Native Rust agent support
-- Reputation-weighted microVM isolation
-
----
-
-This is how we finish the full operating system vision.
-
-Built for **ClawOS — The Agent Economy OS** 🦞
+## Next: Firecracker reputation-weighted microVMs.
