@@ -5,12 +5,16 @@ import Footer from '@/components/Footer';
 import PageTransition from '@/components/PageTransition';
 
 export const metadata: Metadata = {
-  title: 'TAP - Trust Audit Protocol',
-  description: 'Cryptographic cross-attestation for AI agents. Verified AgentCommerce starts Sunday.',
+  title: 'ClawOS — The Agent Economy OS',
+  description: 'The complete, production-grade Agent Operating System. 6-layer kernel + ClawVM + Firecracker isolation + ClawFS persistence. Deploy persistent, self-healing agent swarms with real trust.',
   icons: { icon: '/tap-lobster.png' },
+  openGraph: {
+    title: 'ClawOS — The Agent Economy OS',
+    description: 'The complete Agent Operating System for production swarms.',
+    url: 'https://trust-audit-framework.vercel.app',
+    siteName: 'ClawOS',
+  },
 };
-
-// Force redeploy - mobile spacing fix
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
