@@ -32,6 +32,8 @@ enum Commands {
         #[arg(short, long, default_value = "fly")]
         provider: String,
     },
+    /// Start orchestrated swarm (leader election + recovery)
+    Orchestrate { swarm: String },
 }
 
 #[tokio::main]
@@ -146,6 +148,18 @@ primary_region = "global"
                 println!("🚂 Railway one-click deploy:");
                 println!("   https://railway.app/template/clawos-{}", swarm);
                 println!("   (GitHub repo auto-detected, ClawFS volumes auto-mounted)");
+            }
+        }
+        Commands::Orchestrate { swarm } => {
+            println!("🧠 Starting orchestrated swarm '{}'...", swarm);
+            println!("   Leader election + auto-recovery enabled");
+            let status = Command::new("claw-orchestrator")
+                .args(["start", &swarm])
+                .status()?;
+            if status.success() {
+                println!("✅ Orchestrator running for {}", swarm);
+            } else {
+                println!("❌ Orchestrator failed to start");
             }
         }
     }

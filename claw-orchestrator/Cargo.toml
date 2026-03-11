@@ -1,0 +1,15 @@
+[package]
+name = "claw-orchestrator"
+version = "0.1.0"
+edition = "2021"
+description = "Swarm Orchestrator for ClawOS — The Agent Economy OS (leader election, recovery, task distribution)"
+license = "MIT"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+anyhow = "1.0"
+tracing = "0.1"
+serde = { version = "1.0", features = ["derive"] }
+clawos-core = { path = "../clawos-core" }
+prometheus = "0.13"
+observability = { path = "../observability" }
