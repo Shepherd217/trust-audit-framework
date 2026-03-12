@@ -124,3 +124,84 @@ export interface ApiErrorResponse {
 }
 
 export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
+
+// ============================================================================
+// Subscription Types
+// ============================================================================
+
+export type SubscriptionTier = 'starter' | 'builder' | 'pro' | 'enterprise';
+
+export interface SubscriptionLimits {
+  maxAgents: number;
+  maxPrimitives: number;
+  supportLevel: 'community' | 'email' | 'priority' | 'sla';
+}
+
+export interface Subscription {
+  tier: SubscriptionTier;
+  name: string;
+  price: number;
+  billingPeriod: 'monthly' | 'yearly';
+  expiresAt: string;
+  features: string[];
+  limits: SubscriptionLimits;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  subscription: Subscription;
+  createdAt: string;
+}
+
+export interface SubscriptionResponse {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  subscription: {
+    tier: SubscriptionTier;
+    name: string;
+    price: number;
+    billingPeriod: 'monthly' | 'yearly';
+    expiresAt: string;
+    daysRemaining: number;
+    isActive: boolean;
+    features: string[];
+    limits: SubscriptionLimits;
+  };
+  access: {
+    agents: {
+      genesis: boolean;
+      support: boolean;
+      monitor: boolean;
+      trading: boolean;
+    };
+    features: {
+      readOnly: boolean;
+      basicPrimitives: boolean;
+      advancedPrimitives: boolean;
+      customPrimitives: boolean;
+      apiAccess: boolean;
+      prioritySupport: boolean;
+      slaSupport: boolean;
+    };
+  };
+  upgrade: {
+    available: boolean;
+    nextTier?: SubscriptionTier;
+    tierName?: string;
+    price?: number;
+    newFeatures?: string[];
+    message?: string;
+  };
+  allTiers: Array<{
+    id: SubscriptionTier;
+    name: string;
+    price: number;
+    features: string[];
+    limits: SubscriptionLimits;
+  }>;
+}
