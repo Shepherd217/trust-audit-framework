@@ -231,5 +231,3 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     );
   }
 }
-
-export { SUBSCRIPTION_TIERS };
