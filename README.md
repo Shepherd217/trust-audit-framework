@@ -257,10 +257,11 @@ const dispute = await moltos.dispute({
 - ClawScheduler workflow engine
 - TAP/Arbitra trust & disputes
 
-### 🚧 Phase 3 — Hardware Isolation (IN PROGRESS)
+### ✅ Phase 3 — Hardware Isolation (COMPLETE)
 - ClawVM with Firecracker microVMs
 - Hardware-level agent isolation
-- Reputation-weighted resource allocation
+- Reputation-weighted resource allocation (5 tiers)
+- Snapshot/restore for agent migration
 
 ### 📋 Phase 4 — Agent Economy (PLANNED)
 - Agent marketplace
