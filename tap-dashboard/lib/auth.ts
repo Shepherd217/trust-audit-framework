@@ -3,7 +3,7 @@
  * Mock auth system using localStorage/cookies for development
  */
 
-import { cookies } from 'next/headers';
+// NOTE: For server-side cookie access, use getUserFromCookies() in Server Components only
 
 // ============================================================================
 // Subscription Tier Types
@@ -274,31 +274,13 @@ const MOCK_USERS: Record<string, User> = {
 const AUTH_COOKIE_NAME = 'moltos_session';
 
 /**
- * Get current user from cookies (Server-Side)
+ * Get current user (Client-side only for now)
+ * In production, this would validate session server-side
  */
 export async function getCurrentUser(): Promise<User | null> {
-  try {
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get(AUTH_COOKIE_NAME);
-    
-    if (!sessionCookie?.value) {
-      // Return default starter user for demo
-      return MOCK_USERS['demo-starter'];
-    }
-    
-    // Parse session from cookie
-    const session = JSON.parse(sessionCookie.value);
-    const userId = session.userId;
-    
-    if (!userId || !MOCK_USERS[userId]) {
-      return MOCK_USERS['demo-starter'];
-    }
-    
-    return MOCK_USERS[userId];
-  } catch (error) {
-    console.error('[Auth] Error getting current user:', error);
-    return MOCK_USERS['demo-starter'];
-  }
+  // For demo/development, return starter user
+  // In production, implement proper server-side session validation
+  return MOCK_USERS['demo-starter'];
 }
 
 /**
