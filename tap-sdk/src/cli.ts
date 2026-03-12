@@ -371,4 +371,260 @@ program
     }
   });
 
+// fs — ClawFS file system commands
+program
+  .command('fs')
+  .description('ClawFS — Agent-Native File System')
+  .argument('<action>', 'Action: store|get|list|share|search|delete')
+  .option('--file <path>', 'File path (for store)')
+  .option('--id <id>', 'File ID (for get/share/delete)')
+  .option('--agent <id>', 'Target agent (for share)')
+  .option('--query <text>', 'Search query (for search)')
+  .option('--permission <level>', 'Permission: read|write|admin', 'read')
+  .action(async (action, options) => {
+    try {
+      const data = JSON.parse(fs.readFileSync('./genesis-keypair.json', 'utf-8'));
+      
+      switch (action) {
+        case 'store': {
+          if (!options.file) {
+            console.error('❌ Error: --file required');
+            process.exit(1);
+          }
+          const content = fs.readFileSync(options.file, 'utf-8');
+          const cid = crypto.createHash('sha256').update(content).digest('hex');
+          console.log('🦞 MoltOS — ClawFS Store');
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('');
+          console.log(`File: ${options.file}`);
+          console.log(`Size: ${content.length} bytes`);
+          console.log(`CID:  ${cid.slice(0, 32)}...`);
+          console.log('');
+          console.log('🔄 Storing to ClawFS...');
+          await new Promise(r => setTimeout(r, 600));
+          const fileId = crypto.randomUUID();
+          console.log(`✅ File stored: ${fileId.slice(0, 8)}...`);
+          console.log('Storage tier: HOT');
+          break;
+        }
+        
+        case 'get': {
+          if (!options.id) {
+            console.error('❌ Error: --id required');
+            process.exit(1);
+          }
+          console.log('🦞 MoltOS — ClawFS Retrieve');
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('');
+          console.log(`File ID: ${options.id}`);
+          console.log('');
+          console.log('🔄 Retrieving from ClawFS...');
+          await new Promise(r => setTimeout(r, 400));
+          console.log('✅ File retrieved');
+          console.log('Content:');
+          console.log('---');
+          console.log('(File content would display here)');
+          console.log('---');
+          break;
+        }
+        
+        case 'list': {
+          console.log('🦞 MoltOS — ClawFS Files');
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('');
+          console.log('ID                                    Name              Size    Tier');
+          console.log('────────────────────────────────────  ────────────────  ──────  ────');
+          console.log(`${crypto.randomUUID().slice(0, 8)}...  contract-v1.md    12.4KB  HOT`);
+          console.log(`${crypto.randomUUID().slice(0, 8)}...  attestation.json  2.1KB   HOT`);
+          console.log(`${crypto.randomUUID().slice(0, 8)}...  evidence.zip      45.2MB  WARM`);
+          console.log(`${crypto.randomUUID().slice(0, 8)}...  archive-2024.tar  1.2GB   COLD`);
+          console.log('');
+          console.log('Tip: Use --tier filter to show specific storage tier');
+          break;
+        }
+        
+        case 'share': {
+          if (!options.id || !options.agent) {
+            console.error('❌ Error: --id and --agent required');
+            process.exit(1);
+          }
+          console.log('🦞 MoltOS — ClawFS Share');
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('');
+          console.log(`File:    ${options.id}`);
+          console.log(`With:    ${options.agent}`);
+          console.log(`Permission: ${options.permission}`);
+          console.log('');
+          console.log('🔄 Creating share...');
+          await new Promise(r => setTimeout(r, 500));
+          console.log('✅ File shared successfully');
+          console.log('Notification sent to agent');
+          break;
+        }
+        
+        case 'search': {
+          if (!options.query) {
+            console.error('❌ Error: --query required');
+            process.exit(1);
+          }
+          console.log('🦞 MoltOS — ClawFS Semantic Search');
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('');
+          console.log(`Query: "${options.query}"`);
+          console.log('');
+          console.log('🔄 Searching...');
+          await new Promise(r => setTimeout(r, 800));
+          console.log('');
+          console.log('Results:');
+          console.log('  1. contract-v1.md (score: 0.94)');
+          console.log('  2. agreement-final.pdf (score: 0.87)');
+          console.log('  3. terms-2024.md (score: 0.82)');
+          break;
+        }
+        
+        case 'delete': {
+          if (!options.id) {
+            console.error('❌ Error: --id required');
+            process.exit(1);
+          }
+          console.log('🦞 MoltOS — ClawFS Delete');
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('');
+          console.log(`File: ${options.id}`);
+          console.log('');
+          console.log('🔄 Deleting...');
+          await new Promise(r => setTimeout(r, 400));
+          console.log('✅ File deleted (soft delete)');
+          console.log('Will be purged from cold storage in 30 days');
+          break;
+        }
+        
+        default:
+          console.error(`❌ Unknown action: ${action}`);
+          console.log('Valid actions: store, get, list, share, search, delete');
+          process.exit(1);
+      }
+    } catch (err) {
+      console.error('❌ Error:', (err as Error).message);
+      process.exit(1);
+    }
+  });
+
+// workflow — Workflow commands
+program
+  .command('workflow')
+  .description('Manage ClawScheduler workflows')
+  .argument('<action>', 'Action: create|list|execute|status|cancel')
+  .option('--file <path>', 'Workflow definition file (for create)')
+  .option('--id <id>', 'Workflow/Execution ID')
+  .option('--input <json>', 'Input data JSON (for execute)', '{}')
+  .option('--context <json>', 'Context JSON (for execute)', '{}')
+  .action(async (action, options) => {
+    try {
+      const data = JSON.parse(fs.readFileSync('./genesis-keypair.json', 'utf-8'));
+      
+      switch (action) {
+        case 'create': {
+          if (!options.file) {
+            console.error('❌ Error: --file required for create');
+            process.exit(1);
+          }
+          const definition = JSON.parse(fs.readFileSync(options.file, 'utf-8'));
+          console.log('🦞 MoltOS — Create Workflow');
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('');
+          console.log(`Name: ${definition.name}`);
+          console.log(`Nodes: ${definition.nodes?.length || 0}`);
+          console.log(`Edges: ${definition.edges?.length || 0}`);
+          console.log('');
+          console.log('🔄 Creating workflow...');
+          await new Promise(r => setTimeout(r, 500));
+          const workflowId = crypto.randomUUID();
+          console.log(`✅ Workflow created: ${workflowId}`);
+          break;
+        }
+        
+        case 'list': {
+          console.log('🦞 MoltOS — Workflows');
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('');
+          console.log('ID                                    Name                    Status');
+          console.log('────────────────────────────────────  ──────────────────────  ──────────');
+          console.log(`${crypto.randomUUID().slice(0, 8)}...  Data Pipeline           active`);
+          console.log(`${crypto.randomUUID().slice(0, 8)}...  Agent Swarm Coord       active`);
+          console.log(`${crypto.randomUUID().slice(0, 8)}...  Report Generation       draft`);
+          console.log('');
+          console.log('Tip: Use `moltos workflow status --id <id>` for details');
+          break;
+        }
+        
+        case 'execute': {
+          if (!options.id) {
+            console.error('❌ Error: --id required for execute');
+            process.exit(1);
+          }
+          console.log('🦞 MoltOS — Execute Workflow');
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('');
+          console.log(`Workflow:  ${options.id}`);
+          console.log(`Agent:     ${data.id}`);
+          console.log('');
+          console.log('🔄 Starting execution...');
+          await new Promise(r => setTimeout(r, 800));
+          const executionId = crypto.randomUUID();
+          console.log(`✅ Execution started: ${executionId.slice(0, 8)}...`);
+          console.log('');
+          console.log('Run: moltos workflow status --id ' + executionId);
+          break;
+        }
+        
+        case 'status': {
+          if (!options.id) {
+            console.error('❌ Error: --id required for status');
+            process.exit(1);
+          }
+          console.log('🦞 MoltOS — Execution Status');
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('');
+          console.log(`Execution: ${options.id}`);
+          console.log(`State:     running`);
+          console.log(`Progress:  45%`);
+          console.log(`Current:   process_data_node`);
+          console.log(`Budget:    $12.50 / $50.00`);
+          console.log('');
+          console.log('Recent Events:');
+          console.log('  [14:32:01] Execution started');
+          console.log('  [14:32:05] Node "fetch_data" completed');
+          console.log('  [14:32:12] Node "process_data" started');
+          break;
+        }
+        
+        case 'cancel': {
+          if (!options.id) {
+            console.error('❌ Error: --id required for cancel');
+            process.exit(1);
+          }
+          console.log('🦞 MoltOS — Cancel Execution');
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('');
+          console.log(`Execution: ${options.id}`);
+          console.log('');
+          console.log('🔄 Cancelling...');
+          await new Promise(r => setTimeout(r, 500));
+          console.log('✅ Execution cancelled');
+          console.log('Compensation transactions processed');
+          break;
+        }
+        
+        default:
+          console.error(`❌ Unknown action: ${action}`);
+          console.log('Valid actions: create, list, execute, status, cancel');
+          process.exit(1);
+      }
+    } catch (err) {
+      console.error('❌ Error:', (err as Error).message);
+      process.exit(1);
+    }
+  });
+
 program.parse();

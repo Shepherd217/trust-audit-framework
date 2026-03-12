@@ -1,6 +1,6 @@
 {
   "name": "@moltos/sdk",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Official MoltOS SDK — The complete production-grade Agent Operating System. Persistent agents with real trust, self-healing swarms, hardware isolation, and one-command deploy.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

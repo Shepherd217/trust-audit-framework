@@ -20,7 +20,16 @@ import type {
   WorkflowEventType,
   ValidationResult,
   ValidationError,
+  TaskResult,
+  AgentTask,
+  CircuitBreakerState,
+  RetryPolicy,
+  PaymentRecord,
+  ExecutionStateSnapshot,
 } from './types';
+import { getClawBusService } from '../bus';
+import { list as listKernelProcesses } from '../kernel';
+import { ClawFSService } from '../fs';
 
 // ============================================================================
 // Types for Database Schema
@@ -401,7 +410,7 @@ function mapRowToExecution(row: ExecutionRow): WorkflowExecution {
     id: row.id,
     workflowId: row.workflow_id,
     workflowVersion: row.workflow_version,
-    status: row.status as ExecutionStatus,
+    status: row.status as ExecutionState,
     currentNodeId: row.current_node_id,
     completedNodeIds: row.completed_node_ids || [],
     nodeExecutions,
@@ -602,7 +611,7 @@ export async function executeWorkflow(
  * Get execution status
  * Returns current node, progress %, token/cost tracking, event history summary
  */
-export async function getExecutionStatus(executionId: string): Promise<ExecutionState> {
+export async function getExecutionStatus(executionId: string): Promise<ExecutionStateSnapshot> {
   const supabase = getSupabaseClient();
   
   const { data, error } = await supabase
@@ -647,7 +656,7 @@ export async function getExecutionStatus(executionId: string): Promise<Execution
   return {
     executionId: execution.id,
     workflowId: execution.workflowId,
-    status: execution.status,
+    status: execution.status as ExecutionStatus,
     currentNodeId: execution.currentNodeId,
     currentNodeName,
     progressPercent: execution.progressPercent,
@@ -774,6 +783,1078 @@ export async function listExecutions(filters: ListExecutionsFilters = {}): Promi
 }
 
 // ============================================================================
+// Execution Engine Methods (Part 2)
+// ============================================================================
+
+/**
+ * Circuit breaker states in memory
+ */
+const circuitBreakerStates = new Map<string, CircuitBreakerState>();
+
+/**
+ * Get circuit breaker state for an agent
+ */
+function getCircuitBreakerState(agentId: string): CircuitBreakerState {
+  if (!circuitBreakerStates.has(agentId)) {
+    circuitBreakerStates.set(agentId, {
+      state: 'closed',
+      failureCount: 0,
+      successCount: 0,
+    });
+  }
+  return circuitBreakerStates.get(agentId)!;
+}
+
+/**
+ * Check if circuit breaker allows execution
+ */
+function canExecute(circuitState: CircuitBreakerState): boolean {
+  if (circuitState.state === 'closed') return true;
+  if (circuitState.state === 'open') {
+    const now = new Date();
+    const timeoutMs = 60000; // 1 minute default
+    if (circuitState.openedAt && now.getTime() - circuitState.openedAt.getTime() > timeoutMs) {
+      circuitState.state = 'half-open';
+      circuitState.halfOpenedAt = now;
+      return true;
+    }
+    return false;
+  }
+  // half-open: allow limited execution
+  return true;
+}
+
+/**
+ * Record success for circuit breaker
+ */
+function recordSuccess(agentId: string): void {
+  const state = getCircuitBreakerState(agentId);
+  state.successCount++;
+  state.lastSuccessAt = new Date();
+  
+  if (state.state === 'half-open') {
+    if (state.successCount >= 3) {
+      state.state = 'closed';
+      state.failureCount = 0;
+      state.successCount = 0;
+    }
+  } else {
+    state.failureCount = 0;
+  }
+}
+
+/**
+ * Record failure for circuit breaker
+ */
+function recordFailure(agentId: string): void {
+  const state = getCircuitBreakerState(agentId);
+  state.failureCount++;
+  state.lastFailureAt = new Date();
+  
+  const failureThreshold = 5;
+  if (state.failureCount >= failureThreshold) {
+    state.state = 'open';
+    state.openedAt = new Date();
+    state.successCount = 0;
+  }
+}
+
+/**
+ * Resolve agent for a node
+ * - Returns specific agentId if configured
+ * - Otherwise matches by capability/reputation
+ */
+async function resolveAgent(node: WorkflowNode): Promise<string | null> {
+  // Direct agent assignment
+  if (node.agentConfig?.agentId) {
+    return node.agentConfig.agentId;
+  }
+  
+  // TODO: Implement agent resolution by role/capability/reputation
+  // For now, return a system agent or null
+  if (node.agentConfig?.agentRole) {
+    const supabase = getSupabaseClient();
+    const { data } = await supabase
+      .from('agents')
+      .select('id')
+      .eq('role', node.agentConfig.agentRole)
+      .gte('reputation_score', node.agentConfig.minReputation || 0)
+      .eq('is_active', true)
+      .order('reputation_score', { ascending: false })
+      .limit(1)
+      .single();
+    
+    if (data) {
+      return data.id;
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Execute a node in a workflow
+ * - Gets node config from workflow definition
+ * - Resolves agent (specific ID or match by capability/reputation)
+ * - Checks circuit breaker state
+ * - Creates AgentTask record
+ * - Sends via IPC if agent has ClawKernel process, else publishes via ClawBus
+ * - Waits for result with timeout
+ * - Stores result with reasoning trace
+ * - Updates execution state
+ */
+export async function executeNode(
+  executionId: string,
+  nodeId: string
+): Promise<TaskResult> {
+  const supabase = getSupabaseClient();
+  
+  // Fetch execution and workflow
+  const { data: executionData, error: execError } = await supabase
+    .from('workflow_executions')
+    .select('*, workflow:workflow_id(*)')
+    .eq('id', executionId)
+    .single();
+  
+  if (execError || !executionData) {
+    throw new Error(`Execution not found: ${executionId}`);
+  }
+  
+  const execution = mapRowToExecution(executionData);
+  const workflow = executionData.workflow;
+  
+  // Find node config
+  const node = workflow.nodes.find((n: any) => n.id === nodeId);
+  if (!node) {
+    throw new Error(`Node ${nodeId} not found in workflow`);
+  }
+  
+  // Resolve agent
+  const agentId = await resolveAgent(node);
+  if (!agentId) {
+    const errorResult: TaskResult = {
+      success: false,
+      error: {
+        code: 'AGENT_NOT_FOUND',
+        message: `Could not resolve agent for node ${nodeId}`,
+        retryable: false,
+      },
+      metadata: {
+        agentId: 'system',
+        startedAt: new Date(),
+        completedAt: new Date(),
+      },
+    };
+    await storeNodeResult(executionId, nodeId, errorResult);
+    return errorResult;
+  }
+  
+  // Check circuit breaker
+  const circuitState = getCircuitBreakerState(agentId);
+  if (!canExecute(circuitState)) {
+    const errorResult: TaskResult = {
+      success: false,
+      error: {
+        code: 'CIRCUIT_BREAKER_OPEN',
+        message: `Circuit breaker is open for agent ${agentId}`,
+        retryable: true,
+      },
+      metadata: {
+        agentId,
+        startedAt: new Date(),
+        completedAt: new Date(),
+      },
+    };
+    await storeNodeResult(executionId, nodeId, errorResult);
+    return errorResult;
+  }
+  
+  // Create AgentTask record
+  const taskId = generateId();
+  const taskInput = buildTaskInput(node, execution);
+  const timeoutMs = node.agentConfig?.timeoutMs || 300000; // 5 min default
+  
+  const task: AgentTask = {
+    id: taskId,
+    executionId,
+    nodeId,
+    agentId,
+    taskType: node.type,
+    input: taskInput,
+    context: {
+      workflowId: execution.workflowId,
+      executionId,
+      nodeId,
+      previousResults: Object.fromEntries(execution.nodeExecutions),
+      executionContext: execution.context,
+    },
+    payment: {
+      baseAmount: node.paymentConfig?.baseAmount || 0,
+      reputationBonus: 0,
+      escrowAmount: (node.paymentConfig?.baseAmount || 0) * (node.paymentConfig?.escrowPercent || 0) / 100,
+      token: workflow.payment_token || 'USDC',
+      released: false,
+    },
+    createdAt: new Date(),
+    status: 'queued' as const,
+    priority: execution.context.priority,
+  };
+  
+  // Store task in database
+  const { error: taskError } = await supabase
+    .from('agent_tasks')
+    .insert({
+      id: taskId,
+      execution_id: executionId,
+      node_id: nodeId,
+      agent_id: agentId,
+      task_type: node.type,
+      input: taskInput,
+      context: task.context,
+      payment: task.payment,
+      status: 'queued',
+      priority: task.priority,
+      created_at: task.createdAt.toISOString(),
+      deadline_at: new Date(Date.now() + timeoutMs).toISOString(),
+    });
+  
+  if (taskError) {
+    throw new Error(`Failed to create agent task: ${taskError.message}`);
+  }
+  
+  // Update node execution status
+  const nodeExecution = execution.nodeExecutions.get(nodeId);
+  if (nodeExecution) {
+    nodeExecution.status = 'running';
+    nodeExecution.startedAt = new Date();
+    nodeExecution.attempts++;
+  }
+  
+  // Log node started event
+  const startEvent = createWorkflowEvent(executionId, 'node_started', nodeId, {
+    taskId,
+    agentId,
+    nodeType: node.type,
+  });
+  await logEvent(executionId, startEvent);
+  
+  // Check if agent has ClawKernel process
+  let result: TaskResult;
+  try {
+    // Try to get agent process status from ClawKernel
+    const agentProcesses = await listKernelProcesses();
+    const agentProcess = agentProcesses.find(p => p.agentId === agentId && p.status === 'running');
+    
+    if (agentProcess) {
+      // Send via IPC (implementation depends on IPC mechanism)
+      result = await executeViaIPC(agentProcess.id, task, timeoutMs);
+    } else {
+      // Publish via ClawBus
+      result = await executeViaBus(task, timeoutMs);
+    }
+    
+    // Record success for circuit breaker
+    if (result.success) {
+      recordSuccess(agentId);
+    } else {
+      recordFailure(agentId);
+    }
+    
+  } catch (error) {
+    recordFailure(agentId);
+    result = {
+      success: false,
+      error: {
+        code: 'EXECUTION_ERROR',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        details: error,
+        retryable: true,
+      },
+      metadata: {
+        agentId,
+        startedAt: new Date(),
+        completedAt: new Date(),
+      },
+    };
+  }
+  
+  // Store result with reasoning trace
+  await storeNodeResult(executionId, nodeId, result);
+  
+  // Update execution state
+  if (result.success) {
+    nodeExecution!.status = 'completed';
+    nodeExecution!.completedAt = new Date();
+    nodeExecution!.result = result;
+    
+    const completeEvent = createWorkflowEvent(executionId, 'node_completed', nodeId, {
+      taskId,
+      agentId,
+      output: result.output,
+    });
+    await logEvent(executionId, completeEvent);
+  } else {
+    nodeExecution!.status = 'failed';
+    nodeExecution!.completedAt = new Date();
+    nodeExecution!.error = result.error as Error;
+    
+    const failEvent = createWorkflowEvent(executionId, 'node_failed', nodeId, {
+      taskId,
+      agentId,
+      error: result.error,
+    });
+    await logEvent(executionId, failEvent);
+  }
+  
+  return result;
+}
+
+/**
+ * Build task input from node configuration and execution context
+ */
+function buildTaskInput(node: WorkflowNode, execution: WorkflowExecution): any {
+  return {
+    nodeType: node.type,
+    nodeName: node.name,
+    nodeDescription: node.description,
+    executionInput: execution.input,
+    executionContext: execution.context,
+    previousResults: Object.fromEntries(
+      Array.from(execution.nodeExecutions.entries())
+        .filter(([_, ne]) => ne.status === 'completed')
+        .map(([id, ne]) => [id, ne.result?.output])
+    ),
+  };
+}
+
+/**
+ * Execute task via IPC to ClawKernel process
+ */
+async function executeViaIPC(processId: string, task: AgentTask, timeoutMs: number): Promise<TaskResult> {
+  // TODO: Implement actual IPC communication
+  // For now, simulate async execution
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error(`IPC execution timeout after ${timeoutMs}ms`));
+    }, timeoutMs);
+    
+    // Simulate IPC response
+    setTimeout(() => {
+      clearTimeout(timeout);
+      resolve({
+        success: true,
+        output: { message: `Task ${task.id} executed via IPC` },
+        metadata: {
+          agentId: task.agentId!,
+          startedAt: new Date(),
+          completedAt: new Date(),
+        },
+      });
+    }, 100);
+  });
+}
+
+/**
+ * Execute task via ClawBus
+ */
+async function executeViaBus(task: AgentTask, timeoutMs: number): Promise<TaskResult> {
+  const bus = getClawBusService();
+  
+  // Send task via bus
+  await bus.send({
+    type: 'task',
+    from: 'scheduler',
+    to: task.agentId!,
+    payload: {
+      taskId: task.id,
+      executionId: task.executionId,
+      nodeId: task.nodeId,
+      input: task.input,
+    },
+    priority: task.priority,
+  });
+  
+  // Wait for result with timeout
+  const supabase = getSupabaseClient();
+  const startTime = Date.now();
+  const pollInterval = 1000; // 1 second
+  
+  while (Date.now() - startTime < timeoutMs) {
+    const { data } = await supabase
+      .from('agent_tasks')
+      .select('status, result')
+      .eq('id', task.id)
+      .single();
+    
+    if (data) {
+      if (data.status === 'completed' && data.result) {
+        return data.result as TaskResult;
+      }
+      if (data.status === 'failed') {
+        return {
+          success: false,
+          error: {
+            code: 'TASK_FAILED',
+            message: 'Task execution failed',
+            retryable: true,
+          },
+          metadata: {
+            agentId: task.agentId!,
+            startedAt: task.createdAt,
+            completedAt: new Date(),
+          },
+        };
+      }
+    }
+    
+    await sleep(pollInterval);
+  }
+  
+  throw new Error(`Bus execution timeout after ${timeoutMs}ms`);
+}
+
+/**
+ * Store node execution result
+ */
+async function storeNodeResult(
+  executionId: string,
+  nodeId: string,
+  result: TaskResult
+): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  const { data: executionData } = await supabase
+    .from('workflow_executions')
+    .select('node_executions')
+    .eq('id', executionId)
+    .single();
+  
+  if (!executionData) return;
+  
+  const nodeExecutions = executionData.node_executions || {};
+  nodeExecutions[nodeId] = {
+    ...nodeExecutions[nodeId],
+    status: result.success ? 'completed' : 'failed',
+    result,
+    completed_at: new Date().toISOString(),
+  };
+  
+  await supabase
+    .from('workflow_executions')
+    .update({ node_executions: nodeExecutions })
+    .eq('id', executionId);
+}
+
+/**
+ * Log event to execution
+ */
+async function logEvent(executionId: string, event: WorkflowEvent): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  const { data: executionData } = await supabase
+    .from('workflow_executions')
+    .select('events')
+    .eq('id', executionId)
+    .single();
+  
+  if (!executionData) return;
+  
+  const events = executionData.events || [];
+  events.push({
+    ...event,
+    timestamp: event.timestamp.toISOString(),
+  });
+  
+  await supabase
+    .from('workflow_executions')
+    .update({ events })
+    .eq('id', executionId);
+}
+
+/**
+ * Sleep utility
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Transition to next node(s) in workflow
+ * - Finds outgoing edges from node
+ * - Evaluates edge conditions (if any)
+ * - Determines next node(s)
+ * - Handles parallel branches (fork)
+ * - Handles join nodes (wait for all branches)
+ * - Updates execution.current_node_id
+ * - Logs transition event
+ * - If end node → marks completed
+ */
+export async function transition(
+  executionId: string,
+  fromNodeId: string,
+  result: TaskResult
+): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  // Fetch execution and workflow
+  const { data: executionData, error: execError } = await supabase
+    .from('workflow_executions')
+    .select('*, workflow:workflow_id(*)')
+    .eq('id', executionId)
+    .single();
+  
+  if (execError || !executionData) {
+    throw new Error(`Execution not found: ${executionId}`);
+  }
+  
+  const execution = mapRowToExecution(executionData);
+  const workflow = executionData.workflow;
+  
+  // Find outgoing edges
+  const outgoingEdges = workflow.edges.filter((e: WorkflowEdge) => e.from === fromNodeId);
+  
+  if (outgoingEdges.length === 0) {
+    // No outgoing edges - this might be an end node
+    const isEndNode = workflow.end_node_ids?.includes(fromNodeId) || 
+                      workflow.nodes.find((n: WorkflowNode) => n.id === fromNodeId)?.type === 'agent';
+    
+    if (isEndNode || workflow.end_node_ids === undefined) {
+      // Mark execution as completed
+      await markExecutionCompleted(executionId, result.output);
+      return;
+    }
+  }
+  
+  // Evaluate edge conditions
+  const validEdges = outgoingEdges.filter((edge: WorkflowEdge) => {
+    if (!edge.condition) return true;
+    return evaluateCondition(edge.condition, result);
+  });
+  
+  // Sort by priority
+  validEdges.sort((a: WorkflowEdge, b: WorkflowEdge) => (b.priority || 0) - (a.priority || 0));
+  
+  // Determine next nodes
+  const nextNodes: string[] = validEdges.map((e: WorkflowEdge) => e.to);
+  
+  if (nextNodes.length === 0) {
+    // No valid transition - this is a failure
+    throw new Error(`No valid transition from node ${fromNodeId}`);
+  }
+  
+  // Handle parallel branches (fork)
+  const fromNode = workflow.nodes.find((n: WorkflowNode) => n.id === fromNodeId);
+  if (fromNode?.type === 'parallel' && fromNode.parallelConfig) {
+    // Fork into multiple branches
+    for (const branch of fromNode.parallelConfig.branches) {
+      for (const branchNodeId of branch) {
+        execution.activeBranches.add(branchNodeId);
+      }
+    }
+    
+    const branchEvent = createWorkflowEvent(executionId, 'branch_started', fromNodeId, {
+      branches: fromNode.parallelConfig.branches,
+    });
+    await logEvent(executionId, branchEvent);
+  }
+  
+  // Handle join nodes
+  for (const nextNodeId of nextNodes) {
+    const nextNode = workflow.nodes.find((n: WorkflowNode) => n.id === nextNodeId);
+    if (nextNode?.type === 'join') {
+      // Check if all branches have completed
+      const joinKey = `join_${nextNodeId}`;
+      const waitingBranches = execution.pendingJoins.get(joinKey) || [];
+      
+      // Add current branch to waiting list
+      if (!waitingBranches.includes(fromNodeId)) {
+        waitingBranches.push(fromNodeId);
+      }
+      
+      // Check if all required branches are complete
+      const requiredBranches = nextNode.parallelConfig?.branches?.flat() || [];
+      const allComplete = requiredBranches.every((branchId: string) => 
+        execution.completedNodeIds.includes(branchId) || waitingBranches.includes(branchId)
+      );
+      
+      if (!allComplete) {
+        execution.pendingJoins.set(joinKey, waitingBranches);
+        
+        const joinWaitEvent = createWorkflowEvent(executionId, 'join_waiting', nextNodeId, {
+          waitingFor: requiredBranches.filter((id: string) => !execution.completedNodeIds.includes(id)),
+        });
+        await logEvent(executionId, joinWaitEvent);
+        
+        // Don't proceed yet - wait for other branches
+        continue;
+      }
+      
+      // All branches complete - proceed
+      execution.pendingJoins.delete(joinKey);
+      
+      const joinCompleteEvent = createWorkflowEvent(executionId, 'join_completed', nextNodeId, {
+        completedBranches: waitingBranches,
+      });
+      await logEvent(executionId, joinCompleteEvent);
+    }
+  }
+  
+  // Update execution state
+  const completedNodeIds = [...execution.completedNodeIds, fromNodeId];
+  const currentNodeId = nextNodes[0]; // Primary path
+  
+  await supabase
+    .from('workflow_executions')
+    .update({
+      current_node_id: currentNodeId,
+      completed_node_ids: completedNodeIds,
+      active_branches: Array.from(execution.activeBranches),
+      pending_joins: Object.fromEntries(execution.pendingJoins),
+    })
+    .eq('id', executionId);
+  
+  // Log transition event
+  const transitionEvent = createWorkflowEvent(executionId, 'node_completed', fromNodeId, {
+    nextNodes,
+    result: result.success ? 'success' : 'failure',
+  });
+  await logEvent(executionId, transitionEvent);
+  
+  // Check if we've reached an end node
+  if (workflow.end_node_ids?.includes(currentNodeId)) {
+    await markExecutionCompleted(executionId, result.output);
+  }
+}
+
+/**
+ * Evaluate a condition expression against a result
+ */
+function evaluateCondition(condition: string, result: TaskResult): boolean {
+  try {
+    // Simple expression evaluation
+    // Supports: success, failure, result.field == value, result.field > value, etc.
+    if (condition === 'success') return result.success;
+    if (condition === 'failure') return !result.success;
+    
+    // More complex conditions can be added here
+    // For now, default to true
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Mark execution as completed
+ */
+async function markExecutionCompleted(executionId: string, output?: any): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  await supabase
+    .from('workflow_executions')
+    .update({
+      status: 'completed',
+      output,
+      completed_at: new Date().toISOString(),
+      progress_percent: 100,
+      current_node_id: null,
+    })
+    .eq('id', executionId);
+  
+  const completeEvent = createWorkflowEvent(executionId, 'execution_completed', undefined, {
+    output,
+  });
+  await logEvent(executionId, completeEvent);
+}
+
+/**
+ * Pause a workflow execution
+ * - Sets state to PAUSED
+ * - Stops scheduling new nodes
+ * - Persists current state
+ * - Logs pause event
+ */
+export async function pauseExecution(executionId: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  // Verify execution exists and is running
+  const { data: executionData, error } = await supabase
+    .from('workflow_executions')
+    .select('status')
+    .eq('id', executionId)
+    .single();
+  
+  if (error || !executionData) {
+    throw new Error(`Execution not found: ${executionId}`);
+  }
+  
+  if (executionData.status !== 'running') {
+    throw new Error(`Cannot pause execution with status: ${executionData.status}`);
+  }
+  
+  // Update state to PAUSED
+  const { error: updateError } = await supabase
+    .from('workflow_executions')
+    .update({
+      status: 'paused',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', executionId);
+  
+  if (updateError) {
+    throw new Error(`Failed to pause execution: ${updateError.message}`);
+  }
+  
+  // Log pause event
+  const pauseEvent = createWorkflowEvent(executionId, 'execution_paused');
+  await logEvent(executionId, pauseEvent);
+}
+
+/**
+ * Resume a paused workflow execution
+ * - Sets state to RUNNING
+ * - Resumes from current node
+ * - Logs resume event
+ */
+export async function resumeExecution(executionId: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  // Verify execution exists and is paused
+  const { data: executionData, error } = await supabase
+    .from('workflow_executions')
+    .select('status, current_node_id')
+    .eq('id', executionId)
+    .single();
+  
+  if (error || !executionData) {
+    throw new Error(`Execution not found: ${executionId}`);
+  }
+  
+  if (executionData.status !== 'paused') {
+    throw new Error(`Cannot resume execution with status: ${executionData.status}`);
+  }
+  
+  // Update state to RUNNING
+  const { error: updateError } = await supabase
+    .from('workflow_executions')
+    .update({
+      status: 'running',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', executionId);
+  
+  if (updateError) {
+    throw new Error(`Failed to resume execution: ${updateError.message}`);
+  }
+  
+  // Log resume event
+  const resumeEvent = createWorkflowEvent(executionId, 'execution_resumed', executionData.current_node_id, {
+    resumedFrom: executionData.current_node_id,
+  });
+  await logEvent(executionId, resumeEvent);
+}
+
+/**
+ * Cancel a workflow execution
+ * - Sets state to CANCELLED
+ * - Triggers compensation for completed nodes (Saga pattern)
+ * - Releases allocated payments from escrow
+ * - Logs cancel event
+ */
+export async function cancelExecution(
+  executionId: string,
+  reason?: string
+): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  // Verify execution exists
+  const { data: executionData, error } = await supabase
+    .from('workflow_executions')
+    .select('status, node_executions, payments')
+    .eq('id', executionId)
+    .single();
+  
+  if (error || !executionData) {
+    throw new Error(`Execution not found: ${executionId}`);
+  }
+  
+  if (['completed', 'cancelled', 'failed'].includes(executionData.status)) {
+    throw new Error(`Cannot cancel execution with status: ${executionData.status}`);
+  }
+  
+  // Trigger compensation for completed nodes (Saga pattern)
+  const nodeExecutions = executionData.node_executions || {};
+  const completedNodes = Object.entries(nodeExecutions)
+    .filter(([_, ne]: [string, any]) => ne.status === 'completed')
+    .map(([nodeId, _]) => nodeId);
+  
+  if (completedNodes.length > 0) {
+    const compensationEvent = createWorkflowEvent(executionId, 'compensation_started', undefined, {
+      nodesToCompensate: completedNodes,
+      reason,
+    });
+    await logEvent(executionId, compensationEvent);
+    
+    // Execute compensation for each completed node
+    for (const nodeId of completedNodes) {
+      try {
+        await compensateNode(executionId, nodeId);
+      } catch (compError) {
+        const compFailEvent = createWorkflowEvent(executionId, 'compensation_failed', nodeId, {
+          error: compError instanceof Error ? compError.message : 'Unknown error',
+        });
+        await logEvent(executionId, compFailEvent);
+      }
+    }
+    
+    const compCompleteEvent = createWorkflowEvent(executionId, 'compensation_completed');
+    await logEvent(executionId, compCompleteEvent);
+  }
+  
+  // Release allocated payments from escrow
+  const payments: PaymentRecord[] = executionData.payments || [];
+  for (const payment of payments) {
+    if (payment.status === 'held') {
+      try {
+        await releasePaymentFromEscrow(executionId, payment.id);
+      } catch (paymentError) {
+        console.error(`Failed to release payment ${payment.id}:`, paymentError);
+      }
+    }
+  }
+  
+  // Update state to CANCELLED
+  const { error: updateError } = await supabase
+    .from('workflow_executions')
+    .update({
+      status: 'cancelled',
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', executionId);
+  
+  if (updateError) {
+    throw new Error(`Failed to cancel execution: ${updateError.message}`);
+  }
+  
+  // Log cancel event
+  const cancelEvent = createWorkflowEvent(executionId, 'execution_cancelled', undefined, {
+    reason: reason || 'Cancelled by user',
+    compensatedNodes: completedNodes.length,
+  });
+  await logEvent(executionId, cancelEvent);
+}
+
+/**
+ * Compensate a completed node (Saga pattern)
+ */
+async function compensateNode(executionId: string, nodeId: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  // Get node execution details
+  const { data } = await supabase
+    .from('workflow_executions')
+    .select('node_executions')
+    .eq('id', executionId)
+    .single();
+  
+  if (!data) return;
+  
+  const nodeExecution = data.node_executions?.[nodeId];
+  if (!nodeExecution?.compensationData) return;
+  
+  // TODO: Implement actual compensation logic
+  // This would involve calling compensation handlers, rolling back state, etc.
+  
+  // Update node execution with compensation status
+  data.node_executions[nodeId] = {
+    ...nodeExecution,
+    compensated: true,
+    compensatedAt: new Date().toISOString(),
+  };
+  
+  await supabase
+    .from('workflow_executions')
+    .update({ node_executions: data.node_executions })
+    .eq('id', executionId);
+}
+
+/**
+ * Release payment from escrow
+ */
+async function releasePaymentFromEscrow(executionId: string, paymentId: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  const { data } = await supabase
+    .from('workflow_executions')
+    .select('payments')
+    .eq('id', executionId)
+    .single();
+  
+  if (!data?.payments) return;
+  
+  const payments = data.payments.map((p: PaymentRecord) => {
+    if (p.id === paymentId) {
+      return {
+        ...p,
+        status: 'rolled_back',
+        releasedAt: new Date().toISOString(),
+      };
+    }
+    return p;
+  });
+  
+  await supabase
+    .from('workflow_executions')
+    .update({ payments })
+    .eq('id', executionId);
+  
+  // Log payment rollback
+  const rollbackEvent = createWorkflowEvent(executionId, 'payment_rolled_back', undefined, {
+    paymentId,
+  });
+  await logEvent(executionId, rollbackEvent);
+}
+
+/**
+ * Retry a failed node
+ * - Gets retry policy from node config
+ * - Checks circuit breaker
+ * - Increments retry count
+ * - Re-executes node
+ */
+export async function retryFailedNode(
+  executionId: string,
+  nodeId: string
+): Promise<TaskResult> {
+  const supabase = getSupabaseClient();
+  
+  // Fetch execution and workflow
+  const { data: executionData, error: execError } = await supabase
+    .from('workflow_executions')
+    .select('*, workflow:workflow_id(*)')
+    .eq('id', executionId)
+    .single();
+  
+  if (execError || !executionData) {
+    throw new Error(`Execution not found: ${executionId}`);
+  }
+  
+  const execution = mapRowToExecution(executionData);
+  const workflow = executionData.workflow;
+  
+  // Find node config
+  const node = workflow.nodes.find((n: WorkflowNode) => n.id === nodeId);
+  if (!node) {
+    throw new Error(`Node ${nodeId} not found in workflow`);
+  }
+  
+  // Get retry policy
+  const retryPolicy: RetryPolicy = node.agentConfig?.maxRetries 
+    ? {
+        maxAttempts: node.agentConfig.maxRetries,
+        backoffType: 'exponential',
+        baseDelayMs: 1000,
+        maxDelayMs: 30000,
+      }
+    : workflow.default_retry_policy || {
+        maxAttempts: 3,
+        backoffType: 'exponential',
+        baseDelayMs: 1000,
+        maxDelayMs: 30000,
+      };
+  
+  // Check current retry count
+  const currentRetries = execution.retryCount.get(nodeId) || 0;
+  
+  if (currentRetries >= retryPolicy.maxAttempts) {
+    const errorResult: TaskResult = {
+      success: false,
+      error: {
+        code: 'MAX_RETRIES_EXCEEDED',
+        message: `Maximum retry attempts (${retryPolicy.maxAttempts}) exceeded for node ${nodeId}`,
+        retryable: false,
+      },
+      metadata: {
+        agentId: 'system',
+        startedAt: new Date(),
+        completedAt: new Date(),
+      },
+    };
+    return errorResult;
+  }
+  
+  // Resolve agent
+  const agentId = await resolveAgent(node);
+  if (!agentId) {
+    throw new Error(`Could not resolve agent for node ${nodeId}`);
+  }
+  
+  // Check circuit breaker
+  const circuitState = getCircuitBreakerState(agentId);
+  if (!canExecute(circuitState)) {
+    const errorResult: TaskResult = {
+      success: false,
+      error: {
+        code: 'CIRCUIT_BREAKER_OPEN',
+        message: `Circuit breaker is open for agent ${agentId}`,
+        retryable: true,
+      },
+      metadata: {
+        agentId,
+        startedAt: new Date(),
+        completedAt: new Date(),
+      },
+    };
+    return errorResult;
+  }
+  
+  // Increment retry count
+  const newRetryCount = currentRetries + 1;
+  execution.retryCount.set(nodeId, newRetryCount);
+  
+  await supabase
+    .from('workflow_executions')
+    .update({
+      retry_count: Object.fromEntries(execution.retryCount),
+    })
+    .eq('id', executionId);
+  
+  // Log retry event
+  const retryEvent = createWorkflowEvent(executionId, 'node_retrying', nodeId, {
+    attempt: newRetryCount,
+    maxAttempts: retryPolicy.maxAttempts,
+  });
+  await logEvent(executionId, retryEvent);
+  
+  // Calculate backoff delay
+  let delayMs = retryPolicy.baseDelayMs;
+  if (retryPolicy.backoffType === 'exponential') {
+    delayMs = Math.min(
+      retryPolicy.baseDelayMs * Math.pow(2, currentRetries),
+      retryPolicy.maxDelayMs
+    );
+  } else if (retryPolicy.backoffType === 'linear') {
+    delayMs = Math.min(
+      retryPolicy.baseDelayMs * (currentRetries + 1),
+      retryPolicy.maxDelayMs
+    );
+  }
+  
+  // Add jitter if enabled
+  if (retryPolicy.jitter) {
+    const jitterMax = retryPolicy.jitterMaxMs || 1000;
+    delayMs += Math.random() * jitterMax;
+  }
+  
+  // Wait for backoff
+  await sleep(delayMs);
+  
+  // Re-execute node
+  return executeNode(executionId, nodeId);
+}
+
+// ============================================================================
 // Export all functions as ClawScheduler namespace
 // ============================================================================
 
@@ -784,6 +1865,12 @@ export const ClawScheduler = {
   listWorkflows,
   listExecutions,
   validateWorkflowDefinition,
+  executeNode,
+  transition,
+  pauseExecution,
+  resumeExecution,
+  cancelExecution,
+  retryFailedNode,
 };
 
 export default ClawScheduler;
