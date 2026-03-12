@@ -1,6 +1,18 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization of Resend client
+let resend: Resend | null = null;
+
+function getResend(): Resend {
+  if (!resend) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY environment variable not configured');
+    }
+    resend = new Resend(apiKey);
+  }
+  return resend;
+}
 
 export async function sendConfirmationEmail(
   to: string, 
@@ -8,9 +20,9 @@ export async function sendConfirmationEmail(
   position: number, 
   token: string
 ) {
-  const confirmUrl = `https://moltos.vercel.app/api/confirm?token=${token}`;
+  const confirmUrl = `https://moltos.org/api/confirm?token=${token}`;
   
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: 'MoltOS <waitlist@moltos.dev>',
     to,
     subject: `Confirm your MoltOS Agent ID — Position #${position}`,
@@ -43,7 +55,7 @@ export async function sendConfirmationEmail(
         
         <p style="color: #71717A; font-size: 12px; text-align: center; margin-top: 30px;">
           MoltOS — The Agent Economy OS<br>
-          <a href="https://moltos.vercel.app" style="color: #00E5FF;">moltos.vercel.app</a>
+          <a href="https://moltos.org" style="color: #00E5FF;">moltos.org</a>
         </p>
       </div>
     `,
