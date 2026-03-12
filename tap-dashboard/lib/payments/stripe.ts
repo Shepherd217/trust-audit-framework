@@ -23,10 +23,28 @@ import {
   WebhookEvent,
 } from '@/types/payments';
 
-// Initialize Stripe client
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia',
-  typescript: true,
+// Lazy-initialized Stripe client
+let stripeInstance: Stripe | null = null;
+
+function getStripe(): Stripe {
+  if (!stripeInstance) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+      throw new Error('STRIPE_SECRET_KEY environment variable not configured');
+    }
+    stripeInstance = new Stripe(key, {
+      apiVersion: '2026-02-25.clover',
+      typescript: true,
+    });
+  }
+  return stripeInstance;
+}
+
+// Export for backward compatibility
+const stripe = new Proxy({} as Stripe, {
+  get(target, prop) {
+    return getStripe()[prop as keyof Stripe];
+  },
 });
 
 // Constants
@@ -40,7 +58,7 @@ export class PaymentError extends Error {
   constructor(
     message: string,
     public code: string,
-    public stripeError?: Stripe.StripeError
+    public stripeError?: Stripe.errors.StripeError
   ) {
     super(message);
     this.name = 'PaymentError';
@@ -123,10 +141,10 @@ export async function createPaymentIntent(
   } catch (error) {
     if (error instanceof PaymentError) throw error;
     
-    const stripeError = error as Stripe.StripeError;
+    const stripeError = error as Stripe.errors.StripeError;
     throw new PaymentError(
       stripeError.message || 'Failed to create payment intent',
-      stripeError.code || 'UNKNOWN_ERROR',
+      stripeError.code ?? 'UNKNOWN_ERROR',
       stripeError
     );
   }
@@ -152,13 +170,11 @@ export async function updatePaymentIntentForAgent(
     const agentAmount = Math.round(paymentIntent.amount * (agentFeePercent / 100));
 
     // Update payment intent with transfer data
+    // Note: Transfer data is set at capture time for on_behalf_of transfers
+    // We'll update metadata to store the agent info for later transfer
     const updatedPaymentIntent = await stripe.paymentIntents.update(
       paymentIntentId,
       {
-        transfer_data: {
-          destination: agentConnectedAccountId,
-          amount: agentAmount,
-        },
         metadata: {
           ...paymentIntent.metadata,
           agentConnectedAccountId,
@@ -169,10 +185,10 @@ export async function updatePaymentIntentForAgent(
 
     return updatedPaymentIntent;
   } catch (error) {
-    const stripeError = error as Stripe.StripeError;
+    const stripeError = error as Stripe.errors.StripeError;
     throw new PaymentError(
       stripeError.message || 'Failed to update payment intent for agent',
-      stripeError.code || 'UPDATE_ERROR',
+      stripeError.code ?? 'UPDATE_ERROR',
       stripeError
     );
   }
@@ -227,10 +243,10 @@ export async function capturePayment(
   } catch (error) {
     if (error instanceof PaymentError) throw error;
     
-    const stripeError = error as Stripe.StripeError;
+    const stripeError = error as Stripe.errors.StripeError;
     throw new PaymentError(
       stripeError.message || 'Failed to capture payment',
-      stripeError.code || 'CAPTURE_ERROR',
+      stripeError.code ?? 'CAPTURE_ERROR',
       stripeError
     );
   }
@@ -258,10 +274,10 @@ export async function cancelPayment(
       canceledAt: canceledPaymentIntent.canceled_at,
     };
   } catch (error) {
-    const stripeError = error as Stripe.StripeError;
+    const stripeError = error as Stripe.errors.StripeError;
     throw new PaymentError(
       stripeError.message || 'Failed to cancel payment',
-      stripeError.code || 'CANCEL_ERROR',
+      stripeError.code ?? 'CANCEL_ERROR',
       stripeError
     );
   }
@@ -279,22 +295,25 @@ export async function refundPayment(
   try {
     const { paymentIntentId, amount, reason } = params;
 
-    // Get the charge ID from the payment intent
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    // Get the charge ID by listing charges for this payment intent
+    const charges = await stripe.charges.list({
+      payment_intent: paymentIntentId,
+      limit: 1,
+    });
     
-    if (!paymentIntent.charges.data[0]) {
+    if (!charges.data[0]) {
       throw new PaymentError(
         'No charge found for this payment intent',
         'NO_CHARGE_FOUND'
       );
     }
 
-    const chargeId = paymentIntent.charges.data[0].id;
+    const chargeId = charges.data[0].id;
 
     // Create refund
     const refundData: Stripe.RefundCreateParams = {
       charge: chargeId,
-      reason: reason || 'requested_by_customer',
+      reason: (reason || 'requested_by_customer') as Stripe.RefundCreateParams['reason'],
     };
 
     if (amount) {
@@ -307,15 +326,15 @@ export async function refundPayment(
       success: true,
       refundId: refund.id,
       amountRefunded: refund.amount,
-      status: refund.status,
+      status: refund.status ?? 'pending',
     };
   } catch (error) {
     if (error instanceof PaymentError) throw error;
     
-    const stripeError = error as Stripe.StripeError;
+    const stripeError = error as Stripe.errors.StripeError;
     throw new PaymentError(
       stripeError.message || 'Failed to process refund',
-      stripeError.code || 'REFUND_ERROR',
+      stripeError.code ?? 'REFUND_ERROR',
       stripeError
     );
   }
@@ -347,6 +366,7 @@ export async function createConnectedAccount(
 
     return {
       accountId: account.id,
+      status: 'created',
       requirements: {
         currentlyDue: account.requirements?.currently_due || [],
         eventuallyDue: account.requirements?.eventually_due || [],
@@ -357,10 +377,10 @@ export async function createConnectedAccount(
       payoutsEnabled: account.payouts_enabled,
     };
   } catch (error) {
-    const stripeError = error as Stripe.StripeError;
+    const stripeError = error as Stripe.errors.StripeError;
     throw new PaymentError(
       stripeError.message || 'Failed to create connected account',
-      stripeError.code || 'ACCOUNT_CREATE_ERROR',
+      stripeError.code ?? 'ACCOUNT_CREATE_ERROR',
       stripeError
     );
   }
@@ -389,10 +409,10 @@ export async function createAccountOnboardingLink(
 
     return { url: accountLink.url };
   } catch (error) {
-    const stripeError = error as Stripe.StripeError;
+    const stripeError = error as Stripe.errors.StripeError;
     throw new PaymentError(
       stripeError.message || 'Failed to create onboarding link',
-      stripeError.code || 'ONBOARDING_ERROR',
+      stripeError.code ?? 'ONBOARDING_ERROR',
       stripeError
     );
   }
@@ -412,26 +432,26 @@ export async function createTransfer(
 
     const transfer = await stripe.transfers.create({
       amount,
-      currency: currency.toLowerCase(),
+      currency: (currency || 'usd').toLowerCase(),
       destination: destinationAccountId,
-      transfer_group: paymentIntentId,
-      description: description || `Transfer for payment ${paymentIntentId}`,
+      transfer_group: paymentIntentId || undefined,
+      description: description || `Transfer for payment ${paymentIntentId || 'unknown'}`,
       metadata: {
-        paymentIntentId,
+        paymentIntentId: paymentIntentId || '',
       },
     });
 
     return {
       transferId: transfer.id,
       amount: transfer.amount,
-      destination: transfer.destination,
+      destination: typeof transfer.destination === 'string' ? transfer.destination : undefined,
       status: 'paid', // Transfers are immediate in most cases
     };
   } catch (error) {
-    const stripeError = error as Stripe.StripeError;
+    const stripeError = error as Stripe.errors.StripeError;
     throw new PaymentError(
       stripeError.message || 'Failed to create transfer',
-      stripeError.code || 'TRANSFER_ERROR',
+      stripeError.code ?? 'TRANSFER_ERROR',
       stripeError
     );
   }
@@ -449,10 +469,10 @@ export async function retrievePaymentIntent(
   try {
     return await stripe.paymentIntents.retrieve(paymentIntentId);
   } catch (error) {
-    const stripeError = error as Stripe.StripeError;
+    const stripeError = error as Stripe.errors.StripeError;
     throw new PaymentError(
       stripeError.message || 'Failed to retrieve payment intent',
-      stripeError.code || 'RETRIEVE_ERROR',
+      stripeError.code ?? 'RETRIEVE_ERROR',
       stripeError
     );
   }
@@ -475,7 +495,7 @@ export function constructWebhookEvent(
       payload,
       signature,
       webhookSecret
-    ) as WebhookEvent;
+    ) as unknown as WebhookEvent;
 
     return event;
   } catch (error) {
@@ -500,28 +520,28 @@ export async function handleWebhookEvent(
 
   switch (type) {
     case 'payment_intent.succeeded':
-      return handlePaymentIntentSucceeded(data.object as Stripe.PaymentIntent);
+      return handlePaymentIntentSucceeded(data.object as unknown as Stripe.PaymentIntent);
 
     case 'payment_intent.payment_failed':
-      return handlePaymentIntentFailed(data.object as Stripe.PaymentIntent);
+      return handlePaymentIntentFailed(data.object as unknown as Stripe.PaymentIntent);
 
     case 'payment_intent.canceled':
-      return handlePaymentIntentCanceled(data.object as Stripe.PaymentIntent);
+      return handlePaymentIntentCanceled(data.object as unknown as Stripe.PaymentIntent);
 
     case 'payment_intent.amount_capturable_updated':
-      return handlePaymentIntentCapturable(data.object as Stripe.PaymentIntent);
+      return handlePaymentIntentCapturable(data.object as unknown as Stripe.PaymentIntent);
 
     case 'charge.refunded':
-      return handleChargeRefunded(data.object as Stripe.Charge);
+      return handleChargeRefunded(data.object as unknown as Stripe.Charge);
 
     case 'charge.dispute.created':
-      return handleDisputeCreated(data.object as Stripe.Dispute);
+      return handleDisputeCreated(data.object as unknown as Stripe.Dispute);
 
     case 'account.updated':
-      return handleAccountUpdated(data.object as Stripe.Account);
+      return handleAccountUpdated(data.object as unknown as Stripe.Account);
 
     case 'transfer.failed':
-      return handleTransferFailed(data.object as Stripe.Transfer);
+      return handleTransferFailed(data.object as unknown as Stripe.Transfer);
 
     default:
       return { handled: false };
@@ -653,7 +673,8 @@ async function handleTransferFailed(
       transferId: transfer.id,
       destination: transfer.destination,
       amount: transfer.amount,
-      failureCode: transfer.failure_code,
+      // Note: failure_code not available in current Stripe SDK version
+      failureCode: (transfer as any).failure_code,
     },
   };
 }

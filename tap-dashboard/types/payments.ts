@@ -327,8 +327,39 @@ export interface CreateEscrowRequest {
 }
 
 /**
- * Request to fund an escrow
+ * Request to create a Stripe payment intent
  */
+export interface CreatePaymentIntentRequest {
+    /** Payment amount */
+    amount: number;
+    
+    /** Currency code (usd, eur, etc.) */
+    currency: string;
+    
+    /** Task ID this payment is for */
+    taskId: string;
+    
+    /** Agent ID receiving payment */
+    agentId: string;
+    
+    /** Customer ID making payment */
+    customerId: string;
+    
+    /** Optional description */
+    description?: string;
+    
+    /** Whether to hold funds in escrow */
+    holdInEscrow?: boolean;
+    
+    /** Whether escrow is enabled for this payment */
+    escrowEnabled?: boolean;
+    
+    /** Platform fee percentage (default 2.5%) */
+    platformFeePercent?: number;
+    
+    /** Additional metadata */
+    metadata?: Record<string, unknown>;
+}
 export interface FundEscrowRequest {
     /** Escrow ID to fund */
     escrowId: string;
@@ -341,6 +372,220 @@ export interface FundEscrowRequest {
     
     /** For Stripe: payment method ID */
     paymentMethodId?: string;
+}
+
+/**
+ * Request to capture a payment (for Stripe holds)
+ */
+export interface CapturePaymentRequest {
+    /** Payment intent ID to capture */
+    paymentIntentId: string;
+    
+    /** Amount to capture (if partial capture) */
+    amount?: number;
+    
+    /** Optional capture notes */
+    notes?: string;
+}
+
+/**
+ * Request to refund a payment
+ */
+export interface RefundPaymentRequest {
+    /** Payment intent ID to refund */
+    paymentIntentId: string;
+    
+    /** Amount to refund (if partial refund) */
+    amount?: number;
+    
+    /** Refund reason */
+    reason?: 'duplicate' | 'fraudulent' | 'requested_by_customer' | 'expired_uncaptured_charge';
+}
+
+// =====================================================
+// RESPONSE INTERFACES
+// =====================================================
+
+/**
+ * Response from creating a payment intent
+ */
+export interface CreatePaymentIntentResponse {
+    /** Client secret for Stripe.js */
+    clientSecret: string;
+    
+    /** Payment intent ID */
+    paymentIntentId: string;
+    
+    /** Payment status */
+    status: string;
+    
+    /** Amount in cents */
+    amount: number;
+    
+    /** Currency code */
+    currency: string;
+}
+
+/**
+ * Response from capturing a payment
+ */
+export interface CapturePaymentResponse {
+    /** Success status */
+    success: boolean;
+    
+    /** Payment intent ID */
+    paymentIntentId: string;
+    
+    /** Captured amount */
+    amountCaptured: number;
+    
+    /** Payment status */
+    status: string;
+}
+
+/**
+ * Response from refunding a payment
+ */
+export interface RefundPaymentResponse {
+    /** Success status */
+    success: boolean;
+    
+    /** Refund ID */
+    refundId: string;
+    
+    /** Refunded amount */
+    amountRefunded: number;
+    
+    /** Refund status */
+    status: string;
+}
+
+/**
+ * Request to create a connected account
+ */
+export interface ConnectedAccountRequest {
+    /** Agent ClawID (optional if passed in metadata) */
+    clawId?: string;
+    
+    /** Account type (standard, express, custom) */
+    accountType?: 'standard' | 'express' | 'custom';
+    
+    /** Country code */
+    country?: string;
+    
+    /** Email address */
+    email?: string;
+    
+    /** Business type (individual, company) */
+    businessType?: 'individual' | 'company';
+    
+    /** Additional metadata (string values only for Stripe) */
+    metadata?: Record<string, string>;
+}
+
+/**
+ * Response from creating a connected account
+ */
+export interface ConnectedAccountResponse {
+    /** Connected account ID */
+    accountId: string;
+    
+    /** Onboarding URL (for express/custom) */
+    onboardingUrl?: string;
+    
+    /** Account status */
+    status: string;
+    
+    /** Account requirements */
+    requirements?: {
+        currentlyDue: string[];
+        eventuallyDue: string[];
+        pastDue: string[];
+        pendingVerification: string[];
+    };
+    
+    /** Whether charges are enabled */
+    chargesEnabled?: boolean;
+    
+    /** Whether payouts are enabled */
+    payoutsEnabled?: boolean;
+}
+
+/**
+ * Request to transfer funds
+ */
+export interface TransferRequest {
+    /** Connected account ID to transfer to */
+    destinationAccountId: string;
+    
+    /** Transfer amount in cents */
+    amount: number;
+    
+    /** Currency code */
+    currency?: string;
+    
+    /** Transfer description */
+    description?: string;
+    
+    /** Associated payment intent ID */
+    paymentIntentId?: string;
+}
+
+/**
+ * Response from transferring funds
+ */
+export interface TransferResponse {
+    /** Transfer ID */
+    transferId: string;
+    
+    /** Transferred amount */
+    amount: number;
+    
+    /** Transfer status */
+    status: string;
+    
+    /** Destination account ID */
+    destination?: string;
+}
+
+/**
+ * Metadata for payment intent
+ */
+export interface PaymentIntentMetadata {
+    /** Task ID */
+    taskId: string;
+    
+    /** Agent ID */
+    agentId: string;
+    
+    /** Customer ID */
+    customerId: string;
+    
+    /** Whether escrow is enabled */
+    escrowEnabled: string;
+    
+    /** Platform fee percentage */
+    platformFeePercent: string;
+    
+    /** Description */
+    description: string;
+    
+    /** Additional metadata */
+    [key: string]: string;
+}
+
+/**
+ * Webhook event
+ */
+export interface WebhookEvent {
+    /** Event type */
+    type: string;
+    
+    /** Event data */
+    data: {
+        /** Object data */
+        object: Record<string, unknown>;
+    };
 }
 
 /**

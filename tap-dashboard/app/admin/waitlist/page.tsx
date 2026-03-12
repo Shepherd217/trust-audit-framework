@@ -1,16 +1,28 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy-initialized Supabase client
+let supabase: ReturnType<typeof createClient> | null = null;
+
+function getSupabase() {
+  if (!supabase) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!url || !key) {
+      throw new Error('Supabase environment variables not configured');
+    }
+    
+    supabase = createClient(url, key);
+  }
+  return supabase;
+}
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminWaitlistPage() {
   // Fetch waitlist entries
-  const { data: entries, error } = await supabase
+  const { data: entries, error } = await getSupabase()
     .from('waitlist')
     .select('*')
     .order('created_at', { ascending: false });
@@ -24,9 +36,9 @@ export default async function AdminWaitlistPage() {
     );
   }
 
-  const confirmed = entries?.filter(e => e.confirmed) || [];
-  const unconfirmed = entries?.filter(e => !e.confirmed) || [];
-  const verified = entries?.filter(e => e.reputation > 1) || [];
+  const confirmed = (entries as any[])?.filter(e => e.confirmed) || [];
+  const unconfirmed = (entries as any[])?.filter(e => !e.confirmed) || [];
+  const verified = (entries as any[])?.filter(e => e.reputation > 1) || [];
 
   return (
     <div className="min-h-screen bg-[#050507] text-white p-8">
@@ -68,7 +80,7 @@ export default async function AdminWaitlistPage() {
         <div className="bg-[#111113] border border-[#27272A] rounded-xl overflow-hidden">
           <div className="px-6 py-4 border-b border-[#27272A] flex items-center justify-between">
             <h2 className="text-xl font-bold">Recent Signups</h2>
-            <span className="text-sm text-gray-400">Last 24h: {entries?.filter(e => {
+            <span className="text-sm text-gray-400">Last 24h: {(entries as any[])?.filter(e => {
               const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
               return new Date(e.created_at) > dayAgo;
             }).length || 0}</span>
@@ -87,7 +99,7 @@ export default async function AdminWaitlistPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#27272A]">
-                {entries?.map((entry) => (
+                {(entries as any[])?.map((entry) => (
                   <tr key={entry.id} className="hover:bg-[#050507]/50">
                     <td className="px-6 py-4 font-mono text-[#00FF9F]">{entry.agent_id}</td>
                     <td className="px-6 py-4 text-gray-300">{entry.email}</td>

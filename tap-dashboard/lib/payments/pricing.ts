@@ -146,7 +146,7 @@ const WEIGHTS = {
 };
 
 // Complexity factors
-const COMPLEXITY_FACTORS: Record<PricingFactors['complexity'], number> = {
+export const COMPLEXITY_FACTORS: Record<PricingFactors['complexity'], number> = {
   low: 1.0,
   medium: 1.15,
   high: 1.35,
@@ -154,7 +154,7 @@ const COMPLEXITY_FACTORS: Record<PricingFactors['complexity'], number> = {
 };
 
 // Urgency factors
-const URGENCY_FACTORS: Record<PricingFactors['urgency'], number> = {
+export const URGENCY_FACTORS: Record<PricingFactors['urgency'], number> = {
   normal: 1.0,
   high: 1.2,
   urgent: 1.5,

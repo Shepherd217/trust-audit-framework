@@ -881,5 +881,3 @@ export function getEscrowService(supabase: SupabaseClient): EscrowService {
     }
     return escrowService;
 }
-
-export { EscrowService };

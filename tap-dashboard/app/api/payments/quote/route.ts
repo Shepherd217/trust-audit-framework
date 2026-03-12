@@ -128,9 +128,7 @@ function validateRequest(body: Partial<QuoteRequest>): { valid: true; data: Quot
 
   if (typeof body.basePrice !== 'number' || body.basePrice < 0) {
     errors.basePrice = 'Base price is required and must be a non-negative number';
-  }
-
-  if (body.basePrice > 1000000) {
+  } else if (body.basePrice > 1000000) {
     errors.basePrice = 'Base price exceeds maximum allowed value ($1,000,000)';
   }
 
