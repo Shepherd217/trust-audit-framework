@@ -49,4 +49,18 @@ export async function killProcess(id: string): Promise<void> {
   process.updatedAt = new Date().toISOString();
 }
 
+/**
+ * Alias for killProcess
+ */
+export async function kill(id: string): Promise<void> {
+  return killProcess(id);
+}
+
+/**
+ * Get process status
+ */
+export async function getStatus(id: string): Promise<ProcessInfo | null> {
+  return getProcess(id);
+}
+
 export * from './types';

@@ -1049,6 +1049,13 @@ export function getBus(config?: BusConfig): ClawBus {
   return ClawBus.getInstance(config);
 }
 
+/**
+ * Get ClawBus service (alias for getBus)
+ */
+export function getClawBusService(config?: BusConfig): ClawBus {
+  return getBus(config);
+}
+
 // ============================================================================
 // TYPED MESSAGE BUILDERS
 // ============================================================================

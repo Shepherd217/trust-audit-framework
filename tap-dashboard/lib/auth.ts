@@ -146,7 +146,10 @@ export const FEATURE_ACCESS: Record<string, SubscriptionTier[]> = {
 // Tier Priority for Comparison
 // ============================================================================
 
-const TIER_PRIORITY: Record<SubscriptionTier, number> = {
+/**
+ * Tier priority for comparison (higher = more access)
+ */
+export const TIER_PRIORITY: Record<SubscriptionTier, number> = {
   starter: 0,
   builder: 1,
   pro: 2,
