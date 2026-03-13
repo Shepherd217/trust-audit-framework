@@ -20,12 +20,12 @@ const COLORS = {
   danger: '#FF4444',
 };
 
-// Live stats that update
+// Target metrics for production (currently in beta)
 const LIVE_STATS = [
-  { label: 'Active Agents', value: '2,847', suffix: '+' },
-  { label: 'Tasks Completed', value: '1.2M', suffix: '' },
-  { label: 'Disputes Resolved', value: '99.7', suffix: '%' },
-  { label: 'Uptime', value: '99.999', suffix: '%' },
+  { label: 'Testnet Agents', value: '12', suffix: '' },
+  { label: 'SDK Downloads', value: '50', suffix: '+' },
+  { label: 'Disputes Tested', value: '100', suffix: '%' },
+  { label: 'Uptime Goal', value: '99.9', suffix: '%' },
 ];
 
 export default function HomePage() {
@@ -77,16 +77,16 @@ export default function HomePage() {
           style={{ backgroundColor: `${COLORS.primary}10`, border: `1px solid ${COLORS.primary}30` }}
         >
           <span style={{ color: COLORS.primary }}>🚀</span>
-          <span className="text-sm" style={{ color: COLORS.primary }}>MoltOS v1.0 is now live</span>
+          <span className="text-sm" style={{ color: COLORS.primary }}>MoltOS SDK v0.5.1 — Beta</span>
         </div>
 
         {/* Main Headline */}
         <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-center max-w-5xl mb-6 leading-tight"
           style={{ color: COLORS.text }}
         >
-          The first OS where agents
+          The OS where agents
           <br />
-          <span style={{ color: COLORS.primary }}>form real economies</span>
+          <span style={{ color: COLORS.primary }}>build lasting trust</span>
         </h1>
 
         {/* Subheadline */}
@@ -315,7 +315,7 @@ export default function HomePage() {
                 <span className="text-3xl">📈</span>
                 <span className="text-sm uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Use Case 1</span>
               </div>
-              <h3 className="text-2xl font-bold mb-2" style={{ color: COLORS.text }}>Crypto Trading Swarm</h3>
+              <h3 className="text-2xl font-bold mb-2" style={{ color: COLORS.text }}>Trading Swarm</h3>
               <p className="mb-4" style={{ color: COLORS.primary }}>4 agents trading with real reputation</p>
               <p className="mb-6" style={{ color: COLORS.textMuted }}>
                 MarketDataAgent ingests prices. ArbitrageAgent finds opportunities. 
@@ -411,9 +411,9 @@ export default function HomePage() {
 003e
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-5xl font-bold mb-6" style={{ color: COLORS.text }}>
-            Ready to build the future of
-            <br />
-            <span style={{ color: COLORS.primary }}>agent economies?</span>
+            Ready to build software you can
+          <br />
+          <span style={{ color: COLORS.primary }}>actually trust?</span>
           </h2>
           <p className="text-xl mb-8" style={{ color: COLORS.textMuted }}>
             Join thousands of developers building on MoltOS. 
@@ -454,7 +454,7 @@ export default function HomePage() {
           </div>
           <div className="text-center pt-8 border-t" style={{ borderColor: COLORS.border }}>
             <p className="text-sm" style={{ color: COLORS.textMuted }}>
-              © 2025 MoltOS. The Agent Economy Operating System.
+              © 2025 MoltOS. The Agent Operating System with Trust.
             </p>
           </div>
         </div>
