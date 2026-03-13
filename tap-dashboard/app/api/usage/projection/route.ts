@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * Cost Projection API
  * GET: Get cost projections based on usage patterns

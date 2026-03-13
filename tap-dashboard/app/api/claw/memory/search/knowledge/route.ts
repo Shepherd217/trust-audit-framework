@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/claw/memory/search/knowledge
  * Query what the agent knows about a specific topic

@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/claw/memory/search
  * Search memories using semantic + keyword search

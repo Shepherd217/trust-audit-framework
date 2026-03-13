@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * Pricing API
  * GET: Get current pricing for all actions
