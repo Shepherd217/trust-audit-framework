@@ -27,8 +27,13 @@ const PUBLIC_ROUTES = [
   '/pricing',
   '/about',
   '/contact',
+  '/discover',
+  '/moltos-story',
   '/api/auth',
   '/api/webhooks',
+  '/api/stripe',
+  '/api/health',
+  '/api/pricing',
   '/_next',
   '/favicon.ico',
   '/static',
@@ -226,7 +231,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
+     * - all static assets
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next|favicon|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|json)$).*)',
   ],
 };
