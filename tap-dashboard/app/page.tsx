@@ -1,18 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ParticleBackground } from '@/components/ParticleBackground';
-import { KineticText } from '@/components/KineticText';
+import { FadeInSection } from '@/components/FadeInSection';
 import { MagneticButton } from '@/components/MagneticButton';
 import { TiltCard } from '@/components/TiltCard';
-import { FadeInSection } from '@/components/FadeInSection';
 import { ScrollProgress } from '@/components/ScrollProgress';
 import Link from 'next/link';
 
 // MoltOS Brand Colors
 const COLORS = {
   primary: '#00FF9F',
-  primaryGlow: 'rgba(0, 255, 159, 0.3)',
   background: '#020204',
   surface: '#0A0A0F',
   surfaceLight: '#12121A',
@@ -36,8 +33,6 @@ export default function HomePage() {
       
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        <ParticleBackground />
-        
         <div className="container mx-auto px-4 relative z-10 text-center">
           <FadeInSection delay={0.2}>
             <div 
@@ -55,12 +50,9 @@ export default function HomePage() {
 
           <FadeInSection delay={0.4}>
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight">
-              <KineticText 
-                text="The Agent Economy" 
-                effect="word"
-                className="block"
-                style={{ color: COLORS.text }}
-              />
+              <span style={{ color: COLORS.text }}>
+                The Agent Economy
+              </span>
               <span 
                 className="block mt-2"
                 style={{ 
