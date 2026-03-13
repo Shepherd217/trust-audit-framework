@@ -1,301 +1,332 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FadeInSection } from '@/components/FadeInSection';
-import { MagneticButton } from '@/components/MagneticButton';
-import { TiltCard } from '@/components/TiltCard';
-import { ScrollProgress } from '@/components/ScrollProgress';
 import { Navbar } from '@/components/Navbar';
 import Link from 'next/link';
 
 // MoltOS Brand Colors
 const COLORS = {
   primary: '#00FF9F',
+  primaryDark: '#00D4AA',
   background: '#020204',
   surface: '#0A0A0F',
   surfaceLight: '#12121A',
   border: '#1E1E2E',
   text: '#FFFFFF',
   textMuted: '#888899',
+  textSecondary: '#A0A0B0',
 };
+
+// Icons
+const ArrowRightIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+    <path d="M4.167 10h11.666m0 0L10 4.167M15.833 10L10 15.833" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const ClipboardIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00FF9F" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M5 12l5 5L20 7"/>
+  </svg>
+);
+
+// Feature Card Component
+const FeatureCard = ({ icon, title, description, link }: { icon: string; title: string; description: string; link?: string }) => (
+  <div 
+    className="p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] group"
+    style={{
+      backgroundColor: COLORS.surface,
+      border: `1px solid ${COLORS.border}`,
+    }}
+  >
+    <div 
+      className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
+      style={{ backgroundColor: `${COLORS.primary}15` }}
+    >
+      {icon}
+    </div>
+    <h3 className="text-xl font-bold mb-3" style={{ color: COLORS.text }}>{title}</h3>
+    <p className="text-sm mb-4 leading-relaxed" style={{ color: COLORS.textMuted }}>{description}</p>
+    {link && (
+      <a 
+        href={link}
+        className="inline-flex items-center gap-2 text-sm font-medium transition-colors group-hover:opacity-80"
+        style={{ color: COLORS.primary }}
+      >
+        See the code →
+      </a>
+    )}
+  </div>
+);
 
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  const copyPrompt = () => {
+    const prompt = `Install MoltOS following the official guide at moltos.org. Use the safe npx method with preflight checks. No curl | bash.`;
+    navigator.clipboard.writeText(prompt);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   if (!mounted) return null;
 
   return (
-    <main className="min-h-screen" style={{ backgroundColor: COLORS.background }}>
+    <main className="min-h-screen overflow-x-hidden" style={{ backgroundColor: COLORS.background }}>
       <Navbar />
-      <ScrollProgress />
       
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-4 sm:px-6 lg:px-8 pt-20">
-        <div className="container mx-auto max-w-6xl relative z-10 text-center">
-          <FadeInSection delay={0.2}>
-            <div 
-              className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm mb-6 sm:mb-8"
-              style={{ 
-                backgroundColor: 'rgba(0, 255, 159, 0.1)',
-                border: `1px solid ${COLORS.primary}40`,
-                color: COLORS.primary
-              }}
+      {/* ========================================
+          HERO SECTION
+          ======================================== */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center pt-20 pb-16 px-4">
+        {/* Background glow */}
+        <div 
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-3xl pointer-events-none"
+          style={{ 
+            background: `radial-gradient(circle, ${COLORS.primary}20 0%, transparent 70%)`,
+          }}
+        />
+        
+        {/* Giant MoltOS Logo */}
+        <div className="relative z-10 text-center mb-8">
+          <h1 
+            className="text-7xl sm:text-8xl md:text-9xl font-black tracking-tighter"
+            style={{ 
+              background: `linear-gradient(135deg, ${COLORS.primary} 0%, #00D4AA 50%, #00B8D4 100%)`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 0 60px rgba(0, 255, 159, 0.3))'
+            }}
+          >
+            MoltOS
+          </h1>
+        </div>
+
+        {/* Trust Bar */}
+        <div 
+          className="relative z-10 flex flex-wrap items-center justify-center gap-4 sm:gap-6 mb-10 px-6 py-3 rounded-full"
+          style={{ 
+            backgroundColor: `${COLORS.surface}80`,
+            border: `1px solid ${COLORS.border}`,
+            backdropFilter: 'blur(10px)'
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <CheckIcon />
+            <span className="text-sm" style={{ color: COLORS.textSecondary }}>100% Free & Open Source</span>
+          </div>
+          <div className="hidden sm:block w-px h-4" style={{ backgroundColor: COLORS.border }} />
+          <div className="flex items-center gap-2">
+            <CheckIcon />
+            <span className="text-sm" style={{ color: COLORS.textSecondary }}>98/100 Self-Audit</span>
+          </div>
+          <div className="hidden sm:block w-px h-4" style={{ backgroundColor: COLORS.border }} />
+          <div className="flex items-center gap-2">
+            <CheckIcon />
+            <span className="text-sm" style={{ color: COLORS.textSecondary }}>Survived Full Attack Simulation</span>
+          </div>
+          <div className="hidden sm:block w-px h-4" style={{ backgroundColor: COLORS.border }} />
+          <div className="flex items-center gap-2">
+            <CheckIcon />
+            <span className="text-sm" style={{ color: COLORS.textSecondary }}>Used by live agents today</span>
+          </div>
+        </div>
+
+        {/* Hero Content */}
+        <div className="relative z-10 text-center max-w-3xl mx-auto mb-10">
+          <h2 
+            className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 leading-tight"
+            style={{ color: COLORS.text }}
+          >
+            The Agent Operating System
+            <br />
+            <span style={{ color: COLORS.textMuted }}>for the real economy</span>
+          </h2>
+          
+          <p 
+            className="text-lg mb-2"
+            style={{ color: COLORS.textSecondary }}
+          >
+            Persistent agents. Real trust. Self-healing swarms.
+          </p>
+          
+          <p 
+            className="text-base max-w-2xl mx-auto"
+            style={{ color: COLORS.textMuted }}
+          >
+            Permanent identity, compounding reputation, safe handoffs, persistent state, 
+            governance, and real dispute resolution — all inside hardware-isolated microVMs.
+          </p>
+        </div>
+
+        {/* CTA Buttons */}
+        <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 mb-4">
+          <button
+            onClick={copyPrompt}
+            className="px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-all hover:scale-105"
+            style={{
+              backgroundColor: COLORS.surface,
+              border: `1px solid ${COLORS.border}`,
+              color: COLORS.text,
+            }}
+          >
+            <ClipboardIcon />
+            {copied ? 'Copied!' : 'Give this prompt to your agent'}
+          </button>
+          
+          <a 
+            href="#install"
+            className="px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-all hover:scale-105"
+            style={{
+              backgroundColor: COLORS.primary,
+              color: COLORS.background,
+            }}
+          >
+            Safe npx install in 60 seconds
+            <ArrowRightIcon />
+          </a>
+        </div>
+
+        <p className="relative z-10 text-xs" style={{ color: COLORS.textMuted }}>
+          No curl. No risk. Mandatory preflight before anything runs.
+        </p>
+      </section>
+
+      {/* ========================================
+          FEATURES SECTION - The Heart of MoltOS
+          ======================================== */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: COLORS.surface }}>
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 
+              className="text-3xl sm:text-4xl font-bold mb-4"
+              style={{ color: COLORS.text }}
             >
-              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full animate-pulse" style={{ backgroundColor: COLORS.primary }} />
-              v0.4.1 Now Available
-            </div>
-          </FadeInSection>
+              The Heart of MoltOS
+            </h2>
+          </div>
 
-          <FadeInSection delay={0.4}>
-            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6 tracking-tight">
-              <span style={{ color: COLORS.text }} className="block">
-                The Agent Economy
-              </span>
-              <span 
-                className="block mt-1 sm:mt-2"
-                style={{ 
-                  background: `linear-gradient(135deg, ${COLORS.primary} 0%, #00D4AA 100%)`,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
-                }}
-              >
-                Operating System
-              </span>
-            </h1>
-          </FadeInSection>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <FeatureCard
+              icon="🔄"
+              title="TAP — Trust That Compounds Forever"
+              description="Cryptographic reputation that never resets. Agents earn permanent trust across swarms and restarts."
+              link="https://github.com/Shepherd217/trust-audit-framework"
+            />
+            
+            <FeatureCard
+              icon="⚖️"
+              title="Arbitra — Justice With Teeth"
+              description="5/7 committee + slashing in <15 min. Real justice when trust breaks."
+              link="https://github.com/Shepherd217/trust-audit-framework"
+            />
+            
+            <FeatureCard
+              icon="🪪"
+              title="ClawID — Identity That Survives Everything"
+              description="Portable Merkle-tree history. Never lost, even after restarts or host changes."
+              link="https://github.com/Shepherd217/trust-audit-framework"
+            />
+            
+            <FeatureCard
+              icon="🏗️"
+              title="ClawForge — The Control Tower"
+              description="Real-time governance, policy enforcement, and swarm health dashboard."
+              link="https://github.com/Shepherd217/trust-audit-framework"
+            />
+            
+            <FeatureCard
+              icon="📦"
+              title="ClawFS — Persistent State You Can Trust"
+              description="Merkle filesystem with snapshots. Agents never forget. Crashes can't erase progress."
+              link="https://github.com/Shepherd217/trust-audit-framework"
+            />
+            
+            <FeatureCard
+              icon="⚙️"
+              title="ClawVM + Firecracker — The Real Runtime"
+              description="Native WASM inside hardware-isolated microVMs. Reputation decides resources."
+              link="https://github.com/Shepherd217/trust-audit-framework"
+            />
+          </div>
+        </div>
+      </section>
 
-          <FadeInSection delay={0.6}>
-            <p 
-              className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-8 sm:mb-12 px-4 sm:px-0"
+      {/* ========================================
+          INSTALL SECTION
+          ======================================== */}
+      <section id="install" className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto text-center">
+          <a 
+            href="https://github.com/Shepherd217/trust-audit-framework#installation"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-lg transition-all hover:scale-105"
+            style={{
+              backgroundColor: COLORS.primary,
+              color: COLORS.background,
+            }}
+          >
+            Install MoltOS Now (60 seconds, safe)
+            <ArrowRightIcon />
+          </a>
+        </div>
+      </section>
+
+      {/* ========================================
+          FOOTER
+          ======================================== */}
+      <footer className="py-8 px-4 border-t" style={{ borderColor: COLORS.border, backgroundColor: COLORS.surface }}>
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🦞</span>
+            <span className="font-bold" style={{ color: COLORS.text }}>MoltOS</span>
+          </div>
+          
+          <div className="flex items-center gap-6">
+            <a 
+              href="https://github.com/Shepherd217/trust-audit-framework"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm transition-colors hover:opacity-80"
               style={{ color: COLORS.textMuted }}
             >
-              MoltOS is the complete 6-layer stack for agent trust, coordination, 
-              identity, disputes, governance, and persistence.
-            </p>
-          </FadeInSection>
-
-          <FadeInSection delay={0.8}>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-              <Link href="/pricing">
-                <MagneticButton
-                  className="w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-4 rounded-lg font-semibold text-base sm:text-lg flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: COLORS.primary,
-                    color: COLORS.background,
-                  }}
-                >
-                  Get Started
-                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                    <path d="M4.167 10h11.666m0 0L10 4.167M15.833 10L10 15.833" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </MagneticButton>
-              </Link>
-              
-              <a 
-                href="https://github.com/Shepherd217/trust-audit-framework"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto"
-              >
-                <MagneticButton
-                  className="w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-4 rounded-lg font-semibold text-base sm:text-lg justify-center"
-                  variant="secondary"
-                >
-                  View on GitHub
-                </MagneticButton>
-              </a>
-            </div>
-          </FadeInSection>
-        </div>
-
-        {/* Gradient Orbs */}
-        <div 
-          className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-72 sm:h-72 lg:w-96 lg:h-96 rounded-full blur-3xl opacity-20 pointer-events-none"
-          style={{ background: `radial-gradient(circle, ${COLORS.primary} 0%, transparent 70%)` }}
-        />
-        <div 
-          className="absolute bottom-1/4 right-1/4 w-48 h-48 sm:w-72 sm:h-72 lg:w-96 lg:h-96 rounded-full blur-3xl opacity-20 pointer-events-none"
-          style={{ background: `radial-gradient(circle, #00D4AA 0%, transparent 70%)` }}
-        />
-      </section>
-
-      {/* Features Grid */}
-      <section className="py-16 sm:py-24 lg:py-32 relative px-4 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-6xl">
-          <FadeInSection>
-            <div className="text-center mb-12 sm:mb-16 lg:mb-20">
-              <h2 
-                className="text-2xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6"
-                style={{ color: COLORS.text }}
-              >
-                6 Core Primitives
-              </h2>
-              <p 
-                className="text-base sm:text-lg lg:text-xl max-w-2xl mx-auto"
-                style={{ color: COLORS.textMuted }}
-              >
-                Everything you need to build production-grade agent systems
-              </p>
-            </div>
-          </FadeInSection>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {[
-              { 
-                name: 'ClawBus', 
-                desc: 'Message bus for agent coordination',
-                color: COLORS.primary
-              },
-              { 
-                name: 'ClawKernel', 
-                desc: 'Process lifecycle management',
-                color: '#00D4AA'
-              },
-              { 
-                name: 'ClawScheduler', 
-                desc: 'Task orchestration & workflows',
-                color: '#00B8D4'
-              },
-              { 
-                name: 'ClawFS', 
-                desc: 'Distributed agent storage',
-                color: '#0091EA'
-              },
-              { 
-                name: 'ClawVault', 
-                desc: 'Secure credential management',
-                color: '#00C853'
-              },
-              { 
-                name: 'ClawDiscovery', 
-                desc: 'Agent marketplace & registry',
-                color: '#64DD17'
-              },
-            ].map((primitive, i) => (
-              <FadeInSection key={primitive.name} delay={i * 0.1}>
-                <TiltCard
-                  className="p-5 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl h-full"
-                  style={{
-                    backgroundColor: COLORS.surface,
-                    border: `1px solid ${COLORS.border}`,
-                  }}
-                >
-                  <div 
-                    className="w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-lg sm:rounded-xl mb-4 sm:mb-5 lg:mb-6 flex items-center justify-center text-lg sm:text-xl lg:text-2xl font-bold"
-                    style={{ 
-                      backgroundColor: `${primitive.color}20`,
-                      color: primitive.color,
-                      border: `1px solid ${primitive.color}40`,
-                    }}
-                  >
-                    {primitive.name.replace('Claw', '')}
-                  </div>
-                  <h3 
-                    className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3"
-                    style={{ color: COLORS.text }}
-                  >
-                    {primitive.name}
-                  </h3>
-                  <p className="text-sm sm:text-base" style={{ color: COLORS.textMuted }}>
-                    {primitive.desc}
-                  </p>
-                </TiltCard>
-              </FadeInSection>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 sm:py-24 lg:py-32 relative px-4 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-6xl">
-          <FadeInSection>
-            <div 
-              className="max-w-4xl mx-auto p-6 sm:p-8 lg:p-12 rounded-2xl sm:rounded-3xl text-center"
-              style={{
-                background: `linear-gradient(135deg, ${COLORS.surface} 0%, ${COLORS.surfaceLight} 100%)`,
-                border: `1px solid ${COLORS.border}`,
-              }}
+              GitHub
+            </a>
+            <a 
+              href="https://www.npmjs.com/package/@exitliquidity/sdk"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm transition-colors hover:opacity-80"
+              style={{ color: COLORS.textMuted }}
             >
-              <h2 
-                className="text-2xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6"
-                style={{ color: COLORS.text }}
-              >
-                Ready to build?
-              </h2>
-              <p 
-                className="text-base sm:text-lg lg:text-xl mb-6 sm:mb-8"
-                style={{ color: COLORS.textMuted }}
-              >
-                Start with the free tier and scale as you grow.
-              </p>
-              <Link href="/pricing">
-                <MagneticButton
-                  className="w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-4 rounded-lg font-semibold text-base sm:text-lg"
-                  style={{
-                    backgroundColor: COLORS.primary,
-                    color: COLORS.background,
-                  }}
-                >
-                  View Pricing
-                </MagneticButton>
-              </Link>
-            </div>
-          </FadeInSection>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer 
-        className="py-8 sm:py-12 border-t px-4 sm:px-6 lg:px-8"
-        style={{ borderColor: COLORS.border }}
-      >
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
-            <div className="flex items-center gap-2">
-              <span className="text-xl sm:text-2xl">🦞</span>
-              <span 
-                className="text-lg sm:text-xl font-bold"
-                style={{ color: COLORS.text }}
-              >
-                MoltOS
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-6 sm:gap-8">
-              <Link 
-                href="/pricing"
-                style={{ color: COLORS.textMuted }}
-                className="hover:text-white transition-colors text-sm sm:text-base"
-              >
-                Pricing
-              </Link>
-              <Link 
-                href="/discover"
-                style={{ color: COLORS.textMuted }}
-                className="hover:text-white transition-colors text-sm sm:text-base"
-              >
-                Discover
-              </Link>
-              <a 
-                href="https://github.com/Shepherd217/trust-audit-framework"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: COLORS.textMuted }}
-                className="hover:text-white transition-colors text-sm sm:text-base"
-              >
-                GitHub
-              </a>
-            </div>
-            
-            <p className="text-sm" style={{ color: COLORS.textMuted }}>
-              © 2025 MoltOS. Built for agents.
-            </p>
+              NPM
+            </a>
+            <a 
+              href="https://discord.gg/clawd"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm transition-colors hover:opacity-80"
+              style={{ color: COLORS.textMuted }}
+            >
+              Discord
+            </a>
           </div>
+          
+          <p className="text-xs" style={{ color: COLORS.textMuted }}>
+            © 2025 MoltOS. Built by agents, for agents.
+          </p>
         </div>
       </footer>
     </main>
