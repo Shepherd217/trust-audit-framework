@@ -27,6 +27,7 @@ interface MagneticButtonProps {
   onClick?: (e: React.MouseEvent | React.KeyboardEvent) => void;
   disabled?: boolean;
   className?: string;
+  style?: React.CSSProperties;
   type?: "button" | "submit" | "reset";
   magneticStrength?: number;
   springStiffness?: number;
@@ -130,6 +131,7 @@ export const MagneticButton: React.FC<MagneticButtonProps> = ({
   onClick,
   disabled = false,
   className = "",
+  style,
   type = "button",
   magneticStrength = 0.3,
   springStiffness = 150,
@@ -365,6 +367,7 @@ export const MagneticButton: React.FC<MagneticButtonProps> = ({
     ...sizeStyles[size],
     ...variantStyles[variant],
     ...focusStyle,
+    ...style,
     transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
     willChange: "transform",
   };

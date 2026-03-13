@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { FadeInSection } from '@/components/FadeInSection';
+import { MagneticButton } from '@/components/MagneticButton';
+import { TiltCard } from '@/components/TiltCard';
 import { ScrollProgress } from '@/components/ScrollProgress';
 import Link from 'next/link';
 
@@ -77,8 +79,8 @@ export default function HomePage() {
           <FadeInSection delay={0.8}>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link href="/pricing">
-                <button
-                  className="px-8 py-4 rounded-lg font-semibold text-lg flex items-center gap-2 transition-all hover:scale-105"
+                <MagneticButton
+                  className="px-8 py-4 rounded-lg font-semibold text-lg flex items-center gap-2"
                   style={{
                     backgroundColor: COLORS.primary,
                     color: COLORS.background,
@@ -88,7 +90,7 @@ export default function HomePage() {
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <path d="M4.167 10h11.666m0 0L10 4.167M15.833 10L10 15.833" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
-                </button>
+                </MagneticButton>
               </Link>
               
               <a 
@@ -96,16 +98,12 @@ export default function HomePage() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <button
-                  className="px-8 py-4 rounded-lg font-semibold text-lg transition-all hover:scale-105"
-                  style={{
-                    backgroundColor: 'transparent',
-                    border: `1px solid ${COLORS.border}`,
-                    color: COLORS.text,
-                  }}
+                <MagneticButton
+                  className="px-8 py-4 rounded-lg font-semibold text-lg"
+                  variant="secondary"
                 >
                   View on GitHub
-                </button>
+                </MagneticButton>
               </a>
             </div>
           </FadeInSection>
@@ -176,8 +174,8 @@ export default function HomePage() {
               },
             ].map((primitive, i) => (
               <FadeInSection key={primitive.name} delay={i * 0.1}>
-                <div
-                  className="p-8 rounded-2xl h-full transition-transform hover:scale-105"
+                <TiltCard
+                  className="p-8 rounded-2xl h-full"
                   style={{
                     backgroundColor: COLORS.surface,
                     border: `1px solid ${COLORS.border}`,
@@ -202,7 +200,7 @@ export default function HomePage() {
                   <p style={{ color: COLORS.textMuted }}>
                     {primitive.desc}
                   </p>
-                </div>
+                </TiltCard>
               </FadeInSection>
             ))}
           </div>
@@ -233,15 +231,15 @@ export default function HomePage() {
                 Start with the free tier and scale as you grow.
               </p>
               <Link href="/pricing">
-                <button
-                  className="px-8 py-4 rounded-lg font-semibold text-lg transition-all hover:scale-105"
+                <MagneticButton
+                  className="px-8 py-4 rounded-lg font-semibold text-lg"
                   style={{
                     backgroundColor: COLORS.primary,
                     color: COLORS.background,
                   }}
                 >
                   View Pricing
-                </button>
+                </MagneticButton>
               </Link>
             </div>
           </FadeInSection>
