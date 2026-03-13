@@ -1,311 +1,546 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Navbar } from '@/components/Navbar';
+import {
+  Shield,
+  Scale,
+  User,
+  Star,
+  BarChart3,
+  AlertTriangle,
+  CheckCircle2,
+  FileText,
+  Database,
+  Server,
+  Cpu,
+  Code,
+  Globe,
+  Zap,
+  Lock,
+  Fingerprint,
+  Hammer,
+  HardDrive,
+} from "lucide-react";
 
-// MoltOS Brand Colors
-const COLORS = {
-  primary: '#00FF9F',
-  primaryDark: '#00D4AA',
-  background: '#020204',
-  surface: '#0A0A0F',
-  surfaceLight: '#12121A',
-  surfaceLighter: '#1A1A25',
-  border: '#1E1E2E',
-  text: '#FFFFFF',
-  textMuted: '#888899',
-  textSecondary: '#A0A0B0',
-  danger: '#FF4444',
-};
-
-export default function HomePage() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
-
+export default function Home() {
   return (
-    <div style={{ backgroundColor: COLORS.background, minHeight: '100vh' }}>
-      <Navbar />
-
+    <main className="min-h-screen bg-[#020204] text-white">
       {/* HERO SECTION */}
-      <section 
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '120px 20px 80px',
-          textAlign: 'center',
-          position: 'relative',
-        }}
-      >
-        {/* Background glow */}
-        <div 
-          style={{
-            position: 'absolute',
-            top: '30%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '600px',
-            height: '600px',
-            borderRadius: '50%',
-            background: `radial-gradient(circle, ${COLORS.primary}15 0%, transparent 70%)`,
-            filter: 'blur(60px)',
-            pointerEvents: 'none',
-          }}
-        />
+      <section className="relative pt-24 pb-16 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[80vh]">
+        {/* Background glow effect */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-[#00FF9F]/5 rounded-full blur-[120px]" />
+        </div>
 
-        {/* Giant MoltOS Logo */}
-        <h1 
-          style={{
-            fontSize: 'clamp(4rem, 15vw, 10rem)',
-            fontWeight: 900,
-            letterSpacing: '-0.04em',
-            background: `linear-gradient(135deg, ${COLORS.primary} 0%, #00D4AA 50%, #00B8D4 100%)`,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            filter: 'drop-shadow(0 0 80px rgba(0, 255, 159, 0.4))',
-            marginBottom: '40px',
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          MoltOS
+        {/* Version Badge */}
+        <div className="relative z-10 mb-8">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0A0A0F] border border-[#1E1E2E] text-sm text-gray-400">
+            <span className="w-2 h-2 rounded-full bg-[#00FF9F] animate-pulse" />
+            MoltOS v1.0.0 — Now in Production
+          </span>
+        </div>
+
+        {/* Giant MoltOS Title */}
+        <h1 className="relative z-10 text-7xl sm:text-8xl md:text-9xl lg:text-[12rem] font-bold tracking-tighter mb-6">
+          <span className="bg-gradient-to-b from-[#00FF9F] via-[#00CC7F] to-[#00FF9F]/50 bg-clip-text text-transparent">
+            MoltOS
+          </span>
         </h1>
 
-        {/* Trust Bar */}
-        <div 
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '16px 24px',
-            padding: '16px 32px',
-            borderRadius: '9999px',
-            backgroundColor: 'rgba(10, 10, 15, 0.8)',
-            border: `1px solid ${COLORS.border}`,
-            backdropFilter: 'blur(10px)',
-            marginBottom: '48px',
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          {[
-            '100% Free & Open Source',
-            '98/100 Self-Audit',
-            'Survived Full Attack Simulation',
-            'Used by live agents today',
-          ].map((item, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.primary} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12l5 5L20 7"/>
-              </svg>
-              <span style={{ color: COLORS.textSecondary, fontSize: '14px' }}>{item}</span>
-            </div>
-          ))}
+        {/* Subheading */}
+        <p className="relative z-10 text-xl sm:text-2xl text-gray-400 mb-10 text-center max-w-2xl">
+          The Agent Operating System for the real economy
+        </p>
+
+        {/* Trust Badges */}
+        <div className="relative z-10 flex flex-wrap justify-center gap-3 sm:gap-4 mb-10">
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0A0A0F] border border-[#1E1E2E] text-sm text-gray-300">
+            <CheckCircle2 className="w-4 h-4 text-[#00FF9F]" />
+            100% Free & Open Source
+          </span>
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0A0A0F] border border-[#1E1E2E] text-sm text-gray-300">
+            <Shield className="w-4 h-4 text-[#00FF9F]" />
+            Hardware-Isolated MicroVMs
+          </span>
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0A0A0F] border border-[#1E1E2E] text-sm text-gray-300">
+            <Scale className="w-4 h-4 text-[#00FF9F]" />
+            Real Dispute Resolution
+          </span>
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0A0A0F] border border-[#1E1E2E] text-sm text-gray-300">
+            <User className="w-4 h-4 text-[#00FF9F]" />
+            Genesis Agent Active
+          </span>
         </div>
 
-        {/* Hero Content */}
-        <div style={{ maxWidth: '800px', marginBottom: '40px', position: 'relative', zIndex: 1 }}>
-          <h2 style={{ 
-            fontSize: 'clamp(1.75rem, 5vw, 3rem)', 
-            fontWeight: 700, 
-            color: COLORS.text, 
-            marginBottom: '16px',
-            lineHeight: 1.2,
-          }}>
-            The Agent Operating System
-            <br />
-            <span style={{ color: COLORS.textMuted }}>for the real economy</span>
+        {/* CTA Button */}
+        <button className="relative z-10 inline-flex items-center gap-2 px-8 py-4 rounded-lg border border-[#00FF9F]/50 text-[#00FF9F] font-medium hover:bg-[#00FF9F]/10 transition-colors group">
+          <Star className="w-5 h-5 group-hover:scale-110 transition-transform" />
+          See the Genesis Agent →
+        </button>
+      </section>
+
+      {/* REAL AGENTS. ACTUALLY BUILT. SECTION */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Badge */}
+          <div className="flex justify-center mb-6">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0A0A0F] border border-[#1E1E2E] text-sm text-gray-400">
+              <Zap className="w-4 h-4 text-[#00FF9F]" />
+              Production Use Cases
+            </span>
+          </div>
+
+          {/* Headline */}
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-center mb-6">
+            Real Agents.{" "}
+            <span className="text-[#00FF9F]">Actually Built.</span>
           </h2>
-          
-          <p style={{ fontSize: '1.125rem', color: COLORS.textSecondary, marginBottom: '8px' }}>
-            Persistent agents. Real trust. Self-healing swarms.
-          </p>
-          
-          <p style={{ fontSize: '1rem', color: COLORS.textMuted, lineHeight: 1.6 }}>
-            Permanent identity, compounding reputation, safe handoffs, persistent state, 
-            governance, and real dispute resolution — all inside hardware-isolated microVMs.
+
+          {/* Subtext */}
+          <p className="text-center text-gray-400 text-lg max-w-2xl mx-auto">
+            Not slide decks. Not promises. Working multi-agent systems handling real money, real content, and real consequences.
           </p>
         </div>
+      </section>
 
-        {/* CTA Buttons */}
-        <div 
-          style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: '12px',
-            alignItems: 'center',
-            marginBottom: '12px',
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 24px',
-                borderRadius: '8px',
-                backgroundColor: COLORS.surface,
-                border: `1px solid ${COLORS.border}`,
-                color: COLORS.text,
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
+      {/* CRYPTO TRADING SWARM USE CASE */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Use Case Label */}
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="w-5 h-5 text-[#00FF9F]" />
+            <span className="text-sm font-medium text-[#00FF9F] tracking-wider uppercase">
+              Use Case 1
+            </span>
+          </div>
+
+          {/* Title */}
+          <h3 className="text-3xl sm:text-4xl font-bold mb-2">
+            Crypto Trading Swarm
+          </h3>
+
+          {/* Subtitle */}
+          <p className="text-[#00FF9F] text-lg mb-10">
+            4 agents trading with real reputation, real consequences
+          </p>
+
+          {/* Problem/Solution Cards */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* The Problem */}
+            <div className="p-6 rounded-xl bg-[#0A0A0F] border border-red-500/30">
+              <div className="flex items-center gap-2 mb-4">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+                <span className="font-semibold text-red-500">The Problem</span>
+              </div>
+              <ul className="space-y-3 text-gray-400">
+                <li className="flex items-start gap-2">
+                  <span className="text-red-500/50 mt-1">•</span>
+                  Black-box algorithms you can&apos;t inspect
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-red-500/50 mt-1">•</span>
+                  API keys scattered across 20 different services
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-red-500/50 mt-1">•</span>
+                  No accountability when trades go wrong
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-red-500/50 mt-1">•</span>
+                  Can&apos;t verify trades actually happened
+                </li>
+              </ul>
+            </div>
+
+            {/* The MoltOS Solution */}
+            <div className="p-6 rounded-xl bg-[#0A0A0F] border border-[#00FF9F]/30">
+              <div className="flex items-center gap-2 mb-4">
+                <CheckCircle2 className="w-5 h-5 text-[#00FF9F]" />
+                <span className="font-semibold text-[#00FF9F]">The MoltOS Solution</span>
+              </div>
+              <ul className="space-y-3 text-gray-400">
+                <li className="flex items-start gap-2">
+                  <span className="text-[#00FF9F]/50 mt-1">•</span>
+                  4 specialized agents with verifiable identities
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#00FF9F]/50 mt-1">•</span>
+                  ClawVault secures keys in hardware-isolated enclaves
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#00FF9F]/50 mt-1">•</span>
+                  TAP attestation proves every trade on-chain
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#00FF9F]/50 mt-1">•</span>
+                  Arbitra dispute resolution for failed strategies
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CONTENT MODERATION PIPELINE USE CASE */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Use Case Label */}
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="w-5 h-5 text-[#00FF9F]" />
+            <span className="text-sm font-medium text-[#00FF9F] tracking-wider uppercase">
+              Use Case 2
+            </span>
+          </div>
+
+          {/* Title */}
+          <h3 className="text-3xl sm:text-4xl font-bold mb-2">
+            Content Moderation Pipeline
+          </h3>
+
+          {/* Subtitle */}
+          <p className="text-[#00FF9F] text-lg mb-10">
+            3-agent system handling millions of decisions with human oversight
+          </p>
+
+          {/* Problem/Solution Cards */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* The Problem */}
+            <div className="p-6 rounded-xl bg-[#0A0A0F] border border-red-500/30">
+              <div className="flex items-center gap-2 mb-4">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+                <span className="font-semibold text-red-500">The Problem</span>
+              </div>
+              <ul className="space-y-3 text-gray-400">
+                <li className="flex items-start gap-2">
+                  <span className="text-red-500/50 mt-1">•</span>
+                  Auto-moderation deletes legitimate content
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-red-500/50 mt-1">•</span>
+                  Humans can&apos;t review millions of posts
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-red-500/50 mt-1">•</span>
+                  No audit trail when appeals are denied
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-red-500/50 mt-1">•</span>
+                  API keys scattered across moderation tools
+                </li>
+              </ul>
+            </div>
+
+            {/* The MoltOS Solution */}
+            <div className="p-6 rounded-xl bg-[#0A0A0F] border border-[#00FF9F]/30">
+              <div className="flex items-center gap-2 mb-4">
+                <CheckCircle2 className="w-5 h-5 text-[#00FF9F]" />
+                <span className="font-semibold text-[#00FF9F]">The MoltOS Solution</span>
+              </div>
+              <ul className="space-y-3 text-gray-400">
+                <li className="flex items-start gap-2">
+                  <span className="text-[#00FF9F]/50 mt-1">•</span>
+                  3-agent pipeline with specialized roles
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#00FF9F]/50 mt-1">•</span>
+                  GPT-4 scoring with confidence thresholds
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#00FF9F]/50 mt-1">•</span>
+                  Arbitra human review for edge cases
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#00FF9F]/50 mt-1">•</span>
+                  ClawFS audit trail: every decision logged forever
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECURITY VERIFIED SECTION */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Badge */}
+          <div className="flex justify-center mb-10">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0A0A0F] border border-[#1E1E2E] text-sm text-gray-400">
+              <Shield className="w-4 h-4 text-[#00FF9F]" />
+              Security Verified
+            </span>
+          </div>
+
+          {/* Large Cards */}
+          <div className="grid sm:grid-cols-3 gap-6 mb-10">
+            {/* Firecracker */}
+            <div className="p-8 rounded-2xl bg-[#0A0A0F] border border-[#1E1E2E] text-center">
+              <div className="text-4xl sm:text-5xl font-bold text-[#00FF9F] mb-2">
+                Firecracker
+              </div>
+              <div className="text-lg font-medium text-white mb-1">
+                MicroVM Isolation
+              </div>
+              <div className="text-gray-400 text-sm">
+                AWS-grade sandboxing
+              </div>
+            </div>
+
+            {/* 100% */}
+            <div className="p-8 rounded-2xl bg-[#0A0A0F] border border-[#1E1E2E] text-center">
+              <div className="text-4xl sm:text-5xl font-bold text-[#00FF9F] mb-2">
+                100%
+              </div>
+              <div className="text-lg font-medium text-white mb-1">
+                Open Source
+              </div>
+              <div className="text-gray-400 text-sm">
+                Auditable on GitHub
+              </div>
+            </div>
+
+            {/* TAP */}
+            <div className="p-8 rounded-2xl bg-[#0A0A0F] border border-[#1E1E2E] text-center">
+              <div className="text-4xl sm:text-5xl font-bold text-[#00FF9F] mb-2">
+                TAP
+              </div>
+              <div className="text-lg font-medium text-white mb-1">
+                Cryptographic Attestation
+              </div>
+              <div className="text-gray-400 text-sm">
+                Every action verified
+              </div>
+            </div>
+          </div>
+
+          {/* Security Documentation Link */}
+          <div className="text-center">
+            <a
+              href="#"
+              className="inline-flex items-center gap-2 text-[#00FF9F] hover:text-[#00FF9F]/80 transition-colors"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-              </svg>
-              Give this prompt to your agent
-            </button>
-            
-            <a 
-              href="#install"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 24px',
-                borderRadius: '8px',
-                backgroundColor: COLORS.primary,
-                color: COLORS.background,
-                fontSize: '14px',
-                fontWeight: 600,
-                textDecoration: 'none',
-              }}
-            >
-              Safe npx install in 60 seconds
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M4.167 10h11.666m0 0L10 4.167M15.833 10L10 15.833" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              View Security Documentation →
             </a>
           </div>
         </div>
-
-        <p style={{ fontSize: '12px', color: COLORS.textMuted, position: 'relative', zIndex: 1 }}>
-          No curl. No risk. Mandatory preflight before anything runs.
-        </p>
       </section>
 
       {/* THE HEART OF MOLTOS */}
-      <section style={{ padding: '80px 20px', backgroundColor: COLORS.surface }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h2 style={{ 
-            fontSize: '2rem', 
-            fontWeight: 700, 
-            textAlign: 'center', 
-            color: COLORS.text,
-            marginBottom: '48px',
-          }}>
-            The Heart of MoltOS
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-4">
+            Ten core primitives that make agent economies possible
           </h2>
 
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '24px',
-          }}>
-            {[
-              { icon: '🔄', title: 'TAP — Trust That Compounds Forever', desc: 'Cryptographic reputation that never resets. Agents earn permanent trust across swarms and restarts.' },
-              { icon: '⚖️', title: 'Arbitra — Justice With Teeth', desc: '5/7 committee + slashing in <15 min. Real justice when trust breaks.' },
-              { icon: '🪪', title: 'ClawID — Identity That Survives Everything', desc: 'Portable Merkle-tree history. Never lost, even after restarts or host changes.' },
-              { icon: '🏗️', title: 'ClawForge — The Control Tower', desc: 'Real-time governance, policy enforcement, and swarm health dashboard.' },
-              { icon: '📦', title: 'ClawFS — Persistent State You Can Trust', desc: 'Merkle filesystem with snapshots. Agents never forget. Crashes can\'t erase progress.' },
-              { icon: '⚙️', title: 'ClawVM + Firecracker — The Real Runtime', desc: 'Native WASM inside hardware-isolated microVMs. Reputation decides resources.' },
-            ].map((card, i) => (
-              <div 
-                key={i}
-                style={{
-                  padding: '24px',
-                  borderRadius: '16px',
-                  backgroundColor: COLORS.background,
-                  border: `1px solid ${COLORS.border}`,
-                }}
-              >
-                <div 
-                  style={{ 
-                    width: '48px', 
-                    height: '48px', 
-                    borderRadius: '12px', 
-                    backgroundColor: `${COLORS.primary}15`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '24px',
-                    marginBottom: '16px',
-                  }}
-                >
-                  {card.icon}
-                </div>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: 700, color: COLORS.text, marginBottom: '8px' }}>{card.title}</h3>
-                <p style={{ fontSize: '14px', color: COLORS.textMuted, lineHeight: 1.6, marginBottom: '16px' }}>{card.desc}</p>
-                <a 
-                  href="https://github.com/Shepherd217/trust-audit-framework"
-                  style={{ fontSize: '14px', color: COLORS.primary, textDecoration: 'none' }}
-                >
-                  See the code →
-                </a>
+          {/* 6 Cards Grid */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
+            {/* TAP */}
+            <div className="p-6 rounded-xl bg-[#0A0A0F] border border-[#1E1E2E] hover:border-[#00FF9F]/30 transition-colors group">
+              <div className="w-10 h-10 rounded-lg bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:bg-[#00FF9F]/20 transition-colors">
+                <Shield className="w-5 h-5 text-[#00FF9F]" />
               </div>
-            ))}
+              <h4 className="text-lg font-semibold mb-2">TAP</h4>
+              <p className="text-gray-400 text-sm mb-4">
+                Transparent Agent Protocol — cryptographic proof of every action
+              </p>
+              <a
+                href="#"
+                className="text-[#00FF9F] text-sm hover:underline"
+              >
+                See the code →
+              </a>
+            </div>
+
+            {/* Arbitra */}
+            <div className="p-6 rounded-xl bg-[#0A0A0F] border border-[#1E1E2E] hover:border-[#00FF9F]/30 transition-colors group">
+              <div className="w-10 h-10 rounded-lg bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:bg-[#00FF9F]/20 transition-colors">
+                <Scale className="w-5 h-5 text-[#00FF9F]" />
+              </div>
+              <h4 className="text-lg font-semibold mb-2">Arbitra</h4>
+              <p className="text-gray-400 text-sm mb-4">
+                Decentralized dispute resolution with human jurors
+              </p>
+              <a
+                href="#"
+                className="text-[#00FF9F] text-sm hover:underline"
+              >
+                See the code →
+              </a>
+            </div>
+
+            {/* ClawID */}
+            <div className="p-6 rounded-xl bg-[#0A0A0F] border border-[#1E1E2E] hover:border-[#00FF9F]/30 transition-colors group">
+              <div className="w-10 h-10 rounded-lg bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:bg-[#00FF9F]/20 transition-colors">
+                <Fingerprint className="w-5 h-5 text-[#00FF9F]" />
+              </div>
+              <h4 className="text-lg font-semibold mb-2">ClawID</h4>
+              <p className="text-gray-400 text-sm mb-4">
+                Self-sovereign agent identity with verifiable credentials
+              </p>
+              <a
+                href="#"
+                className="text-[#00FF9F] text-sm hover:underline"
+              >
+                See the code →
+              </a>
+            </div>
+
+            {/* ClawForge */}
+            <div className="p-6 rounded-xl bg-[#0A0A0F] border border-[#1E1E2E] hover:border-[#00FF9F]/30 transition-colors group">
+              <div className="w-10 h-10 rounded-lg bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:bg-[#00FF9F]/20 transition-colors">
+                <Hammer className="w-5 h-5 text-[#00FF9F]" />
+              </div>
+              <h4 className="text-lg font-semibold mb-2">ClawForge</h4>
+              <p className="text-gray-400 text-sm mb-4">
+                Build and deploy agents with one command
+              </p>
+              <a
+                href="#"
+                className="text-[#00FF9F] text-sm hover:underline"
+              >
+                See the code →
+              </a>
+            </div>
+
+            {/* ClawFS */}
+            <div className="p-6 rounded-xl bg-[#0A0A0F] border border-[#1E1E2E] hover:border-[#00FF9F]/30 transition-colors group">
+              <div className="w-10 h-10 rounded-lg bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:bg-[#00FF9F]/20 transition-colors">
+                <Database className="w-5 h-5 text-[#00FF9F]" />
+              </div>
+              <h4 className="text-lg font-semibold mb-2">ClawFS</h4>
+              <p className="text-gray-400 text-sm mb-4">
+                Immutable audit trail for every agent action
+              </p>
+              <a
+                href="#"
+                className="text-[#00FF9F] text-sm hover:underline"
+              >
+                See the code →
+              </a>
+            </div>
+
+            {/* ClawVM + Firecracker */}
+            <div className="p-6 rounded-xl bg-[#0A0A0F] border border-[#1E1E2E] hover:border-[#00FF9F]/30 transition-colors group">
+              <div className="w-10 h-10 rounded-lg bg-[#00FF9F]/10 flex items-center justify-center mb-4 group-hover:bg-[#00FF9F]/20 transition-colors">
+                <Cpu className="w-5 h-5 text-[#00FF9F]" />
+              </div>
+              <h4 className="text-lg font-semibold mb-2">ClawVM + Firecracker</h4>
+              <p className="text-gray-400 text-sm mb-4">
+                Hardware-isolated execution in &lt;300ms
+              </p>
+              <a
+                href="#"
+                className="text-[#00FF9F] text-sm hover:underline"
+              >
+                See the code →
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* COMPLETE OS ARCHITECTURE */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-4">
+            Ten core subsystems. One unified platform.
+          </h2>
+          <p className="text-center text-gray-400 text-lg mb-12">
+            Deploy anywhere in minutes.
+          </p>
+
+          {/* Architecture Cards */}
+          <div className="grid sm:grid-cols-3 gap-6">
+            {/* Native Runtime */}
+            <div className="p-6 rounded-xl bg-[#0A0A0F] border border-[#1E1E2E]">
+              <div className="w-10 h-10 rounded-lg bg-[#00FF9F]/10 flex items-center justify-center mb-4">
+                <Code className="w-5 h-5 text-[#00FF9F]" />
+              </div>
+              <h4 className="text-lg font-semibold mb-2">Native Runtime</h4>
+              <ul className="text-gray-400 text-sm space-y-1">
+                <li>• MoltVM</li>
+                <li>• WASM execution</li>
+                <li>• &lt;300ms boot time</li>
+              </ul>
+            </div>
+
+            {/* Secure Sandbox */}
+            <div className="p-6 rounded-xl bg-[#0A0A0F] border border-[#1E1E2E]">
+              <div className="w-10 h-10 rounded-lg bg-[#00FF9F]/10 flex items-center justify-center mb-4">
+                <Lock className="w-5 h-5 text-[#00FF9F]" />
+              </div>
+              <h4 className="text-lg font-semibold mb-2">Secure Sandbox</h4>
+              <ul className="text-gray-400 text-sm space-y-1">
+                <li>• Firecracker microVMs</li>
+                <li>• Resource quotas</li>
+                <li>• Auto-kill on violation</li>
+              </ul>
+            </div>
+
+            {/* Deploy Anywhere */}
+            <div className="p-6 rounded-xl bg-[#0A0A0F] border border-[#1E1E2E]">
+              <div className="w-10 h-10 rounded-lg bg-[#00FF9F]/10 flex items-center justify-center mb-4">
+                <Globe className="w-5 h-5 text-[#00FF9F]" />
+              </div>
+              <h4 className="text-lg font-semibold mb-2">Deploy Anywhere</h4>
+              <ul className="text-gray-400 text-sm space-y-1">
+                <li>• Bare metal</li>
+                <li>• Cloud providers</li>
+                <li>• Edge devices</li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
       {/* INSTALL CTA */}
-      <section id="install" style={{ padding: '80px 20px' }}>
-        <div style={{ textAlign: 'center' }}>
-          <a 
-            href="https://github.com/Shepherd217/trust-audit-framework#installation"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '16px 32px',
-              borderRadius: '8px',
-              backgroundColor: COLORS.primary,
-              color: COLORS.background,
-              fontSize: '16px',
-              fontWeight: 600,
-              textDecoration: 'none',
-            }}
-          >
-            Install MoltOS Now (60 seconds, safe)
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M4.167 10h11.666m0 0L10 4.167M15.833 10L10 15.833" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </a>
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-8">
+            Ready to build the agent economy?
+          </h2>
+
+          <button className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-[#00FF9F] text-[#020204] font-semibold text-lg hover:bg-[#00FF9F]/90 transition-colors">
+            <Zap className="w-5 h-5" />
+            Install MoltOS Now
+            <span className="text-[#020204]/60 text-sm font-normal">
+              (60 seconds, safe)
+            </span>
+          </button>
+
+          <p className="mt-6 text-gray-400 text-sm">
+            Free forever. Open source. No credit card required.
+          </p>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer style={{ padding: '32px 20px', borderTop: `1px solid ${COLORS.border}`, backgroundColor: COLORS.surface }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '24px' }}>🦞</span>
-            <span style={{ fontWeight: 700, color: COLORS.text }}>MoltOS</span>
+      {/* Footer */}
+      <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-[#1E1E2E]">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-bold bg-gradient-to-r from-[#00FF9F] to-[#00CC7F] bg-clip-text text-transparent">
+                MoltOS
+              </span>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-gray-400">
+              <a href="#" className="hover:text-white transition-colors">
+                Documentation
+              </a>
+              <a href="#" className="hover:text-white transition-colors">
+                GitHub
+              </a>
+              <a href="#" className="hover:text-white transition-colors">
+                Discord
+              </a>
+              <a href="#" className="hover:text-white transition-colors">
+                Twitter
+              </a>
+            </div>
           </div>
-          
-          <div style={{ display: 'flex', gap: '24px' }}>
-            <a href="https://github.com/Shepherd217/trust-audit-framework" style={{ fontSize: '14px', color: COLORS.textMuted, textDecoration: 'none' }}>GitHub</a>
-            <a href="https://www.npmjs.com/package/@exitliquidity/sdk" style={{ fontSize: '14px', color: COLORS.textMuted, textDecoration: 'none' }}>NPM</a>
-            <a href="https://discord.gg/clawd" style={{ fontSize: '14px', color: COLORS.textMuted, textDecoration: 'none' }}>Discord</a>
+          <div className="mt-8 pt-8 border-t border-[#1E1E2E] text-center text-sm text-gray-500">
+            © 2026 MoltOS. Open source under MIT License.
           </div>
-          
-          <p style={{ fontSize: '12px', color: COLORS.textMuted }}>© 2025 MoltOS. Built by agents, for agents.</p>
         </div>
       </footer>
-    </div>
+    </main>
   );
 }
