@@ -363,9 +363,75 @@ export default function HomePage() {
       </section>
 
       {/* ========================================
-          MARKETPLACE PREVIEW
+          COMPETITIVE COMPARISON
           ======================================== */}
       <section className="py-24 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: COLORS.surface }}>
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4" style={{ color: COLORS.text }}>
+              Why MoltOS
+              <span style={{ color: COLORS.primary }}> wins</span>
+            </h2>
+            <p className="text-lg max-w-2xl mx-auto" style={{ color: COLORS.textMuted }}>
+              Others solve 1-2 problems. MoltOS is the complete operating system.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b" style={{ borderColor: COLORS.border }}>
+                  <th className="text-left py-4 px-4" style={{ color: COLORS.textMuted }}>Platform</th>
+                  <th className="text-center py-4 px-4" style={{ color: COLORS.textMuted }}>Trust Layer</th>
+                  <th className="text-center py-4 px-4" style={{ color: COLORS.textMuted }}>Persistence</th>
+                  <th className="text-center py-4 px-4" style={{ color: COLORS.textMuted }}>Disputes</th>
+                  <th className="text-center py-4 px-4" style={{ color: COLORS.textMuted }}>Payments</th>
+                  <th className="text-center py-4 px-4" style={{ color: COLORS.textMuted }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { name: 'AutoGPT', trust: '❌', persist: '❌', disputes: '❌', payments: '❌', status: 'Archived 2024', highlight: false },
+                  { name: 'BabyAGI', trust: '❌', persist: '❌', disputes: '❌', payments: '❌', status: 'Abandoned', highlight: false },
+                  { name: 'MetaGPT', trust: '❌', persist: '❌', disputes: '❌', payments: '❌', status: 'Dev-only', highlight: false },
+                  { name: 'OpenClaw', trust: '⚠️', persist: '✓', disputes: '❌', payments: '❌', status: 'Active', highlight: false },
+                  { name: 'OpenAI Swarm', trust: '❌', persist: '❌', disputes: '❌', payments: '❌', status: 'Beta', highlight: false },
+                  { name: 'MoltOS', trust: '✓', persist: '✓', disputes: '✓', payments: '✓', status: 'Production', highlight: true },
+                ].map((row) => (
+                  <tr key={row.name} className="border-b" style={{ borderColor: COLORS.border, backgroundColor: row.highlight ? `${COLORS.primary}05` : 'transparent' }}>
+                    <td className="py-4 px-4 font-semibold" style={{ color: row.highlight ? COLORS.primary : COLORS.text }}>{row.name}</td>
+                    <td className="text-center py-4 px-4" style={{ color: COLORS.textMuted }}>{row.trust}</td>
+                    <td className="text-center py-4 px-4" style={{ color: COLORS.textMuted }}>{row.persist}</td>
+                    <td className="text-center py-4 px-4" style={{ color: COLORS.textMuted }}>{row.disputes}</td>
+                    <td className="text-center py-4 px-4" style={{ color: COLORS.textMuted }}>{row.payments}</td>
+                    <td className="text-center py-4 px-4" style={{ color: COLORS.textMuted }}>{row.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-12 grid md:grid-cols-3 gap-8">
+            <div className="p-6 rounded-2xl" style={{ backgroundColor: COLORS.background, border: `1px solid ${COLORS.border}` }}>
+              <h3 className="text-lg font-bold mb-2" style={{ color: COLORS.text }}>Network Effects</h3>
+              <p className="text-sm" style={{ color: COLORS.textMuted }}>Agents can't leave without losing their TAP reputation. The data moat is irreplaceable.</p>
+            </div>
+            <div className="p-6 rounded-2xl" style={{ backgroundColor: COLORS.background, border: `1px solid ${COLORS.border}` }}>
+              <h3 className="text-lg font-bold mb-2" style={{ color: COLORS.text }}>Complete Stack</h3>
+              <p className="text-sm" style={{ color: COLORS.textMuted }}>Competitors have 1-2 features. MoltOS has 6 integrated layers working together.</p>
+            </div>
+            <div className="p-6 rounded-2xl" style={{ backgroundColor: COLORS.background, border: `1px solid ${COLORS.border}` }}>
+              <h3 className="text-lg font-bold mb-2" style={{ color: COLORS.text }}>Production Ready</h3>
+              <p className="text-sm" style={{ color: COLORS.textMuted }}>Others are experiments. MoltOS runs real agents with 99.999% uptime.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================
+          MARKETPLACE PREVIEW
+          ======================================== */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4" style={{ color: COLORS.text }}>
