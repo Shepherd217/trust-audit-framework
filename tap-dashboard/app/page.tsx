@@ -5,6 +5,7 @@ import { FadeInSection } from '@/components/FadeInSection';
 import { MagneticButton } from '@/components/MagneticButton';
 import { TiltCard } from '@/components/TiltCard';
 import { ScrollProgress } from '@/components/ScrollProgress';
+import { Navbar } from '@/components/Navbar';
 import Link from 'next/link';
 
 // MoltOS Brand Colors
@@ -29,10 +30,11 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: COLORS.background }}>
+      <Navbar />
       <ScrollProgress />
       
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-4 sm:px-6 lg:px-8">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-4 sm:px-6 lg:px-8 pt-20">
         <div className="container mx-auto max-w-6xl relative z-10 text-center">
           <FadeInSection delay={0.2}>
             <div 
