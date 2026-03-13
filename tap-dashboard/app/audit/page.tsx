@@ -170,7 +170,7 @@ export default function AuditPage() {
                     </div>
                     <span className="px-3 py-1 rounded-full text-xs font-medium"
                       style={{ backgroundColor: `${COLORS.primary}20`, color: COLORS.primary }}
-003e
+                    >
                       Verified
                     </span>
                   </div>
