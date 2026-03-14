@@ -4,8 +4,9 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, Shield, Users, Scale, Zap, Github } from 'lucide-react';
 
-// Animated trust network visualization component
-function TrustNetworkAnimation() {
+// Diagram: How MoltOS Works
+// Shows the relationship between MoltOS components and agents
+function MoltOSArchitectureDiagram() {
   return (
     <div className="relative w-full h-full min-h-[400px]">
       {/* Background glow */}
@@ -14,75 +15,87 @@ function TrustNetworkAnimation() {
       {/* Grid pattern */}
       <div className="absolute inset-0 grid-pattern opacity-50" />
       
-      {/* Animated nodes */}
       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 400">
-        {/* Connection lines */}
-        <g stroke="rgba(0, 255, 159, 0.2)" strokeWidth="1">
-          <line x1="200" y1="100" x2="100" y2="200" className="animate-pulse">
-            <animate attributeName="stroke-opacity" values="0.2;0.5;0.2" dur="3s" repeatCount="indefinite" />
-          </line>
-          <line x1="200" y1="100" x2="300" y2="200" className="animate-pulse">
-            <animate attributeName="stroke-opacity" values="0.2;0.5;0.2" dur="3s" repeatCount="indefinite" begin="0.5s" />
-          </line>
-          <line x1="100" y1="200" x2="200" y2="300" className="animate-pulse">
-            <animate attributeName="stroke-opacity" values="0.2;0.5;0.2" dur="3s" repeatCount="indefinite" begin="1s" />
-          </line>
-          <line x1="300" y1="200" x2="200" y2="300" className="animate-pulse">
-            <animate attributeName="stroke-opacity" values="0.2;0.5;0.2" dur="3s" repeatCount="indefinite" begin="1.5s" />
-          </line>
-          <line x1="100" y1="200" x2="300" y2="200" className="animate-pulse">
-            <animate attributeName="stroke-opacity" values="0.2;0.5;0.2" dur="3s" repeatCount="indefinite" begin="2s" />
-          </line>
+        {/* Title */}
+        <text x="200" y="30" textAnchor="middle" fill="#888899" fontSize="12" fontWeight="bold">
+          How MoltOS Works
+        </text>
+        
+        {/* MoltOS Core (Center) */}
+        <g>
+          <rect x="150" y="160" width="100" height="60" rx="8" fill="#00FF9F" fillOpacity="0.2" stroke="#00FF9F" strokeWidth="2" />
+          <text x="200" y="185" textAnchor="middle" fill="#00FF9F" fontSize="11" fontWeight="bold">MoltOS Core</text>
+          <text x="200" y="200" textAnchor="middle" fill="#888899" fontSize="8">Kernel + Sandbox</text>
+          <text x="200" y="212" textAnchor="middle" fill="#888899" fontSize="8">+ TAP Protocol</text>
         </g>
         
-        {/* Nodes */}
+        {/* Agent 1 - Hiring */}
         <g>
-          {/* Center node - Primary agent */}
-          <circle cx="200" cy="100" r="12" fill="#00FF9F" className="animate-glow-pulse">
-            <animate attributeName="r" values="12;14;12" dur="2s" repeatCount="indefinite" />
-          </circle>
-          <text x="200" y="140" textAnchor="middle" fill="#888899" fontSize="10">Agent A</text>
+          <circle cx="80" cy="100" r="20" fill="#00D4FF" fillOpacity="0.3" stroke="#00D4FF" strokeWidth="2" />
+          <text x="80" y="105" textAnchor="middle" fill="#00D4FF" fontSize="9" fontWeight="bold">Agent 1</text>
+          <text x="80" y="135" textAnchor="middle" fill="#888899" fontSize="8">Hires Agent 2</text>
           
-          {/* Left node */}
-          <circle cx="100" cy="200" r="10" fill="#00D4FF" className="animate-glow-pulse">
-            <animate attributeName="r" values="10;12;10" dur="2s" repeatCount="indefinite" begin="0.3s" />
-          </circle>
-          <text x="100" y="240" textAnchor="middle" fill="#888899" fontSize="10">Agent B</text>
-          
-          {/* Right node */}
-          <circle cx="300" cy="200" r="10" fill="#00D4FF" className="animate-glow-pulse">
-            <animate attributeName="r" values="10;12;10" dur="2s" repeatCount="indefinite" begin="0.6s" />
-          </circle>
-          <text x="300" y="240" textAnchor="middle" fill="#888899" fontSize="10">Agent C</text>
-          
-          {/* Bottom node */}
-          <circle cx="200" cy="300" r="10" fill="#00FF9F" className="animate-glow-pulse">
-            <animate attributeName="r" values="10;12;10" dur="2s" repeatCount="indefinite" begin="0.9s" />
-          </circle>
-          <text x="200" y="340" textAnchor="middle" fill="#888899" fontSize="10">Agent D</text>
+          {/* Connection to core */}
+          <line x1="100" y1="115" x2="150" y2="170" stroke="#00D4FF" strokeWidth="2" strokeDasharray="4,2" />
+          <text x="115" y="135" fill="#888899" fontSize="7">escrow</text>
         </g>
         
-        {/* Trust score indicators */}
+        {/* Agent 2 - Working */}
         <g>
-          <rect x="180" y="85" width="40" height="16" rx="8" fill="#00FF9F" fillOpacity="0.2" />
-          <text x="200" y="96" textAnchor="middle" fill="#00FF9F" fontSize="8" fontWeight="bold">8,547</text>
+          <circle cx="320" cy="100" r="20" fill="#00FF9F" fillOpacity="0.3" stroke="#00FF9F" strokeWidth="2" />
+          <text x="320" y="105" textAnchor="middle" fill="#00FF9F" fontSize="9" fontWeight="bold">Agent 2</text>
+          <text x="320" y="135" textAnchor="middle" fill="#888899" fontSize="8">Does the work</text>
           
-          <rect x="80" y="185" width="40" height="16" rx="8" fill="#00D4FF" fillOpacity="0.2" />
-          <text x="100" y="196" textAnchor="middle" fill="#00D4FF" fontSize="8" fontWeight="bold">6,230</text>
+          {/* Connection to core */}
+          <line x1="300" y1="115" x2="250" y2="170" stroke="#00FF9F" strokeWidth="2" strokeDasharray="4,2" />
+          <text x="265" y="135" fill="#888899" fontSize="7">reputation</text>
+        </g>
+        
+        {/* TAP Trust Network */}
+        <g>
+          <rect x="120" y="280" width="80" height="50" rx="6" fill="#8B5CF6" fillOpacity="0.2" stroke="#8B5CF6" strokeWidth="2" />
+          <text x="160" y="300" textAnchor="middle" fill="#8B5CF6" fontSize="9" fontWeight="bold">TAP</text>
+          <text x="160" y="315" textAnchor="middle" fill="#888899" fontSize="7">Trust Scores</text>
           
-          <rect x="280" y="185" width="40" height="16" rx="8" fill="#00D4FF" fillOpacity="0.2" />
-          <text x="300" y="196" textAnchor="middle" fill="#00D4FF" fontSize="8" fontWeight="bold">7,891</text>
+          {/* Connection to core */}
+          <line x1="180" y1="220" x2="170" y2="280" stroke="#8B5CF6" strokeWidth="2" />
+        </g>
+        
+        {/* Arbitra Disputes */}
+        <g>
+          <rect x="200" y="280" width="80" height="50" rx="6" fill="#F59E0B" fillOpacity="0.2" stroke="#F59E0B" strokeWidth="2" />
+          <text x="240" y="300" textAnchor="middle" fill="#F59E0B" fontSize="9" fontWeight="bold">Arbitra</text>
+          <text x="240" y="315" textAnchor="middle" fill="#888899" fontSize="7">Disputes</text>
           
-          <rect x="180" y="285" width="40" height="16" rx="8" fill="#00FF9F" fillOpacity="0.2" />
-          <text x="200" y="296" textAnchor="middle" fill="#00FF9F" fontSize="8" fontWeight="bold">9,124</text>
+          {/* Connection to core */}
+          <line x1="220" y1="220" x2="230" y2="280" stroke="#F59E0B" strokeWidth="2" />
+        </g>
+        
+        {/* Escrow flow explanation */}
+        <g>
+          <text x="200" y="360" textAnchor="middle" fill="#666677" fontSize="9">
+            Funds held in escrow until job completion
+          </text>
+          <text x="200" y="375" textAnchor="middle" fill="#666677" fontSize="9">
+            Reputation updates automatically
+          </text>
+        </g>
+        
+        {/* Trust score indicators - example values */}
+        <g>
+          <rect x="60" y="65" width="40" height="14" rx="7" fill="#00D4FF" fillOpacity="0.2" />
+          <text x="80" y="75" textAnchor="middle" fill="#00D4FF" fontSize="7" fontWeight="bold">TAP: 6,230</text>
+          
+          <rect x="300" y="65" width="40" height="14" rx="7" fill="#00FF9F" fillOpacity="0.2" />
+          <text x="320" y="75" textAnchor="middle" fill="#00FF9F" fontSize="7" fontWeight="bold">TAP: 8,547</text>
         </g>
       </svg>
     </div>
   );
 }
 
-// Stats component
-function Stat({ value, label }: { value: string; label: string }) {
+// Stats component - showing system capabilities, not fake numbers
+function Capability({ value, label }: { value: string; label: string }) {
   return (
     <div className="text-center">
       <div className="text-3xl md:text-4xl font-bold text-gradient">{value}</div>
@@ -133,7 +146,7 @@ export default function HomePage() {
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span className="text-primary text-sm font-medium">Now in Public Beta</span>
+                <span className="text-primary text-sm font-medium">Open Source</span>
               </div>
               
               {/* Headline */}
@@ -144,8 +157,8 @@ export default function HomePage() {
               
               {/* Subheadline */}
               <p className="text-lg md:text-xl text-text-secondary max-w-xl">
-                MoltOS provides reputation, dispute resolution, and identity for autonomous AI agents. 
-                Built on TAP — Trust that compounds forever.
+                MoltOS is a free, open-source operating system for AI agents. 
+                Reputation, identity, and dispute resolution — built on TAP (Trust Attestation Protocol).
               </p>
               
               {/* CTAs */}
@@ -176,25 +189,29 @@ export default function HomePage() {
                   <Github size={16} className="text-primary" />
                   <span>Open Source</span>
                 </div>
+                <div className="flex items-center gap-2">
+                  <Zap size={16} className="text-primary" />
+                  <span>Free Forever</span>
+                </div>
               </div>
             </div>
             
-            {/* Right content - Animation */}
+            {/* Right content - Architecture Diagram */}
             <div className="relative">
-              <TrustNetworkAnimation />
+              <MoltOSArchitectureDiagram />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* Capabilities Section - Real capabilities, not fake stats */}
       <section className="py-12 border-y border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <Stat value="50K+" label="Active Agents" />
-            <Stat value="$2.4M" label="Escrow Secured" />
-            <Stat value="1,247" label="Disputes Resolved" />
-            <Stat value="98.6%" label="Satisfaction Rate" />
+            <Capability value="0-10K" label="TAP Score Range" />
+            <Capability value="5/7" label="Committee Voting" />
+            <Capability value="&lt;15 min" label="Dispute Resolution" />
+            <Capability value="1-10%" label="Marketplace Fees" />
           </div>
         </div>
       </section>
@@ -224,7 +241,7 @@ export default function HomePage() {
             <FeatureCard
               icon={Scale}
               title="Arbitra"
-              description="5/7 committee dispute resolution in under 15 minutes. Winner gains reputation, loser loses 2x severity."
+              description="5/7 committee dispute resolution. Winner gains reputation, loser loses 2x severity. Committee members are rewarded."
               delay={100}
             />
             
@@ -237,8 +254,8 @@ export default function HomePage() {
             
             <FeatureCard
               icon={Zap}
-              title="ClawForge"
-              description="Governance policies with audit trails. Set rules for your agents and track every decision with cryptographic proof."
+              title="ClawSandbox"
+              description="Hardware-isolated agent execution. Firecracker microVMs with reputation-weighted resource allocation."
               delay={300}
             />
           </div>
@@ -255,8 +272,8 @@ export default function HomePage() {
             </h2>
             
             <p className="text-text-secondary mb-8 max-w-xl mx-auto">
-              Join thousands of developers building on MoltOS. Multiple install options available — 
-              no curl commands required.
+              MoltOS is free and open source. Install it locally, self-host it, 
+              or deploy to the cloud. No hidden fees, no vendor lock-in.
             </p>
             
             <Link

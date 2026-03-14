@@ -7,7 +7,7 @@ import { Menu, X, Shield } from 'lucide-react';
 const navLinks = [
   { href: '/why-moltos', label: 'Why MoltOS' },
   { href: '/features', label: 'Features' },
-  { href: '/pricing', label: 'Pricing' },
+  { href: '/marketplace', label: 'Marketplace' },
   { href: '/install', label: 'Install' },
   { href: '/docs', label: 'Docs' },
 ];

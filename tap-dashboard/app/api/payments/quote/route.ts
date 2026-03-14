@@ -1,22 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  generatePriceQuote,
-  validatePricingFactors,
-  calculateReputationScore,
+  calculateMarketplaceFee,
+  validateJobDetails,
   getTierFromScore,
-  AgentMetrics,
-  PricingFactors,
-} from '@/lib/payments/pricing';
+  type JobDetails,
+} from '@/lib/payments/marketplace';
 
 /**
  * POST /api/payments/quote
  * 
- * Returns a price quote for an agent based on their reputation and task factors.
+ * Returns a marketplace fee quote for a job based on worker reputation.
  * 
  * Request Body:
  * {
- *   agentId: string,
- *   basePrice: number,
+ *   workerId: string,
+ *   jobValue: number,
  *   complexity: 'low' | 'medium' | 'high' | 'critical',
  *   urgency: 'normal' | 'high' | 'urgent' | 'emergency'
  * }
@@ -25,18 +23,15 @@ import {
  * {
  *   success: true,
  *   data: {
- *     agentId: string,
- *     basePrice: number,
- *     finalPrice: number,
- *     multiplier: number,
+ *     jobValue: number,
+ *     platformFee: number,
+ *     workerReceives: number,
+ *     feeRate: number,
  *     tier: string,
  *     breakdown: {
- *       basePrice: number,
- *       tierMultiplier: number,
- *       tierDiscount: number,
- *       complexityFactor: number,
+ *       baseFee: number,
+ *       reputationDiscount: number,
  *       complexityPremium: number,
- *       urgencyFactor: number,
  *       urgencyPremium: number
  *     },
  *     reputation: {
@@ -50,27 +45,24 @@ import {
  */
 
 interface QuoteRequest {
-  agentId: string;
-  basePrice: number;
-  complexity?: PricingFactors['complexity'];
-  urgency?: PricingFactors['urgency'];
+  workerId: string;
+  jobValue: number;
+  complexity?: JobDetails['complexity'];
+  urgency?: JobDetails['urgency'];
 }
 
 interface QuoteResponse {
   success: boolean;
   data?: {
-    agentId: string;
-    basePrice: number;
-    finalPrice: number;
-    multiplier: number;
+    jobValue: number;
+    platformFee: number;
+    workerReceives: number;
+    feeRate: number;
     tier: string;
     breakdown: {
-      basePrice: number;
-      tierMultiplier: number;
-      tierDiscount: number;
-      complexityFactor: number;
+      baseFee: number;
+      reputationDiscount: number;
       complexityPremium: number;
-      urgencyFactor: number;
       urgencyPremium: number;
     };
     reputation: {
@@ -107,7 +99,6 @@ async function getAgentReputationScore(agentId: string): Promise<number> {
   }
 
   // Mock: Generate deterministic score based on agentId
-  // In production, fetch from database
   const hash = agentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const mockScore = (hash % 100) + 1; // 1-100
   
@@ -122,16 +113,16 @@ async function getAgentReputationScore(agentId: string): Promise<number> {
 function validateRequest(body: Partial<QuoteRequest>): { valid: true; data: QuoteRequest } | { valid: false; errors: Record<string, string> } {
   const errors: Record<string, string> = {};
 
-  if (!body.agentId || typeof body.agentId !== 'string' || body.agentId.trim().length === 0) {
-    errors.agentId = 'Agent ID is required and must be a non-empty string';
+  if (!body.workerId || typeof body.workerId !== 'string' || body.workerId.trim().length === 0) {
+    errors.workerId = 'Worker ID is required and must be a non-empty string';
   }
 
-  if (typeof body.basePrice !== 'number' || body.basePrice < 0) {
-    errors.basePrice = 'Base price is required and must be a non-negative number';
+  if (typeof body.jobValue !== 'number' || body.jobValue < 0) {
+    errors.jobValue = 'Job value is required and must be a non-negative number';
   }
 
-  if (body.basePrice! > 1000000) {
-    errors.basePrice = 'Base price exceeds maximum allowed value ($1,000,000)';
+  if (body.jobValue! > 1000000) {
+    errors.jobValue = 'Job value exceeds maximum allowed value ($1,000,000)';
   }
 
   const validComplexity = ['low', 'medium', 'high', 'critical'];
@@ -151,8 +142,8 @@ function validateRequest(body: Partial<QuoteRequest>): { valid: true; data: Quot
   return {
     valid: true,
     data: {
-      agentId: body.agentId!.trim(),
-      basePrice: body.basePrice!,
+      workerId: body.workerId!.trim(),
+      jobValue: body.jobValue!,
       complexity: body.complexity || 'medium',
       urgency: body.urgency || 'normal',
     },
@@ -176,7 +167,7 @@ function getExpiryTime(): Date {
 }
 
 /**
- * POST handler for price quotes
+ * POST handler for marketplace fee quotes
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -213,40 +204,40 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const { agentId, basePrice, complexity, urgency } = validation.data;
+    const { workerId, jobValue, complexity, urgency } = validation.data;
 
-    // Get agent reputation score
+    // Get worker reputation score
     let reputationScore: number;
     try {
-      reputationScore = await getAgentReputationScore(agentId);
+      reputationScore = await getAgentReputationScore(workerId);
     } catch (error) {
-      console.error('Failed to fetch agent reputation:', error);
+      console.error('Failed to fetch worker reputation:', error);
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'REPUTATION_FETCH_ERROR',
-            message: 'Failed to fetch agent reputation score',
+            message: 'Failed to fetch worker reputation score',
           },
         },
         { status: 500 }
       );
     }
 
-    // Validate pricing factors
-    const factors = validatePricingFactors({ complexity, urgency });
+    // Validate job details
+    const jobDetails = validateJobDetails({ value: jobValue, complexity, urgency });
 
-    // Generate price quote
-    const quote = generatePriceQuote(agentId, basePrice, reputationScore, factors);
+    // Calculate marketplace fee
+    const quote = calculateMarketplaceFee(jobDetails, reputationScore);
 
     // Build response
     const response: QuoteResponse = {
       success: true,
       data: {
-        agentId: quote.agentId,
-        basePrice: quote.basePrice,
-        finalPrice: quote.finalPrice,
-        multiplier: quote.multiplier,
+        jobValue: quote.jobValue,
+        platformFee: quote.platformFee,
+        workerReceives: quote.workerReceives,
+        feeRate: quote.feeRate,
         tier: quote.tier,
         breakdown: quote.breakdown,
         reputation: quote.reputation,
@@ -275,10 +266,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 /**
  * GET /api/payments/quote
  * 
- * Get pricing information and tier details
+ * Get marketplace fee information and tier details
  */
 export async function GET(): Promise<NextResponse> {
-  const { TIER_CONFIG, COMPLEXITY_FACTORS, URGENCY_FACTORS } = await import('@/lib/payments/pricing');
+  const { TIER_CONFIG, COMPLEXITY_PREMIUMS, URGENCY_PREMIUMS, BASE_FEE_RATE } = await import('@/lib/payments/marketplace');
 
   return NextResponse.json({
     success: true,
@@ -286,12 +277,14 @@ export async function GET(): Promise<NextResponse> {
       tiers: Object.values(TIER_CONFIG).map(tier => ({
         name: tier.name,
         scoreRange: `${tier.minScore}-${tier.maxScore}`,
-        multiplier: tier.multiplier,
+        feeRate: tier.feeRate,
+        discount: tier.discount,
         description: tier.description,
         benefits: tier.benefits,
       })),
-      complexityFactors: COMPLEXITY_FACTORS,
-      urgencyFactors: URGENCY_FACTORS,
+      complexityPremiums: COMPLEXITY_PREMIUMS,
+      urgencyPremiums: URGENCY_PREMIUMS,
+      baseFeeRate: BASE_FEE_RATE,
       quoteExpiryMinutes: QUOTE_EXPIRY_MINUTES,
     },
   });

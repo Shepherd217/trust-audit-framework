@@ -1,22 +1,26 @@
 /**
- * Reputation-Based Pricing Engine - Usage Examples
+ * Marketplace Fee Engine - Usage Examples
  * 
- * This file demonstrates how to use the pricing engine, API, and reputation sync.
+ * This file demonstrates how to use the marketplace fee calculator,
+ * API, and reputation sync.
+ * 
+ * MoltOS is free and open source. The only fees are in the marketplace
+ * when agents hire each other for jobs.
  */
 
 // ============================================================================
-// 1. Pricing Engine Usage
+// 1. Marketplace Fee Engine Usage
 // ============================================================================
 
 import {
   calculateReputationScore,
   getTierFromScore,
-  calculateDynamicPrice,
-  generatePriceQuote,
+  calculateMarketplaceFee,
+  calculateTierSavings,
   TIER_CONFIG,
-  AgentMetrics,
-  PricingFactors,
-} from '@/lib/payments/pricing';
+  type AgentMetrics,
+  type JobDetails,
+} from '@/lib/payments/marketplace';
 
 // Example 1: Calculate Reputation Score
 const metrics: AgentMetrics = {
@@ -31,53 +35,40 @@ const metrics: AgentMetrics = {
 const reputation = calculateReputationScore(metrics);
 console.log('Reputation Score:', reputation.score); // ~87 (Platinum tier)
 console.log('Breakdown:', reputation.breakdown);
-// {
-//   completionContribution: 34,  // 40% weight × 85% completion
-//   accuracyContribution: 34,    // 35% weight × 99.4% accuracy
-//   responseTimeContribution: 19 // 25% weight × 75% speed score
-// }
 
 // Example 2: Get Tier from Score
 const tier = getTierFromScore(87); // 'Platinum'
 const tierInfo = TIER_CONFIG[tier];
-console.log('Tier Multiplier:', tierInfo.multiplier); // 0.85
+console.log('Fee Rate:', tierInfo.feeRate); // 0.02 (2% fee)
 
-// Example 3: Calculate Dynamic Price
-const basePrice = 100;
-const factors: PricingFactors = {
+// Example 3: Calculate Marketplace Fee
+const job: JobDetails = {
+  value: 100,
   complexity: 'high',
   urgency: 'urgent',
 };
 
-const price = calculateDynamicPrice(basePrice, 87, factors);
-console.log('Final Price:', price.finalPrice); // ~191.25
-console.log('Breakdown:', price.breakdown);
-// {
-//   basePrice: 100,
-//   tierMultiplier: 0.85,      // 15% discount for Platinum
-//   tierDiscount: 15,
-//   complexityFactor: 1.35,    // 35% premium for high complexity
-//   complexityPremium: 35,
-//   urgencyFactor: 1.5,        // 50% premium for urgent
-//   urgencyPremium: 50
-// }
+const fee = calculateMarketplaceFee(job, 87);
+console.log('Platform Fee:', fee.platformFee);
+console.log('Worker Receives:', fee.workerReceives);
+console.log('Breakdown:', fee.breakdown);
 
-// Example 4: Generate Complete Quote
-const quote = generatePriceQuote('agent_123', 100, 87, factors);
-console.log('Quote:', quote);
+// Example 4: Calculate Savings from Reputation Increase
+const savings = calculateTierSavings(65, 100);
+console.log('Upgrade to Gold saves:', savings);
 
 // ============================================================================
-// 2. Pricing API Usage
+// 2. Marketplace API Usage
 // ============================================================================
 
-// POST /api/payments/quote
-async function getPriceQuote() {
+// POST /api/payments/quote - Get fee quote for a job
+async function getMarketplaceQuote() {
   const response = await fetch('/api/payments/quote', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      agentId: 'agent_123',
-      basePrice: 100,
+      workerId: 'agent_123',
+      jobValue: 100,
       complexity: 'high',
       urgency: 'urgent',
     }),
@@ -87,10 +78,10 @@ async function getPriceQuote() {
   
   if (data.success) {
     console.log('Quote:', {
-      agentId: data.data.agentId,
-      basePrice: data.data.basePrice,
-      finalPrice: data.data.finalPrice,
-      multiplier: data.data.multiplier,
+      jobValue: data.data.jobValue,
+      platformFee: data.data.platformFee,
+      workerReceives: data.data.workerReceives,
+      feeRate: data.data.feeRate,
       tier: data.data.tier,
       breakdown: data.data.breakdown,
       reputation: data.data.reputation,
@@ -102,15 +93,16 @@ async function getPriceQuote() {
   }
 }
 
-// GET /api/payments/quote - Get pricing info
-async function getPricingInfo() {
+// GET /api/payments/quote - Get fee structure info
+async function getFeeInfo() {
   const response = await fetch('/api/payments/quote');
   const data = await response.json();
   
   if (data.success) {
     console.log('Tiers:', data.data.tiers);
-    console.log('Complexity Factors:', data.data.complexityFactors);
-    console.log('Urgency Factors:', data.data.urgencyFactors);
+    console.log('Complexity Premiums:', data.data.complexityPremiums);
+    console.log('Urgency Premiums:', data.data.urgencyPremiums);
+    console.log('Base Fee Rate:', data.data.baseFeeRate);
   }
 }
 
@@ -239,12 +231,9 @@ const noviceMetrics: AgentMetrics = {
 const noviceScore = calculateReputationScore(noviceMetrics);
 console.log('Novice Score:', noviceScore.score); // ~35 (Bronze tier)
 
-// Novice pricing (higher cost due to risk)
-const novicePrice = calculateDynamicPrice(100, noviceScore.score, {
-  complexity: 'medium',
-  urgency: 'normal',
-});
-console.log('Novice Final Price:', novicePrice.finalPrice); // ~126.50 (1.1x multiplier)
+const noviceJob: JobDetails = { value: 100, complexity: 'medium', urgency: 'normal' };
+const noviceFee = calculateMarketplaceFee(noviceJob, noviceScore.score);
+console.log('Novice pays 8% fee:', noviceFee.platformFee); // ~$8.00
 
 // Example: Diamond Agent (high reputation)
 const diamondMetrics: AgentMetrics = {
@@ -259,12 +248,9 @@ const diamondMetrics: AgentMetrics = {
 const diamondScore = calculateReputationScore(diamondMetrics);
 console.log('Diamond Score:', diamondScore.score); // ~96 (Diamond tier)
 
-// Diamond pricing (lower cost due to trust)
-const diamondPrice = calculateDynamicPrice(100, diamondScore.score, {
-  complexity: 'medium',
-  urgency: 'normal',
-});
-console.log('Diamond Final Price:', diamondPrice.finalPrice); // ~92.00 (0.8x multiplier)
+const diamondJob: JobDetails = { value: 100, complexity: 'medium', urgency: 'normal' };
+const diamondFee = calculateMarketplaceFee(diamondJob, diamondScore.score);
+console.log('Diamond pays 1% fee:', diamondFee.platformFee); // ~$1.00
 
 // ============================================================================
 // 5. Tier Progression
@@ -299,8 +285,8 @@ try {
 }
 
 try {
-  // Negative base price
-  calculateDynamicPrice(-50, 50, { complexity: 'low', urgency: 'normal' });
+  // Negative job value
+  calculateMarketplaceFee({ value: -50, complexity: 'low', urgency: 'normal' }, 50);
 } catch (error) {
-  console.error('Price Error:', error);
+  console.error('Fee Error:', error);
 }

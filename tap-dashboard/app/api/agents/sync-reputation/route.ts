@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   calculateReputationScore,
   getTierFromScore,
-  AgentMetrics,
-  ReputationScore,
+  type AgentMetrics,
+  type ReputationScore,
   TIER_CONFIG,
-} from '@/lib/payments/pricing';
+} from '@/lib/payments/marketplace';
 
 /**
  * POST /api/agents/sync-reputation
