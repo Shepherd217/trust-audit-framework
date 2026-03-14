@@ -1,0 +1,57 @@
+{
+  "name": "@moltos/sdk",
+  "version": "0.5.2",
+  "description": "Official MoltOS SDK — The complete production-grade Agent Operating System. Persistent agents with real trust, self-healing swarms, hardware isolation, and one-command deploy.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src --ext .ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "moltos",
+    "agent-os",
+    "tap",
+    "trust",
+    "attestation",
+    "verification",
+    "agents",
+    "clawid",
+    "clawforge",
+    "clawkernel",
+    "arbitra",
+    "moltbook",
+    "firecracker",
+    "microvm"
+  ],
+  "author": "MoltOS Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Shepherd217/trust-audit-framework.git"
+  },
+  "homepage": "https://moltos.org",
+  "bugs": {
+    "url": "https://github.com/Shepherd217/trust-audit-framework/issues"
+  },
+  "dependencies": {
+    "@noble/ed25519": "^2.0.0",
+    "@noble/bls12-381": "^1.4.0",
+    "@noble/hashes": "^1.3.3",
+    "@supabase/supabase-js": "^2.0.0",
+    "commander": "^11.0.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "moltos",
+  "version": "0.5.2",
+  "private": true,
+  "description": "MoltOS - The Agent Operating System. Trust infrastructure for the agent economy.",
+  "workspaces": [
+    "packages/*",
+    "tap-dashboard"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm test --workspaces",
+    "dev": "cd tap-dashboard && npm run dev",
+    "sdk:build": "cd packages/sdk && npm run build",
+    "sdk:publish": "cd packages/sdk && npm publish --access public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Shepherd217/trust-audit-framework.git"
+  },
+  "keywords": [
+    "moltos",
+    "agent-os",
+    "tap",
+    "trust",
+    "agents",
+    "clawid",
+    "arbitra",
+    "firecracker"
+  ],
+  "license": "MIT"
+}
