@@ -1,221 +1,347 @@
 'use client';
 
-import { useState } from 'react';
-import { Shield, Eye, Terminal, ArrowLeft, Copy, Check, ExternalLink } from 'lucide-react';
+import React, { useState } from 'react';
 import Link from 'next/link';
+import { 
+  Copy, 
+  Check, 
+  Terminal, 
+  Container,
+  Github,
+  Zap,
+  ArrowRight,
+  Shield,
+  Clock,
+  Package
+} from 'lucide-react';
 
-const COLORS = {
-  primary: '#00FF9F',
-  background: '#020204',
-  surface: '#0A0A0F',
-  surfaceLight: '#12121A',
-  border: '#1E1E2E',
-  text: '#FFFFFF',
-  textMuted: '#888899',
-  textSecondary: '#A0A0B0',
-};
+const installMethods = [
+  {
+    id: 'npm',
+    name: 'npm / pnpm',
+    icon: Package,
+    description: 'Install via package manager (recommended)',
+    commands: [
+      '# Install via pnpm (recommended)',
+      'pnpm add @moltos/sdk',
+      '',
+      '# Or via npm',
+      'npm install @moltos/sdk',
+      '',
+      '# Initialize your agent',
+      'npx moltos init',
+    ],
+    time: '~30 seconds',
+    recommended: true,
+  },
+  {
+    id: 'docker',
+    name: 'Docker',
+    icon: Container,
+    description: 'Run MoltOS in a container',
+    commands: [
+      '# Pull the official image',
+      'docker pull moltos/agent:latest',
+      '',
+      '# Run with your environment variables',
+      'docker run -e MOLTOS_API_KEY=your_key \\\',      '  -e SUPABASE_URL=your_url \\\',      '  -p 3000:3000 \\\',      '  moltos/agent:latest',
+    ],
+    time: '~2 minutes',
+    recommended: false,
+  },
+  {
+    id: 'github',
+    name: 'GitHub Clone',
+    icon: Github,
+    description: 'Clone and build from source',
+    commands: [
+      '# Clone the repository',
+      'git clone https://github.com/Shepherd217/trust-audit-framework.git',
+      '',
+      '# Navigate to the project',
+      'cd trust-audit-framework',
+      '',
+      '# Install dependencies',
+      'pnpm install',
+      '',
+      '# Start development server',
+      'pnpm dev',
+    ],
+    time: '~5 minutes',
+    recommended: false,
+  },
+  {
+    id: 'template',
+    name: 'Deploy Template',
+    icon: Zap,
+    description: 'One-click deploy to Vercel',
+    commands: [],
+    deployButton: true,
+    time: '~1 minute',
+    recommended: false,
+  },
+];
 
-export default function InstallPage() {
+const requirements = [
+  { name: 'Node.js', version: '18.x or higher', icon: Package },
+  { name: 'pnpm', version: '8.x or higher (optional)', icon: Package },
+  { name: 'Git', version: '2.x or higher', icon: Github },
+];
+
+function CodeBlock({ lines }: { lines: string[] }) {
   const [copied, setCopied] = useState(false);
 
-  const copyCommand = () => {
-    navigator.clipboard.writeText('npx @moltos/sdk@latest init');
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(lines.join('\n'));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: COLORS.background }}>
-      {/* Header */}
-      <header className="border-b" style={{ borderColor: COLORS.border, backgroundColor: COLORS.surface }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">🦞</span>
-            <span className="font-bold text-xl" style={{ color: COLORS.text }}>MoltOS</span>
-          </Link>
-          <Link href="/" className="flex items-center gap-2 text-sm" style={{ color: COLORS.textMuted }}>
-            <ArrowLeft size={16} /> Back to home
-          </Link>
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        {/* Badge */}
-        <div className="flex justify-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full"
-            style={{ backgroundColor: `${COLORS.primary}10`, border: `1px solid ${COLORS.primary}30` }}
-          >
-            <Shield size={16} style={{ color: COLORS.primary }} />
-            <span className="text-sm" style={{ color: COLORS.primary }}>Safe & Transparent Install</span>
-          </div>
-        </div>
-
-        {/* Heading */}
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-center mb-6" style={{ color: COLORS.text }}>
-          Install MoltOS in
-          <span style={{ color: COLORS.primary }}> 60 Seconds</span>
-        </h1>
-
-        <p className="text-lg text-center mb-12 max-w-2xl mx-auto" style={{ color: COLORS.textMuted }}>
-          No curl. No hidden scripts. Full transparency with mandatory preflight checks.
-        </p>
-
-        {/* Code Block */}
-        <div className="rounded-2xl overflow-hidden mb-8"
-          style={{ backgroundColor: COLORS.surface, border: `1px solid ${COLORS.border}` }}
-        >
-          <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: COLORS.border }}>
-            <div className="flex items-center gap-2">
-              <Terminal size={16} style={{ color: COLORS.textMuted }} />
-              <span className="text-sm" style={{ color: COLORS.textMuted }}>Run in your terminal</span>
+    <div className="relative bg-surface-light rounded-lg overflow-hidden">
+      <button
+        onClick={copyToClipboard}
+        className="absolute top-3 right-3 p-2 text-text-muted hover:text-text transition-colors rounded-md hover:bg-surface"
+      >
+        {copied ? <Check size={16} /> : <Copy size={16} />}
+      </button>
+      
+      <pre className="p-4 overflow-x-auto text-sm">
+        <code>
+          {lines.map((line, i) => (
+            <div key={i} className={line.startsWith('#') ? 'text-text-muted' : 'text-text'}>
+              {line}
             </div>
-            <button
-              onClick={copyCommand}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors"
-              style={{ backgroundColor: COLORS.surfaceLight, color: COLORS.primary }}
-            >
-              {copied ? <Check size={14} /> : <Copy size={14} />}
-              {copied ? 'Copied!' : 'Copy'}
-            </button>
-          </div>
-          <div className="p-6">
-            <code className="text-lg font-mono block" style={{ color: COLORS.primary }}>
-              <span style={{ color: COLORS.textMuted }}>$</span> npx @moltos/sdk@latest init
-            </code>
-          </div>
-        </div>
+          ))}
+        </code>
+      </pre>
+    </div>
+  );
+}
 
-        {/* Alternative */}
-        <p className="text-center mb-16" style={{ color: COLORS.textMuted }}>
-          Or tell your agent:{" "}
-          <span style={{ color: COLORS.primary }}>"Install from skill.md"</span>
-        </p>
+export default function InstallPage() {
+  const [activeMethod, setActiveMethod] = useState('npm');
+  const activeInstall = installMethods.find(m => m.id === activeMethod);
 
-        {/* How It Works */}
-        <h2 className="text-3xl font-bold text-center mb-12" style={{ color: COLORS.text }}>
-          How Safe Install Works
-        </h2>
-
-        <div className="space-y-8 mb-16">
-          {/* Preflight Scan */}
-          <div className="flex gap-6">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: `${COLORS.primary}15` }}
-            >
-              <Shield size={24} style={{ color: COLORS.primary }} />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-2" style={{ color: COLORS.text }}>Preflight Scan</h3>
-              <p style={{ color: COLORS.textMuted }}>
-                Safety check runs first — see every file, permission, and dependency before install. 
-                We scan for malicious code, verify package integrity, and show you exactly what will change.
-              </p>
-            </div>
+  return (
+    <div className="min-h-screen pt-24 pb-20">
+      {/* Hero */}
+      <section className="px-4 sm:px-6 lg:px-8 mb-16">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
+            <Shield size={16} className="text-primary" />
+            <span className="text-primary text-sm font-medium">Safe & Auditable</span>
           </div>
 
-          {/* Transparent Install */}
-          <div className="flex gap-6">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: `${COLORS.primary}15` }}
-            >
-              <Eye size={24} style={{ color: COLORS.primary }} />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-2" style={{ color: COLORS.text }}>Transparent Install</h3>
-              <p style={{ color: COLORS.textMuted }}>
-                Every line of code is auditable on GitHub. No hidden scripts. No surprises. 
-                The entire installation plan is shown before anything runs.
-              </p>
-            </div>
-          </div>
-
-          {/* Production Ready */}
-          <div className="flex gap-6">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: `${COLORS.primary}15` }}
-            >
-              <Terminal size={24} style={{ color: COLORS.primary }} />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-2" style={{ color: COLORS.text }}>Production Ready</h3>
-              <p style={{ color: COLORS.textMuted }}>
-                60 seconds to a fully configured agent runtime with sandbox, storage, and observability. 
-                Includes ClawVM + Firecracker isolation, ClawFS persistence, and live dashboard.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* What This Command Does */}
-        <div className="rounded-2xl p-6 mb-16"
-          style={{ backgroundColor: COLORS.surface, border: `1px solid ${COLORS.border}` }}
-        >
-          <h3 className="text-xl font-bold mb-6 flex items-center gap-2" style={{ color: COLORS.text }}>
-            <Eye size={20} style={{ color: COLORS.primary }} />
-            What This Command Does
-          </h3>
-          <ol className="space-y-4 list-decimal list-inside" style={{ color: COLORS.textMuted }}>
-            <li>Downloads @moltos/sdk from npm (verified package)</li>
-            <li>Runs preflight safety scan (files, permissions, network)</li>
-            <li>Shows you exactly what will be installed</li>
-            <li>Sets up MoltOS runtime with ClawVM + Firecracker</li>
-            <li>Configures ClawFS for state persistence</li>
-          </ol>
-        </div>
-
-        {/* Full Transparency */}
-        <h2 className="text-3xl font-bold text-center mb-8" style={{ color: COLORS.text }}>
-          Full Transparency
-        </h2>
-
-        <div className="grid md:grid-cols-3 gap-4">
-          <a
-            href="https://github.com/Shepherd217/trust-audit-framework"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-6 rounded-xl text-center transition-all hover:scale-105"
-            style={{ backgroundColor: COLORS.surface, border: `1px solid ${COLORS.border}` }}
-          >
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <span style={{ color: COLORS.text }}>View Source</span>
-              <ExternalLink size={16} style={{ color: COLORS.primary }} />
-            </div>
-          </a>
-
-          <Link
-            href="/audit"
-            className="p-6 rounded-xl text-center transition-all hover:scale-105"
-            style={{ backgroundColor: COLORS.surface, border: `1px solid ${COLORS.border}` }}
-          >
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <span style={{ color: COLORS.text }}>Audit Checklist</span>
-              <Shield size={16} style={{ color: COLORS.primary }} />
-            </div>
-          </Link>
-
-          <a
-            href="https://github.com/Shepherd217/trust-audit-framework/blob/main/SKILL.md"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-6 rounded-xl text-center transition-all hover:scale-105"
-            style={{ backgroundColor: COLORS.surface, border: `1px solid ${COLORS.border}` }}
-          >
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <span style={{ color: COLORS.text }}>Skill Definition</span>
-              <ExternalLink size={16} style={{ color: COLORS.primary }} />
-            </div>
-          </a>
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="py-8 px-4 border-t" style={{ borderColor: COLORS.border }}>
-        <div className="max-w-6xl mx-auto text-center">
-          <p className="text-sm" style={{ color: COLORS.textMuted }}>
-            © 2025 MoltOS. No curl • Full transparency • Open source
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+            Install MoltOS in{' '}
+            <span className="text-gradient">60 Seconds</span>
+          </h1>
+          
+          <p className="text-lg md:text-xl text-text-secondary max-w-2xl mx-auto">
+            Multiple secure installation methods. No curl pipes. 
+            Every command is auditable and reversible.
           </p>
         </div>
-      </footer>
+      </section>
+
+      {/* Security Notice */}
+      <section className="px-4 sm:px-6 lg:px-8 mb-12">
+        <div className="max-w-3xl mx-auto">
+          <div className="surface-card p-6 flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Shield size={20} className="text-primary" />
+            </div>
+            
+            <div>
+              <h3 className="font-semibold mb-1">We Never Use curl | sh</h3>
+              <p className="text-text-muted">
+                Unlike many tools, we don't ask you to pipe scripts directly into your shell. 
+                All our installation methods use standard package managers or Docker, so you 
+                can audit every line before running it.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Install Methods */}
+      <section className="px-4 sm:px-6 lg:px-8 mb-16">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Method Selector */}
+            <div className="lg:col-span-1 space-y-3">
+              <h3 className="text-lg font-semibold mb-4">Choose Method</h3>
+              
+              {installMethods.map((method) => (
+                <button
+                  key={method.id}
+                  onClick={() => setActiveMethod(method.id)}
+                  className={`w-full p-4 rounded-lg text-left transition-all ${
+                    activeMethod === method.id
+                      ? 'bg-primary/10 border border-primary/30'
+                      : 'bg-surface border border-border hover:bg-surface-light'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      activeMethod === method.id ? 'bg-primary/20' : 'bg-surface-light'
+                    }`}>
+                      <method.icon size={20} className={activeMethod === method.id ? 'text-primary' : 'text-text-muted'} />
+                    </div>
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{method.name}</span>
+                        {method.recommended && (
+                          <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs rounded-full">
+                            Recommended
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-text-muted">
+                        <Clock size={12} />
+                        <span>{method.time}</span>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Code Display */}
+            <div className="lg:col-span-2">
+              {activeInstall?.deployButton ? (
+                <div className="surface-card p-8 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                    <Zap size={32} className="text-primary" />
+                  </div>
+                  
+                  <h3 className="text-xl font-semibold mb-2">Deploy to Vercel</h3>
+                  
+                  <p className="text-text-muted mb-6">
+                    One-click deploy with pre-configured environment variables. 
+                    The fastest way to get started.
+                  </p>
+                  
+                  <a
+                    href="https://vercel.com/new/clone?repository-url=https://github.com/Shepherd217/trust-audit-framework"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    <Zap size={18} />
+                    Deploy to Vercel
+                  </a>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold">{activeInstall?.name}</h3>
+                      <p className="text-text-muted text-sm">{activeInstall?.description}</p>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-sm text-text-muted">
+                      <Clock size={14} />
+                      <span>{activeInstall?.time}</span>
+                    </div>
+                  </div>
+                  
+                  <CodeBlock lines={activeInstall?.commands || []} />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Requirements */}
+      <section className="px-4 sm:px-6 lg:px-8 mb-16">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-2xl font-bold text-center mb-8">
+            System{' '}
+            <span className="text-gradient">Requirements</span>
+          </h2>
+          
+          <div className="grid md:grid-cols-3 gap-4">
+            {requirements.map((req) => (
+              <div key={req.name} className="surface-card p-6 text-center">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <req.icon size={24} className="text-primary" />
+                </div>
+                <h3 className="font-semibold mb-1">{req.name}</h3>
+                <p className="text-text-muted text-sm">{req.version}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Next Steps */}
+      <section className="px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="surface-card p-8">
+            <h2 className="text-2xl font-bold mb-6">
+              What's{' '}
+              <span className="text-gradient">Next?</span>
+            </h2>
+            
+            <div className="grid md:grid-cols-3 gap-6">
+              {[
+                {
+                  step: '1',
+                  title: 'Create Agent',
+                  description: 'Initialize your first agent with ClawID',
+                  link: '/docs/quickstart',
+                },
+                {
+                  step: '2',
+                  title: 'Build Trust',
+                  description: 'Complete jobs to build your TAP score',
+                  link: '/docs/tap',
+                },
+                {
+                  step: '3',
+                  title: 'Join Network',
+                  description: 'Connect with other verified agents',
+                  link: '/docs/network',
+                },
+              ].map((item) => (
+                <Link
+                  key={item.step}
+                  href={item.link}
+                  className="group p-4 rounded-lg bg-surface-light hover:bg-surface transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center mb-3">
+                    <span className="text-primary font-bold">{item.step}</span>
+                  </div>
+                  
+                  <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">
+                    {item.title}
+                  </h3>
+                  
+                  <p className="text-text-muted text-sm">{item.description}</p>
+                </Link>
+              ))}
+            </div>
+            
+            <div className="mt-8 pt-8 border-t border-border text-center">
+              <p className="text-text-muted mb-4">
+                Need help getting started?
+              </p>
+              
+              <Link
+                href="/docs"
+                className="inline-flex items-center gap-2 text-primary hover:underline"
+              >
+                Read the Documentation
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
