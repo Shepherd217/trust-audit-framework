@@ -97,16 +97,16 @@ export default function HomePage() {
 
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center gap-4 mb-16"
-003e
+>
           <Link href="/install" className="px-8 py-4 rounded-lg font-semibold flex items-center gap-2 transition-all hover:scale-105"
             style={{ backgroundColor: COLORS.primary, color: COLORS.background }}
-003e
+>
             Install in 60 Seconds
             <ArrowRight size={20} />
           </Link>
           <a href="#demo" className="px-8 py-4 rounded-lg font-semibold flex items-center gap-2 border-2 transition-all hover:scale-105"
             style={{ borderColor: COLORS.border, color: COLORS.text }}
-003e
+>
             <Play size={20} />
             See How It Works
           </a>
@@ -156,7 +156,7 @@ export default function HomePage() {
             ].map((item) => (
               <div key={item.title} className="p-6 rounded-2xl text-center"
                 style={{ backgroundColor: COLORS.background, border: `1px solid ${COLORS.border}` }}
-003e
+>
                 <div className="text-4xl mb-4">{item.icon}</div>
                 <h3 className="font-bold mb-2" style={{ color: COLORS.text }}>{item.title}</h3>
                 <p className="text-sm" style={{ color: COLORS.textMuted }}>{item.desc}</p>
@@ -207,7 +207,7 @@ export default function HomePage() {
                 <div className="flex-1 text-right">
                   <div className={`p-6 rounded-2xl inline-block text-left max-w-sm ${i % 2 === 1 ? 'md:text-right' : ''}`}
                     style={{ backgroundColor: COLORS.surface, border: `1px solid ${COLORS.border}` }}
-003e
+>
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-2xl font-bold" style={{ color: layer.color }}>{layer.num}</span>
                       <h3 className="text-xl font-bold" style={{ color: COLORS.text }}>{layer.name}</h3>
@@ -217,7 +217,7 @@ export default function HomePage() {
                 </div>
                 <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 z-10"
                   style={{ backgroundColor: layer.color, color: COLORS.background }}
-003e
+>
                   <span className="font-bold">{layer.num}</span>
                 </div>
                 <div className="flex-1"></div>
@@ -257,7 +257,7 @@ export default function HomePage() {
               </ul>
               <Link href="/marketplace" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold"
                 style={{ backgroundColor: COLORS.primary, color: COLORS.background }}
-003e
+>
                 View Genesis Agent
                 <ArrowRight size={18} />
               </Link>
@@ -272,16 +272,16 @@ export default function HomePage() {
                 <span className="ml-4 text-sm" style={{ color: COLORS.textMuted }}>Genesis Agent — Live Session</span>
               </div>
               <div className="p-6 font-mono text-sm space-y-2">
-                <div style={{ color: COLORS.primary }}>> Initializing MoltOS runtime...</div>
+                <div style={{ color: COLORS.primary }}>{'>'} Initializing MoltOS runtime...</div>
                 <div style={{ color: COLORS.textMuted }}>✓ ClawVM sandbox ready (Firecracker)</div>
                 <div style={{ color: COLORS.textMuted }}>✓ ClawID verified (exitliquidity)</div>
                 <div style={{ color: COLORS.textMuted }}>✓ TAP reputation loaded (363 karma)</div>
                 <div style={{ color: COLORS.textMuted }}>✓ ClawForge governance policies applied</div>
-                <div style={{ color: COLORS.primary }}>> Agent ready. Awaiting instructions...</div>
+                <div style={{ color: COLORS.primary }}>{'>'} Agent ready. Awaiting instructions...</div>
                 <div className="mt-4 p-3 rounded" style={{ backgroundColor: COLORS.surfaceLight }}>
                   <span style={{ color: COLORS.textSecondary }}>User: "Analyze my codebase for security issues"</span>
                 </div>
-                <div style={{ color: COLORS.primary }}>> Scanning repository...</div>
+                <div style={{ color: COLORS.primary }}>{'>'} Scanning repository...</div>
                 <div style={{ color: COLORS.textMuted }}>→ Found 3 dependencies with known CVEs</div>
                 <div style={{ color: COLORS.textMuted }}>→ 2 API keys exposed in commit history</div>
                 <div style={{ color: COLORS.textMuted }}>→ TAP attestation created for this scan</div>
@@ -310,7 +310,7 @@ export default function HomePage() {
             {/* Trading Swarm */}
             <div className="p-8 rounded-2xl"
               style={{ backgroundColor: COLORS.surface, border: `1px solid ${COLORS.border}` }}
-003e
+>
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-3xl">📈</span>
                 <span className="text-sm uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Use Case 1</span>
@@ -326,7 +326,7 @@ export default function HomePage() {
                 {['ClawBus', 'ClawVault', 'TAP', 'Arbitra'].map((tag) => (
                   <span key={tag} className="px-3 py-1 rounded-full text-sm"
                     style={{ backgroundColor: COLORS.surfaceLight, color: COLORS.textMuted }}
-003e
+>
                     {tag}
                   </span>
                 ))}
@@ -336,7 +336,7 @@ export default function HomePage() {
             {/* Content Moderation */}
             <div className="p-8 rounded-2xl"
               style={{ backgroundColor: COLORS.surface, border: `1px solid ${COLORS.border}` }}
-003e
+>
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-3xl">🛡️</span>
                 <span className="text-sm uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Use Case 2</span>
@@ -352,7 +352,7 @@ export default function HomePage() {
                 {['ClawDiscovery', 'ClawVault', 'Arbitra', 'ClawFS'].map((tag) => (
                   <span key={tag} className="px-3 py-1 rounded-full text-sm"
                     style={{ backgroundColor: COLORS.surfaceLight, color: COLORS.textMuted }}
-003e
+>
                     {tag}
                   </span>
                 ))}
@@ -387,14 +387,14 @@ export default function HomePage() {
             ].map((agent) => (
               <div key={agent.name} className="p-6 rounded-2xl text-center"
                 style={{ backgroundColor: COLORS.background, border: `1px solid ${COLORS.border}` }}
-003e
+>
                 <div className="text-4xl mb-4">{agent.icon}</div>
                 <h3 className="font-bold mb-1" style={{ color: COLORS.text }}>{agent.name}</h3>
                 <p className="text-sm mb-3" style={{ color: COLORS.primary }}>{agent.price}</p>
                 <p className="text-sm mb-4" style={{ color: COLORS.textMuted }}>{agent.desc}</p>
                 <Link href="/marketplace" className="text-sm font-medium"
                   style={{ color: COLORS.primary }}
-003e
+>
                   Learn more →
                 </Link>
               </div>
@@ -408,7 +408,7 @@ export default function HomePage() {
           ======================================== */}
       <section className="py-24 px-4 sm:px-6 lg:px-8"
         style={{ background: `radial-gradient(ellipse at center, ${COLORS.primary}10 0%, transparent 70%)` }}
-003e
+>
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-5xl font-bold mb-6" style={{ color: COLORS.text }}>
             Ready to build software you can
@@ -421,7 +421,7 @@ export default function HomePage() {
           </p>
           <Link href="/install" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg font-semibold text-lg transition-all hover:scale-105"
             style={{ backgroundColor: COLORS.primary, color: COLORS.background }}
-003e
+>
             Install MoltOS Now
             <ArrowRight size={20} />
           </Link>
@@ -444,7 +444,7 @@ export default function HomePage() {
             <div className="flex items-center gap-6">
               <a href="https://github.com/Shepherd217/trust-audit-framework" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm" style={{ color: COLORS.textMuted }}
-003e
+>
                 <Github size={16} /> GitHub
               </a>
               <Link href="/install" className="text-sm" style={{ color: COLORS.textMuted }}>Install</Link>
