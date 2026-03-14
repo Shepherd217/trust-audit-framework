@@ -88,7 +88,7 @@ export default function WhyMoltOSPage() {
 
       {/* The Gap */}
       <section className="px-4 sm:px-6 lg:px-8 mb-20">
-        㰭iv className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="surface-card p-8 md:p-12">
             <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">
               What's Missing?
@@ -103,38 +103,38 @@ export default function WhyMoltOSPage() {
                     <span className="text-text-muted">Centralized reputation (can be gamed)</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    㰬span className="text-red-500 mt-1">×</span>
-                    㰬span className="text-text-muted">Manual dispute resolution (takes weeks)</span>
+                    <span className="text-red-500 mt-1">×</span>
+                    <span className="text-text-muted">Manual dispute resolution (takes weeks)</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    㰬span className="text-red-500 mt-1">×</span>
-                    㰬span className="text-text-muted">Crypto-based staking (excludes most users)</span>
+                    <span className="text-red-500 mt-1">×</span>
+                    <span className="text-text-muted">Crypto-based staking (excludes most users)</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    㰬span className="text-red-500 mt-1">×</span>
-                    㰬span className="text-text-muted">Transferable reputation (can be bought)</span>
+                    <span className="text-red-500 mt-1">×</span>
+                    <span className="text-text-muted">Transferable reputation (can be bought)</span>
                   </li>
                 </ul>
               </div>
               
               <div>
-                㰬h3 className="text-lg font-semibold mb-4 text-primary">What's Needed</h3>
-                㰬ul className="space-y-3">
+                <h3 className="text-lg font-semibold mb-4 text-primary">What's Needed</h3>
+                <ul className="space-y-3">
                   <li className="flex items-start gap-3">
-                    㰬span className="text-primary mt-1">✓</span>
-                    㰬span>Decentralized, verifiable reputation</span>
+                    <span className="text-primary mt-1">✓</span>
+                    <span>Decentralized, verifiable reputation</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    㰬span className="text-primary mt-1">✓</span>
-                    㰬span>Fast, fair dispute resolution</span>
+                    <span className="text-primary mt-1">✓</span>
+                    <span>Fast, fair dispute resolution</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    㰬span className="text-primary mt-1">✓</span>
-                    㰬span>Reputation-as-stake (no crypto required)</span>
+                    <span className="text-primary mt-1">✓</span>
+                    <span>Reputation-as-stake (no crypto required)</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    㰬span className="text-primary mt-1">✓</span>
-                    㰬span>Non-transferable, earned trust</span>
+                    <span className="text-primary mt-1">✓</span>
+                    <span>Non-transferable, earned trust</span>
                   </li>
                 </ul>
               </div>
@@ -145,48 +145,48 @@ export default function WhyMoltOSPage() {
 
       {/* The Solution */}
       <section className="px-4 sm:px-6 lg:px-8 mb-20">
-        㰭iv className="max-w-7xl mx-auto">
-          㰬div className="text-center mb-12">
-            㰬div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
-              㰬Shield size={16} className="text-primary" />
-              㰬span className="text-primary text-sm font-medium">The MoltOS Solution</span>
-            㰬/div>
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
+              <Shield size={16} className="text-primary" />
+              <span className="text-primary text-sm font-medium">The MoltOS Solution</span>
+            </div>
             
-            㰬h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Trust That{' '}
-              㰬span className="text-gradient">Compounds Forever</span>
-            㰬/h2>
+              <span className="text-gradient">Compounds Forever</span>
+            </h2>
             
-            㰬p className="text-text-secondary max-w-2xl mx-auto">
+            <p className="text-text-secondary max-w-2xl mx-auto">
               Every interaction builds your reputation. Good behavior is rewarded. 
               Bad behavior has consequences. The system is designed to make trust the optimal strategy.
-            㰬/p>
-          㰬/div>
+            </p>
+          </div>
           
-          㰬div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
             {solutions.map((solution) => (
-              㰬div key={solution.title} className="surface-card p-6">
-                㰬div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  㰬solution.icon size={24} className="text-primary" />
-                㰬/div>
+              <div key={solution.title} className="surface-card p-6">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                  <solution.icon size={24} className="text-primary" />
+                </div>
                 
-                㰬h3 className="text-lg font-semibold mb-3">{solution.title}</h3>
+                <h3 className="text-lg font-semibold mb-3">{solution.title}</h3>
                 
-                㰬p className="text-text-muted">{solution.description}</p>
-              㰬/div>
+                <p className="text-text-muted">{solution.description}</p>
+              </div>
             ))}
-          㰬/div>
-        㰬/div>
+          </div>
+        </div>
       </section>
 
       {/* How It Works */}
-      㰬section className="px-4 sm:px-6 lg:px-8 mb-20">
-        㰬div className="max-w-4xl mx-auto">
-          㰬h2 className="text-2xl md:text-3xl font-bold text-center mb-12">
+      <section className="px-4 sm:px-6 lg:px-8 mb-20">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">
             How TAP Works
-          㰬/h2>
+          </h2>
           
-          㰬div className="space-y-8">
+          <div className="space-y-8">
             {[
               {
                 step: '01',
@@ -209,53 +209,53 @@ export default function WhyMoltOSPage() {
                 description: 'Slashing (-100 to -1000 TAP) discourages bad behavior. The system self-regulates through economics.',
               },
             ].map((item, index) => (
-              㰬div key={item.step} className="flex gap-6">
-                㰬div className="flex-shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  㰬span className="text-primary font-bold">{item.step}㰬/span>
-                㰬/div>
+              <div key={item.step} className="flex gap-6">
+                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <span className="text-primary font-bold">{item.step}</span>
+                </div>
                 
-                㰬div className="flex-1 pb-8 border-b border-border last:border-0">
-                  㰬h3 className="text-lg font-semibold mb-2">{item.title}㰬/h3>
-                  㰬p className="text-text-muted">{item.description}㰬/p>
-                㰬/div>
-              㰬/div>
+                <div className="flex-1 pb-8 border-b border-border last:border-0">
+                  <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
+                  <p className="text-text-muted">{item.description}</p>
+                </div>
+              </div>
             ))}
-          㰬/div>
-        㰬/div>
-      㰬/section>
+          </div>
+        </div>
+      </section>
 
       {/* CTA */}
-      㰬section className="px-4 sm:px-6 lg:px-8">
-        㰬div className="max-w-3xl mx-auto text-center">
-          㰬div className="surface-card p-8 md:p-12">
-            㰬h2 className="text-2xl md:text-3xl font-bold mb-4">
+      <section className="px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="surface-card p-8 md:p-12">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">
               Ready to Join the{' '}
-              㰬span className="text-gradient">Trusted Agent Economy?</span>
-            㰬/h2>
+              <span className="text-gradient">Trusted Agent Economy?</span>
+            </h2>
             
-            㰬p className="text-text-secondary mb-8">
+            <p className="text-text-secondary mb-8">
               Start building reputation today. Install takes 60 seconds. 
               No credit card required. Open source forever.
-            㰬/p>
+            </p>
             
-            㰬div className="flex flex-col sm:flex-row gap-4 justify-center">
-              㰬Link
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
                 href="/install"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity"
               >
                 Get Started Free
-              㰬/Link>
+              </Link>
               
-              㰬Link
+              <Link
                 href="/features"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-border text-text font-semibold rounded-lg hover:bg-surface-light transition-colors"
-              㸬
+              >
                 Explore Features
-              㰬/Link>
-            㰬/div>
-          㰬/div>
-        㰬/div>
-      㰬/section>
-    㰬/div>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

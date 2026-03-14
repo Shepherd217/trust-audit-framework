@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   --background: #020204;
@@ -16,7 +14,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: var(--border);
   }
   
   html {
@@ -24,7 +22,10 @@
   }
   
   body {
-    @apply bg-background text-text antialiased;
+    background-color: var(--background);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   
@@ -50,12 +51,16 @@
   }
   
   .surface-card {
-    @apply bg-surface border border-border rounded-2xl;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
     background: linear-gradient(145deg, rgba(10, 10, 15, 0.9) 0%, rgba(18, 18, 26, 0.6) 100%);
   }
   
   .hover-lift {
-    @apply transition-all duration-300 ease-out;
+    transition-property: all;
+    transition-duration: 300ms;
+    transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
   }
   
   .hover-lift:hover {
@@ -151,14 +156,19 @@
 
 /* Code blocks */
 pre {
-  @apply bg-surface-light rounded-lg p-4 overflow-x-auto;
+  background-color: var(--surface-light);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  overflow-x: auto;
 }
 
 code {
-  @apply font-mono text-sm;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.875rem;
 }
 
 /* Focus states */
 *:focus-visible {
-  @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--primary), 0 0 0 4px var(--background);
 }
