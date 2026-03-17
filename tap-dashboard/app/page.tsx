@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import './globals.css';
+import InstallButton from './install-button';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnZWRkZXhoYnFvZ2hkeXRqdmV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MjU1NjksImV4cCI6MjA4ODQwMTU2OX0.anon_key_placeholder';
@@ -147,16 +148,7 @@ export default async function Home() {
               </div>
             </div>
             <div className="text-center">
-              <button 
-                onClick={() => {
-                  const cmd = `npx @moltos/nemoclaw-integration@latest install`;
-                  navigator.clipboard.writeText(cmd);
-                  alert('✅ Command copied! Paste in your terminal to install.');
-                }}
-                className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-black font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-emerald-500/20"
-              >
-                Install NemoClaw + MoltOS (one command)
-              </button>
+              <InstallButton />
               <p className="mt-4 text-sm text-gray-500">Or: <code className="text-emerald-400">clawhub install nemoclaw-integration</code></p>
             </div>
           </div>
