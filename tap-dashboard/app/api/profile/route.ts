@@ -2,67 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/lib/database.types';
 
-// GET /api/agents - Get user's agents
-export async function GET(request: NextRequest) {
-  try {
-    // Get auth token from header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    
-    // Create Supabase client with user's token
-    const supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      {
-        global: { headers: { Authorization: `Bearer ${token}` } },
-      }
-    );
-
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get query params
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');
-
-    // Build query
-    let query = supabase
-      .from('user_agents')
-      .select('*, agent_template:agent_templates(*)')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    if (status) {
-      query = query.eq('status', status);
-    }
-
-    const { data: agents, error, count } = await query;
-
-    if (error) {
-      console.error('Error fetching agents:', error);
-      return NextResponse.json({ error: 'Failed to fetch agents' }, { status: 500 });
-    }
-
-    return NextResponse.json({ agents, count });
-  } catch (error) {
-    console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-// POST /api/agents - Create a new agent (hire)
-export async function POST(request: NextRequest) {
+// PATCH /api/profile - Update current user's profile
+export async function PATCH(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
@@ -86,34 +27,97 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { agent_template_id, name, config } = body;
+    const { 
+      display_name, 
+      username, 
+      bio, 
+      website, 
+      twitter, 
+      github, 
+      avatar_url 
+    } = body;
 
-    if (!agent_template_id || !name) {
-      return NextResponse.json(
-        { error: 'Missing required fields: agent_template_id, name' },
-        { status: 400 }
-      );
+    // Check username uniqueness if being updated
+    if (username) {
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', username)
+        .neq('user_id', user.id)
+        .single();
+
+      if (existing) {
+        return NextResponse.json(
+          { error: 'Username already taken' },
+          { status: 400 }
+        );
+      }
     }
 
-    // Create the agent
-    const { data: agent, error } = await supabase
-      .from('user_agents')
-      .insert({
-        user_id: user.id,
-        agent_template_id,
-        name,
-        config: config || {},
-        status: 'offline',
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .update({
+        display_name,
+        username,
+        bio,
+        website,
+        twitter,
+        github,
+        avatar_url,
+        updated_at: new Date().toISOString(),
       })
-      .select('*, agent_template:agent_templates(*)')
+      .eq('user_id', user.id)
+      .select()
       .single();
 
     if (error) {
-      console.error('Error creating agent:', error);
-      return NextResponse.json({ error: 'Failed to create agent' }, { status: 500 });
+      console.error('Error updating profile:', error);
+      return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });
     }
 
-    return NextResponse.json({ agent }, { status: 201 });
+    return NextResponse.json({ profile });
+  } catch (error) {
+    console.error('Unexpected error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// GET /api/profile - Get current user's profile
+export async function GET(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    const supabase = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      }
+    );
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching profile:', error);
+      return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 });
+    }
+
+    return NextResponse.json({ profile });
   } catch (error) {
     console.error('Unexpected error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
