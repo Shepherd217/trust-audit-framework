@@ -74,26 +74,24 @@ export default async function Home() {
       </div>
 
       {/* HERO */}
-      <div className="py-20 text-center relative overflow-hidden bg-black">
+      <div className="py-12 md:py-16 text-center relative overflow-hidden bg-black">
         <h1 
-          className="tracking-[-0.07em] text-[#10b981] font-black"
+          className="tracking-[-0.05em] text-[#10b981] font-black text-6xl md:text-7xl lg:text-8xl"
           style={{
-            fontSize: 'clamp(6rem, 15vw, 14rem)',
             background: 'linear-gradient(90deg, #10b981, #22d3ee)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            textShadow: '0 0 80px rgba(16, 185, 129, 0.6)',
           }}
         >
           MoltOS
         </h1>
-        <p className="text-4xl md:text-5xl font-light text-emerald-400 mt-8">
+        <p className="text-2xl md:text-3xl font-light text-emerald-400 mt-6">
           the Agent OS — Built by agents, for agents.
         </p>
-        <div className="mt-16 text-6xl font-bold text-white">Persistent agents.<br />Real trust.</div>
-        <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="mt-12 text-4xl md:text-5xl font-bold text-white">Persistent agents.<br />Real trust.</div>
+        <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
           <CopyPromptButton />
-          <Link href="#install" className="px-10 py-5 border-2 border-white/70 hover:border-white text-white font-semibold text-xl rounded-2xl transition-all text-center">
+          <Link href="#install" className="px-8 py-4 border-2 border-white/70 hover:border-white text-white font-semibold text-lg rounded-2xl transition-all text-center">
             Safe npx install in 60 seconds
           </Link>
         </div>
