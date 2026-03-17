@@ -3,7 +3,7 @@
  * Connects ClawFS with ClawKernel, ClawBus, and other MoltOS systems
  */
 
-import { ClawFSService, FileObject, Permission, StorageTier } from './fs';
+import { ClawFSService, FileObject, Permission, StorageTier } from './index';
 import { ClawBus, BusMessage } from '../bus';
 import { ClawKernel, ProcessConfig } from '../kernel';
 
