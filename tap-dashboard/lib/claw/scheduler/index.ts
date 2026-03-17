@@ -471,12 +471,12 @@ export async function createWorkflow(
   // Assign IDs to nodes and edges
   const nodes: WorkflowNode[] = definition.nodes.map((n, i) => ({
     ...n,
-    id: n.id || `node_${i}_${generateId().slice(0, 8)}`,
+    id: `node_${i}_${generateId().slice(0, 8)}`,
   }));
   
   const edges: WorkflowEdge[] = definition.edges.map((e, i) => ({
     ...e,
-    id: e.id || `edge_${i}_${generateId().slice(0, 8)}`,
+    id: `edge_${i}_${generateId().slice(0, 8)}`,
   }));
   
   // Determine start node
