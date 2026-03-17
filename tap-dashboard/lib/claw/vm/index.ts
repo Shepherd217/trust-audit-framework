@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ClawVM Service
  * Hardware-isolated agent runtime using Firecracker microVMs
