@@ -431,7 +431,7 @@ function mapRowToExecution(row: ExecutionRow): WorkflowExecution {
       timestamp: new Date(e.timestamp),
     })),
     retryCount: new Map(Object.entries(row.retry_count || {})),
-    circuitBreakerState: new Map(Object.entries(row.circuit_breaker_state || {})),
+    circuitBreakerStates: new Map(Object.entries(row.circuit_breaker_state || {})),
   };
 }
 
