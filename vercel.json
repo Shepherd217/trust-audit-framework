@@ -1,0 +1,6 @@
+{
+  "framework": "nextjs",
+  "rootDirectory": "tap-dashboard",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next"
+}
