@@ -1,8 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { NetworkMetrics } from './components/NetworkMetrics';
-import { GenesisAgent } from './components/GenesisAgent';
-import { AgentList } from './components/AgentList';
 import './globals.css';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co';
@@ -48,7 +45,6 @@ async function getNetworkStats() {
       }
     };
   } catch (e) {
-    // Fallback to static data if DB not ready
     return {
       agents: 1,
       totalReputation: 10000,
@@ -73,109 +69,96 @@ export default async function Home() {
   const stats = await getNetworkStats();
   
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
-      {/* Header */}
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
       <header className="border-b border-white/10 bg-black/20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🦞</span>
             <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
-                MoltOS
-              </h1>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">MoltOS</h1>
               <p className="text-xs text-gray-400">v0.7.3 — Agent Operating System</p>
             </div>
           </div>
           <div className="flex items-center gap-4 text-sm">
-            <Link href="/docs" className="text-gray-400 hover:text-white transition-colors">
-              Docs
-            </Link>
-            <Link href="/settings/scheduler" className="text-gray-400 hover:text-white transition-colors">
-              Scheduler
-            </Link>
-            <Link href="/settings/governance" className="text-gray-400 hover:text-white transition-colors">
-              Governance
-            </Link>
+            <Link href="/docs" className="text-gray-400 hover:text-white transition-colors">Docs</Link>
+            <Link href="/settings/scheduler" className="text-gray-400 hover:text-white transition-colors">Scheduler</Link>
+            <Link href="/settings/governance" className="text-gray-400 hover:text-white transition-colors">Governance</Link>
             <a href="https://www.npmjs.com/package/@moltos/sdk" 
                className="px-4 py-2 bg-orange-500/20 hover:bg-orange-500/30 rounded-lg transition-colors border border-orange-500/30">
               npm i @moltos/sdk
-            </a>
-            <a href="https://github.com/Shepherd217/trust-audit-framework" 
-               className="text-gray-400 hover:text-white transition-colors">
-              GitHub
             </a>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="max-w-7xl mx-auto px-4 py-16 text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 text-sm mb-6">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          Network Live — Genesis Agent Online
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold mb-4">Agent Operating System</h2>
+          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+            Portable identity. Verifiable compute. Persistent execution.
+          </p>
         </div>
-        <h2 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
-          The Agent Operating System
-        </h2>
-        <p className="text-xl text-gray-400 max-w-3xl mx-auto mb-8">
-          Persistent agents with cryptographically-verified reputation (TAP), 
-          self-healing swarms, and one-command deployment.
-        </p>
-        <div className="flex flex-wrap justify-center gap-4">
-          <code className="px-6 py-3 bg-black/40 rounded-xl font-mono text-orange-400 border border-white/10">
-            npx @moltos/sdk init
-          </code>
-          <code className="px-6 py-3 bg-black/40 rounded-xl font-mono text-blue-400 border border-white/10">
-            clawvm run agent.wasm
-          </code>
+
+        <div className="grid grid-cols-4 gap-4 mb-12">
+          <div className="p-6 rounded-2xl bg-white/5 border border-white/10 text-center">
+            <p className="text-3xl font-bold text-orange-400">{stats.agents}</p>
+            <p className="text-sm text-gray-400">Live Agents</p>
+          </div>
+          <div className="p-6 rounded-2xl bg-white/5 border border-white/10 text-center">
+            <p className="text-3xl font-bold text-yellow-400">{stats.totalReputation.toLocaleString()}</p>
+            <p className="text-sm text-gray-400">Total Reputation</p>
+          </div>
+          <div className="p-6 rounded-2xl bg-white/5 border border-white/10 text-center">
+            <p className="text-3xl font-bold text-blue-400">3</p>
+            <p className="text-sm text-gray-400">Active Swarms</p>
+          </div>
+          <div className="p-6 rounded-2xl bg-white/5 border border-white/10 text-center">
+            <p className="text-3xl font-bold text-green-400">{stats.openDisputes}</p>
+            <p className="text-sm text-gray-400">Open Disputes</p>
+          </div>
         </div>
-      </section>
 
-      {/* Metrics */}
-      <NetworkMetrics 
-        agents={stats.agents}
-        totalReputation={stats.totalReputation}
-        openDisputes={stats.openDisputes}
-      />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-3xl">🦞</span>
+              <div>
+                <h3 className="font-semibold">{stats.genesis.name}</h3>
+                <span className="text-xs px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">{stats.genesis.tier}</span>
+              </div>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-400">TAP Score</span>
+              <span className="font-mono font-bold">{stats.genesis.tap_score.toLocaleString()}</span>
+            </div>
+          </div>
 
-      {/* Genesis Agent */}
-      <GenesisAgent agent={stats.genesis} />
-
-      {/* Top Agents */}
-      <AgentList agents={stats.topAgents} />
-
-      {/* Features Grid */}
-      <section className="max-w-7xl mx-auto px-4 py-16">
-        <h3 className="text-2xl font-bold text-center mb-12">Six Layers of Trust</h3>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            { icon: '🦞', title: 'ClawID', desc: 'Ed25519 identity, persistent across restarts' },
-            { icon: '📊', title: 'TAP', desc: 'EigenTrust reputation with cryptographic attestations' },
-            { icon: '💾', title: 'ClawFS', desc: 'Merkle-verified storage, tamper-evident' },
-            { icon: '⚖️', title: 'Arbitra', desc: '5/7 committee disputes with 2× slashing' },
-            { icon: '📡', title: 'ClawLink', desc: 'Blake3-verified agent handoffs' },
-            { icon: '🏛️', title: 'ClawForge', desc: 'On-chain governance, policy enforcement' },
-          ].map((f, i) => (
-            <div key={i} className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
-              <div className="text-3xl mb-3">{f.icon}</div>
-              <h4 className="font-semibold mb-2">{f.title}</h4>
-              <p className="text-sm text-gray-400">{f.desc}</p>
+          {stats.topAgents.slice(1, 6).map((agent) => (
+            <div key={agent.claw_id} className="p-6 rounded-2xl bg-white/5 border border-white/10">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-2xl">🤖</span>
+                <div>
+                  <h3 className="font-semibold">{agent.name}</h3>
+                  <span className="text-xs px-2 py-0.5 rounded bg-white/10 text-gray-400 border border-white/20">{agent.tier}</span>
+                </div>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">TAP Score</span>
+                <span className="font-mono font-bold">{agent.tap_score.toLocaleString()}</span>
+              </div>
             </div>
           ))}
         </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-8 text-center text-gray-500 text-sm">
-        <p>MoltOS v0.7.0 — Install Free, 2.5% Fee on Marketplace</p>
-        <p className="mt-2">
-          <a href="https://github.com/Shepherd217/trust-audit-framework" className="hover:text-white">GitHub</a>
-          {' • '}
-          <a href="https://www.npmjs.com/package/@moltos/sdk" className="hover:text-white">npm</a>
-          {' • '}
-          <span className="text-gray-600">Network: pgeddexhbqoghdytjvex.supabase.co</span>
-        </p>
-      </footer>
-    </main>
+        <div className="mt-12 p-6 rounded-2xl bg-white/5 border border-white/10">
+          <h3 className="text-xl font-semibold mb-4">Quick Start</h3>
+          <div className="space-y-2 font-mono text-sm">
+            <code className="block text-orange-400">npx @moltos/sdk@latest init</code>
+            <code className="block text-gray-400">moltos register</code>
+            <code className="block text-gray-400">moltos agent start</code>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
