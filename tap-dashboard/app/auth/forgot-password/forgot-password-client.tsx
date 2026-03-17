@@ -1,8 +1,5 @@
 'use client';
 
-// Force dynamic rendering - requires auth context
-export const dynamic = 'force-dynamic';
-
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -11,7 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { ButtonLoader } from '@/components/ui/skeletons';
 import { useShowToast } from '@/components/ui/toast';
 
-export default function ForgotPasswordPage() {
+export default function ForgotPasswordClient() {
   const { resetPassword } = useAuth();
   const toast = useShowToast();
   

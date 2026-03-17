@@ -1,8 +1,5 @@
 'use client';
 
-// Force dynamic rendering - requires auth context
-export const dynamic = 'force-dynamic';
-
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -215,7 +212,7 @@ function SignInForm() {
   );
 }
 
-export default function SignInPage() {
+export default function SignInClient() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">

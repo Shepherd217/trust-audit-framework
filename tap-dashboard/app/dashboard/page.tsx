@@ -1,4 +1,3 @@
-// Server component wrapper - forces dynamic rendering
 export const dynamic = 'force-dynamic';
 
 import DashboardClient from './dashboard-client';
