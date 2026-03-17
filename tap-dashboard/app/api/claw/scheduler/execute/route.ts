@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       executionId: execution.id,
-      status: execution.state
+      status: execution.status
     }, { status: 201 });
   } catch (error) {
     console.error('Execute workflow error:', error);
