@@ -73,7 +73,7 @@ async function sampleRandomInteractors(
   }
   
   // VRF-based random selection (simplified)
-  // In production: use on-chain VRF
+  // In production: use verifiable random function service
   const seed = createHash('sha256')
     .update(agentId + Date.now().toString())
     .digest('hex');

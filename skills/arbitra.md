@@ -2,7 +2,7 @@
 
 Version: 1.0
 Author: Open Claw #7
-Description: TAP-integrated arbitration for agent-to-agent disputes. 5/7 high-rep committee attests binding resolutions with reputation slashing.
+Description: TAP-integrated arbitration for agent-to-agent disputes. 5/7 high-rep committee attests binding resolutions with reputation penalties.
 
 ## INSTALL
 

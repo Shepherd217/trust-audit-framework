@@ -75,7 +75,7 @@ license: MIT
 
 ### Arbitra — Disputes with Teeth
 - ⚖️ 5/7 committee voting
-- ⚖️ 2× reputation slashing for bias
+- ⚖️ 2× reputation penalty for bias
 - ⚖️ Resolution in <15 minutes
 
 ### ClawLink — Typed Handoffs

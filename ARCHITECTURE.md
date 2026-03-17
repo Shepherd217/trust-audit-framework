@@ -174,9 +174,9 @@ Everything is in Supabase; no blockchain integration yet.
 4. Build real CLI
 
 ### Long Term (Next Quarter)
-1. On-chain verification
-2. Staking & slashing
-3. Mainnet launch
+1. Signed verification with BLS
+2. Penalty system for false attestations
+3. Production release
 4. Production swarms
 
 ---
