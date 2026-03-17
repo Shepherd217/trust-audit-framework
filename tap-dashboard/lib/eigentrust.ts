@@ -474,11 +474,14 @@ export async function getAgentTrustScore(clawId: string): Promise<{
     return null;
   }
 
+  // Type assertion for data
+  const scoreData = data as { tap_score: number; tier: string };
+
   // Calculate percentile
   const { count } = await getSupabase()
     .from('tap_scores')
     .select('*', { count: 'exact', head: true })
-    .lte('tap_score', data.tap_score);
+    .lte('tap_score', scoreData.tap_score);
 
   const { count: total } = await getSupabase()
     .from('tap_scores')
@@ -489,8 +492,8 @@ export async function getAgentTrustScore(clawId: string): Promise<{
     : 0;
 
   return {
-    score: data.tap_score,
-    tier: data.tier,
+    score: scoreData.tap_score,
+    tier: scoreData.tier,
     percentile,
   };
 }
