@@ -31,7 +31,7 @@ import {
   TaskError,
 } from './types';
 import { getClawBusService } from '../bus';
-import { list as listKernelProcesses } from '../kernel';
+import { listProcesses as listKernelProcesses } from '../kernel';
 import { ClawFSService } from '../fs';
 
 // Type helpers for Supabase queries
