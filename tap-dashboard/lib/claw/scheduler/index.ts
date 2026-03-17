@@ -5,7 +5,7 @@
 
 import { getSupabaseClient } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
-import type {
+import {
   Workflow,
   WorkflowDefinition,
   WorkflowNode,
@@ -26,6 +26,8 @@ import type {
   RetryPolicy,
   PaymentRecord,
   ExecutionStateSnapshot,
+  TaskStatus,
+  TaskError,
 } from './types';
 import { getClawBusService } from '../bus';
 import { list as listKernelProcesses } from '../kernel';
@@ -933,10 +935,10 @@ export async function executeNode(
   }
   
   const execution = mapRowToExecution(executionData);
-  const workflow = executionData.workflow;
+  const workflow = executionData.workflow as WorkflowRow;
   
   // Find node config
-  const node = workflow.nodes.find((n: any) => n.id === nodeId);
+  const node = workflow.nodes.find((n: WorkflowNode) => n.id === nodeId);
   if (!node) {
     throw new Error(`Node ${nodeId} not found in workflow`);
   }
@@ -1008,7 +1010,7 @@ export async function executeNode(
       released: false,
     },
     createdAt: new Date(),
-    status: 'queued' as const,
+    status: TaskStatus.QUEUED,
     priority: execution.context.priority,
   };
   
@@ -1108,7 +1110,7 @@ export async function executeNode(
   } else {
     nodeExecution!.status = 'failed';
     nodeExecution!.completedAt = new Date();
-    nodeExecution!.error = result.error as Error;
+    nodeExecution!.error = result.error ? new Error(result.error.message) : new Error('Unknown error');
     
     const failEvent = createWorkflowEvent(executionId, 'node_failed', nodeId, {
       taskId,
@@ -1174,7 +1176,7 @@ async function executeViaBus(task: AgentTask, timeoutMs: number): Promise<TaskRe
   
   // Send task via bus
   await bus.send({
-    type: 'task',
+    type: 'request',
     from: 'scheduler',
     to: task.agentId!,
     payload: {
