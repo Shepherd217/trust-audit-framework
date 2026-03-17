@@ -9,9 +9,9 @@ export function CopyPromptButton() {
   return (
     <button 
       onClick={handleClick}
-      className="px-10 py-5 bg-white text-black font-semibold text-xl rounded-2xl hover:bg-emerald-400 hover:text-white transition-all flex items-center gap-3 justify-center"
+      className="px-8 py-4 bg-white text-black font-semibold text-lg rounded-2xl hover:bg-emerald-400 hover:text-white transition-all flex items-center gap-3 justify-center"
     >
-      Give this prompt to your agent <span className="text-2xl">📋</span>
+      Give this prompt to your agent <span className="text-xl">📋</span>
     </button>
   );
 }
@@ -25,7 +25,7 @@ export function CopyNemoclawButton() {
   return (
     <button 
       onClick={handleClick}
-      className="px-10 py-5 bg-emerald-500 text-black font-semibold text-xl rounded-2xl hover:bg-emerald-400 transition-all"
+      className="px-8 py-4 bg-emerald-500 text-black font-semibold text-lg rounded-2xl hover:bg-emerald-400 transition-all"
     >
       Install NemoClaw + MoltOS (one command)
     </button>
