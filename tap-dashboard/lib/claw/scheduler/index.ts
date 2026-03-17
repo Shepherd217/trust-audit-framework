@@ -178,12 +178,12 @@ function validateWorkflowDefinition(def: WorkflowDefinition): ValidationResult {
   // Assign IDs to nodes and edges if not present
   const nodes: WorkflowNode[] = def.nodes.map((n, i) => ({
     ...n,
-    id: n.id || `node_${i}`,
+    id: (n as any).id || `node_${i}`,
   }));
   
   const edges: WorkflowEdge[] = def.edges.map((e, i) => ({
     ...e,
-    id: e.id || `edge_${i}`,
+    id: (e as any).id || `edge_${i}`,
   }));
   
   // Validate required fields
