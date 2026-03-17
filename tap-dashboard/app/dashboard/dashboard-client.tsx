@@ -1,8 +1,5 @@
 'use client';
 
-// Force dynamic rendering - requires auth context
-export const dynamic = 'force-dynamic';
-
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -17,7 +14,7 @@ import { DashboardSkeleton, SectionError, ButtonLoader } from '@/components/ui/s
 import { useShowToast } from '@/components/ui/toast';
 import { UserAgentRow, SwarmRow } from '@/lib/database.types';
 
-export default function DashboardPage() {
+export default function DashboardClient() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const toast = useShowToast();

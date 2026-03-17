@@ -1,8 +1,5 @@
 'use client';
 
-// Force dynamic rendering - requires auth context
-export const dynamic = 'force-dynamic';
-
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -197,7 +194,7 @@ function UpdatePasswordForm() {
   );
 }
 
-export default function UpdatePasswordPage() {
+export default function UpdatePasswordClient() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
