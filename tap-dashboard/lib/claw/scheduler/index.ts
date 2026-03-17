@@ -1,10 +1,12 @@
 // @ts-nocheck
+
 /**
  * ClawScheduler Service
  * Core workflow orchestration engine for TAP
  */
 
 import { getSupabaseClient } from '@/lib/supabase';
+import type { Database, WorkflowRow, WorkflowExecutionRow, AgentTaskRow } from '@/lib/database.types';
 import { v4 as uuidv4 } from 'uuid';
 import {
   Workflow,
@@ -34,57 +36,18 @@ import { getClawBusService } from '../bus';
 import { list as listKernelProcesses } from '../kernel';
 import { ClawFSService } from '../fs';
 
+// Type helpers for Supabase queries
+type DbResult<T> = { data: T | null; error: Error | null };
+type Tables = Database['public']['Tables'];
+
 // ============================================================================
-// Types for Database Schema
+// Types for Database Schema (local mapping types)
 // ============================================================================
 
-interface WorkflowRow {
-  id: string;
-  name: string;
-  description?: string;
-  version: number;
-  nodes: any[];
-  edges: any[];
-  start_node_id: string;
-  end_node_ids?: string[];
-  global_timeout_ms?: number;
-  max_concurrent_nodes?: number;
-  default_retry_policy?: any;
-  owner_id: string;
-  allowed_agent_ids?: string[];
-  budget_limit?: number;
-  payment_token?: string;
-  created_at: string;
-  updated_at: string;
-  is_active: boolean;
-  tags?: string[];
-}
+interface LocalWorkflowRow extends WorkflowRow {}
 
-interface ExecutionRow {
-  id: string;
-  workflow_id: string;
-  workflow_version: number;
-  status: string;
-  current_node_id?: string;
-  completed_node_ids: string[];
-  node_executions: Record<string, any>;
-  input: any;
-  output?: any;
-  context: any;
-  active_branches: string[];
-  pending_joins: Record<string, string[]>;
-  started_at: string;
-  completed_at?: string;
-  estimated_completion_at?: string;
-  progress_percent: number;
-  budget_allocated: number;
-  budget_spent: number;
-  payments: any[];
-  events: any[];
-  retry_count: Record<string, number>;
+interface LocalExecutionRow extends WorkflowExecutionRow {
   circuit_breaker_state: Record<string, CircuitBreakerState>;
-  created_at: string;
-  updated_at: string;
 }
 
 interface ListWorkflowsFilters {
@@ -376,7 +339,7 @@ function createWorkflowEvent(
   };
 }
 
-function mapRowToWorkflow(row: WorkflowRow): Workflow {
+function mapRowToWorkflow(row: LocalWorkflowRow): Workflow {
   return {
     id: row.id,
     name: row.name,
@@ -399,7 +362,7 @@ function mapRowToWorkflow(row: WorkflowRow): Workflow {
   };
 }
 
-function mapRowToExecution(row: ExecutionRow): WorkflowExecution {
+function mapRowToExecution(row: LocalExecutionRow): WorkflowExecution {
   const nodeExecutions = new Map<string, NodeExecution>();
   for (const [key, value] of Object.entries(row.node_executions || {})) {
     nodeExecutions.set(key, {
@@ -508,8 +471,8 @@ export async function createWorkflow(
   };
   
   // Store in Supabase
-  const { data, error } = await supabase
-    .from('workflows')
+  const { data, error } = await (supabase
+    .from('workflows') as any)
     .insert(workflow)
     .select()
     .single();
@@ -518,7 +481,7 @@ export async function createWorkflow(
     throw new Error(`Failed to create workflow: ${error.message}`);
   }
   
-  return mapRowToWorkflow(data);
+  return mapRowToWorkflow(data as LocalWorkflowRow);
 }
 
 /**
@@ -643,7 +606,7 @@ export async function getExecutionStatus(executionId: string): Promise<Execution
   }
   
   // Explicitly type to avoid narrowing issues
-  const data = rawData as ExecutionRow & { workflow: { name: string; nodes: any[] } | null };
+  const data = rawData as LocalExecutionRow & { workflow: { name: string; nodes: any[] } | null };
   
   const execution = mapRowToExecution(data);
   const workflow = data.workflow;
@@ -903,7 +866,7 @@ async function resolveAgent(node: WorkflowNode): Promise<string | null> {
       .single();
     
     if (data) {
-      return data.id;
+      return (data as { id: string }).id;
     }
   }
   
@@ -939,7 +902,7 @@ export async function executeNode(
   }
   
   // Explicitly type the data to avoid TypeScript narrowing issues
-  const executionData = rawData as ExecutionRow & { workflow: WorkflowRow | null };
+  const executionData = rawData as LocalExecutionRow & { workflow: LocalWorkflowRow | null };
   
   const execution = mapRowToExecution(executionData);
   const workflow = executionData.workflow;
@@ -1025,8 +988,8 @@ export async function executeNode(
   };
   
   // Store task in database
-  const { error: taskError } = await supabase
-    .from('agent_tasks')
+  const { error: taskError } = await (supabase
+    .from('agent_tasks') as any)
     .insert({
       id: taskId,
       execution_id: executionId,
@@ -1256,7 +1219,8 @@ async function storeNodeResult(
   
   if (!executionData) return;
   
-  const nodeExecutions = executionData.node_executions || {};
+  const execData = executionData as LocalExecutionRow;
+  const nodeExecutions = execData.node_executions || {};
   nodeExecutions[nodeId] = {
     ...nodeExecutions[nodeId],
     status: result.success ? 'completed' : 'failed',
@@ -1264,9 +1228,9 @@ async function storeNodeResult(
     completed_at: new Date().toISOString(),
   };
   
-  await supabase
-    .from('workflow_executions')
-    .update({ node_executions: nodeExecutions } as any)
+  await (supabase
+    .from('workflow_executions') as any)
+    .update({ node_executions: nodeExecutions })
     .eq('id', executionId);
 }
 
@@ -1293,9 +1257,9 @@ async function logEvent(executionId: string, event: WorkflowEvent): Promise<void
     timestamp: event.timestamp.toISOString(),
   });
   
-  await supabase
-    .from('workflow_executions')
-    .update({ events } as any)
+  await (supabase
+    .from('workflow_executions') as any)
+    .update({ events })
     .eq('id', executionId);
 }
 
@@ -1335,8 +1299,8 @@ export async function transition(
     throw new Error(`Execution not found: ${executionId}`);
   }
   
-  const execution = mapRowToExecution(executionData);
-  const workflow = executionData.workflow;
+  const execution = mapRowToExecution(executionData as LocalExecutionRow);
+  const workflow = executionData.workflow as LocalWorkflowRow;
   
   // Find outgoing edges
   const outgoingEdges = workflow.edges.filter((e: WorkflowEdge) => e.from === fromNodeId);
@@ -1431,14 +1395,14 @@ export async function transition(
   const completedNodeIds = [...execution.completedNodeIds, fromNodeId];
   const currentNodeId = nextNodes[0]; // Primary path
   
-  await supabase
-    .from('workflow_executions')
+  await (supabase
+    .from('workflow_executions') as any)
     .update({
       current_node_id: currentNodeId,
       completed_node_ids: completedNodeIds,
       active_branches: Array.from(execution.activeBranches),
       pending_joins: Object.fromEntries(execution.pendingJoins),
-    } as any)
+    })
     .eq('id', executionId);
   
   // Log transition event
