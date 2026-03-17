@@ -10,11 +10,22 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Lazy initialization of Supabase client
+let supabase: ReturnType<typeof createClient> | null = null;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+function getSupabase() {
+  if (!supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Supabase environment variables not configured');
+    }
+    
+    supabase = createClient(supabaseUrl, supabaseKey);
+  }
+  return supabase;
+}
 
 /**
  * Attestation data structure
@@ -89,7 +100,7 @@ const DEFAULT_CONFIG: EigenTrustConfig = {
  * Fetch attestations from the database
  */
 async function fetchAttestations(timeWindowDays: number = 0): Promise<Attestation[]> {
-  let query = supabase
+  let query = getSupabase()
     .from('attestations')
     .select('id, agent_id, target_id, score, created_at');
 
@@ -112,7 +123,7 @@ async function fetchAttestations(timeWindowDays: number = 0): Promise<Attestatio
  * Fetch all agents from the database
  */
 async function fetchAgents(): Promise<Agent[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('tap_scores')
     .select('claw_id, name, tap_score, total_attestations_received, total_attestations_given');
 
@@ -127,7 +138,7 @@ async function fetchAgents(): Promise<Agent[]> {
  * Fetch pre-trusted agents (genesis agents with highest reputation)
  */
 async function fetchPretrustedAgents(limit: number = 5): Promise<string[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('tap_scores')
     .select('claw_id')
     .order('tap_score', { ascending: false })
@@ -138,7 +149,7 @@ async function fetchPretrustedAgents(limit: number = 5): Promise<string[]> {
     return [];
   }
 
-  return data?.map(a => a.claw_id) || [];
+  return (data as Array<{ claw_id: string }>)?.map(a => a.claw_id) || [];
 }
 
 /**
@@ -369,9 +380,9 @@ async function updateTAPScores(scores: Map<string, number>): Promise<void> {
   });
 
   // Batch update
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from('tap_scores')
-    .upsert(updates, { onConflict: 'claw_id' });
+    .upsert(updates as any, { onConflict: 'claw_id' });
 
   if (error) {
     throw new Error(`Failed to update TAP scores: ${error.message}`);
@@ -453,7 +464,7 @@ export async function getAgentTrustScore(clawId: string): Promise<{
   tier: string;
   percentile: number;
 } | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('tap_scores')
     .select('tap_score, tier')
     .eq('claw_id', clawId)
@@ -464,12 +475,12 @@ export async function getAgentTrustScore(clawId: string): Promise<{
   }
 
   // Calculate percentile
-  const { count } = await supabase
+  const { count } = await getSupabase()
     .from('tap_scores')
     .select('*', { count: 'exact', head: true })
     .lte('tap_score', data.tap_score);
 
-  const { count: total } = await supabase
+  const { count: total } = await getSupabase()
     .from('tap_scores')
     .select('*', { count: 'exact', head: true });
 
@@ -495,7 +506,7 @@ export async function getTrustNetwork(
   edges: Array<{ from: string; to: string; weight: number }>;
 }> {
   // Get attestations from this agent
-  const { data: attestations, error } = await supabase
+  const { data: attestations, error } = await getSupabase()
     .from('attestations')
     .select('agent_id, target_id, score')
     .or(`agent_id.eq.${agentId},target_id.eq.${agentId}`)
@@ -513,7 +524,7 @@ export async function getTrustNetwork(
   });
 
   // Get agent details
-  const { data: agents } = await supabase
+  const { data: agents } = await getSupabase()
     .from('tap_scores')
     .select('claw_id, name, tap_score')
     .in('claw_id', Array.from(nodeIds));

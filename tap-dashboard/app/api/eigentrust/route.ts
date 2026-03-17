@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runEigenTrustCalculation, getAgentTrustScore, getTrustNetwork } from '@/lib/eigentrust';
 
+// Force dynamic rendering - this API route requires runtime DB access
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/eigentrust
  * Trigger EigenTrust recalculation
