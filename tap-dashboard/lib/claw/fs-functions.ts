@@ -3,7 +3,7 @@
  * Wrapper functions for API routes
  */
 
-import { createClawFSService, FileMetadata, Permission, ListFilters } from './fs';
+import { createClawFSService, FileMetadata, Permission, StorageTier } from './fs';
 
 const service = createClawFSService({
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,6 +39,25 @@ interface SearchInput {
   };
 }
 
+interface ListFilters {
+  tier?: 'hot' | 'warm' | 'cold';
+  type?: string;
+  limit?: number;
+  offset?: number;
+  fromDate?: Date;
+  toDate?: Date;
+}
+
+function toStorageTier(tier?: 'hot' | 'warm' | 'cold'): StorageTier | undefined {
+  if (!tier) return undefined;
+  switch (tier) {
+    case 'hot': return StorageTier.HOT;
+    case 'warm': return StorageTier.WARM;
+    case 'cold': return StorageTier.COLD;
+    default: return undefined;
+  }
+}
+
 export async function store(input: StoreInput, agentId: string) {
   return service.store(agentId, input.content, input.metadata || {}, input.permissions);
 }
@@ -48,7 +67,11 @@ export async function retrieve(fileId: string, agentId: string) {
 }
 
 export async function list(agentId: string, filters?: ListFilters) {
-  return service.list(agentId, filters);
+  const serviceFilters = filters ? {
+    ...filters,
+    tier: toStorageTier(filters.tier)
+  } : undefined;
+  return service.list(agentId, serviceFilters);
 }
 
 export async function remove(fileId: string, agentId: string) {
@@ -58,7 +81,7 @@ export async function remove(fileId: string, agentId: string) {
 export async function search(input: SearchInput, agentId: string) {
   return service.search(agentId, input.query, { 
     limit: input.filters?.limit,
-    filterByTier: input.filters?.tier ? [input.filters.tier] : undefined
+    filterByTier: input.filters?.tier ? [toStorageTier(input.filters.tier)!] : undefined
   });
 }
 

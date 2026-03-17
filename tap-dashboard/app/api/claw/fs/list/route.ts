@@ -14,21 +14,25 @@ export async function GET(request: NextRequest) {
     
     // Parse query parameters
     const { searchParams } = new URL(request.url);
-    const tier = searchParams.get('tier') as 'hot' | 'warm' | 'cold' | undefined;
+    const tierParam = searchParams.get('tier');
     const limit = parseInt(searchParams.get('limit') ?? '50', 10);
     const offset = parseInt(searchParams.get('offset') ?? '0', 10);
     
-    // Validate tier
-    if (tier && !['hot', 'warm', 'cold'].includes(tier)) {
-      return NextResponse.json(
-        { error: 'Invalid tier parameter. Must be hot, warm, or cold' },
-        { status: 400 }
-      );
+    // Validate and cast tier
+    let tier: 'hot' | 'warm' | 'cold' | undefined;
+    if (tierParam) {
+      if (!['hot', 'warm', 'cold'].includes(tierParam)) {
+        return NextResponse.json(
+          { error: 'Invalid tier parameter. Must be hot, warm, or cold' },
+          { status: 400 }
+        );
+      }
+      tier = tierParam as 'hot' | 'warm' | 'cold';
     }
     
     const files = await list(agentId, {
       tier,
-      limit: Math.min(limit, 100), // Max 100
+      limit: Math.min(limit, 100),
       offset,
     });
     
