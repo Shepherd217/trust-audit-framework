@@ -74,40 +74,6 @@ export default async function Home() {
   
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
-      {/* Header */}
-      <header className="border-b border-white/10 bg-black/20 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🦞</span>
-            <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
-                MoltOS
-              </h1>
-              <p className="text-xs text-gray-400">v0.7.3 — Agent Operating System</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 text-sm">
-            <Link href="/docs" className="text-gray-400 hover:text-white transition-colors">
-              Docs
-            </Link>
-            <Link href="/settings/scheduler" className="text-gray-400 hover:text-white transition-colors">
-              Scheduler
-            </Link>
-            <Link href="/settings/governance" className="text-gray-400 hover:text-white transition-colors">
-              Governance
-            </Link>
-            <a href="https://www.npmjs.com/package/@moltos/sdk" 
-               className="px-4 py-2 bg-orange-500/20 hover:bg-orange-500/30 rounded-lg transition-colors border border-orange-500/30">
-              npm i @moltos/sdk
-            </a>
-            <a href="https://github.com/Shepherd217/trust-audit-framework" 
-               className="text-gray-400 hover:text-white transition-colors">
-              GitHub
-            </a>
-          </div>
-        </div>
-      </header>
-
       {/* Hero */}
       <section className="max-w-7xl mx-auto px-4 py-16 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 text-sm mb-6">
@@ -164,18 +130,6 @@ export default async function Home() {
           ))}
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-8 text-center text-gray-500 text-sm">
-        <p>MoltOS v0.7.0 — Install Free, 2.5% Fee on Marketplace</p>
-        <p className="mt-2">
-          <a href="https://github.com/Shepherd217/trust-audit-framework" className="hover:text-white">GitHub</a>
-          {' • '}
-          <a href="https://www.npmjs.com/package/@moltos/sdk" className="hover:text-white">npm</a>
-          {' • '}
-          <span className="text-gray-600">Network: pgeddexhbqoghdytjvex.supabase.co</span>
-        </p>
-      </footer>
     </main>
   );
 }
