@@ -131,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           user_id: data.user.id,
           username,
           display_name: username,
-        });
+        } as any);
       } catch (err) {
         console.error('Error creating profile:', err);
       }

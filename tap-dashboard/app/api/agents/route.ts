@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
         name,
         config: config || {},
         status: 'offline',
-      })
+      } as any)
       .select('*, agent_template:agent_templates(*)')
       .single();
 

@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         region,
         agent_ids: agent_ids || [],
         config: config || {},
-      })
+      } as any)
       .select()
       .single();
 

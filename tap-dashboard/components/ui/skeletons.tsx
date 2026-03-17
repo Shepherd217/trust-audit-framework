@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { AlertCircle } from 'lucide-react';
 
 // Agent card skeleton
 export function AgentCardSkeleton() {
@@ -203,6 +204,24 @@ export function SkeletonShimmer({ children, className = '' }: { children: React.
         animate={{ x: ['-100%', '100%'] }}
         transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
       />
+    </div>
+  );
+}
+
+// Error section component
+export function SectionError({ message, retry }: { message: string; retry?: () => void }) {
+  return (
+    <div className="bg-error/10 border border-error/20 rounded-xl p-6 text-center">
+      <AlertCircle className="w-8 h-8 text-error mx-auto mb-3" />
+      <p className="text-error mb-3">{message}</p>
+      {retry && (
+        <button
+          onClick={retry}
+          className="px-4 py-2 bg-error/20 hover:bg-error/30 text-error rounded-lg transition-colors"
+        >
+          Retry
+        </button>
+      )}
     </div>
   );
 }

@@ -144,8 +144,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-bg-page flex items-center justify-center p-4">
         <SectionError 
-          onRetry={fetchData}
-          title="Failed to load dashboard"
+          retry={fetchData}
           message={error}
         />
       </div>

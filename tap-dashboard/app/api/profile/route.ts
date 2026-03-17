@@ -65,7 +65,7 @@ export async function PATCH(request: NextRequest) {
         github,
         avatar_url,
         updated_at: new Date().toISOString(),
-      })
+      } as never)
       .eq('user_id', user.id)
       .select()
       .single();

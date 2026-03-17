@@ -113,7 +113,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const { data: agent, error } = await supabase
       .from('user_agents')
-      .update(updates)
+      .update(updates as never)
       .eq('id', id)
       .eq('user_id', user.id)
       .select('*, agent_template:agent_templates(*)')
@@ -131,7 +131,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         level: 'info',
         message: `Agent ${status === 'online' ? 'started' : status === 'offline' ? 'stopped' : `status changed to ${status}`}`,
         metadata: { status },
-      });
+      } as any);
     }
 
     return NextResponse.json({ agent });

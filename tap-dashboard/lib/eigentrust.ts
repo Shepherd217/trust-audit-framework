@@ -357,7 +357,7 @@ function getTierFromScore(score: number): string {
  * Update TAP scores in the database
  */
 async function updateTAPScores(scores: Map<string, number>): Promise<void> {
-  const updates = [];
+  const updates: { claw_id: string; tap_score: number; tier: string; last_calculated_at: string; }[] = [];
   
   Array.from(scores.entries()).forEach(([clawId, score]) => {
     updates.push({
