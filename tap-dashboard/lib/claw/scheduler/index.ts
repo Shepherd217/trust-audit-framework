@@ -642,7 +642,7 @@ export async function getExecutionStatus(executionId: string): Promise<Execution
   }
   
   const execution = mapRowToExecution(data);
-  const workflow = data.workflow;
+  const workflow = data.workflow as { name: string; nodes: any[] } | null;
   
   // Calculate time metrics
   const nowTime = now().getTime();
@@ -935,7 +935,10 @@ export async function executeNode(
   }
   
   const execution = mapRowToExecution(executionData);
-  const workflow = executionData.workflow as WorkflowRow;
+  const workflow = executionData.workflow as WorkflowRow | null;
+  if (!workflow) {
+    throw new Error(`Workflow not found for execution: ${executionId}`);
+  }
   
   // Find node config
   const node = workflow.nodes.find((n: WorkflowNode) => n.id === nodeId);
@@ -1201,10 +1204,11 @@ async function executeViaBus(task: AgentTask, timeoutMs: number): Promise<TaskRe
       .single();
     
     if (data) {
-      if (data.status === 'completed' && data.result) {
-        return data.result as TaskResult;
+      const taskData = data as { status: string; result: unknown };
+      if (taskData.status === 'completed' && taskData.result) {
+        return taskData.result as TaskResult;
       }
-      if (data.status === 'failed') {
+      if (taskData.status === 'failed') {
         return {
           success: false,
           error: {

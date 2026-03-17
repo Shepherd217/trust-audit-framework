@@ -261,7 +261,7 @@ export interface WorkflowExecution {
   payments: PaymentRecord[];
   
   // Event sourcing
-  events: ExecutionEvent[];
+  events: WorkflowEvent[];
   
   // Retry and circuit breaker state
   retryCount: Map<string, number>;
