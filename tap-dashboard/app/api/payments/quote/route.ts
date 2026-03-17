@@ -66,7 +66,7 @@ async function getTAPInfo(agentId: string): Promise<{ score: number; tier: strin
     const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+      process.env.NEXT_PUBLIC_SUPABASE_ANON || ''
     );
 
     // Fetch TAP score

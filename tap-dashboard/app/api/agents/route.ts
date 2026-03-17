@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     // Create Supabase client with user's token
     const supabase = createClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
       {
         global: { headers: { Authorization: `Bearer ${token}` } },
       }
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     
     const supabase = createClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
       {
         global: { headers: { Authorization: `Bearer ${token}` } },
       }

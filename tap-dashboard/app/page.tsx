@@ -3,7 +3,7 @@ import Link from 'next/link';
 import './globals.css';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnZWRkZXhoYnFvZ2hkeXRqdmV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MjU1NjksImV4cCI6MjA4ODQwMTU2OX0.anon_key_placeholder';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnZWRkZXhoYnFvZ2hkeXRqdmV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MjU1NjksImV4cCI6MjA4ODQwMTU2OX0.anon_key_placeholder';
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 

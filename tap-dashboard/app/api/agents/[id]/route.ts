@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     
     const supabase = createClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
       {
         global: { headers: { Authorization: `Bearer ${token}` } },
       }
@@ -79,7 +79,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     
     const supabase = createClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
       {
         global: { headers: { Authorization: `Bearer ${token}` } },
       }
@@ -154,7 +154,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     
     const supabase = createClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
       {
         global: { headers: { Authorization: `Bearer ${token}` } },
       }
