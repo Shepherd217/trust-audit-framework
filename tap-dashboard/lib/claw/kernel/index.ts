@@ -45,7 +45,7 @@ export async function spawn(config: ProcessConfig): Promise<AgentProcess> {
   const id = uuidv4();
   const now = new Date();
   
-  const process: AgentProcess = {
+  const agentProcess: AgentProcess = {
     id,
     agentId: config.agentId,
     status: 'spawning',
@@ -59,7 +59,7 @@ export async function spawn(config: ProcessConfig): Promise<AgentProcess> {
   };
   
   // Store in memory
-  processes.set(id, process);
+  processes.set(id, agentProcess);
   
   // Spawn actual child process
   // For now, spawn a simple Node process that keeps running
@@ -74,8 +74,8 @@ export async function spawn(config: ProcessConfig): Promise<AgentProcess> {
   });
   
   childProcesses.set(id, child);
-  process.pid = child.pid;
-  process.status = 'running';
+  agentProcess.pid = child.pid;
+  agentProcess.status = 'running';
   
   // Handle process events
   child.on('exit', (code) => {
@@ -96,12 +96,12 @@ export async function spawn(config: ProcessConfig): Promise<AgentProcess> {
   
   emitEvent({ type: 'spawned', processId: id, agentId: config.agentId, timestamp: now });
   
-  return process;
+  return agentProcess;
 }
 
 export async function kill(processId: string): Promise<void> {
-  const process = processes.get(processId);
-  if (!process) {
+  const agentProcess = processes.get(processId);
+  if (!agentProcess) {
     throw new Error(`Process ${processId} not found`);
   }
   
@@ -118,13 +118,13 @@ export async function kill(processId: string): Promise<void> {
     }, 5000);
   }
   
-  process.status = 'killed';
-  emitEvent({ type: 'killed', processId, agentId: process.agentId, timestamp: new Date() });
+  agentProcess.status = 'killed';
+  emitEvent({ type: 'killed', processId, agentId: agentProcess.agentId, timestamp: new Date() });
 }
 
 export async function getStatus(processId: string): Promise<AgentProcess> {
-  const process = processes.get(processId);
-  if (!process) {
+  const agentProcess = processes.get(processId);
+  if (!agentProcess) {
     throw new Error(`Process ${processId} not found`);
   }
   
@@ -135,11 +135,11 @@ export async function getStatus(processId: string): Promise<AgentProcess> {
       // Check if process exists (sends signal 0)
       process.kill(0);
     } catch {
-      process.status = 'crashed';
+      agentProcess.status = 'crashed';
     }
   }
   
-  return { ...process };
+  return { ...agentProcess };
 }
 
 export async function list(): Promise<AgentProcess[]> {
@@ -147,13 +147,13 @@ export async function list(): Promise<AgentProcess[]> {
 }
 
 export async function heartbeat(processId: string): Promise<void> {
-  const process = processes.get(processId);
-  if (!process) {
+  const agentProcess = processes.get(processId);
+  if (!agentProcess) {
     throw new Error(`Process ${processId} not found`);
   }
   
-  process.lastHeartbeat = new Date();
-  emitEvent({ type: 'heartbeat', processId, agentId: process.agentId, timestamp: new Date() });
+  agentProcess.lastHeartbeat = new Date();
+  emitEvent({ type: 'heartbeat', processId, agentId: agentProcess.agentId, timestamp: new Date() });
 }
 
 export function onEvent(listener: (event: ProcessEvent) => void): () => void {
