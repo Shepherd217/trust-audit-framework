@@ -133,3 +133,28 @@ export interface Database {
     };
   };
 }
+
+// ============================================================================
+// Helper Types - Use these instead of Database['public']['Tables']['...']
+// ============================================================================
+
+/** Table row type shorthand: Tables<'workflows'> = WorkflowRow */
+export type Tables<T extends keyof Database['public']['Tables']> = 
+  Database['public']['Tables'][T]['Row'];
+
+/** Table insert type shorthand */
+export type TablesInsert<T extends keyof Database['public']['Tables']> = 
+  Database['public']['Tables'][T]['Insert'];
+
+/** Table update type shorthand */
+export type TablesUpdate<T extends keyof Database['public']['Tables']> = 
+  Database['public']['Tables'][T]['Update'];
+
+/** Query result helper: DbResult<typeof query> = { data: T[], error: null } | { data: null, error: PostgrestError } */
+export type DbResult<T> = T extends PromiseLike<infer U> ? U : never;
+
+/** Extract data type from query: DbResultOk<typeof query> = T[] */
+export type DbResultOk<T> = T extends PromiseLike<{ data: infer U }> ? Exclude<U, null> : never;
+
+/** Error type shorthand */
+export type DbResultErr = import('@supabase/supabase-js').PostgrestError;
