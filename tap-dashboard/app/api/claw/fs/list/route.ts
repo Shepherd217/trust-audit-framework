@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { list } from '@/lib/claw/fs';
+import { list, StorageTier } from '@/lib/claw/fs';
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') ?? '50', 10);
     const offset = parseInt(searchParams.get('offset') ?? '0', 10);
     
-    // Validate and cast tier
-    let tier: 'hot' | 'warm' | 'cold' | undefined;
+    // Validate and convert tier to StorageTier enum
+    let tier: StorageTier | undefined;
     if (tierParam) {
       if (!['hot', 'warm', 'cold'].includes(tierParam)) {
         return NextResponse.json(
@@ -27,7 +27,18 @@ export async function GET(request: NextRequest) {
           { status: 400 }
         );
       }
-      tier = tierParam as 'hot' | 'warm' | 'cold';
+      // Convert string to StorageTier enum
+      switch (tierParam) {
+        case 'hot':
+          tier = StorageTier.HOT;
+          break;
+        case 'warm':
+          tier = StorageTier.WARM;
+          break;
+        case 'cold':
+          tier = StorageTier.COLD;
+          break;
+      }
     }
     
     const files = await list(agentId, {
