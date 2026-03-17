@@ -79,7 +79,7 @@ interface ExecutionRow {
   payments: any[];
   events: any[];
   retry_count: Record<string, number>;
-  circuit_breaker_state: Record<string, string>;
+  circuit_breaker_state: Record<string, CircuitBreakerState>;
   created_at: string;
   updated_at: string;
 }
@@ -431,7 +431,19 @@ function mapRowToExecution(row: ExecutionRow): WorkflowExecution {
       timestamp: new Date(e.timestamp),
     })),
     retryCount: new Map(Object.entries(row.retry_count || {})),
-    circuitBreakerStates: new Map(Object.entries(row.circuit_breaker_state || {})),
+    circuitBreakerStates: new Map(
+      Object.entries(row.circuit_breaker_state || {}).map(([key, value]) => [
+        key,
+        {
+          ...value,
+          lastFailureAt: value.lastFailureAt ? new Date(value.lastFailureAt) : undefined,
+          lastSuccessAt: value.lastSuccessAt ? new Date(value.lastSuccessAt) : undefined,
+          openedAt: value.openedAt ? new Date(value.openedAt) : undefined,
+          halfOpenedAt: value.halfOpenedAt ? new Date(value.halfOpenedAt) : undefined,
+          nextAttemptAt: value.nextAttemptAt ? new Date(value.nextAttemptAt) : undefined,
+        } as CircuitBreakerState,
+      ])
+    ),
   };
 }
 
