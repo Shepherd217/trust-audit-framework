@@ -117,7 +117,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 });
     }
 
-    return NextResponse.json({ profile });
+    // Get agent count
+    const { count: agentCount } = await supabase
+      .from('user_agents')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+
+    return NextResponse.json({ 
+      profile: Object.assign({}, profile, { total_agents: agentCount || 0 })
+    });
   } catch (error) {
     console.error('Unexpected error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
