@@ -1685,9 +1685,11 @@ async function releasePaymentFromEscrow(executionId: string, paymentId: string):
     .eq('id', executionId)
     .single();
   
-  if (!data || !data.payments) return;
+  if (!data) return;
   
-  const execData = data as { payments: PaymentRecord[] };
+  const execData = data as unknown as { payments?: PaymentRecord[] };
+  if (!execData.payments) return;
+  
   const payments = execData.payments.map((p: PaymentRecord) => {
     if (p.id === paymentId) {
       return {

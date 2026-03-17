@@ -1,9 +1,12 @@
 /**
  * Supabase Database Types
- * Manual type definitions for ClawScheduler tables
+ * Complete type definitions for MoltOS
  */
 
-// Row type definitions (snake_case for DB columns)
+// ============================================================================
+// Existing Tables (ClawScheduler)
+// ============================================================================
+
 export interface WorkflowRow {
   id: string;
   name: string;
@@ -102,9 +105,113 @@ export interface VMSnapshotRow {
   last_restored_at?: string;
 }
 
+// ============================================================================
+// User Experience Tables
+// ============================================================================
+
+export interface ProfileRow {
+  id: string;
+  user_id: string;
+  username: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  website: string | null;
+  twitter: string | null;
+  github: string | null;
+  role: 'user' | 'admin' | 'moderator';
+  reputation_score: number;
+  total_agents: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AgentTemplateRow {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  short_description: string | null;
+  category: string;
+  tags: string[] | null;
+  icon: string | null;
+  image_url: string | null;
+  price_per_hour: number;
+  setup_fee: number;
+  min_reputation: number;
+  features: any[] | null;
+  specs: Record<string, any> | null;
+  config_schema: Record<string, any> | null;
+  default_config: Record<string, any> | null;
+  is_active: boolean;
+  is_featured: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserAgentRow {
+  id: string;
+  user_id: string;
+  agent_template_id: string | null;
+  name: string;
+  status: 'online' | 'offline' | 'starting' | 'stopping' | 'error' | 'suspended';
+  health: 'healthy' | 'degraded' | 'critical' | 'unknown';
+  config: Record<string, any>;
+  hired_at: string;
+  started_at: string | null;
+  stopped_at: string | null;
+  last_active_at: string | null;
+  total_runtime_hours: number;
+  tasks_completed: number;
+  reputation_score: number;
+  vm_instance_id: string | null;
+  claw_id: string | null;
+  metadata: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  agent_template?: AgentTemplateRow;
+}
+
+export interface AgentLogRow {
+  id: string;
+  agent_id: string;
+  level: 'info' | 'warn' | 'error' | 'debug';
+  message: string;
+  metadata: Record<string, any>;
+  created_at: string;
+}
+
+export interface AgentMetricRow {
+  id: string;
+  agent_id: string;
+  metric_type: string;
+  value: number;
+  recorded_at: string;
+}
+
+export interface SwarmRow {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  status: 'active' | 'idle' | 'error' | 'scaling';
+  agent_ids: string[];
+  region: string | null;
+  throughput_per_min: number;
+  config: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================================================
+// Database Schema
+// ============================================================================
+
 export interface Database {
   public: {
     Tables: {
+      // ClawScheduler tables
       workflows: {
         Row: WorkflowRow;
         Insert: Partial<WorkflowRow>;
@@ -130,12 +237,43 @@ export interface Database {
         Insert: Partial<VMSnapshotRow>;
         Update: Partial<VMSnapshotRow>;
       };
+      // User Experience tables
+      profiles: {
+        Row: ProfileRow;
+        Insert: Partial<ProfileRow>;
+        Update: Partial<ProfileRow>;
+      };
+      agent_templates: {
+        Row: AgentTemplateRow;
+        Insert: Partial<AgentTemplateRow>;
+        Update: Partial<AgentTemplateRow>;
+      };
+      user_agents: {
+        Row: UserAgentRow;
+        Insert: Partial<UserAgentRow>;
+        Update: Partial<UserAgentRow>;
+      };
+      agent_logs: {
+        Row: AgentLogRow;
+        Insert: Partial<AgentLogRow>;
+        Update: Partial<AgentLogRow>;
+      };
+      agent_metrics: {
+        Row: AgentMetricRow;
+        Insert: Partial<AgentMetricRow>;
+        Update: Partial<AgentMetricRow>;
+      };
+      swarms: {
+        Row: SwarmRow;
+        Insert: Partial<SwarmRow>;
+        Update: Partial<SwarmRow>;
+      };
     };
   };
 }
 
 // ============================================================================
-// Helper Types - Use these instead of Database['public']['Tables']['...']
+// Helper Types
 // ============================================================================
 
 /** Table row type shorthand: Tables<'workflows'> = WorkflowRow */
@@ -150,11 +288,51 @@ export type TablesInsert<T extends keyof Database['public']['Tables']> =
 export type TablesUpdate<T extends keyof Database['public']['Tables']> = 
   Database['public']['Tables'][T]['Update'];
 
-/** Query result helper: DbResult<typeof query> = { data: T[], error: null } | { data: null, error: PostgrestError } */
+/** Query result helper */
 export type DbResult<T> = T extends PromiseLike<infer U> ? U : never;
 
-/** Extract data type from query: DbResultOk<typeof query> = T[] */
+/** Extract data type from query */
 export type DbResultOk<T> = T extends PromiseLike<{ data: infer U }> ? Exclude<U, null> : never;
 
 /** Error type shorthand */
 export type DbResultErr = import('@supabase/supabase-js').PostgrestError;
+
+// ============================================================================
+// Enums & Constants
+// ============================================================================
+
+export const AGENT_STATUS = {
+  ONLINE: 'online',
+  OFFLINE: 'offline',
+  STARTING: 'starting',
+  STOPPING: 'stopping',
+  ERROR: 'error',
+  SUSPENDED: 'suspended',
+} as const;
+
+export const AGENT_HEALTH = {
+  HEALTHY: 'healthy',
+  DEGRADED: 'degraded',
+  CRITICAL: 'critical',
+  UNKNOWN: 'unknown',
+} as const;
+
+export const SWARM_STATUS = {
+  ACTIVE: 'active',
+  IDLE: 'idle',
+  ERROR: 'error',
+  SCALING: 'scaling',
+} as const;
+
+export const LOG_LEVEL = {
+  INFO: 'info',
+  WARN: 'warn',
+  ERROR: 'error',
+  DEBUG: 'debug',
+} as const;
+
+export const USER_ROLE = {
+  USER: 'user',
+  ADMIN: 'admin',
+  MODERATOR: 'moderator',
+} as const;
