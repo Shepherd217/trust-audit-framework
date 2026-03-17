@@ -1,2 +1,6 @@
 supabase-functions/
 .vercel
+
+# Don't ignore package-lock.json for this project
+# (needed for npm ci in CI/CD)
+!package-lock.json
