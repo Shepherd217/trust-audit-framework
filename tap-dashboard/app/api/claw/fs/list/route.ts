@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { list, StorageTier } from '@/lib/claw/fs';
+import { list } from '@/lib/claw/fs';
+import { StorageTier } from '@/lib/claw/fs/types';
 
 export async function GET(request: NextRequest) {
   try {
