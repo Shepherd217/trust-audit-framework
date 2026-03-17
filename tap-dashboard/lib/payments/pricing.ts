@@ -1,372 +1,159 @@
 /**
- * Reputation-Based Pricing Engine
+ * TAP-Aware Pricing (Flat Fee Model)
  * 
- * Algorithm Overview (Spec 2.3):
- * - Reputation Score (0-100) calculated from:
- *   - Completion Rate (40% weight): Tasks completed / Tasks assigned
- *   - Accuracy Score (35% weight): 1 - (Errors / Total actions)
- *   - Response Time (25% weight): Avg response time vs baseline
+ * IMPORTANT: TAP (Trust and Attestation Protocol) score is a VISIBILITY
+ * and TRUST signal only — it does NOT affect pricing.
  * 
- * - 6 Tiers with multipliers:
- *   Novice (0-20): 1.2x
- *   Bronze (21-40): 1.1x
- *   Silver (41-60): 1.0x (baseline)
- *   Gold (61-75): 0.9x
- *   Platinum (76-90): 0.85x
- *   Diamond (91-100): 0.8x
+ * Per PAYMENT_LAYER_SPEC.md and TAP Protocol Model:
+ * - Agents set their own rates freely
+ * - No tier-based multipliers, discounts, or forced premiums
+ * - Flat 2.5% platform fee only
+ * - TAP score affects marketplace visibility and trust signaling only
+ * - Hirers decide if price matches reputation based on transparency
  * 
- * - Dynamic Pricing:
- *   Final Price = Base Price × Tier Multiplier × Complexity Factor × Urgency Factor
+ * This file provides pricing utilities for complexity/urgency factors
+ * (set by agents) and platform fee calculation only.
  */
 
-// ============================================================================
-// Types
-// ============================================================================
-
-export type ReputationTier = 'Novice' | 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond';
-
-export interface TierConfig {
-  name: ReputationTier;
-  minScore: number;
-  maxScore: number;
-  multiplier: number;
-  description: string;
-  benefits: string[];
-}
-
-export interface AgentMetrics {
-  tasksCompleted: number;
-  tasksAssigned: number;
-  errors: number;
-  totalActions: number;
-  avgResponseTimeMs: number; // Average response time in milliseconds
-  baselineResponseTimeMs: number; // Expected baseline response time
-}
-
-export interface ReputationScore {
-  score: number; // 0-100
-  completionRate: number; // 0-1
-  accuracyScore: number; // 0-1
-  responseTimeScore: number; // 0-1
-  breakdown: {
-    completionContribution: number;
-    accuracyContribution: number;
-    responseTimeContribution: number;
-  };
-}
+// Complexity multipliers (agent-defined, not enforced by platform)
+export type ComplexityLevel = 'low' | 'medium' | 'high' | 'critical';
+export type UrgencyLevel = 'normal' | 'high' | 'urgent' | 'emergency';
 
 export interface PricingFactors {
-  complexity: 'low' | 'medium' | 'high' | 'critical'; // Complexity level
-  urgency: 'normal' | 'high' | 'urgent' | 'emergency'; // Urgency level
+  complexity: ComplexityLevel;
+  urgency: UrgencyLevel;
 }
+
+// Agent-defined complexity factors (not enforced by TAP)
+export const COMPLEXITY_FACTORS: Record<ComplexityLevel, number> = {
+  low: 1.0,
+  medium: 1.0,  // Agents set these; platform doesn't enforce
+  high: 1.0,
+  critical: 1.0,
+};
+
+// Agent-defined urgency factors (not enforced by TAP)
+export const URGENCY_FACTORS: Record<UrgencyLevel, number> = {
+  normal: 1.0,
+  high: 1.0,    // Agents set these; platform doesn't enforce
+  urgent: 1.0,
+  emergency: 1.0,
+};
+
+// Platform configuration
+export const PLATFORM_CONFIG = {
+  feePercent: 2.5,        // Flat 2.5% platform fee
+  minFeeAmount: 0.50,     // $0.50 minimum
+  maxFeeAmount: 50.00,    // $50 maximum
+};
 
 export interface PriceQuote {
   agentId: string;
-  basePrice: number;
-  finalPrice: number;
-  multiplier: number;
-  tier: ReputationTier;
+  basePrice: number;      // Agent's asking price
+  finalPrice: number;     // What hirer pays (base + factors set by agent)
+  platformFee: number;    // 2.5% flat fee
+  agentEarnings: number;  // 97.5% of final price
   breakdown: {
     basePrice: number;
-    tierMultiplier: number;
-    tierDiscount: number;
-    complexityFactor: number;
-    complexityPremium: number;
-    urgencyFactor: number;
-    urgencyPremium: number;
+    complexityFactor: number;  // Agent-defined
+    urgencyFactor: number;     // Agent-defined
+    platformFee: number;
+    agentShare: number;        // 97.5%
   };
-  reputation: {
+  // TAP info (for transparency only, does NOT affect price)
+  tapInfo?: {
     score: number;
-    tier: ReputationTier;
-    nextTier?: ReputationTier;
-    pointsToNextTier?: number;
-  };
-}
-
-// ============================================================================
-// Tier Configuration
-// ============================================================================
-
-export const TIER_CONFIG: Record<ReputationTier, TierConfig> = {
-  Novice: {
-    name: 'Novice',
-    minScore: 0,
-    maxScore: 20,
-    multiplier: 1.2,
-    description: 'New agent building reputation',
-    benefits: ['Access to basic tasks', 'Standard support'],
-  },
-  Bronze: {
-    name: 'Bronze',
-    minScore: 21,
-    maxScore: 40,
-    multiplier: 1.1,
-    description: 'Established agent with proven track record',
-    benefits: ['Access to standard tasks', 'Priority support'],
-  },
-  Silver: {
-    name: 'Silver',
-    minScore: 41,
-    maxScore: 60,
-    multiplier: 1.0,
-    description: 'Reliable agent at baseline pricing',
-    benefits: ['Access to advanced tasks', 'Priority matching', 'Reduced fees'],
-  },
-  Gold: {
-    name: 'Gold',
-    minScore: 61,
-    maxScore: 75,
-    multiplier: 0.9,
-    description: 'High-performing agent with discount pricing',
-    benefits: ['Access to premium tasks', 'VIP support', 'Reduced fees', 'Early access'],
-  },
-  Platinum: {
-    name: 'Platinum',
-    minScore: 76,
-    maxScore: 90,
-    multiplier: 0.85,
-    description: 'Elite agent with significant discounts',
-    benefits: ['Access to all tasks', 'VIP support', 'Maximum fee reduction', 'Beta features'],
-  },
-  Diamond: {
-    name: 'Diamond',
-    minScore: 91,
-    maxScore: 100,
-    multiplier: 0.8,
-    description: 'Top-tier agent with best pricing',
-    benefits: ['Access to exclusive tasks', 'White-glove support', 'Minimum fees', 'Advisory role'],
-  },
-};
-
-// Weights for reputation score calculation (Spec 2.3)
-const WEIGHTS = {
-  completionRate: 0.40, // 40% weight
-  accuracy: 0.35,       // 35% weight
-  responseTime: 0.25,   // 25% weight
-};
-
-// Complexity factors
-export const COMPLEXITY_FACTORS: Record<PricingFactors['complexity'], number> = {
-  low: 1.0,
-  medium: 1.15,
-  high: 1.35,
-  critical: 1.6,
-};
-
-// Urgency factors
-export const URGENCY_FACTORS: Record<PricingFactors['urgency'], number> = {
-  normal: 1.0,
-  high: 1.2,
-  urgent: 1.5,
-  emergency: 2.0,
-};
-
-// ============================================================================
-// Core Functions
-// ============================================================================
-
-/**
- * Calculate reputation score from agent metrics
- * Spec 2.3: Score = (Completion × 0.4) + (Accuracy × 0.35) + (ResponseTime × 0.25)
- * 
- * @param metrics - Agent performance metrics
- * @returns ReputationScore with detailed breakdown
- */
-export function calculateReputationScore(metrics: AgentMetrics): ReputationScore {
-  // Validate inputs
-  if (metrics.tasksAssigned < 0 || metrics.tasksCompleted < 0) {
-    throw new Error('Task counts cannot be negative');
-  }
-  if (metrics.totalActions < 0 || metrics.errors < 0) {
-    throw new Error('Action counts cannot be negative');
-  }
-  if (metrics.avgResponseTimeMs < 0 || metrics.baselineResponseTimeMs <= 0) {
-    throw new Error('Invalid response time values');
-  }
-
-  // Calculate Completion Rate (0-1)
-  const completionRate = metrics.tasksAssigned > 0
-    ? Math.min(metrics.tasksCompleted / metrics.tasksAssigned, 1)
-    : 0;
-
-  // Calculate Accuracy Score (0-1)
-  const accuracyScore = metrics.totalActions > 0
-    ? Math.max(0, 1 - (metrics.errors / metrics.totalActions))
-    : 1; // Default to perfect accuracy for new agents
-
-  // Calculate Response Time Score (0-1)
-  // Faster than baseline = 1.0, 2x baseline = 0.5, 3x+ baseline = 0.0
-  const responseTimeRatio = metrics.avgResponseTimeMs / metrics.baselineResponseTimeMs;
-  const responseTimeScore = Math.max(0, Math.min(1, 1 - (responseTimeRatio - 1) * 0.5));
-
-  // Calculate weighted score (0-100)
-  const score = Math.round(
-    (completionRate * WEIGHTS.completionRate +
-     accuracyScore * WEIGHTS.accuracy +
-     responseTimeScore * WEIGHTS.responseTime) * 100
-  );
-
-  return {
-    score: Math.min(100, Math.max(0, score)),
-    completionRate,
-    accuracyScore,
-    responseTimeScore,
-    breakdown: {
-      completionContribution: Math.round(completionRate * WEIGHTS.completionRate * 100),
-      accuracyContribution: Math.round(accuracyScore * WEIGHTS.accuracy * 100),
-      responseTimeContribution: Math.round(responseTimeScore * WEIGHTS.responseTime * 100),
-    },
+    tier: string;
+    attestations: number;
   };
 }
 
 /**
- * Get tier from reputation score
+ * Calculate price quote
  * 
- * @param score - Reputation score (0-100)
- * @returns ReputationTier
+ * NOTE: TAP score is NOT used in pricing calculation.
+ * It is returned for hirer transparency only.
  */
-export function getTierFromScore(score: number): ReputationTier {
-  if (score < 0 || score > 100) {
-    throw new Error('Score must be between 0 and 100');
-  }
-
-  for (const tier of Object.values(TIER_CONFIG)) {
-    if (score >= tier.minScore && score <= tier.maxScore) {
-      return tier.name;
-    }
-  }
-
-  // Fallback (should never reach here with valid config)
-  return 'Novice';
-}
-
-/**
- * Calculate dynamic price based on reputation and task factors
- * Spec 2.3: Final Price = Base × TierMultiplier × Complexity × Urgency
- * 
- * @param basePrice - Base price for the task
- * @param reputationScore - Agent's reputation score
- * @param factors - Complexity and urgency factors
- * @returns Object with final price and breakdown
- */
-export function calculateDynamicPrice(
+export function calculateQuote(
+  agentId: string,
   basePrice: number,
-  reputationScore: number,
-  factors: PricingFactors
-): {
-  finalPrice: number;
-  multiplier: number;
-  tier: ReputationTier;
-  breakdown: PriceQuote['breakdown'];
-} {
+  factors: PricingFactors,
+  tapInfo?: { score: number; tier: string; attestations: number }
+): PriceQuote {
   if (basePrice < 0) {
     throw new Error('Base price cannot be negative');
   }
 
-  // Get tier and multiplier
-  const tier = getTierFromScore(reputationScore);
-  const tierConfig = TIER_CONFIG[tier];
-  const tierMultiplier = tierConfig.multiplier;
-
-  // Get complexity and urgency factors
+  // Agents set their own complexity/urgency multipliers
+  // Platform does not enforce these — they are agent-defined
   const complexityFactor = COMPLEXITY_FACTORS[factors.complexity];
   const urgencyFactor = URGENCY_FACTORS[factors.urgency];
 
-  // Calculate total multiplier
-  const totalMultiplier = tierMultiplier * complexityFactor * urgencyFactor;
+  // Calculate agent's asking price (agent-controlled)
+  const finalPrice = Math.round(basePrice * complexityFactor * urgencyFactor * 100) / 100;
 
-  // Calculate final price (rounded to 2 decimal places)
-  const finalPrice = Math.round(basePrice * totalMultiplier * 100) / 100;
+  // Calculate platform fee (flat 2.5%)
+  let platformFee = Math.max(
+    PLATFORM_CONFIG.minFeeAmount,
+    Math.min(
+      PLATFORM_CONFIG.maxFeeAmount,
+      finalPrice * (PLATFORM_CONFIG.feePercent / 100)
+    )
+  );
 
-  // Calculate breakdown values
-  const tierDiscount = basePrice * (1 - tierMultiplier);
-  const complexityPremium = basePrice * (complexityFactor - 1);
-  const urgencyPremium = basePrice * (urgencyFactor - 1);
-
-  return {
-    finalPrice,
-    multiplier: Math.round(totalMultiplier * 1000) / 1000,
-    tier,
-    breakdown: {
-      basePrice,
-      tierMultiplier,
-      tierDiscount: Math.round(tierDiscount * 100) / 100,
-      complexityFactor,
-      complexityPremium: Math.round(complexityPremium * 100) / 100,
-      urgencyFactor,
-      urgencyPremium: Math.round(urgencyPremium * 100) / 100,
-    },
-  };
-}
-
-/**
- * Get next tier information for progress tracking
- * 
- * @param currentScore - Current reputation score
- * @returns Next tier info or undefined if at max
- */
-export function getNextTierInfo(currentScore: number): { tier: ReputationTier; pointsNeeded: number } | undefined {
-  const currentTier = getTierFromScore(currentScore);
-  const tierNames: ReputationTier[] = ['Novice', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
-  const currentIndex = tierNames.indexOf(currentTier);
-  
-  if (currentIndex >= tierNames.length - 1) {
-    return undefined; // Already at max tier
-  }
-
-  const nextTierName = tierNames[currentIndex + 1];
-  const nextTierConfig = TIER_CONFIG[nextTierName];
-  
-  return {
-    tier: nextTierName,
-    pointsNeeded: nextTierConfig.minScore - currentScore,
-  };
-}
-
-/**
- * Generate a complete price quote for an agent
- * 
- * @param agentId - Agent identifier
- * @param basePrice - Base task price
- * @param reputationScore - Agent's reputation score
- * @param factors - Pricing factors
- * @returns Complete price quote
- */
-export function generatePriceQuote(
-  agentId: string,
-  basePrice: number,
-  reputationScore: number,
-  factors: PricingFactors
-): PriceQuote {
-  const priceResult = calculateDynamicPrice(basePrice, reputationScore, factors);
-  const nextTier = getNextTierInfo(reputationScore);
+  // Agent keeps 97.5%
+  const agentEarnings = finalPrice - platformFee;
 
   return {
     agentId,
     basePrice,
-    finalPrice: priceResult.finalPrice,
-    multiplier: priceResult.multiplier,
-    tier: priceResult.tier,
-    breakdown: priceResult.breakdown,
-    reputation: {
-      score: reputationScore,
-      tier: priceResult.tier,
-      nextTier: nextTier?.tier,
-      pointsToNextTier: nextTier?.pointsNeeded,
+    finalPrice,
+    platformFee,
+    agentEarnings,
+    breakdown: {
+      basePrice,
+      complexityFactor,
+      urgencyFactor,
+      platformFee,
+      agentShare: 97.5,
     },
+    tapInfo, // For transparency only — does NOT affect price
   };
 }
 
-// ============================================================================
-// Utility Functions
-// ============================================================================
+/**
+ * Calculate earnings breakdown for completed task
+ */
+export function calculateEarnings(
+  taskAmount: number
+): {
+  grossAmount: number;
+  platformFee: number;
+  agentEarnings: number;
+  agentSharePercent: number;
+} {
+  const platformFee = Math.max(
+    PLATFORM_CONFIG.minFeeAmount,
+    Math.min(
+      PLATFORM_CONFIG.maxFeeAmount,
+      taskAmount * (PLATFORM_CONFIG.feePercent / 100)
+    )
+  );
+
+  return {
+    grossAmount: taskAmount,
+    platformFee,
+    agentEarnings: taskAmount - platformFee,
+    agentSharePercent: 97.5,
+  };
+}
 
 /**
- * Validate pricing factors input
+ * Validate pricing factors
  */
 export function validatePricingFactors(factors: Partial<PricingFactors>): PricingFactors {
-  const validComplexity: PricingFactors['complexity'][] = ['low', 'medium', 'high', 'critical'];
-  const validUrgency: PricingFactors['urgency'][] = ['normal', 'high', 'urgent', 'emergency'];
+  const validComplexity: ComplexityLevel[] = ['low', 'medium', 'high', 'critical'];
+  const validUrgency: UrgencyLevel[] = ['normal', 'high', 'urgent', 'emergency'];
 
   const complexity = factors.complexity || 'medium';
   const urgency = factors.urgency || 'normal';
@@ -381,44 +168,32 @@ export function validatePricingFactors(factors: Partial<PricingFactors>): Pricin
   return { complexity, urgency };
 }
 
-/**
- * Get all tier information for UI display
- */
-export function getAllTiers(): TierConfig[] {
-  return Object.values(TIER_CONFIG);
-}
+// DEPRECATED: Reputation tiers are for TAP visibility only, NOT pricing
+// These are kept for reference/comparison tools only
+export const REPUTATION_TIERS = [
+  { name: 'Bronze', minScore: 0, description: 'Building reputation' },
+  { name: 'Silver', minScore: 2000, description: 'Established agent' },
+  { name: 'Gold', minScore: 4000, description: 'Proven track record' },
+  { name: 'Platinum', minScore: 6000, description: 'Top performer' },
+  { name: 'Diamond', minScore: 8000, description: 'Elite agent' },
+] as const;
 
 /**
- * Estimate price range for a task
+ * Get tier from TAP score (for UI/display only)
+ * Does NOT affect pricing.
  */
-export function estimatePriceRange(
-  basePrice: number,
-  factors: PricingFactors
-): { min: number; max: number; average: number } {
-  const minTier = TIER_CONFIG.Diamond;
-  const maxTier = TIER_CONFIG.Novice;
-  
-  const minPrice = calculateDynamicPrice(basePrice, minTier.minScore, factors);
-  const maxPrice = calculateDynamicPrice(basePrice, maxTier.minScore, factors);
-  
-  return {
-    min: minPrice.finalPrice,
-    max: maxPrice.finalPrice,
-    average: Math.round(((minPrice.finalPrice + maxPrice.finalPrice) / 2) * 100) / 100,
-  };
+export function getTierFromScore(score: number): string {
+  for (const tier of [...REPUTATION_TIERS].reverse()) {
+    if (score >= tier.minScore) return tier.name;
+  }
+  return 'Novice';
 }
 
 export default {
-  calculateReputationScore,
-  getTierFromScore,
-  calculateDynamicPrice,
-  generatePriceQuote,
-  getNextTierInfo,
+  calculateQuote,
+  calculateEarnings,
   validatePricingFactors,
-  getAllTiers,
-  estimatePriceRange,
-  TIER_CONFIG,
-  WEIGHTS,
-  COMPLEXITY_FACTORS,
-  URGENCY_FACTORS,
+  getTierFromScore,
+  PLATFORM_CONFIG,
+  REPUTATION_TIERS,
 };
