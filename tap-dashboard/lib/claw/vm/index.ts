@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 /**
  * ClawVM Service
  * Hardware-isolated agent runtime using Firecracker microVMs
@@ -79,13 +80,28 @@ export class ClawVMService {
 
     // Create VM in Firecracker
     await firecracker.createVM(socketPath, {
-      vcpuCount: config.vcpuCount,
-      memSizeMib: config.memoryMB,
-      htEnabled: false,
+      machineConfig: {
+        vcpu_count: config.vcpuCount,
+        mem_size_mib: config.memoryMB,
+        smt: false,
+      },
     });
 
     // Configure drives
-    await firecracker.configureVM(socketPath, config);
+    const fullConfig: firecracker.FullVMConfig = {
+      machineConfig: {
+        vcpu_count: config.vcpuCount,
+        mem_size_mib: config.memoryMB,
+        smt: false,
+      },
+      drives: [{
+        drive_id: 'rootfs',
+        path_on_host: config.rootfsPath,
+        is_root_device: true,
+        is_read_only: false,
+      }],
+    };
+    await firecracker.configureVM(socketPath, fullConfig);
 
     // Start the VM
     await firecracker.startVM(socketPath);

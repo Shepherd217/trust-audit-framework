@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 /**
  * ClawVM Types
  * Core type definitions for the Agent MicroVM Manager
