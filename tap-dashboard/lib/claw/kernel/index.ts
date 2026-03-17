@@ -3,7 +3,7 @@
  * Process management for MoltOS agents
  */
 
-import { spawn, ChildProcess } from 'child_process';
+import { spawn as spawnProcess, ChildProcess } from 'child_process';
 import { v4 as uuidv4 } from 'uuid';
 import {
   AgentProcess,
@@ -63,7 +63,7 @@ export async function spawn(config: ProcessConfig): Promise<AgentProcess> {
   
   // Spawn actual child process
   // For now, spawn a simple Node process that keeps running
-  const child = spawn('node', ['-e', `
+  const child = spawnProcess('node', ['-e', `
     console.log('Agent ${config.agentId} started, PID:', process.pid);
     setInterval(() => {
       console.log('heartbeat:${id}');
