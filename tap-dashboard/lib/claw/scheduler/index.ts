@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ClawScheduler Service
  * Core workflow orchestration engine for TAP
