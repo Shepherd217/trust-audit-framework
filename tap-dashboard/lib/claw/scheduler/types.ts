@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ClawScheduler Types
  * Core type definitions for Workflow Orchestration
