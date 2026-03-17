@@ -3,23 +3,24 @@
 ## Active Work (March 17, 2026)
 
 ### CI/CD
-- **Run #5** in progress (scheduler TypeScript fixes)
-- Waiting for: type check → lint → build
-- Next: Commit package-lock.json for faster builds
+- ✅ Run #5 complete (TypeScript fixes)
+- ✅ Commit package-lock.json for faster builds (DONE)
+- ⏳ Deploy to Vercel (ready)
 
 ### Documentation  
 - ✅ ARCHITECTURE.md updated (real vs aspirational)
 - ✅ TAP_PROTOCOL.md written
-- ⏳ GETTING_STARTED.md needs rewrite (currently aspirational)
+- ✅ GETTING_STARTED.md corrected
 
 ### Dashboard
-- ⏳ Deploy to Vercel (pending CI green)
-- ⏳ Configure Supabase connection
+- ⏳ Deploy to Vercel (pending approval)
+- ✅ Configure Supabase connection
 
 ### Protocol
-- ⏳ Implement real EigenTrust calculation
-- ⏳ Add BLS signature stubs
-- ⏳ Build TAP SDK (npm)
+- ✅ Implement real EigenTrust calculation (DONE)
+- ✅ Add BLS signature stubs (DONE)
+- ✅ Build TAP SDK (npm) (DONE)
+- ⏳ On-chain verification (planned)
 
 ---
 
