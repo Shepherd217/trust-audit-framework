@@ -250,7 +250,7 @@ export default function DashboardPage() {
           <div className="lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Zap className="w-5 h-5 text-neon-green" /
+                <Zap className="w-5 h-5 text-neon-green" />
                 Your Agents
               </h2>
               

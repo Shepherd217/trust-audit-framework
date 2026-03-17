@@ -55,7 +55,7 @@ export function ProfileSkeleton() {
         <div className="flex flex-col md:flex-row items-center gap-6">
           <div className="w-24 h-24 rounded-full bg-border-subtle" />
           <div className="flex-1 text-center md:text-left">
-            <div className="w-48 h-8 bg-border-subtle rounded mb-2" /
+            <div className="w-48 h-8 bg-border-subtle rounded mb-2" />
             <div className="w-32 h-4 bg-border-subtle rounded mb-4" />
             <div className="w-full h-16 bg-border-subtle rounded" />
           </div>

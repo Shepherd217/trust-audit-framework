@@ -136,7 +136,7 @@ function ConfirmHireForm() {
           {/* Agent Configuration */}
           <div className="bg-bg-card border border-border-subtle rounded-xl p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-neon-green" /
+              <Zap className="w-5 h-5 text-neon-green" />
               Agent Configuration
             </h2>
 
@@ -173,7 +173,7 @@ function ConfirmHireForm() {
           {/* Pricing Summary */}
           <div className="bg-bg-card border border-border-subtle rounded-xl p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-neon-green" /
+              <CreditCard className="w-5 h-5 text-neon-green" />
               Pricing Summary
             </h2>
 
