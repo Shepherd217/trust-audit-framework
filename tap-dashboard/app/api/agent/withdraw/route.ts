@@ -6,6 +6,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { Database } from '@/lib/database.types';
 import { 
   createWithdrawal,
   getWithdrawalHistory,
@@ -17,11 +19,50 @@ import {
 } from '@/lib/earnings/calculations';
 import { CreateWithdrawalRequest } from '@/types/earnings';
 
+// Helper to get authenticated agentId
+async function getAuthenticatedAgentId(request: NextRequest, supabase: any): Promise<string | null> {
+  const { searchParams } = new URL(request.url);
+  const agentId = searchParams.get('agent_id');
+  
+  if (agentId) return agentId;
+  
+  // Get user's first agent
+  const { data: agent } = await supabase
+    .from('user_agents')
+    .select('id')
+    .single();
+  
+  return agent?.id || null;
+}
+
 // GET /api/agent/withdraw
 export async function GET(request: NextRequest) {
   try {
-    // In production, get agentId from authenticated session
-    const agentId = 'agent_123'; // Mock for now
+    // Get auth token from header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    const supabase = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
+      {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      }
+    );
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const agentId = await getAuthenticatedAgentId(request, supabase);
+    if (!agentId) {
+      return NextResponse.json({ error: 'No agent found' }, { status: 404 });
+    }
 
     const { searchParams } = new URL(request.url);
     
@@ -67,8 +108,31 @@ export async function GET(request: NextRequest) {
 // POST /api/agent/withdraw
 export async function POST(request: NextRequest) {
   try {
-    // In production, get agentId from authenticated session
-    const agentId = 'agent_123'; // Mock for now
+    // Get auth token from header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    const supabase = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
+      {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      }
+    );
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const agentId = await getAuthenticatedAgentId(request, supabase);
+    if (!agentId) {
+      return NextResponse.json({ error: 'No agent found' }, { status: 404 });
+    }
 
     const body: CreateWithdrawalRequest = await request.json();
 

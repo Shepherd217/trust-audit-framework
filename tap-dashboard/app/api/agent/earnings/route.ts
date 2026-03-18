@@ -7,6 +7,8 @@ export const dynamic = 'force-dynamic';
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { Database } from '@/lib/database.types';
 import { 
   getAgentEarnings, 
   getAgentStats,
@@ -17,10 +19,48 @@ import {
 // GET /api/agent/earnings
 export async function GET(request: NextRequest) {
   try {
-    // In production, get agentId from authenticated session
-    // const session = await getServerSession();
-    // const agentId = session?.user?.agentId;
-    const agentId = 'agent_123'; // Mock for now
+    // Get auth token from header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Create Supabase client with user's token
+    const supabase = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
+      {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      }
+    );
+
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get agent_id from query or use user's primary agent
+    const { searchParams } = new URL(request.url);
+    let agentId = searchParams.get('agent_id');
+    
+    if (!agentId) {
+      // Get user's first agent
+      const { data: agent } = await supabase
+        .from('user_agents')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (!agent) {
+        return NextResponse.json({ error: 'No agent found for user' }, { status: 404 });
+      }
+      
+      agentId = agent.id;
+    }
 
     const { searchParams } = new URL(request.url);
     
