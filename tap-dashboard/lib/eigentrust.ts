@@ -247,11 +247,12 @@ async function fetchPretrustedAgents(limit: number = 5): Promise<string[]> {
     return genesisAgents.map((a: any) => a.agent_id);
   }
   
-  // Fallback to highest TAP scores
+  // Fallback to highest reputation agents from agent_registry
   const { data, error } = await getSupabase()
-    .from('tap_scores')
-    .select('claw_id')
-    .order('tap_score', { ascending: false })
+    .from('agent_registry')
+    .select('agent_id')
+    .eq('activation_status', 'active')
+    .order('reputation', { ascending: false })
     .limit(limit);
 
   if (error) {
@@ -259,7 +260,7 @@ async function fetchPretrustedAgents(limit: number = 5): Promise<string[]> {
     return [];
   }
 
-  return (data as Array<{ claw_id: string }>)?.map(a => a.claw_id) || [];
+  return (data as Array<{ agent_id: string }>)?.map(a => a.agent_id) || [];
 }
 
 /**
