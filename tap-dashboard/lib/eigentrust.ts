@@ -1,11 +1,14 @@
 /**
- * EigenTrust Reputation Algorithm
+ * EigenTrust Reputation Algorithm with Stake Weighting & Time Decay
  * 
  * Based on the paper "EigenTrust: A Reputation Management System
  * for Peer-to-Peer Networks" by Sepandar D. Kamvar et al.
  * 
  * This implementation computes global trust scores using the
- * power iteration method on the trust matrix.
+ * power iteration method on the trust matrix, with enhancements:
+ * - Stake weighting: Higher stakes = more trust weight
+ * - Time decay: Older attestations lose weight over time
+ * - Logarithmic scaling: Prevents whale dominance
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -28,14 +31,16 @@ function getSupabase() {
 }
 
 /**
- * Attestation data structure
+ * Attestation data structure with stake
  */
 interface Attestation {
   id: string;
   agent_id: string;
   target_id: string;
   score: number;
+  stake_amount: number;
   created_at: string;
+  attestation_status?: string;
 }
 
 /**
@@ -47,6 +52,14 @@ interface Agent {
   tap_score: number;
   total_attestations_received: number;
   total_attestations_given: number;
+}
+
+/**
+ * WoT Configuration
+ */
+interface WoTConfig {
+  attestation_half_life_days: number;
+  max_attestation_age_days: number;
 }
 
 /**
@@ -84,17 +97,102 @@ interface EigenTrustConfig {
   timeWindowDays: number;
   /** Pre-trusted agent IDs (for initial vector) */
   pretrustedAgents: string[];
+  /** Half-life for attestation decay (days) */
+  halfLifeDays: number;
 }
 
 /** Default configuration */
 const DEFAULT_CONFIG: EigenTrustConfig = {
-  alpha: 0.85,  // Standard PageRank-like damping
-  epsilon: 1e-6,  // Convergence threshold
+  alpha: 0.85,
+  epsilon: 1e-6,
   maxIterations: 1000,
   minAttestations: 1,
-  timeWindowDays: 0,  // All time
-  pretrustedAgents: [],  // Will be populated from DB
+  timeWindowDays: 0,
+  pretrustedAgents: [],
+  halfLifeDays: 7, // 7-day half-life for attestations
 };
+
+/**
+ * Fetch WoT configuration from database
+ */
+async function fetchWoTConfig(): Promise<WoTConfig> {
+  const { data, error } = await getSupabase()
+    .from('wot_config')
+    .select('attestation_half_life_days, max_attestation_age_days')
+    .eq('id', 1)
+    .single();
+  
+  if (error || !data) {
+    return {
+      attestation_half_life_days: 7,
+      max_attestation_age_days: 365,
+    };
+  }
+  
+  return data as WoTConfig;
+}
+
+/**
+ * Calculate time decay factor for an attestation
+ * Uses exponential decay: weight = 2^(-age/half_life)
+ */
+function calculateTimeDecay(createdAt: string, halfLifeDays: number): number {
+  const ageMs = Date.now() - new Date(createdAt).getTime();
+  const ageDays = ageMs / (1000 * 60 * 60 * 24);
+  
+  // Exponential decay: weight halves every halfLifeDays
+  const decay = Math.pow(2, -ageDays / halfLifeDays);
+  
+  // Clamp to minimum of 0.1 (10% weight for very old attestations)
+  return Math.max(0.1, decay);
+}
+
+/**
+ * Calculate stake multiplier
+ * Uses logarithmic scaling to prevent whale dominance
+ * log10(stake + 10) / 2 gives:
+ * - stake 0 -> 0.5x
+ * - stake 100 -> 1.0x
+ * - stake 1000 -> 1.5x
+ * - stake 10000 -> 2.0x
+ */
+function calculateStakeMultiplier(stakeAmount: number): number {
+  const normalizedStake = Math.max(0, stakeAmount);
+  return Math.log10(normalizedStake + 10) / 2;
+}
+
+/**
+ * Calculate effective weight of an attestation
+ * weight = score × stake_multiplier × time_decay
+ */
+function calculateAttestationWeight(
+  att: Attestation,
+  halfLifeDays: number,
+  maxAgeDays: number
+): number {
+  // Skip invalid/slashed attestations
+  if (att.attestation_status && ['slashed', 'expired'].includes(att.attestation_status)) {
+    return 0;
+  }
+  
+  // Check if attestation is too old
+  const ageMs = Date.now() - new Date(att.created_at).getTime();
+  const ageDays = ageMs / (1000 * 60 * 60 * 24);
+  if (ageDays > maxAgeDays) {
+    return 0;
+  }
+  
+  // Base score (0-100 normalized to 0-1)
+  const normalizedScore = Math.max(0, Math.min(100, att.score)) / 100;
+  
+  // Stake multiplier
+  const stakeMultiplier = calculateStakeMultiplier(att.stake_amount || 0);
+  
+  // Time decay
+  const timeDecay = calculateTimeDecay(att.created_at, halfLifeDays);
+  
+  return normalizedScore * stakeMultiplier * timeDecay;
+}
 
 /**
  * Fetch attestations from the database
@@ -102,7 +200,7 @@ const DEFAULT_CONFIG: EigenTrustConfig = {
 async function fetchAttestations(timeWindowDays: number = 0): Promise<Attestation[]> {
   let query = getSupabase()
     .from('attestations')
-    .select('id, agent_id, target_id, score, created_at');
+    .select('id, agent_id, target_id, score, stake_amount, created_at, attestation_status');
 
   if (timeWindowDays > 0) {
     const cutoffDate = new Date();
@@ -138,6 +236,19 @@ async function fetchAgents(): Promise<Agent[]> {
  * Fetch pre-trusted agents (genesis agents with highest reputation)
  */
 async function fetchPretrustedAgents(limit: number = 5): Promise<string[]> {
+  // Prioritize genesis agents, then highest reputation
+  const { data: genesisAgents, error: genesisError } = await getSupabase()
+    .from('agent_registry')
+    .select('agent_id')
+    .eq('is_genesis', true)
+    .eq('activation_status', 'active')
+    .limit(limit);
+  
+  if (!genesisError && genesisAgents && genesisAgents.length > 0) {
+    return genesisAgents.map((a: any) => a.agent_id);
+  }
+  
+  // Fallback to highest TAP scores
   const { data, error } = await getSupabase()
     .from('tap_scores')
     .select('claw_id')
@@ -153,17 +264,18 @@ async function fetchPretrustedAgents(limit: number = 5): Promise<string[]> {
 }
 
 /**
- * Build the trust matrix from attestations
+ * Build the trust matrix from attestations with stake weighting
  * 
  * For each agent pair (i, j), compute:
-   * trust[i][j] = sum of positive scores from i to j / total attestations from i
+ * weight[i][j] = sum(attestation_weight) / total_weight_from_i
  * 
- * This normalizes so each agent's outgoing trust sums to 1 (or 0 if no attestations)
+ * where attestation_weight = score × stake_multiplier × time_decay
  */
-function buildTrustMatrix(
+function buildWeightedTrustMatrix(
   attestations: Attestation[],
   agents: Agent[],
-  minAttestations: number = 1
+  config: EigenTrustConfig,
+  wotConfig: WoTConfig
 ): Map<string, Map<string, number>> {
   const agentIds = new Set(agents.map(a => a.claw_id));
   const trustMatrix = new Map<string, Map<string, number>>();
@@ -176,46 +288,46 @@ function buildTrustMatrix(
     });
   });
 
-  // Aggregate scores by agent pair
-  const scoreSums = new Map<string, Map<string, { sum: number; count: number }>>();
+  // Aggregate weighted scores by agent pair
+  const weightedSums = new Map<string, Map<string, number>>();
   
   for (const att of attestations) {
     if (!agentIds.has(att.agent_id) || !agentIds.has(att.target_id)) {
-      continue;  // Skip attestations involving unknown agents
+      continue;
     }
     
-    if (!scoreSums.has(att.agent_id)) {
-      scoreSums.set(att.agent_id, new Map());
+    // Calculate effective weight
+    const weight = calculateAttestationWeight(
+      att,
+      config.halfLifeDays,
+      wotConfig.max_attestation_age_days
+    );
+    
+    if (weight <= 0) continue;
+    
+    if (!weightedSums.has(att.agent_id)) {
+      weightedSums.set(att.agent_id, new Map());
     }
     
-    const targetMap = scoreSums.get(att.agent_id)!;
-    if (!targetMap.has(att.target_id)) {
-      targetMap.set(att.target_id, { sum: 0, count: 0 });
-    }
-    
-    const current = targetMap.get(att.target_id)!;
-    current.sum += Math.max(0, att.score);  // Only positive scores contribute to trust
-    current.count += 1;
+    const targetMap = weightedSums.get(att.agent_id)!;
+    const currentWeight = targetMap.get(att.target_id) || 0;
+    targetMap.set(att.target_id, currentWeight + weight);
   }
 
   // Normalize to create stochastic matrix
-  Array.from(scoreSums.entries()).forEach(([fromAgent, targets]) => {
-    let totalScore = 0;
+  Array.from(weightedSums.entries()).forEach(([fromAgent, targets]) => {
+    let totalWeight = 0;
     
-    // Calculate total outgoing score
-    Array.from(targets.entries()).forEach(([_, data]) => {
-      if (data.count >= minAttestations) {
-        totalScore += data.sum;
-      }
+    // Calculate total outgoing weight
+    Array.from(targets.values()).forEach(weight => {
+      totalWeight += weight;
     });
     
     // Normalize
-    if (totalScore > 0) {
-      Array.from(targets.entries()).forEach(([toAgent, data]) => {
-        if (data.count >= minAttestations) {
-          const normalizedTrust = data.sum / totalScore;
-          trustMatrix.get(fromAgent)!.set(toAgent, normalizedTrust);
-        }
+    if (totalWeight > 0) {
+      Array.from(targets.entries()).forEach(([toAgent, weight]) => {
+        const normalizedTrust = weight / totalWeight;
+        trustMatrix.get(fromAgent)!.set(toAgent, normalizedTrust);
       });
     }
   });
@@ -225,16 +337,6 @@ function buildTrustMatrix(
 
 /**
  * Calculate EigenTrust scores using power iteration
- * 
- * The algorithm:
- * 1. Start with initial trust vector (uniform or pre-trusted weighted)
- * 2. Repeatedly multiply by trust matrix: t^(k+1) = alpha * C * t^k + (1-alpha) * p
- * 3. Until convergence
- * 
- * Where:
- * - C is the trust matrix (column-stochastic)
- * - alpha is the damping factor
- * - p is the pre-trusted vector (uniform over pre-trusted agents)
  */
 async function calculateEigenTrust(
   trustMatrix: Map<string, Map<string, number>>,
@@ -264,7 +366,6 @@ async function calculateEigenTrust(
       }
     }
   } else {
-    // If no pre-trusted agents, use uniform distribution
     p.fill(1 / n);
   }
 
@@ -323,6 +424,7 @@ async function calculateEigenTrust(
 
 /**
  * Normalize scores to 0-10000 range for TAP scores
+ * With non-linear scaling to spread out mid-range
  */
 function normalizeToTAPScores(scores: Map<string, number>): Map<string, number> {
   if (scores.size === 0) return scores;
@@ -332,7 +434,6 @@ function normalizeToTAPScores(scores: Map<string, number>): Map<string, number> 
   const minScore = Math.min(...values);
   
   if (maxScore === minScore) {
-    // All equal, assign middle score
     const uniformScore = 5000;
     const result = new Map<string, number>();
     Array.from(scores.entries()).forEach(([agent]) => {
@@ -343,9 +444,9 @@ function normalizeToTAPScores(scores: Map<string, number>): Map<string, number> 
 
   const result = new Map<string, number>();
   Array.from(scores.entries()).forEach(([agent, score]) => {
-    // Normalize to 0-1, then scale to 0-10000
+    // Normalize to 0-1
     const normalized = (score - minScore) / (maxScore - minScore);
-    // Apply non-linear scaling to spread out mid-range scores
+    // Apply non-linear scaling (power of 0.7 spreads out high scores)
     const scaled = Math.pow(normalized, 0.7) * 10000;
     result.set(agent, Math.round(scaled));
   });
@@ -379,7 +480,6 @@ async function updateTAPScores(scores: Map<string, number>): Promise<void> {
     });
   });
 
-  // Batch update
   const { error } = await getSupabase()
     .from('tap_scores')
     .upsert(updates as any, { onConflict: 'claw_id' });
@@ -390,20 +490,24 @@ async function updateTAPScores(scores: Map<string, number>): Promise<void> {
 }
 
 /**
- * Main EigenTrust calculation function
+ * Main EigenTrust calculation function with stake weighting
  */
 export async function runEigenTrustCalculation(
   customConfig?: Partial<EigenTrustConfig>
 ): Promise<EigenTrustResult> {
-  console.log('Starting EigenTrust calculation...');
+  console.log('Starting EigenTrust calculation with stake weighting...');
   const startTime = Date.now();
 
   try {
+    // Fetch WoT config for decay parameters
+    const wotConfig = await fetchWoTConfig();
+    
     // Merge config
     const pretrusted = await fetchPretrustedAgents(5);
     const config: EigenTrustConfig = {
       ...DEFAULT_CONFIG,
       ...customConfig,
+      halfLifeDays: wotConfig.attestation_half_life_days,
       pretrustedAgents: customConfig?.pretrustedAgents || pretrusted,
     };
 
@@ -426,9 +530,9 @@ export async function runEigenTrustCalculation(
       };
     }
 
-    // Build trust matrix
-    console.log('Building trust matrix...');
-    const trustMatrix = buildTrustMatrix(attestations, agents, config.minAttestations);
+    // Build weighted trust matrix
+    console.log('Building weighted trust matrix...');
+    const trustMatrix = buildWeightedTrustMatrix(attestations, agents, config, wotConfig);
 
     // Calculate EigenTrust
     console.log('Running power iteration...');
@@ -474,10 +578,8 @@ export async function getAgentTrustScore(clawId: string): Promise<{
     return null;
   }
 
-  // Type assertion for data
   const scoreData = data as { tap_score: number; tier: string };
 
-  // Calculate percentile
   const { count } = await getSupabase()
     .from('tap_scores')
     .select('*', { count: 'exact', head: true })
@@ -499,19 +601,18 @@ export async function getAgentTrustScore(clawId: string): Promise<{
 }
 
 /**
- * Get trust network for visualization
+ * Get weighted trust network for visualization
  */
 export async function getTrustNetwork(
   agentId: string,
   depth: number = 2
 ): Promise<{
   nodes: Array<{ id: string; name: string; score: number }>;
-  edges: Array<{ from: string; to: string; weight: number }>;
+  edges: Array<{ from: string; to: string; weight: number; stake: number; age: number }>;
 }> {
-  // Get attestations from this agent
   const { data: attestations, error } = await getSupabase()
     .from('attestations')
-    .select('agent_id, target_id, score')
+    .select('agent_id, target_id, score, stake_amount, created_at')
     .or(`agent_id.eq.${agentId},target_id.eq.${agentId}`)
     .limit(100);
 
@@ -519,8 +620,13 @@ export async function getTrustNetwork(
     return { nodes: [], edges: [] };
   }
 
-  // Type assertion for attestations
-  const typedAttestations = attestations as Array<{ agent_id: string; target_id: string; score: number }>;
+  const typedAttestations = attestations as Array<{
+    agent_id: string;
+    target_id: string;
+    score: number;
+    stake_amount: number;
+    created_at: string;
+  }>;
 
   const nodeIds = new Set<string>();
   nodeIds.add(agentId);
@@ -529,13 +635,11 @@ export async function getTrustNetwork(
     nodeIds.add(a.target_id);
   });
 
-  // Get agent details
   const { data: agents } = await getSupabase()
     .from('tap_scores')
     .select('claw_id, name, tap_score')
     .in('claw_id', Array.from(nodeIds));
 
-  // Type assertion for agents
   const typedAgents = (agents || []) as Array<{ claw_id: string; name: string | null; tap_score: number }>;
 
   const nodes = typedAgents.map(a => ({
@@ -544,11 +648,18 @@ export async function getTrustNetwork(
     score: a.tap_score,
   }));
 
-  const edges = typedAttestations.map(a => ({
-    from: a.agent_id,
-    to: a.target_id,
-    weight: a.score / 100,  // Normalize to 0-1
-  }));
+  const edges = typedAttestations.map(a => {
+    const ageMs = Date.now() - new Date(a.created_at).getTime();
+    const ageDays = Math.round(ageMs / (1000 * 60 * 60 * 24));
+    
+    return {
+      from: a.agent_id,
+      to: a.target_id,
+      weight: a.score / 100,
+      stake: a.stake_amount || 0,
+      age: ageDays,
+    };
+  });
 
   return { nodes, edges };
 }
@@ -558,8 +669,11 @@ export {
   DEFAULT_CONFIG,
   fetchAttestations,
   fetchAgents,
-  buildTrustMatrix,
+  buildWeightedTrustMatrix,
   calculateEigenTrust,
+  calculateAttestationWeight,
+  calculateTimeDecay,
+  calculateStakeMultiplier,
   normalizeToTAPScores,
   updateTAPScores,
 };
