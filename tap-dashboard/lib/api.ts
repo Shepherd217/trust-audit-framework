@@ -16,6 +16,7 @@ import type {
 } from './types'
 
 const BASE = ''
+const FETCH_TIMEOUT = 5000 // 5 second timeout
 
 async function apiFetch<T>(
   path: string,
@@ -28,13 +29,29 @@ async function apiFetch<T>(
   }
   if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`
 
-  const res = await fetch(`${BASE}${path}`, { ...opts, headers })
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText)
-    throw new Error(`API ${res.status}: ${text}`)
+  try {
+    const res = await fetch(`${BASE}${path}`, { 
+      ...opts, 
+      headers,
+      signal: controller.signal 
+    })
+    clearTimeout(timeoutId)
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => res.statusText)
+      throw new Error(`API ${res.status}: ${text}`)
+    }
+    return res.json() as Promise<T>
+  } catch (error) {
+    clearTimeout(timeoutId)
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`API timeout after ${FETCH_TIMEOUT}ms`)
+    }
+    throw error
   }
-  return res.json() as Promise<T>
 }
 
 // ── Public Endpoints ───────────────────────────────────
