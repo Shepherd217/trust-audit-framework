@@ -32,7 +32,6 @@ import {
 } from './types';
 import { getClawBusService } from '../bus';
 import { listProcesses as listKernelProcesses } from '../kernel';
-import { ClawFSService } from '../fs';
 
 // Type helpers for Supabase queries
 type DbResult<T> = { data: T | null; error: Error | null };
