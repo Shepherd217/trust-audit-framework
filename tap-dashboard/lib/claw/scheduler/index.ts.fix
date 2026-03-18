@@ -1,0 +1,55 @@
+function mapRowToExecution(row: LocalExecutionRow): WorkflowExecution {
+  const rowAny = row as any;
+  const nodeExecutions = new Map<string, NodeExecution>();
+  for (const [key, value] of Object.entries(rowAny.node_executions || {})) {
+    const valAny = value as any;
+    nodeExecutions.set(key, {
+      ...valAny,
+      startedAt: valAny.started_at ? new Date(valAny.started_at) : undefined,
+      completedAt: valAny.completed_at ? new Date(valAny.completed_at) : undefined,
+    });
+  }
+  
+  return {
+    id: row.id,
+    workflowId: rowAny.workflow_id,
+    workflowVersion: rowAny.workflow_version,
+    status: rowAny.status as ExecutionState,
+    currentNodeId: rowAny.current_node_id,
+    completedNodeIds: rowAny.completed_node_ids || [],
+    nodeExecutions,
+    input: rowAny.input,
+    output: rowAny.output,
+    context: rowAny.context,
+    activeBranches: new Set(rowAny.active_branches || []),
+    pendingJoins: new Map(Object.entries(rowAny.pending_joins || {})),
+    startedAt: new Date(rowAny.started_at),
+    completedAt: rowAny.completed_at ? new Date(rowAny.completed_at) : undefined,
+    estimatedCompletionAt: rowAny.estimated_completion_at ? new Date(rowAny.estimated_completion_at) : undefined,
+    progressPercent: rowAny.progress_percent || 0,
+    budgetAllocated: rowAny.budget_allocated || 0,
+    budgetSpent: rowAny.budget_spent || 0,
+    payments: rowAny.payments || [],
+    events: (rowAny.events || []).map((e: any) => ({
+      ...e,
+      timestamp: new Date(e.timestamp),
+    })),
+    retryCount: new Map(Object.entries(rowAny.retry_count || {})),
+    circuitBreakerStates: new Map(
+      Object.entries(rowAny.circuit_breaker_state || {}).map(([key, value]: [string, any]) => [
+        key,
+        {
+          ...value,
+          lastFailureAt: value.lastFailureAt ? new Date(value.lastFailureAt) : undefined,
+          lastSuccessAt: value.lastSuccessAt ? new Date(value.lastSuccessAt) : undefined,
+          openedAt: value.openedAt ? new Date(value.openedAt) : undefined,
+          halfOpenedAt: value.halfOpenedAt ? new Date(value.halfOpenedAt) : undefined,
+          nextAttemptAt: value.nextAttemptAt ? new Date(value.nextAttemptAt) : undefined,
+        } as CircuitBreakerState,
+      ])
+    ),
+    error: rowAny.error,
+    retryAttempt: rowAny.retry_attempt || 0,
+    timeoutMs: rowAny.timeout_ms,
+  };
+}

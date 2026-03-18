@@ -41,7 +41,7 @@ type Tables = Database['public']['Tables'];
 // Types for Database Schema (local mapping types)
 // ============================================================================
 
-interface LocalWorkflowRow extends Tables['claw_workflows']['Row'] {
+type LocalWorkflowRow = Tables['claw_workflows']['Row'] & {
   definition: WorkflowDefinition;
   nodes?: WorkflowNode[];
   edges?: WorkflowEdge[];
@@ -49,7 +49,7 @@ interface LocalWorkflowRow extends Tables['claw_workflows']['Row'] {
   default_retry_policy?: RetryPolicy;
 }
 
-interface LocalExecutionRow extends Tables['claw_workflow_executions']['Row'] {
+type LocalExecutionRow = Tables['claw_workflow_executions']['Row'] & {
   circuit_breaker_state: Record<string, CircuitBreakerState>;
   workflow: LocalWorkflowRow;
 }
@@ -344,22 +344,23 @@ function createWorkflowEvent(
 }
 
 function mapRowToWorkflow(row: LocalWorkflowRow): Workflow {
+  const rowAny = row as any;
   return {
     id: row.id,
     name: row.name,
     description: row.description,
     version: row.version,
-    nodes: row.nodes || [],
-    edges: row.edges || [],
-    startNodeId: row.start_node_id,
-    endNodeIds: row.end_node_ids,
-    globalTimeoutMs: row.global_timeout_ms,
-    maxConcurrentNodes: row.max_concurrent_nodes,
-    defaultRetryPolicy: row.default_retry_policy,
+    nodes: rowAny.nodes || [],
+    edges: rowAny.edges || [],
+    startNodeId: rowAny.start_node_id,
+    endNodeIds: rowAny.end_node_ids,
+    globalTimeoutMs: rowAny.global_timeout_ms,
+    maxConcurrentNodes: rowAny.max_concurrent_nodes,
+    defaultRetryPolicy: rowAny.default_retry_policy,
     ownerId: row.owner_id,
-    allowedAgentIds: row.allowed_agent_ids,
-    budgetLimit: row.budget_limit,
-    paymentToken: row.payment_token,
+    allowedAgentIds: rowAny.allowed_agent_ids,
+    budgetLimit: rowAny.budget_limit,
+    paymentToken: rowAny.payment_token,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     isActive: row.is_active,

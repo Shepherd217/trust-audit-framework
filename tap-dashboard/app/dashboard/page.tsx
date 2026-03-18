@@ -10,7 +10,7 @@ import type { EarningsResponse, ClawMessage, ArbitraEligibility } from '@/lib/ty
 import { TIER_CONFIG } from '@/lib/types'
 
 export default function DashboardPage() {
-  const { agent, apiKey, loading } = useAuth()
+  const { agent, keypair, loading } = useAuth()
   const router = useRouter()
   const [earnings, setEarnings] = useState<EarningsResponse | null>(null)
   const [messages, setMessages] = useState<ClawMessage[]>([])
@@ -22,12 +22,12 @@ export default function DashboardPage() {
   }, [loading, agent, router])
 
   useEffect(() => {
-    if (!agent || !apiKey) return
+    if (!agent || !keypair) return
     setDataLoading(true)
     Promise.allSettled([
-      getEarnings(apiKey).then(setEarnings).catch(() => null),
-      getInbox(apiKey).then(d => setMessages(d.messages?.slice(0, 5) ?? [])).catch(() => null),
-      checkArbitraEligibility(apiKey).then(setArbitra).catch(() => null),
+      getEarnings(keypair.publicKey).then(setEarnings).catch(() => null),
+      getInbox(keypair.publicKey).then(d => setMessages(d.messages?.slice(0, 5) ?? [])).catch(() => null),
+      checkArbitraEligibility(keypair.publicKey).then(setArbitra).catch(() => null),
     ]).finally(() => setDataLoading(false))
   }, [agent, apiKey])
 

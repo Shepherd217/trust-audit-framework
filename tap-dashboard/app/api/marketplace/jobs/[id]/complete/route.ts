@@ -110,17 +110,6 @@ export async function POST(
       .update({ status: 'completed' })
       .eq('id', id)
 
-    // Create TAP attestation for worker
-    await supabase
-      .from('attestations')
-      .insert({
-        attester_id: contract.hirer_id,
-        target_id: contract.worker_id ?? '',
-        claim: `Completed marketplace job: ${review || 'Job completed satisfactorily'}`,
-        score: rating || 90,
-        signature: hirer_signature,
-      })
-
     return NextResponse.json({
       success: true,
       message: 'Job completed and payment released',

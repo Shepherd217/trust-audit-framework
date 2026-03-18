@@ -41,7 +41,7 @@ export async function generateClawID(): Promise<ClawIDKeypair> {
     } as AlgorithmIdentifier,
     true, // extractable
     ['sign', 'verify']
-  )
+  ) as CryptoKeyPair
 
   // Export keys
   const publicKeyBuffer = await window.crypto.subtle.exportKey('raw', keypair.publicKey)
@@ -157,7 +157,9 @@ export async function signChallenge(
  * Generate a random challenge for authentication
  */
 export function generateChallenge(): ClawIDChallenge {
-  const challenge = arrayBufferToBase64(window.crypto.getRandomValues(new Uint8Array(32)))
+  const array = new Uint8Array(32)
+  window.crypto.getRandomValues(array)
+  const challenge = arrayBufferToBase64(array.buffer)
   const timestamp = Date.now()
   
   return {

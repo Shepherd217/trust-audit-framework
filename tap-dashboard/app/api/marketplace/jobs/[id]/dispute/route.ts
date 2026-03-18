@@ -100,7 +100,7 @@ export async function POST(
       success: true,
       dispute: {
         id: dispute.id,
-        status: dispute.status,
+        status: dispute.dispute_status,
       },
       message: 'Dispute filed. Committee will be assigned.',
     })
