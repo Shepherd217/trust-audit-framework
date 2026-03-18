@@ -192,7 +192,7 @@ async function handleCheckoutSessionCompleted(
 async function handleInvoicePaid(
   invoice: Stripe.Invoice
 ): Promise<{ action: string; subscriptionId?: string; userId?: string }> {
-  const subscriptionId = invoice.subscription as string;
+  const subscriptionId = (invoice as any).subscription as string;
   const customerId = invoice.customer as string;
 
   // Retrieve subscription to get metadata
@@ -228,7 +228,7 @@ async function handleInvoicePaid(
 async function handleInvoicePaymentFailed(
   invoice: Stripe.Invoice
 ): Promise<{ action: string; subscriptionId?: string; userId?: string }> {
-  const subscriptionId = invoice.subscription as string;
+  const subscriptionId = (invoice as any).subscription as string;
   const customerId = invoice.customer as string;
 
   // Retrieve subscription to get metadata
@@ -272,8 +272,8 @@ async function handleSubscriptionCreated(
     subscriptionId: subscription.id,
     status: subscription.status,
     userId,
-    currentPeriodStart: subscription.current_period_start,
-    currentPeriodEnd: subscription.current_period_end,
+    currentPeriodStart: (subscription as any).current_period_start,
+    currentPeriodEnd: (subscription as any).current_period_end,
   });
 
   // TODO: Create subscription record in database

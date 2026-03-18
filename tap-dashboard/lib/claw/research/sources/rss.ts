@@ -39,7 +39,8 @@ const DEFAULT_FEEDS: FeedConfig[] = [
 ];
 
 export class RssAdapter implements SourceAdapter {
-  name: SourceType = 'rss';
+  name = 'RSS';
+  type: SourceType = 'rss';
   private feeds: FeedConfig[];
 
   constructor(customFeeds?: FeedConfig[]) {
@@ -79,7 +80,9 @@ export class RssAdapter implements SourceAdapter {
     // Sort by relevance and date, return top results
     return results
       .sort((a, b) => {
-        const relevanceDiff = (b.metadata?.relevance || 0) - (a.metadata?.relevance || 0);
+        const relA = (a.metadata?.relevance as number) || 0;
+        const relB = (b.metadata?.relevance as number) || 0;
+        const relevanceDiff = relB - relA;
         if (Math.abs(relevanceDiff) > 0.1) return relevanceDiff;
         return (b.publishedAt?.getTime() || 0) - (a.publishedAt?.getTime() || 0);
       })
@@ -100,8 +103,11 @@ export class RssAdapter implements SourceAdapter {
       const html = await response.text();
       const title = this.extractTitle(html) || url;
       const content = this.extractContent(html) || '';
-      
+
       return {
+        id: url,
+        sourceType: 'rss' as const,
+        retrievedAt: new Date(),
         type: 'rss',
         url,
         title,
@@ -110,6 +116,9 @@ export class RssAdapter implements SourceAdapter {
       };
     } catch (error) {
       return {
+        id: url,
+        sourceType: 'rss' as const,
+        retrievedAt: new Date(),
         type: 'rss',
         url,
         title: url,
@@ -225,6 +234,9 @@ export class RssAdapter implements SourceAdapter {
     const author = this.extractTag(item, 'author') || this.extractTag(item, 'dc:creator') || undefined;
 
     return {
+      id: link || title,
+      sourceType: 'rss' as const,
+      retrievedAt: new Date(),
       type: 'rss',
       url: link,
       title: this.cleanHtml(title),
@@ -249,6 +261,9 @@ export class RssAdapter implements SourceAdapter {
     const link = linkMatch ? linkMatch[1] : '';
 
     return {
+      id: link || title,
+      sourceType: 'rss' as const,
+      retrievedAt: new Date(),
       type: 'rss',
       url: link,
       title: this.cleanHtml(title),

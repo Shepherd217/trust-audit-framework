@@ -113,10 +113,9 @@ export class BraveSearchAdapter implements SourceAdapter {
       };
     }
   }
-    }
-  }
 
   getCredibilityScore(source: RawSource): number {
+    if (!source.url) return 50;
     const domain = new URL(source.url).hostname;
     
     // High credibility domains

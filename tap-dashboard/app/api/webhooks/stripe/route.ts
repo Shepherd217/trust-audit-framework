@@ -63,8 +63,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // Log all tracked events
   if (TRACKED_EVENTS.includes(event.type)) {
     console.log(`[Stripe Webhook] ${event.type} received:`, {
-      eventId: event.id,
-      created: new Date(event.created * 1000).toISOString(),
+      eventId: (event as any).id,
+      created: new Date((event as any).created * 1000).toISOString(),
     });
   }
 

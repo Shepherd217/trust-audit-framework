@@ -60,7 +60,7 @@ export class DocumentAdapter implements SourceAdapter {
     let score = 60;
 
     // Boost for structured documents
-    const mimeType = source.metadata?.mimeType;
+    const mimeType = source.metadata?.mimeType as string | undefined;
     if (mimeType?.includes('pdf')) score += 10;
     if (mimeType?.includes('officedocument')) score += 5;
 
@@ -213,6 +213,9 @@ export class DocumentAdapter implements SourceAdapter {
 
   private toRawSource(doc: ProcessedDocument, relevance: number): RawSource {
     return {
+      id: doc.id,
+      sourceType: 'document' as const,
+      retrievedAt: new Date(),
       type: 'document',
       url: `doc://${doc.id}`,
       title: doc.filename,
@@ -220,7 +223,6 @@ export class DocumentAdapter implements SourceAdapter {
       publishedAt: doc.uploadedAt,
       author: doc.uploadedBy,
       metadata: {
-        ...doc.metadata,
         fullId: doc.id,
         relevance,
       },
