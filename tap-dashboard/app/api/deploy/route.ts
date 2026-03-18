@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+// Type definitions
+interface Agent {
+  agent_id: string
+  name: string
+}
+
+interface Swarm {
+  id: string
+}
+
 // ClawID verification helper
 async function verifyClawIDSignature(
   publicKey: string,
@@ -47,7 +57,7 @@ export async function POST(request: NextRequest) {
       .from('agents')
       .select('agent_id, name')
       .eq('public_key', public_key)
-      .single()
+      .single() as { data: Agent | null; error: any }
 
     if (agentError || !agent) {
       return NextResponse.json(
@@ -73,9 +83,9 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString(),
       })
       .select()
-      .single()
+      .single() as { data: Swarm | null; error: any }
 
-    if (swarmError) {
+    if (swarmError || !swarm) {
       console.error('Failed to create swarm:', swarmError)
       return NextResponse.json(
         { error: 'Failed to create swarm record' },

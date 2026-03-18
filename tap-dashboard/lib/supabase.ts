@@ -1,31 +1,25 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from './database.types';
+import { createClient } from '@supabase/supabase-js'
+import type { Database } from './database.types'
 
-let supabaseInstance: ReturnType<typeof createClient<Database>> | null = null;
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON!
 
+export const supabase = createClient<Database>(url, key, {
+  auth: { autoRefreshToken: false, persistSession: false },
+})
+
+// For server-side usage with service role key
 export function getSupabaseClient() {
   if (typeof window !== 'undefined') {
-    throw new Error('getSupabaseClient should only be used on the server');
-  }
-
-  if (!supabaseInstance) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON;
-    
-    if (!url || !key) {
-      throw new Error('Supabase environment variables not configured');
-    }
-    
-    supabaseInstance = createClient<Database>(url, key, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    throw new Error('getSupabaseClient should only be used on the server')
   }
   
-  return supabaseInstance;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured')
+  }
+  
+  return createClient<Database>(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
 }
-
-export const supabase = new Proxy({} as ReturnType<typeof createClient<Database>>, {
-  get(target, prop) {
-    return getSupabaseClient()[prop as keyof typeof target];
-  },
-});

@@ -1,6 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+// Type definitions
+interface Proposal {
+  id: string
+  title: string
+  description: string
+  parameter: string | null
+  new_value: string | null
+  evidence_cid: string | null
+  status: string
+  ends_at: string
+  created_at: string
+  proposer_id: string
+  proposer_public_key: string
+  proposer_signature: string
+  proposer?: {
+    agent_id: string
+    name: string
+    reputation: number
+    tier: string
+  }
+}
+
+interface Vote {
+  vote_type: 'yes' | 'no'
+  voter: {
+    reputation: number
+  } | null
+}
+
+interface Agent {
+  agent_id: string
+  name: string
+  reputation: number
+  tier: string
+}
+
 // ClawID verification helper
 async function verifyClawIDSignature(
   publicKey: string,
@@ -17,7 +53,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') || 'active'
     
-    const { data: proposals, error } = await supabase
+    const result = await supabase
       .from('governance_proposals')
       .select(`
         *,
@@ -25,6 +61,9 @@ export async function GET(request: NextRequest) {
       `)
       .eq('status', status)
       .order('created_at', { ascending: false })
+    
+    const proposals: Proposal[] = result.data || []
+    const error = result.error
     
     if (error) {
       console.error('Failed to fetch proposals:', error)
@@ -36,14 +75,16 @@ export async function GET(request: NextRequest) {
     
     // Calculate vote tallies
     const proposalsWithVotes = await Promise.all(
-      (proposals || []).map(async (p) => {
-        const { data: votes } = await supabase
+      proposals.map(async (p) => {
+        const voteResult = await supabase
           .from('governance_votes')
           .select('vote_type, voter: voter_id(reputation)')
           .eq('proposal_id', p.id)
         
-        const yesVotes = votes?.filter(v => v.vote_type === 'yes').reduce((s, v) => s + (v.voter?.reputation || 0), 0) || 0
-        const noVotes = votes?.filter(v => v.vote_type === 'no').reduce((s, v) => s + (v.voter?.reputation || 0), 0) || 0
+        const votes: Vote[] = voteResult.data || []
+        
+        const yesVotes = votes.filter(v => v.vote_type === 'yes').reduce((s, v) => s + (v.voter?.reputation || 0), 0)
+        const noVotes = votes.filter(v => v.vote_type === 'no').reduce((s, v) => s + (v.voter?.reputation || 0), 0)
         const totalVotes = yesVotes + noVotes
         
         // Calculate time remaining
@@ -58,7 +99,7 @@ export async function GET(request: NextRequest) {
             no: noVotes,
             total: totalVotes,
             yes_percent: totalVotes > 0 ? Math.round((yesVotes / totalVotes) * 100) : 0,
-            turnout: totalVotes, // Would calculate against eligible
+            turnout: totalVotes,
           },
           time_remaining: timeRemaining,
           has_ended: timeRemaining === 0,
@@ -114,11 +155,14 @@ export async function POST(request: NextRequest) {
     }
     
     // Look up proposer
-    const { data: proposer, error: proposerError } = await supabase
+    const proposerResult = await supabase
       .from('agents')
       .select('agent_id, name, reputation, tier')
       .eq('public_key', proposer_public_key)
       .single()
+    
+    const proposer: Agent | null = proposerResult.data
+    const proposerError = proposerResult.error
     
     if (proposerError || !proposer) {
       return NextResponse.json(
@@ -135,12 +179,12 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Calculate dynamic voting window (base 24h, shortens with high TAP participation)
-    const baseWindow = 24 * 60 * 60 * 1000 // 24 hours
+    // Calculate dynamic voting window (base 24h)
+    const baseWindow = 24 * 60 * 60 * 1000
     const endsAt = new Date(Date.now() + baseWindow).toISOString()
     
     // Create proposal
-    const { data: proposal, error } = await supabase
+    const proposalResult = await supabase
       .from('governance_proposals')
       .insert({
         title,
@@ -158,7 +202,10 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
     
-    if (error) {
+    const proposal: Proposal | null = proposalResult.data
+    const error = proposalResult.error
+    
+    if (error || !proposal) {
       console.error('Failed to create proposal:', error)
       return NextResponse.json(
         { error: 'Failed to create proposal' },

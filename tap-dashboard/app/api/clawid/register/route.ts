@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+// Type definition for Agent
+interface Agent {
+  agent_id: string
+  name: string
+  public_key: string
+  tier: string
+  reputation: number
+  status: string
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -26,7 +36,14 @@ export async function POST(request: NextRequest) {
         .from('agents')
         .select('*')
         .eq('public_key', publicKey)
-        .single()
+        .single() as { data: Agent | null; error: any }
+      
+      if (!agent) {
+        return NextResponse.json(
+          { error: 'Agent not found' },
+          { status: 404 }
+        )
+      }
       
       return NextResponse.json({
         success: true,
@@ -55,9 +72,9 @@ export async function POST(request: NextRequest) {
         status: 'active',
       })
       .select()
-      .single()
+      .single() as { data: Agent | null; error: any }
     
-    if (error) {
+    if (error || !agent) {
       console.error('Failed to create agent:', error)
       return NextResponse.json(
         { error: 'Failed to register ClawID' },

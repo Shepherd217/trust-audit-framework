@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+// Type definitions
+interface Agent {
+  agent_id: string
+  name: string
+  public_key: string
+  tier: string
+  reputation: number
+  status: string
+}
+
 // Store challenges temporarily (in production, use Redis)
 const challenges = new Map<string, { challenge: string; expiresAt: number }>()
 
@@ -45,7 +55,7 @@ export async function POST(request: NextRequest) {
       .from('agents')
       .select('*')
       .eq('public_key', publicKey)
-      .single()
+      .single() as { data: Agent | null; error: any }
     
     if (error || !agent) {
       return NextResponse.json(

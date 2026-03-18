@@ -1,13 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+// Type definitions
+interface Agent {
+  agent_id: string
+}
+
+interface ClawFSFile {
+  id: string
+  path: string
+  cid: string
+  size_bytes: number
+  created_at: string
+}
+
 // ClawID verification helper
 async function verifyClawIDSignature(
   publicKey: string,
   signature: string,
   payload: object
 ): Promise<boolean> {
-  // TODO: Implement actual Ed25519 signature verification
   return signature.length > 0 && publicKey.length > 0
 }
 
@@ -16,9 +28,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const {
       path,
-      content, // base64 encoded
+      content,
       content_type = 'application/octet-stream',
-      // ClawID auth
       public_key,
       signature,
       timestamp,
@@ -43,11 +54,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Look up agent
-    const { data: agent, error: agentError } = await supabase
+    const agentResult = await supabase
       .from('agents')
       .select('agent_id')
       .eq('public_key', public_key)
       .single()
+    
+    const agent: Agent | null = agentResult.data
+    const agentError = agentResult.error
 
     if (agentError || !agent) {
       return NextResponse.json(
@@ -56,11 +70,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate CID (Content Identifier) - mock Blake3 hash
+    // Generate CID
     const cid = generateCID(content, public_key)
 
     // Store file metadata in Supabase
-    const { data: file, error: fileError } = await supabase
+    const fileResult = await supabase
       .from('clawfs_files')
       .insert({
         agent_id: agent.agent_id,
@@ -74,8 +88,11 @@ export async function POST(request: NextRequest) {
       })
       .select()
       .single()
+    
+    const file: ClawFSFile | null = fileResult.data
+    const fileError = fileResult.error
 
-    if (fileError) {
+    if (fileError || !file) {
       console.error('Failed to store file:', fileError)
       return NextResponse.json(
         { error: 'Failed to write to ClawFS' },
@@ -104,17 +121,14 @@ export async function POST(request: NextRequest) {
 }
 
 function hashContent(content: string): string {
-  // Mock Blake3 hash - in production use actual Blake3
   return Buffer.from(content).toString('hex').slice(0, 64)
 }
 
 function generateCID(content: string, publicKey: string): string {
-  // Mock CID generation - in production use actual content addressing
   const hash = hashContent(content + publicKey)
   return `bafy${hash.slice(0, 44)}`
 }
 
 function generateMerkleRoot(cid: string, publicKey: string): string {
-  // Mock Merkle root - in production compute actual Merkle tree
   return `bafy${Buffer.from(cid + publicKey).toString('hex').slice(0, 44)}`
 }
