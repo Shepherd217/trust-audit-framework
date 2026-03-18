@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate required contributions based on gap
     const reputationGap = target_reputation - (agent.reputation || 0);
-    const contributionsRequired = Math.ceil(reputationGap / 50); -- 50 rep per contribution
+    const contributionsRequired = Math.ceil(reputationGap / 50); // 50 rep per contribution
 
     const { data: recovery, error } = await getSupabase()
       .from('reputation_recovery')
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         recovery_type,
         contributions_required: contributionsRequired,
         status: 'active',
-        expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() -- 90 days
+        expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days
       }])
       .select()
       .single();
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
         current: agent.reputation || 0,
         target: target_reputation,
         gap: reputationGap,
-        estimated_days: Math.ceil(reputationGap / 5), -- 5 per day base
+        estimated_days: Math.ceil(reputationGap / 5), // 5 per day base
         contributions_needed: contributionsRequired
       }
     });

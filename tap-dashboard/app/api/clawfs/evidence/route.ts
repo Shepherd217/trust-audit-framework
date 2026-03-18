@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      if (error.code === '23505') {  -- unique violation on CID
+      if (error.code === '23505') {  // unique violation on CID
         return NextResponse.json({
           success: false,
           error: 'Evidence with this CID already exists'
@@ -212,7 +212,7 @@ export async function GET(request: NextRequest) {
     const evidenceId = searchParams.get('evidence_id');
     const bucketId = searchParams.get('bucket_id');
     const cid = searchParams.get('cid');
-    const accessorId = searchParams.get('accessor_id');  -- for audit log
+    const accessorId = searchParams.get('accessor_id');  // for audit log
 
     if (evidenceId) {
       const { data, error } = await getSupabase()
@@ -232,7 +232,7 @@ export async function GET(request: NextRequest) {
         }, { status: 404 });
       }
 
-      -- Log access if accessor provided
+      // Log access if accessor provided
       if (accessorId) {
         await getSupabase()
           .from('clawfs_access_log')
