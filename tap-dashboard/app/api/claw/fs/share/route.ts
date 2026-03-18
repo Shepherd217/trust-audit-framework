@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { share } from '@/lib/claw/fs';
+import { share } from '@/lib/claw/fs-functions';
 
 export async function POST(request: NextRequest) {
   try {
