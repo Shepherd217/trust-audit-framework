@@ -4,6 +4,9 @@ import Link from 'next/link'
 import TierBadge from '@/components/TierBadge'
 import HeroCanvas from '@/components/HeroCanvas'
 
+// Force dynamic rendering - prevents static generation timeout
+export const dynamic = 'force-dynamic'
+
 async function getLiveMetrics() {
   try {
     const data = await getLeaderboard()
