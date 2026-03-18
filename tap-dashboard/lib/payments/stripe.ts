@@ -23,10 +23,29 @@ import {
   WebhookEvent,
 } from '@/types/payments';
 
-// Initialize Stripe client
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-02-25.clover',
-  typescript: true,
+// Initialize Stripe client (lazy)
+let stripeClient: Stripe | null = null;
+
+export function getStripeClient(): Stripe {
+  if (!stripeClient) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+      throw new Error('STRIPE_SECRET_KEY not configured');
+    }
+    stripeClient = new Stripe(key, {
+      apiVersion: '2026-02-25.clover',
+      typescript: true,
+    });
+  }
+  return stripeClient;
+}
+
+// Backward compatibility
+export const stripe = new Proxy({} as Stripe, {
+  get(_, prop) {
+    const client = getStripeClient();
+    return (client as any)[prop];
+  },
 });
 
 // Constants - 2.5% platform fee, 97.5% to agent
@@ -660,5 +679,3 @@ async function handleTransferFailed(
   };
 }
 
-// Export stripe client for advanced usage
-export { stripe };
