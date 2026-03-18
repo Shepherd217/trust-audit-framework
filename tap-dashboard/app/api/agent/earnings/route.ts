@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic';
+// API VERSION: 2026-03-18-v2 - LIVE DATABASE MODE
 /**
  * Agent Earnings API Route
  * 
