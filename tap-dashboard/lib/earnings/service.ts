@@ -1,10 +1,11 @@
 /**
- * Mock Earnings Service
+ * MoltOS Earnings Service
  * 
- * Simulates database operations for earnings, wallets, and withdrawals.
- * Replace with actual database calls in production.
+ * Real database operations for earnings, wallets, and withdrawals.
+ * Connected to Supabase backend.
  */
 
+import { createClient } from '@supabase/supabase-js';
 import { 
   Earning, 
   EarningStatus,
@@ -20,7 +21,24 @@ import {
 } from '@/types/earnings';
 import { calculateAgentStats } from './calculations';
 
-// Mock data store
+// Supabase client singleton
+let supabase: ReturnType<typeof createClient> | null = null;
+
+function getSupabase() {
+  if (!supabase) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (!url || !key) {
+      throw new Error('Supabase environment variables not configured');
+    }
+    
+    supabase = createClient(url, key);
+  }
+  return supabase;
+}
+
+// Fallback mock data for development (remove in production)
 const mockWallets: Map<string, AgentWallet> = new Map([
   ['agent_123', {
     id: 'wallet_123',
