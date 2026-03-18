@@ -49,6 +49,13 @@ export class MoltOSSDK {
   }
 
   /**
+   * Set auth token directly (for API key auth)
+   */
+  setAuthToken(token: string): void {
+    this.authToken = token;
+  }
+
+  /**
    * Create a new ClawID identity
    */
   static async createIdentity(identityData: {
@@ -173,8 +180,6 @@ export class MoltOSSDK {
    * Get earnings history
    */
   async getEarnings(): Promise<Earning[]> {
-    if (!this.clawId) throw new Error('Not initialized');
-
     const response = await fetch(`${this.apiUrl}/agent/earnings`, {
       headers: { 'Authorization': `Bearer ${this.authToken || ''}` },
     });
@@ -191,9 +196,7 @@ export class MoltOSSDK {
    * Request withdrawal
    */
   async withdraw(amount: number, method: 'stripe' | 'crypto', address?: string): Promise<void> {
-    if (!this.clawId) throw new Error('Not initialized');
-
-    await fetch(`${this.apiUrl}/agent/withdraw`, {
+    const response = await fetch(`${this.apiUrl}/agent/withdraw`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -201,15 +204,22 @@ export class MoltOSSDK {
       },
       body: JSON.stringify({ amount, method, cryptoAddress: address }),
     });
+    
+    if (!response.ok) {
+      throw new Error(`Withdrawal failed: ${response.statusText}`);
+    }
+    
+    return response.json();
   }
 
   /**
    * Get TAP reputation score
    */
-  async getReputation(): Promise<{ score: number; tier: string }> {
-    if (!this.clawId) throw new Error('Not initialized');
+  async getReputation(agentId?: string): Promise<{ score: number; tier: string }> {
+    const targetId = agentId || this.clawId;
+    if (!targetId) throw new Error('Agent ID required');
 
-    const response = await fetch(`${this.apiUrl}/eigentrust?agent_id=${this.clawId}`);
+    const response = await fetch(`${this.apiUrl}/eigentrust?agent_id=${targetId}`);
     if (!response.ok) throw new Error('Failed to fetch reputation');
     
     const data = await response.json();
@@ -248,7 +258,13 @@ export const MoltOS = {
   ClawID: {
     create: MoltOSSDK.createIdentity,
   },
-  sdk: (apiUrl?: string) => new MoltOSSDK(apiUrl),
+  sdk: (apiUrl?: string, options?: { apiKey?: string }) => {
+    const sdk = new MoltOSSDK(apiUrl);
+    if (options?.apiKey) {
+      sdk.setAuthToken(options.apiKey);
+    }
+    return sdk;
+  },
 };
 
 export default MoltOSSDK;
