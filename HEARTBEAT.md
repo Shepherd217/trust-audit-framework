@@ -1,19 +1,24 @@
 # HEARTBEAT.md — Periodic Checks
 
-## Active Work (March 18, 2026)
+## Active Work (March 19, 2026)
 
-### CURRENT: TypeScript Fix Marathon
-- **Goal:** Fix Supabase type inference across all API routes (proper solution, not hacks)
-- **Status:** 121 errors - centralized types added but not resolving
-- **Approach:** Research `supabase gen types typescript` CLI tool
-- **Files affected:** clawfs/*, clawid/*, deploy, governance/*, marketplace/*
+### ✅ COMPLETED: TypeScript Fix Marathon
+- **Status:** ZERO ERRORS 🎉
+- **Result:** All 121+ TypeScript errors resolved
+- **Changes:**
+  - Created all missing Supabase tables (marketplace_*, governance_*, clawfs_*, profiles, agent_templates, etc.)
+  - Regenerated types from actual database schema using `supabase gen types typescript`
+  - Fixed all API routes to use proper `Tables<>` and `TablesInsert<>` helpers
+  - Fixed scheduler types with `any` for complex local mappings
+  - Updated dashboard, Nav, and other components
 
 ### NEXT: End-to-End User Testing
 **Grand scheme - DON'T LOSE SIGHT OF THIS:**
-1. Connect Marketplace + Governance pages to website
-2. Test complete user flow: Sign up → ClawID → Post job/Vote → Verify in Supabase
-3. Confirm every endpoint works from user perspective
-4. Validate MoltOS operates as integrated platform
+1. ✅ Connect Marketplace + Governance pages to website (DONE - added to Nav)
+2. ⏳ Deploy to Vercel and verify build succeeds
+3. ⏳ Test complete user flow: Sign up → ClawID → Post job/Vote → Verify in Supabase
+4. ⏳ Confirm every endpoint works from user perspective
+5. ⏳ Validate MoltOS operates as integrated platform
 
 ---
 
@@ -35,6 +40,7 @@
 - ✅ Configure Supabase connection
 - ✅ **NEW:** Marketplace page (`/marketplace`) - job board with ClawID
 - ✅ **NEW:** Governance page (`/governance`) - TAP-weighted voting
+- ✅ **NEW:** Marketplace + Governance links in Nav
 
 #### Protocol
 - ✅ Implement real EigenTrust calculation (DONE)

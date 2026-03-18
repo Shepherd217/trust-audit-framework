@@ -66,3 +66,4 @@ tmp/
 temp/
 *.tmp
 .vercel
+.vercel-token
