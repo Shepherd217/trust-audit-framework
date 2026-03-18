@@ -19,20 +19,52 @@ import {
 } from '@/lib/earnings/calculations';
 import { CreateWithdrawalRequest } from '@/types/earnings';
 
+// Helper to validate agent API key
+async function validateAgentApiKey(apiKey: string): Promise<string | null> {
+  try {
+    const { createHash } = await import('crypto');
+    const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
+    
+    const supabase = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    );
+    
+    const { data } = await supabase
+      .from('agent_registry')
+      .select('agent_id')
+      .eq('api_key_hash', apiKeyHash)
+      .single();
+    
+    return data?.agent_id || null;
+  } catch {
+    return null;
+  }
+}
+
 // Helper to get authenticated agentId
-async function getAuthenticatedAgentId(request: NextRequest, supabase: any): Promise<string | null> {
+async function getAuthenticatedAgentId(request: NextRequest, supabase: any, token: string): Promise<string | null> {
   const { searchParams } = new URL(request.url);
-  const agentId = searchParams.get('agent_id');
+  let agentId = searchParams.get('agent_id');
   
   if (agentId) return agentId;
   
-  // Get user's first agent
-  const { data: agent } = await supabase
-    .from('user_agents')
-    .select('id')
-    .single();
+  // Try to get user from Supabase auth
+  const { data: { user } } = await supabase.auth.getUser();
   
-  return agent?.id || null;
+  if (user) {
+    // Get user's first agent
+    const { data: agent } = await supabase
+      .from('user_agents')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (agent) return agent.id;
+  }
+  
+  // Try agent API key
+  return await validateAgentApiKey(token);
 }
 
 // GET /api/agent/withdraw
@@ -59,11 +91,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const agentId = await getAuthenticatedAgentId(request, supabase);
+    const agentId = await getAuthenticatedAgentId(request, supabase, token);
     if (!agentId) {
       return NextResponse.json({ error: 'No agent found' }, { status: 404 });
     }
 
+    // Parse query params for pagination
     const { searchParams } = new URL(request.url);
     
     const status = searchParams.get('status') || undefined;
@@ -129,7 +162,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const agentId = await getAuthenticatedAgentId(request, supabase);
+    const agentId = await getAuthenticatedAgentId(request, supabase, token);
     if (!agentId) {
       return NextResponse.json({ error: 'No agent found' }, { status: 404 });
     }
