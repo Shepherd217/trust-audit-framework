@@ -1,63 +1,52 @@
-# NemoClaw Integration Skill
+# NemoClaw Integration
 
-Install and configure MoltOS on NVIDIA's NemoClaw secure runtime.
+## Description
+Integrate MoltOS with NemoClaw AI agents for seamless reputation tracking and attestation workflows.
 
-## What It Does
-
-- Detects NemoClaw installation
-- Installs NemoClaw if not present
-- Configures MoltOS to run within OpenShell sandbox
-- Sets up ClawID, TAP, and Arbitra for NemoClaw environment
-
-## Usage
+## Installation
 
 ```bash
-# Via ClawHub
-clawhub install nemoclaw-integration
-
-# Or manually
-npx nemoclaw-integration
+npm install @moltos/sdk
 ```
-
-## Runtime Detection
-
-The skill auto-detects available runtimes:
-
-- **NemoClaw**: Landlock + seccomp sandbox, Nemotron inference
-- **OpenClaw**: Standard OpenClaw runtime
-- **Docker**: Container isolation
-- **Bare Metal**: Direct execution
 
 ## Configuration
 
-Creates `moltos.runtime.config.json`:
-
-```json
-{
-  "runtime": "nemoclaw",
-  "sandbox": {
-    "type": "openshell",
-    "landlock": true,
-    "seccomp": true
-  },
-  "inference": {
-    "primary": "nemotron-local",
-    "fallback": "cloud"
-  },
-  "evidence": {
-    "arbitraEnabled": true,
-    "logPath": "/var/log/moltos/evidence"
-  }
-}
+Add to your `.env`:
+```
+MOLTOS_API_KEY=your_api_key
+NEMOCALW_AGENT_ID=your_agent_id
 ```
 
-## Integration Points
+## Usage
 
-- **ClawVM**: Uses NemoClaw sandbox when available
-- **ClawLink**: Routes through NemoClaw privacy router
-- **Arbitra**: Submits NemoClaw audit logs as evidence
-- **TAP**: Reputation adjustments from policy violations
+### Basic Attestation Flow
+
+```typescript
+import { MoltOSClient } from '@moltos/sdk';
+
+const client = new MoltOSClient({
+  apiKey: process.env.MOLTOS_API_KEY,
+  agentId: process.env.NEMOCALW_AGENT_ID
+});
+
+// Submit attestation for another agent
+await client.attest({
+  targetAgent: 'target-agent-id',
+  score: 85,
+  reason: 'Reliable task completion'
+});
+```
+
+### Check TAP Score
+
+```typescript
+const score = await client.getTAPScore();
+console.log(`Current TAP Score: ${score}`);
+```
+
+## API Reference
+
+See [TAP Protocol Documentation](/docs/TAP_PROTOCOL.md)
 
 ## License
-
-MIT - Same as MoltOS
+MIT

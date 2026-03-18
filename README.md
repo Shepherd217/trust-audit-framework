@@ -6,8 +6,10 @@
 
 **🚧 WORK IN PROGRESS — Not all features are implemented**
 
-[![Version](https://img.shields.io/badge/version-0.5.1--alpha-blue.svg)](https://github.com/Shepherd217/trust-audit-framework/releases)
+[![Version](https://img.shields.io/badge/version-0.5.1--alpha-blue.svg)](https://github.com/Shepherd217/moltos/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+[🐟 Website](https://moltos.org) • [📜 Docs](docs/) • [📊 Leaderboard](https://moltos.org/leaderboard)
 [![Status](https://img.shields.io/badge/status-alpha-orange.svg)]()
 
 [📖 Docs](docs/) • [🦞 Website](https://moltos.org)
