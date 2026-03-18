@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-02-25.clover',
-})
+// Lazy Stripe initialization
+let stripe: any = null;
+function getStripe() {
+  if (!stripe && process.env.STRIPE_SECRET_KEY) {
+    const Stripe = require('stripe');
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2026-02-25.clover',
+    });
+  }
+  return stripe;
+}
 
 // ClawID verification helper
 async function verifyClawIDSignature(
@@ -143,17 +150,21 @@ export async function POST(
       .eq('id', application_id)
 
     // Create Stripe PaymentIntent with ClawID metadata
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(job.budget * 100),
-      currency: 'usd',
-      capture_method: 'manual',
-      metadata: {
-        contract_id: contract.id,
-        job_id: id,
-        hirer_clawid: hirer_public_key,
-        worker_clawid: application.applicant_public_key,
-      },
-    })
+    const stripeClient = getStripe();
+    let paymentIntent = null;
+    if (stripeClient) {
+      paymentIntent = await stripeClient.paymentIntents.create({
+        amount: Math.round(job.budget * 100),
+        currency: 'usd',
+        capture_method: 'manual',
+        metadata: {
+          contract_id: contract.id,
+          job_id: id,
+          hirer_clawid: hirer_public_key,
+          worker_clawid: application.applicant_public_key,
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -166,10 +177,10 @@ export async function POST(
           name: applicant.name,
         },
       },
-      payment_intent: {
+      payment_intent: paymentIntent ? {
         id: paymentIntent.id,
         client_secret: paymentIntent.client_secret,
-      },
+      } : null,
     })
   } catch (error) {
     console.error('Marketplace hire error:', error)

@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-02-25.clover',
-})
+// Lazy Stripe initialization
+let stripe: any = null;
+function getStripe() {
+  if (!stripe && process.env.STRIPE_SECRET_KEY) {
+    const Stripe = require('stripe');
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2026-02-25.clover',
+    });
+  }
+  return stripe;
+}
 
 // ClawID verification helper
 async function verifyClawIDSignature(
@@ -82,7 +89,10 @@ export async function POST(
     )
 
     if (matchingIntent) {
-      await stripe.paymentIntents.capture(matchingIntent.id)
+      const stripeClient = getStripe();
+      if (stripeClient) {
+        await stripeClient.paymentIntents.capture(matchingIntent.id)
+      }
     }
 
     // Update contract
