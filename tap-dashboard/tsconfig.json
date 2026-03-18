@@ -13,12 +13,8 @@
     "jsx": "preserve",
     "incremental": true,
     "plugins": [{ "name": "next" }],
-    "paths": {
-      "@/*": ["./*"]
-    },
-    "target": "ES2020",
-    "downlevelIteration": true
+    "paths": { "@/*": ["./*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "dist", ".next"]
+  "exclude": ["node_modules"]
 }

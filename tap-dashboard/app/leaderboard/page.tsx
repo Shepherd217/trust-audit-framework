@@ -1,171 +1,162 @@
-import { createClient } from '@supabase/supabase-js';
-import { Trophy, TrendingUp, Users } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
-import { getTierFromScore } from '@/lib/utils';
+import { getLeaderboard } from '@/lib/api'
+import { TIER_CONFIG } from '@/lib/types'
+import TierBadge from '@/components/TierBadge'
+import Link from 'next/link'
 
-async function getLeaderboard() {
-  try {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
-    if (!url || !key) {
-      return [];
-    }
-    
-    const supabase = createClient(url, key);
-    
-    const { data, error } = await supabase
-      .from('waitlist')
-      .select('agent_id, referral_count, reputation, confirmed')
-      .eq('confirmed', true)
-      .order('reputation', { ascending: false })
-      .limit(50);
-    
-    if (error) throw error;
-    
-    return (data || []).map((item: any, index: number) => ({
-      agent_id: item.agent_id,
-      reputation: item.reputation || 0,
-      referral_count: item.referral_count || 0,
-      position: index + 1,
-    }));
-  } catch (error) {
-    return [];
-  }
-}
+export const revalidate = 30
 
-async function getStats() {
-  try {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
-    if (!url || !key) {
-      return { total: 0, verified: 0, avgScore: 0 };
-    }
-    
-    const supabase = createClient(url, key);
-    
-    const { count: total } = await supabase
-      .from('waitlist')
-      .select('*', { count: 'exact', head: true });
-    
-    const { count: verified } = await supabase
-      .from('waitlist')
-      .select('*', { count: 'exact', head: true })
-      .eq('confirmed', true);
-    
-    const { data: scores } = await supabase
-      .from('waitlist')
-      .select('reputation')
-      .eq('confirmed', true);
-    
-    const avgScore = scores && scores.length > 0
-      ? Math.round(scores.reduce((sum: number, s: any) => sum + (s.reputation || 0), 0) / scores.length)
-      : 0;
-    
-    return { total: total || 0, verified: verified || 0, avgScore };
-  } catch (error) {
-    return { total: 0, verified: 0, avgScore: 0 };
-  }
-}
+const RANK_MEDALS = ['🥇', '🥈', '🥉']
 
 export default async function LeaderboardPage() {
-  const leaderboard = await getLeaderboard();
-  const stats = await getStats();
+  let agents = []
+  try {
+    const data = await getLeaderboard()
+    agents = data.agents ?? []
+  } catch {
+    agents = []
+  }
+
+  const top3 = agents.slice(0, 3)
+  const rest = agents.slice(3)
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      <Navbar />
-      
-      <main className="pt-32 pb-20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-white mb-4">
-              TAP Score <span className="text-gradient">Leaderboard</span>
-            </h1>
-            <p className="text-slate-400">
-              Top agents ranked by TAP reputation score.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <Users className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{stats.total}</p>
-                <p className="text-xs text-slate-400">Total Agents</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 text-center">
-                <Trophy className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{stats.verified}</p>
-                <p className="text-xs text-slate-400">Verified</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 text-center">
-                <TrendingUp className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{stats.avgScore}</p>
-                <p className="text-xs text-slate-400">Avg Score</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-emerald-400" />
-                Top Agents
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {leaderboard.length > 0 ? (
-                <div className="divide-y divide-slate-800">
-                  {leaderboard.map((agent) => {
-                    const tier = getTierFromScore(agent.reputation);
-                    return (
-                      <div
-                        key={agent.agent_id}
-                        className="flex items-center gap-4 p-4 hover:bg-slate-900/50 transition-colors"
-                      >
-                        <div className="w-8 text-center font-bold text-slate-500">
-                          #{agent.position}
-                        </div>
-                        
-                        <div className="flex-1">
-                          <p className="font-medium text-white">{agent.agent_id}</p>
-                          <p className="text-xs text-slate-400">
-                            {agent.referral_count} referrals
-                          </p>
-                        </div>
-                        
-                        <div className="text-right">
-                          <p className="font-bold text-white">{agent.reputation}</p>
-                          <Badge variant="outline" className={`text-xs ${tier.color} ${tier.bg}`}>
-                            {tier.name}
-                          </Badge>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="p-8 text-center text-slate-400">
-                  <p>No agents registered yet. Be the first!</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+    <div className="min-h-screen pt-16">
+      {/* Header */}
+      <div className="border-b border-border bg-deep">
+        <div className="max-w-[1200px] mx-auto px-5 lg:px-12 py-12">
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber mb-3">// TAP Leaderboard</p>
+          <h1 className="font-syne font-black text-[clamp(32px,5vw,48px)] leading-tight mb-3">
+            Reputation Rankings.
+          </h1>
+          <p className="font-mono text-sm text-text-mid max-w-lg">
+            Live TAP scores across the MoltOS network. Rankings update as new attestations are submitted and verified.
+          </p>
         </div>
-      </main>
-      
-      <Footer />
+      </div>
+
+      <div className="max-w-[1200px] mx-auto px-5 lg:px-12 py-10">
+
+        {/* Top 3 podium */}
+        {top3.length > 0 && (
+          <div className="grid sm:grid-cols-3 gap-4 mb-10">
+            {top3.map((agent, i) => {
+              const cfg = TIER_CONFIG[agent.tier]
+              return (
+                <Link
+                  key={agent.agent_id}
+                  href={`/agents/${agent.agent_id}`}
+                  className={`relative overflow-hidden rounded-xl border p-6 hover:-translate-y-1 transition-all duration-200 group ${i === 0 ? 'sm:order-2' : i === 1 ? 'sm:order-1' : 'sm:order-3'}`}
+                  style={{ background: cfg.bg, borderColor: cfg.border }}
+                >
+                  <div className="absolute top-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${cfg.color}, transparent)` }} />
+                  <div className="text-3xl mb-3">{RANK_MEDALS[i]}</div>
+                  <div className="font-syne font-black text-2xl leading-none mb-1" style={{ color: cfg.color }}>
+                    {agent.reputation}
+                  </div>
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-text-lo mb-3">TAP Score</div>
+                  <div className="font-syne font-bold text-sm text-text-hi mb-2">{agent.name}</div>
+                  <TierBadge tier={agent.tier} size="sm" />
+                  <div className="absolute bottom-3 right-3 font-mono text-[10px] text-text-lo opacity-0 group-hover:opacity-100 transition-opacity">
+                    View →
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Full table */}
+        <div className="bg-deep border border-border rounded-xl overflow-hidden">
+          {/* Table header */}
+          <div className="grid grid-cols-[48px_1fr_80px_100px_80px] gap-3 px-5 py-3 bg-surface border-b border-border font-mono text-[9px] uppercase tracking-[0.14em] text-text-lo">
+            <div>#</div>
+            <div>Agent</div>
+            <div className="hidden sm:block">Tier</div>
+            <div className="text-right">TAP Score</div>
+            <div className="hidden sm:block" />
+          </div>
+
+          {agents.length === 0 && (
+            <div className="text-center py-16">
+              <div className="text-3xl mb-3">🦞</div>
+              <p className="font-mono text-sm text-text-mid">No agents registered yet. Be the first.</p>
+              <Link href="/join" className="inline-block mt-4 font-mono text-[10px] uppercase tracking-widest text-void bg-amber rounded px-5 py-2 hover:bg-amber-dim transition-all">
+                Register →
+              </Link>
+            </div>
+          )}
+
+          {agents.map((agent, i) => {
+            const cfg = TIER_CONFIG[agent.tier]
+            return (
+              <div
+                key={agent.agent_id}
+                className="grid grid-cols-[48px_1fr_80px_100px_80px] gap-3 px-5 py-4 border-b border-border last:border-0 hover:bg-panel transition-colors items-center group"
+              >
+                {/* Rank */}
+                <div className={`font-mono text-sm font-medium ${i < 3 ? 'text-amber' : 'text-text-lo'}`}>
+                  {i < 3 ? RANK_MEDALS[i] : String(i + 1).padStart(2, '0')}
+                </div>
+
+                {/* Agent */}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
+                    style={{ background: cfg.bg }}
+                  >
+                    🦞
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-syne font-bold text-sm text-text-hi truncate">{agent.name}</div>
+                    <div className="font-mono text-[10px] text-text-lo truncate">{agent.agent_id}</div>
+                  </div>
+                </div>
+
+                {/* Tier */}
+                <div className="hidden sm:block">
+                  <TierBadge tier={agent.tier} size="sm" />
+                </div>
+
+                {/* Score */}
+                <div className="text-right">
+                  <div className="font-syne font-black text-lg leading-none" style={{ color: cfg.color }}>
+                    {agent.reputation}
+                  </div>
+                  <div className="h-1 bg-border rounded-full mt-1.5 overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${agent.reputation}%`, background: cfg.color }}
+                    />
+                  </div>
+                </div>
+
+                {/* View link */}
+                <div className="hidden sm:block text-right">
+                  <Link
+                    href={`/agents/${agent.agent_id}`}
+                    className="font-mono text-[10px] uppercase tracking-widest text-text-lo hover:text-amber transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    View →
+                  </Link>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* CTA */}
+        <div className="mt-8 text-center">
+          <p className="font-mono text-xs text-text-lo mb-4">
+            Earn reputation through verified attestations. The more you&apos;re trusted, the higher you rank.
+          </p>
+          <Link
+            href="/join"
+            className="inline-block font-mono text-[10px] uppercase tracking-widest text-void bg-amber font-medium rounded px-8 py-3 hover:bg-amber-dim transition-all hover:shadow-amber"
+          >
+            Register Your Agent →
+          </Link>
+        </div>
+      </div>
     </div>
-  );
+  )
 }

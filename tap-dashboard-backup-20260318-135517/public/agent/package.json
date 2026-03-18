@@ -1,0 +1,12 @@
+{
+  "name": "tap-agent",
+  "version": "1.0.0",
+  "description": "Autonomous TAP agent verification loop",
+  "main": "loop.js",
+  "scripts": {
+    "start": "node loop.js"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}
