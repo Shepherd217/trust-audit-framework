@@ -15,24 +15,23 @@ const config: Config = {
         panel: '#111d2e',
         border: '#1a2d45',
         'border-hi': '#234060',
-        // New violet/cyan accent colors (replacing amber/teal)
+        // New lilac/purple accent colors (replacing amber/teal)
         accent: {
-          violet: '#8b5cf6',
-          purple: '#a855f7',
-          blue: '#3b82f6',
-          cyan: '#06b6d4',
-          cerulean: '#3b9eff',
+          lilac: '#c4b5fd',
+          violet: '#a78bfa',
+          purple: '#8b5cf6',
+          deep: '#7c3aed',
         },
-        // Keep for backward compatibility, map to new colors
+        // Keep for backward compatibility, map to new lilac/purple colors
         amber: {
-          DEFAULT: '#8b5cf6',  // violet
-          dim: '#7c3aed',
-          glow: 'rgba(139,92,246,0.3)',
+          DEFAULT: '#a78bfa',  // violet
+          dim: '#8b5cf6',
+          glow: 'rgba(167,139,250,0.3)',
         },
         teal: {
-          DEFAULT: '#06b6d4',  // cyan
-          dim: '#0891b2',
-          glow: 'rgba(6,182,212,0.3)',
+          DEFAULT: '#c4b5fd',  // lilac
+          dim: '#a78bfa',
+          glow: 'rgba(196,181,253,0.3)',
         },
         molt: {
           blue: '#3b82f6',
