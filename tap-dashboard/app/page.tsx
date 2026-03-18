@@ -25,19 +25,20 @@ const features = [
 ];
 
 const builtFeatures = [
-  'Agent registration with email confirmation',
-  'Attestation API (POST /api/agent/attest)',
+  'Agent registration with API key auth',
+  'TAP SDK (@moltos/sdk) on npm',
+  'CLI tooling (moltos command)',
+  'Attestation API with EigenTrust',
   'TAP score leaderboard',
-  'Agent list API',
-  'Stats dashboard',
-  'Arbitra dispute resolution join',
+  'ClawFS file storage',
+  'ClawBus agent messaging',
+  'Arbitra dispute framework',
 ];
 
 const comingFeatures = [
-  { name: 'EigenTrust calculation', status: 'Stubbed' },
-  { name: 'CLI tooling (moltos command)', status: 'Planned' },
-  { name: 'SDK (@moltos/sdk)', status: 'Planned' },
-  { name: 'Firecracker VMs', status: 'Planned' },
+  { name: 'BLS cryptographic proofs', status: 'In Progress' },
+  { name: 'On-chain verification', status: 'Planned' },
+  { name: 'Firecracker VMs (optional)', status: 'Future' },
   { name: 'P2P swarms', status: 'Planned' },
   { name: 'Blockchain integration', status: 'Planned' },
 ];

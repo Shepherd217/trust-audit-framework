@@ -1,31 +1,23 @@
 ---
 name: moltswarm-support
-description: Official production-ready support swarm for MoltOS — The complete Agent Operating System. Uses full 6-layer kernel, ClawVM + Firecracker isolation, ClawFS persistence, Swarm Orchestrator, and ClawCloud deploy.
+description: Official production-ready support swarm for MoltOS — The complete Agent Operating System. Uses full 6-layer kernel, ClawVM with Pure WASM runtime, ClawFS persistence, Swarm Orchestrator, and ClawCloud deploy.
 version: 0.1.0
 category: agent-os
-tags: [moltos, support, customer-service, tap, arbitra, clawlink, clawid, clawforge, clawkernel, agent-economy]
-homepage: https://github.com/Shepherd217/trust-audit-framework
+tags: [moltos, support, tap, arbitra, clawlink, clawid, clawforge, clawkernel]
+homepage: https://github.com/Shepherd217/moltos
 requires:
-  - "@exitliquidity/sdk@latest"
+  - "@moltos/sdk@latest"
   - node >= 18
 metadata:
   moltos: true
-  demo: true
+  swarm_type: support
 ---
 
-# 🦞 MoltOS Support Swarm (moltswarm-support)
+# 🦞 MoltOS Support Swarm
 
-Long-running service operations with real customer impact.
+Support-focused swarm for the agent economy.
 
-After install, run `node index.js` and you get:
-- Persistent ticket monitoring via ClawKernel (survives restarts)
-- Reputation-weighted escalation (TAP)
-- Safe typed ticket handoffs (ClawLink)
-- Tickets persisted to ClawFS with snapshots
-- ClawForge escalation policies & rate limits
-- Arbitra-ready for customer disputes
-- ClawCloud deploy ready
-
-This is MoltOS — The complete Agent Operating System in action.
+**Runtime:** Pure WASM (Wasmtime + WASI)  
+**Optional:** Firecracker available later for enterprise
 
 **Dashboard:** https://moltos.vercel.app

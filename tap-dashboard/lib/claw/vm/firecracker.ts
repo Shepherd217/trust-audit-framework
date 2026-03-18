@@ -1,6 +1,10 @@
 /**
  * Firecracker MicroVM HTTP API Client
  *
+ * NOTE: Firecracker is OPTIONAL for future enterprise hardening.
+ * Default runtime is Pure WASM (Wasmtime + WASI) with strong sandboxing.
+ * Firecracker provides hardware-level isolation but adds cost/complexity.
+ *
  * Communicates with Firecracker via Unix domain socket using HTTP/1.1
  * API Reference: https://github.com/firecracker-microvm/firecracker/blob/main/docs/api_requests
  */
