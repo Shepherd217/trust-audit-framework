@@ -13,15 +13,14 @@ const LINKS = [
 ]
 
 export default function Nav() {
-  const { agent, logout } = useAuth()
+  const { agent, logout, isAuthenticated, loginWithFile, createNewClawID, exportClawID } = useAuth()
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [loginOpen, setLoginOpen] = useState(false)
-  const [apiKeyInput, setApiKeyInput] = useState('')
   const [loginError, setLoginError] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
-  const { login } = useAuth()
+  const [dragActive, setDragActive] = useState(false)
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 40)
@@ -32,17 +31,51 @@ export default function Nav() {
   // Close menu on route change
   useEffect(() => { setMenuOpen(false) }, [pathname])
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleFileUpload(file: File) {
     setLoginLoading(true)
     setLoginError('')
-    const ok = await login(apiKeyInput.trim())
+    
+    const result = await loginWithFile(file)
+    
     setLoginLoading(false)
-    if (ok) {
+    if (result.success) {
       setLoginOpen(false)
-      setApiKeyInput('')
     } else {
-      setLoginError('Invalid API key. Check your credentials and try again.')
+      setLoginError(result.error || 'Failed to authenticate')
+    }
+  }
+
+  function handleDrag(e: React.DragEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true)
+    } else if (e.type === 'dragleave') {
+      setDragActive(false)
+    }
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileUpload(e.dataTransfer.files[0])
+    }
+  }
+
+  async function handleCreateClawID() {
+    setLoginLoading(true)
+    setLoginError('')
+    
+    try {
+      await createNewClawID()
+      setLoginOpen(false)
+    } catch (err) {
+      setLoginError(err instanceof Error ? err.message : 'Failed to create ClawID')
+    } finally {
+      setLoginLoading(false)
     }
   }
 
@@ -59,7 +92,7 @@ export default function Nav() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
           <span className="text-xl" style={{ animation: 'breathe 3s ease-in-out infinite' }}>🦞</span>
-          <span className="font-syne font-black text-[17px] text-text-hi tracking-tight">
+          <span className="font-syne font-bold text-[17px] text-text-hi tracking-tight">
             Molt<span className="text-amber">OS</span>
           </span>
         </Link>
@@ -83,14 +116,14 @@ export default function Nav() {
 
         {/* Right CTAs */}
         <div className="flex items-center gap-2">
-          {agent ? (
+          {isAuthenticated ? (
             <>
               <Link
                 href="/dashboard"
                 className="hidden sm:flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-text-mid border border-border rounded px-3 py-2 hover:text-text-hi hover:border-border-hi transition-all"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-molt-green" style={{ boxShadow: '0 0 6px rgba(40,200,64,0.7)' }} />
-                {agent.name}
+                <span className="w-1.5 h-1.5 rounded-full bg-accent-lilac" style={{ boxShadow: '0 0 6px rgba(196,181,253,0.7)' }} />
+                {agent?.name || 'Agent'}
               </Link>
               <button
                 onClick={logout}
@@ -143,7 +176,7 @@ export default function Nav() {
                 </Link>
               </li>
             ))}
-            {agent && (
+            {isAuthenticated && (
               <li className="border-b border-border">
                 <Link href="/dashboard" className="block py-3.5 font-mono text-sm uppercase tracking-widest text-text-mid hover:text-text-hi transition-colors">
                   Dashboard
@@ -152,7 +185,7 @@ export default function Nav() {
             )}
           </ul>
           <div className="flex gap-2">
-            {agent ? (
+            {isAuthenticated ? (
               <button onClick={logout} className="flex-1 font-mono text-[10px] uppercase tracking-widest text-text-lo border border-border rounded py-2.5 text-center hover:text-text-mid transition-colors">
                 Sign Out
               </button>
@@ -170,7 +203,7 @@ export default function Nav() {
         </div>
       </div>
 
-      {/* Sign-in modal */}
+      {/* ClawID Sign-in modal */}
       {loginOpen && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-void/95 backdrop-blur-xl"
@@ -183,43 +216,58 @@ export default function Nav() {
             >✕</button>
 
             <div className="text-3xl text-center mb-2">🦞</div>
-            <h2 className="font-syne font-black text-xl text-center mb-1">Welcome Back</h2>
+            <h2 className="font-syne font-bold text-xl text-center mb-1">ClawID Sign In</h2>
             <p className="font-mono text-[11px] text-text-mid text-center tracking-widest mb-7">
-              ENTER YOUR API KEY TO AUTHENTICATE
+              UPLOAD YOUR KEYPAIR FILE TO AUTHENTICATE
             </p>
 
-            <form onSubmit={handleLogin}>
-              <div className="mb-4">
-                <label className="block font-mono text-[10px] uppercase tracking-widest text-text-mid mb-1.5">
-                  API Key
-                </label>
-                <input
-                  type="password"
-                  value={apiKeyInput}
-                  onChange={e => setApiKeyInput(e.target.value)}
-                  placeholder="moltos_sk_..."
-                  autoComplete="current-password"
-                  className="w-full bg-surface border border-border rounded px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-amber transition-colors placeholder:text-text-lo"
-                />
-              </div>
-              {loginError && (
-                <p className="font-mono text-[11px] text-molt-red mb-3">{loginError}</p>
+            {/* File drop zone */}
+            <div
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              className={clsx(
+                'border-2 border-dashed rounded-lg p-8 text-center transition-all mb-4',
+                dragActive 
+                  ? 'border-accent-violet bg-accent-violet/10' 
+                  : 'border-border hover:border-border-hi'
               )}
-              <button
-                type="submit"
-                disabled={loginLoading || !apiKeyInput}
-                className="w-full font-mono text-xs uppercase tracking-widest text-void bg-amber font-medium rounded py-3.5 hover:bg-amber-dim transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-amber"
-              >
-                {loginLoading ? 'Authenticating...' : 'Sign In →'}
-              </button>
-            </form>
+            >
+              <input
+                type="file"
+                id="clawid-file"
+                accept=".json"
+                onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+                className="hidden"
+              />
+              <label htmlFor="clawid-file" className="cursor-pointer block">
+                <div className="text-3xl mb-2">🔐</div>
+                <p className="font-mono text-xs text-text-mid mb-1">
+                  {loginLoading ? 'Authenticating...' : 'Drop your clawid-*.json file here'}
+                </p>
+                <p className="font-mono text-[10px] text-text-lo">
+                  or click to browse
+                </p>
+              </label>
+            </div>
 
-            <p className="font-mono text-[10px] text-text-lo text-center mt-5">
-              No agent?{' '}
-              <Link href="/join" onClick={() => setLoginOpen(false)} className="text-amber hover:underline">
-                Register here →
-              </Link>
-            </p>
+            {loginError && (
+              <p className="font-mono text-[11px] text-molt-red mb-3 text-center">{loginError}</p>
+            )}
+
+            <div className="border-t border-border pt-4 mt-4">
+              <p className="font-mono text-[10px] text-text-lo text-center mb-3">
+                Don&apos;t have a ClawID?
+              </p>
+              <button
+                onClick={handleCreateClawID}
+                disabled={loginLoading}
+                className="w-full font-mono text-xs uppercase tracking-widest text-text-hi border border-border rounded py-3 hover:border-accent-violet hover:text-accent-violet transition-all"
+              >
+                Create New ClawID →
+              </button>
+            </div>
           </div>
         </div>
       )}
