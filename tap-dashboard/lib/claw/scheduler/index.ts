@@ -358,10 +358,11 @@ function mapRowToWorkflow(row: LocalWorkflowRow): Workflow {
 function mapRowToExecution(row: LocalExecutionRow): WorkflowExecution {
   const nodeExecutions = new Map<string, NodeExecution>();
   for (const [key, value] of Object.entries(row.node_executions || {})) {
+    const val = value as any;
     nodeExecutions.set(key, {
-      ...value,
-      startedAt: value.started_at ? new Date(value.started_at) : undefined,
-      completedAt: value.completed_at ? new Date(value.completed_at) : undefined,
+      ...val,
+      startedAt: val.started_at ? new Date(val.started_at) : undefined,
+      completedAt: val.completed_at ? new Date(val.completed_at) : undefined,
     });
   }
   
@@ -375,7 +376,7 @@ function mapRowToExecution(row: LocalExecutionRow): WorkflowExecution {
     nodeExecutions,
     input: row.input,
     output: row.output,
-    context: row.context,
+    context: row.context as any,
     activeBranches: new Set(row.active_branches || []),
     pendingJoins: new Map(Object.entries(row.pending_joins || {})),
     startedAt: new Date(row.started_at),
@@ -394,15 +395,18 @@ function mapRowToExecution(row: LocalExecutionRow): WorkflowExecution {
       Object.entries(row.circuit_breaker_state || {}).map(([key, value]) => [
         key,
         {
-          ...value,
-          lastFailureAt: value.lastFailureAt ? new Date(value.lastFailureAt) : undefined,
-          lastSuccessAt: value.lastSuccessAt ? new Date(value.lastSuccessAt) : undefined,
-          openedAt: value.openedAt ? new Date(value.openedAt) : undefined,
-          halfOpenedAt: value.halfOpenedAt ? new Date(value.halfOpenedAt) : undefined,
-          nextAttemptAt: value.nextAttemptAt ? new Date(value.nextAttemptAt) : undefined,
+          ...(value as any),
+          lastFailureAt: (value as any).lastFailureAt ? new Date((value as any).lastFailureAt) : undefined,
+          lastSuccessAt: (value as any).lastSuccessAt ? new Date((value as any).lastSuccessAt) : undefined,
+          openedAt: (value as any).openedAt ? new Date((value as any).openedAt) : undefined,
+          halfOpenedAt: (value as any).halfOpenedAt ? new Date((value as any).halfOpenedAt) : undefined,
+          nextAttemptAt: (value as any).nextAttemptAt ? new Date((value as any).nextAttemptAt) : undefined,
         } as CircuitBreakerState,
       ])
     ),
+    error: row.error,
+    retryAttempt: row.retry_attempt || 0,
+    timeoutMs: row.timeout_ms,
   };
 }
 
@@ -446,7 +450,7 @@ export async function createWorkflow(
   
   // Build workflow object
   const workflowId = generateId();
-  const workflow: Omit<WorkflowRow, 'created_at' | 'updated_at'> = {
+  const workflow: any = {
     id: workflowId,
     name: definition.name,
     description: definition.description,
@@ -1167,7 +1171,7 @@ async function executeViaBus(task: AgentTask, timeoutMs: number): Promise<TaskRe
       .single();
     
     if (data) {
-      const taskData = data as { status: string; result: unknown };
+      const taskData = data as unknown as { status: string; result: unknown };
       if (taskData.status === 'completed' && taskData.result) {
         return taskData.result as TaskResult;
       }
@@ -1242,7 +1246,7 @@ async function logEvent(executionId: string, event: WorkflowEvent): Promise<void
   if (!rawData) return;
   
   // Explicitly type to avoid narrowing issues
-  const executionData = rawData as { events: any[] };
+  const executionData = rawData as unknown as { events: any[] };
   
   const events = executionData.events || [];
   events.push({
@@ -1565,7 +1569,7 @@ export async function cancelExecution(
     throw new Error(`Execution not found: ${executionId}`);
   }
   
-  const execData = executionData as { status: string; node_executions: Record<string, any>; payments: any[] };
+  const execData = executionData as unknown as { status: string; node_executions: Record<string, any>; payments: any[] };
   if (['completed', 'cancelled', 'failed'].includes(execData.status)) {
     throw new Error(`Cannot cancel execution with status: ${execData.status}`);
   }
@@ -1648,7 +1652,7 @@ async function compensateNode(executionId: string, nodeId: string): Promise<void
   
   if (!data) return;
   
-  const execData = data as { node_executions: Record<string, any> };
+  const execData = data as unknown as { node_executions: Record<string, any> };
   const nodeExecution = execData.node_executions?.[nodeId];
   if (!nodeExecution?.compensationData) return;
   
