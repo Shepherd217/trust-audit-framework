@@ -190,6 +190,19 @@ export interface AgentMetricRow {
   recorded_at: string;
 }
 
+export interface AgentRegistryRow {
+  agent_id: string;
+  name: string;
+  public_key: string;
+  api_key_hash: string;
+  reputation: number;
+  tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond';
+  status: 'active' | 'inactive' | 'suspended';
+  metadata: Record<string, any>;
+  created_at: string;
+  last_seen_at?: string;
+}
+
 export interface SwarmRow {
   id: string;
   user_id: string;
@@ -262,6 +275,11 @@ export interface Database {
         Row: AgentMetricRow;
         Insert: Partial<AgentMetricRow>;
         Update: Partial<AgentMetricRow>;
+      };
+      agent_registry: {
+        Row: AgentRegistryRow;
+        Insert: Partial<AgentRegistryRow>;
+        Update: Partial<AgentRegistryRow>;
       };
       swarms: {
         Row: SwarmRow;
