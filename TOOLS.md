@@ -59,39 +59,48 @@ Location: `.github/workflows/typecheck.yml`
 
 ## Next.js 15 Migration Notes
 
-### Page Params are now Promises
-Next.js 15 changed dynamic route params from sync to async:
+### Page Props are now Promises
+Next.js 15 changed both `params` and `searchParams` from sync to async:
 
 **Old (Next.js 14):**
 ```tsx
 export default async function Page({ 
-  params 
+  params,
+  searchParams 
 }: { 
-  params: { id: string } 
+  params: { id: string }
+  searchParams: { q?: string }
 }) {
   const agent = await getAgent(params.id)
+  const query = searchParams.q
 }
 ```
 
 **New (Next.js 15):**
 ```tsx
 export default async function Page({ 
-  params 
+  params,
+  searchParams 
 }: { 
-  params: Promise<{ id: string }> 
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ q?: string }>
 }) {
   const { id } = await params
+  const { q } = await searchParams
   const agent = await getAgent(id)
 }
 ```
 
-Common error:
+Common errors:
 ```
 Type '{ params: { id: string; }; }' does not satisfy 'PageProps'
 Type '{ id: string; }' is missing: then, catch, finally
+
+Type '{ searchParams: { q?: string; }; }' does not satisfy 'PageProps'
+Type '{ q?: string; }' is missing: then, catch, finally
 ```
 
-Fix: Add `Promise<>` wrapper and `await params` before destructuring.
+Fix: Add `Promise<>` wrapper and `await` before destructuring.
 
 ---
 
