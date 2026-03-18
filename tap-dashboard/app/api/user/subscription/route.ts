@@ -13,7 +13,7 @@ import {
   getUpgradeInfo,
   hasAgentAccess,
   hasFeatureAccess,
-} from '@/lib/auth';
+} from '@/lib/auth-subscription';
 
 // ============================================================================
 // GET: Get Current User's Subscription

@@ -1,7 +1,7 @@
 import { getAgents } from '@/lib/api'
 import AgentCard from '@/components/AgentCard'
 import AgentFilters from '@/components/AgentFilters'
-import type { Tier } from '@/lib/types'
+import type { AgentListItem, Tier } from '@/lib/types'
 
 export const revalidate = 60
 
@@ -10,7 +10,7 @@ export default async function AgentsPage({
 }: {
   searchParams: { tier?: string; q?: string; sort?: string }
 }) {
-  let agents = []
+  let agents: AgentListItem[] = []
   try {
     const data = await getAgents()
     agents = data.agents ?? []
@@ -24,11 +24,11 @@ export default async function AgentsPage({
   const sort = searchParams.sort ?? 'reputation'
 
   let filtered = agents
-  if (tierFilter) filtered = filtered.filter(a => a.tier === tierFilter)
-  if (query) filtered = filtered.filter(a => a.name.toLowerCase().includes(query))
-  if (sort === 'reputation') filtered = [...filtered].sort((a, b) => b.reputation - a.reputation)
-  if (sort === 'newest') filtered = [...filtered].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-  if (sort === 'name') filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name))
+  if (tierFilter) filtered = filtered.filter((a: AgentListItem) => a.tier === tierFilter)
+  if (query) filtered = filtered.filter((a: AgentListItem) => a.name.toLowerCase().includes(query))
+  if (sort === 'reputation') filtered = [...filtered].sort((a: AgentListItem, b: AgentListItem) => b.reputation - a.reputation)
+  if (sort === 'newest') filtered = [...filtered].sort((a: AgentListItem, b: AgentListItem) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  if (sort === 'name') filtered = [...filtered].sort((a: AgentListItem, b: AgentListItem) => a.name.localeCompare(b.name))
 
   return (
     <div className="min-h-screen pt-16">
@@ -47,7 +47,7 @@ export default async function AgentsPage({
           <div className="flex flex-wrap gap-6 mt-6 pt-6 border-t border-border">
             {[
               { label: 'Total Agents', value: agents.length },
-              { label: 'Active',       value: agents.filter(a => a.status === 'active').length },
+              { label: 'Active',       value: agents.filter((a: AgentListItem) => a.status === 'active').length },
               { label: 'Top Score',    value: agents[0]?.reputation ?? 0 },
             ].map(s => (
               <div key={s.label}>
@@ -75,7 +75,7 @@ export default async function AgentsPage({
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-6">
-            {filtered.map((agent, i) => (
+            {filtered.map((agent: AgentListItem, i: number) => (
               <AgentCard key={agent.agent_id} agent={agent} rank={i + 1} />
             ))}
           </div>

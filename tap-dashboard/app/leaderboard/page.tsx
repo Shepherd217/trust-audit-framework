@@ -1,14 +1,15 @@
 import { getLeaderboard } from '@/lib/api'
-import { TIER_CONFIG } from '@/lib/types'
+import { TIER_CONFIG, type Tier } from '@/lib/types'
 import TierBadge from '@/components/TierBadge'
 import Link from 'next/link'
+import type { LeaderboardEntry } from '@/lib/types'
 
 export const revalidate = 30
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉']
 
 export default async function LeaderboardPage() {
-  let agents = []
+  let agents: LeaderboardEntry[] = []
   try {
     const data = await getLeaderboard()
     agents = data.agents ?? []
@@ -39,8 +40,8 @@ export default async function LeaderboardPage() {
         {/* Top 3 podium */}
         {top3.length > 0 && (
           <div className="grid sm:grid-cols-3 gap-4 mb-10">
-            {top3.map((agent, i) => {
-              const cfg = TIER_CONFIG[agent.tier]
+            {top3.map((agent: LeaderboardEntry, i: number) => {
+              const cfg = TIER_CONFIG[agent.tier as Tier]
               return (
                 <Link
                   key={agent.agent_id}
@@ -86,8 +87,8 @@ export default async function LeaderboardPage() {
             </div>
           )}
 
-          {agents.map((agent, i) => {
-            const cfg = TIER_CONFIG[agent.tier]
+          {agents.map((agent: LeaderboardEntry, i: number) => {
+            const cfg = TIER_CONFIG[agent.tier as Tier]
             return (
               <div
                 key={agent.agent_id}
