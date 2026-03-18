@@ -193,12 +193,13 @@ function calculateAttestationWeight(
 }
 
 /**
- * Fetch attestations from the database
+ * Fetch trust relationships from agent_vouches (WoT)
  */
 async function fetchAttestations(timeWindowDays: number = 0): Promise<Attestation[]> {
+  // Query agent_vouches as trust relationships
   let query = getSupabase()
-    .from('attestations')
-    .select('id, agent_id, target_id, score, stake_amount, created_at, attestation_status');
+    .from('agent_vouches')
+    .select('id, voucher_id, vouchee_id, stake_amount, created_at, status');
 
   if (timeWindowDays > 0) {
     const cutoffDate = new Date();
@@ -209,10 +210,23 @@ async function fetchAttestations(timeWindowDays: number = 0): Promise<Attestatio
   const { data, error } = await query;
 
   if (error) {
-    throw new Error(`Failed to fetch attestations: ${error.message}`);
+    throw new Error(`Failed to fetch vouches: ${error.message}`);
   }
 
-  return (data as Attestation[]) || [];
+  // Map vouches to attestation format
+  // voucher_id -> agent_id (who is attesting)
+  // vouchee_id -> target_id (who is being attested to)
+  // stake_amount is the weight
+  // All vouches are implicitly score=100 (positive trust)
+  return ((data as any[]) || []).map(v => ({
+    id: v.id,
+    agent_id: v.voucher_id,
+    target_id: v.vouchee_id,
+    score: 100, // Vouches are always positive trust
+    stake_amount: v.stake_amount || 0,
+    created_at: v.created_at,
+    attestation_status: v.status === 'active' ? 'valid' : v.status,
+  }));
 }
 
 /**
@@ -610,29 +624,28 @@ export async function getTrustNetwork(
   nodes: Array<{ id: string; name: string; score: number }>;
   edges: Array<{ from: string; to: string; weight: number; stake: number; age: number }>;
 }> {
-  const { data: attestations, error } = await getSupabase()
-    .from('attestations')
-    .select('agent_id, target_id, score, stake_amount, created_at')
-    .or(`agent_id.eq.${agentId},target_id.eq.${agentId}`)
+  const { data: vouches, error } = await getSupabase()
+    .from('agent_vouches')
+    .select('voucher_id, vouchee_id, stake_amount, created_at')
+    .or(`voucher_id.eq.${agentId},vouchee_id.eq.${agentId}`)
     .limit(100);
 
-  if (error || !attestations) {
+  if (error || !vouches) {
     return { nodes: [], edges: [] };
   }
 
-  const typedAttestations = attestations as Array<{
-    agent_id: string;
-    target_id: string;
-    score: number;
+  const typedVouches = vouches as Array<{
+    voucher_id: string;
+    vouchee_id: string;
     stake_amount: number;
     created_at: string;
   }>;
 
   const nodeIds = new Set<string>();
   nodeIds.add(agentId);
-  typedAttestations.forEach(a => {
-    nodeIds.add(a.agent_id);
-    nodeIds.add(a.target_id);
+  typedVouches.forEach(v => {
+    nodeIds.add(v.voucher_id);
+    nodeIds.add(v.vouchee_id);
   });
 
   const { data: agents } = await getSupabase()
@@ -648,15 +661,15 @@ export async function getTrustNetwork(
     score: a.tap_score,
   }));
 
-  const edges = typedAttestations.map(a => {
-    const ageMs = Date.now() - new Date(a.created_at).getTime();
+  const edges = typedVouches.map(v => {
+    const ageMs = Date.now() - new Date(v.created_at).getTime();
     const ageDays = Math.round(ageMs / (1000 * 60 * 60 * 24));
     
     return {
-      from: a.agent_id,
-      to: a.target_id,
-      weight: a.score / 100,
-      stake: a.stake_amount || 0,
+      from: v.voucher_id,
+      to: v.vouchee_id,
+      weight: 1.0, // Vouches are positive trust
+      stake: v.stake_amount || 0,
       age: ageDays,
     };
   });
