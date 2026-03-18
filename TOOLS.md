@@ -102,6 +102,29 @@ Type '{ q?: string; }' is missing: then, catch, finally
 
 Fix: Add `Promise<>` wrapper and `await` before destructuring.
 
+### API Routes Too
+API route handlers also need Promise wrapper for params:
+
+**Old:**
+```tsx
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const { id } = params
+}
+```
+
+**New:**
+```tsx
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+}
+```
+
 ---
 
 Add whatever helps you do your job. This is your cheat sheet.
