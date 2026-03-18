@@ -404,8 +404,6 @@ function mapRowToExecution(row: LocalExecutionRow): WorkflowExecution {
         } as CircuitBreakerState,
       ])
     ),
-    error: row.error,
-    retryAttempt: row.retry_attempt || 0,
     timeoutMs: row.timeout_ms,
   };
 }
@@ -1477,7 +1475,7 @@ export async function pauseExecution(executionId: string): Promise<void> {
     throw new Error(`Execution not found: ${executionId}`);
   }
   
-  const execData = executionData as { status: string };
+  const execData = executionData as unknown as { status: string };
   if (execData.status !== 'running') {
     throw new Error(`Cannot pause execution with status: ${execData.status}`);
   }
@@ -1520,7 +1518,7 @@ export async function resumeExecution(executionId: string): Promise<void> {
     throw new Error(`Execution not found: ${executionId}`);
   }
   
-  const execData = executionData as { status: string; current_node_id?: string };
+  const execData = executionData as unknown as { status: string; current_node_id?: string };
   if (execData.status !== 'paused') {
     throw new Error(`Cannot resume execution with status: ${execData.status}`);
   }
