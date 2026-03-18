@@ -5,11 +5,14 @@ import type { AgentListItem, Tier } from '@/lib/types'
 
 export const revalidate = 60
 
+// Next.js 15: searchParams is now a Promise
 export default async function AgentsPage({
   searchParams,
 }: {
-  searchParams: { tier?: string; q?: string; sort?: string }
+  searchParams: Promise<{ tier?: string; q?: string; sort?: string }>
 }) {
+  const params = await searchParams
+  
   let agents: AgentListItem[] = []
   try {
     const data = await getAgents()
@@ -19,9 +22,9 @@ export default async function AgentsPage({
   }
 
   // Filter
-  const tierFilter = searchParams.tier as Tier | undefined
-  const query = searchParams.q?.toLowerCase() ?? ''
-  const sort = searchParams.sort ?? 'reputation'
+  const tierFilter = params.tier as Tier | undefined
+  const query = params.q?.toLowerCase() ?? ''
+  const sort = params.sort ?? 'reputation'
 
   let filtered = agents
   if (tierFilter) filtered = filtered.filter((a: AgentListItem) => a.tier === tierFilter)
