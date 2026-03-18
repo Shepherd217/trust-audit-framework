@@ -50,3 +50,4 @@ Colors, fonts, and animations are defined in:
 - `app/globals.css` — keyframes + utilities
 
 **Scan everything first. 🦞**
+# Auto deploy trigger
