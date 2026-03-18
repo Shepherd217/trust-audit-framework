@@ -37,4 +37,26 @@ Skills are shared. Your setup is yours. Keeping them apart means you can update 
 
 ---
 
+## GitHub Actions / CI
+
+### Type Checking Workflow
+Location: `.github/workflows/typecheck.yml`
+- Runs `npx tsc --noEmit` on every push/PR
+- Working directory: `tap-dashboard/`
+- Catches TypeScript errors before Vercel deploy
+
+### Adding New Workflows
+1. Create `.github/workflows/<name>.yml`
+2. Set `defaults.run.working-directory: ./tap-dashboard` for dashboard jobs
+3. Use `cache-dependency-path: tap-dashboard/package-lock.json` for npm cache
+
+## MoltOS Deploy
+
+- **Vercel Project:** molt.os
+- **Root Directory:** tap-dashboard
+- **Auto-deploy:** GitHub integration on main branch
+- **Custom Domain:** MoltOS.org
+
+---
+
 Add whatever helps you do your job. This is your cheat sheet.
