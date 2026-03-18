@@ -132,7 +132,7 @@ SELECT
     COUNT(*) as total,
     COUNT(*) FILTER (WHERE status = 'open') as pending,
     COUNT(*) FILTER (WHERE status = 'resolved') as resolved,
-    COUNT(*) FILTER (WHERE detected_at > NOW() - INTERVAL '24 hours') as last_24h
+    COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '24 hours') as last_24h
 FROM anomaly_events
 UNION ALL
 SELECT 
