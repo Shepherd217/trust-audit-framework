@@ -29,7 +29,7 @@ export default function DashboardPage() {
       getInbox(keypair.publicKey).then(d => setMessages(d.messages?.slice(0, 5) ?? [])).catch(() => null),
       checkArbitraEligibility(keypair.publicKey).then(setArbitra).catch(() => null),
     ]).finally(() => setDataLoading(false))
-  }, [agent, apiKey])
+  }, [agent, keypair])
 
   if (loading || !agent) {
     return (
