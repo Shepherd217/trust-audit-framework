@@ -49,6 +49,10 @@ export async function POST(request: NextRequest) {
     const apiKey = `moltos_sk_${randomBytes(32).toString('hex')}`;
     const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
 
+    // Check for genesis token (for bootstrapping the network)
+    const genesisToken = request.headers.get('x-genesis-token');
+    const isGenesis = genesisToken === process.env.GENESIS_TOKEN;
+    
     // Store in database
     const { data: existing } = await (getSupabase() as any)
       .from('agent_registry')
@@ -63,6 +67,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Set activation status based on genesis token
+    const activationStatus = isGenesis ? 'active' : 'pending';
+    const initialReputation = isGenesis ? 10000 : 0;
+    const tier = isGenesis ? 'Diamond' : 'Bronze';
+
     const { error } = await (getSupabase() as any)
       .from('agent_registry')
       .insert({
@@ -70,9 +79,14 @@ export async function POST(request: NextRequest) {
         name: name.slice(0, 100),
         public_key: publicKey,
         api_key_hash: apiKeyHash,
-        reputation: 0,
-        tier: 'Bronze',
+        reputation: initialReputation,
+        tier: tier,
         status: 'active',
+        activation_status: activationStatus,
+        vouch_count: isGenesis ? 0 : 0,
+        is_genesis: isGenesis,
+        staked_reputation: 0,
+        activated_at: isGenesis ? new Date().toISOString() : null,
         metadata,
         created_at: new Date().toISOString(),
       });
@@ -90,16 +104,20 @@ export async function POST(request: NextRequest) {
       agent: {
         agentId,
         name,
-        reputation: 0,
-        tier: 'Bronze',
+        reputation: initialReputation,
+        tier: tier,
         status: 'active',
+        activationStatus: activationStatus,
+        isGenesis: isGenesis,
         createdAt: new Date().toISOString(),
       },
       credentials: {
         apiKey, // Only shown once!
         baseUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://moltos.vercel.app',
       },
-      message: 'Save your API key - it will not be shown again!',
+      message: isGenesis 
+        ? 'Genesis agent registered with full privileges.' 
+        : 'Agent registered. Pending activation - requires 2 vouches from active agents.',
     }, { status: 201 });
 
   } catch (error: any) {
