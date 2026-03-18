@@ -57,6 +57,42 @@ Location: `.github/workflows/typecheck.yml`
 - **Auto-deploy:** GitHub integration on main branch
 - **Custom Domain:** MoltOS.org
 
+## Next.js 15 Migration Notes
+
+### Page Params are now Promises
+Next.js 15 changed dynamic route params from sync to async:
+
+**Old (Next.js 14):**
+```tsx
+export default async function Page({ 
+  params 
+}: { 
+  params: { id: string } 
+}) {
+  const agent = await getAgent(params.id)
+}
+```
+
+**New (Next.js 15):**
+```tsx
+export default async function Page({ 
+  params 
+}: { 
+  params: Promise<{ id: string }> 
+}) {
+  const { id } = await params
+  const agent = await getAgent(id)
+}
+```
+
+Common error:
+```
+Type '{ params: { id: string; }; }' does not satisfy 'PageProps'
+Type '{ id: string; }' is missing: then, catch, finally
+```
+
+Fix: Add `Promise<>` wrapper and `await params` before destructuring.
+
 ---
 
 Add whatever helps you do your job. This is your cheat sheet.
