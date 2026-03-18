@@ -476,7 +476,7 @@ export async function createWorkflow(
   
   // Store in Supabase
   const { data, error } = await (supabase
-    .from('workflows') as any)
+    .from('claw_workflows') as any)
     .insert(workflow)
     .select()
     .single();
@@ -501,7 +501,7 @@ export async function executeWorkflow(
   
   // Fetch the workflow
   const { data: workflowData, error: workflowError } = await supabase
-    .from('workflows')
+    .from('claw_workflows')
     .select('*')
     .eq('id', workflowId)
     .eq('is_active', true)
@@ -577,7 +577,7 @@ export async function executeWorkflow(
   };
   
   const { data, error } = await supabase
-    .from('workflow_executions')
+    .from('claw_workflow_executions')
     .insert(executionRow)
     .select()
     .single();
@@ -597,7 +597,7 @@ export async function getExecutionStatus(executionId: string): Promise<Execution
   const supabase = getSupabaseClient();
   
   const { data: rawData, error } = await supabase
-    .from('workflow_executions')
+    .from('claw_workflow_executions')
     .select(`
       *,
       workflow:workflow_id(name, nodes)
@@ -669,7 +669,7 @@ export async function listWorkflows(filters: ListWorkflowsFilters = {}): Promise
   const supabase = getSupabaseClient();
   
   let query = supabase
-    .from('workflows')
+    .from('claw_workflows')
     .select('*', { count: 'exact' });
   
   // Apply filters
@@ -723,7 +723,7 @@ export async function listExecutions(filters: ListExecutionsFilters = {}): Promi
   const supabase = getSupabaseClient();
   
   let query = supabase
-    .from('workflow_executions')
+    .from('claw_workflow_executions')
     .select('*', { count: 'exact' });
   
   // Apply filters
@@ -896,7 +896,7 @@ export async function executeNode(
   
   // Fetch execution and workflow
   const { data: rawData, error: execError } = await supabase
-    .from('workflow_executions')
+    .from('claw_workflow_executions')
     .select('*, workflow:workflow_id(*)')
     .eq('id', executionId)
     .single();
@@ -993,7 +993,7 @@ export async function executeNode(
   
   // Store task in database
   const { error: taskError } = await (supabase
-    .from('agent_tasks') as any)
+    .from('claw_agent_tasks') as any)
     .insert({
       id: taskId,
       execution_id: executionId,
@@ -1172,7 +1172,7 @@ async function executeViaBus(task: AgentTask, timeoutMs: number): Promise<TaskRe
   
   while (Date.now() - startTime < timeoutMs) {
     const { data } = await supabase
-      .from('agent_tasks')
+      .from('claw_agent_tasks')
       .select('status, result')
       .eq('id', task.id)
       .single();
@@ -1216,7 +1216,7 @@ async function storeNodeResult(
   const supabase = getSupabaseClient();
   
   const { data: executionData } = await supabase
-    .from('workflow_executions')
+    .from('claw_workflow_executions')
     .select('node_executions')
     .eq('id', executionId)
     .single();
@@ -1233,7 +1233,7 @@ async function storeNodeResult(
   };
   
   await (supabase
-    .from('workflow_executions') as any)
+    .from('claw_workflow_executions') as any)
     .update({ node_executions: nodeExecutions })
     .eq('id', executionId);
 }
@@ -1245,7 +1245,7 @@ async function logEvent(executionId: string, event: WorkflowEvent): Promise<void
   const supabase = getSupabaseClient();
   
   const { data: rawData } = await supabase
-    .from('workflow_executions')
+    .from('claw_workflow_executions')
     .select('events')
     .eq('id', executionId)
     .single();
@@ -1262,7 +1262,7 @@ async function logEvent(executionId: string, event: WorkflowEvent): Promise<void
   });
   
   await (supabase
-    .from('workflow_executions') as any)
+    .from('claw_workflow_executions') as any)
     .update({ events })
     .eq('id', executionId);
 }
@@ -1294,7 +1294,7 @@ export async function transition(
   
   // Fetch execution and workflow
   const { data: executionData, error: execError } = await supabase
-    .from('workflow_executions')
+    .from('claw_workflow_executions')
     .select('*, workflow:workflow_id(*)')
     .eq('id', executionId)
     .single();
@@ -1400,7 +1400,7 @@ export async function transition(
   const currentNodeId = nextNodes[0]; // Primary path
   
   await (supabase
-    .from('workflow_executions') as any)
+    .from('claw_workflow_executions') as any)
     .update({
       current_node_id: currentNodeId,
       completed_node_ids: completedNodeIds,
@@ -1447,7 +1447,7 @@ async function markExecutionCompleted(executionId: string, output?: any): Promis
   const supabase = getSupabaseClient();
   
   await (supabase
-    .from('workflow_executions') as any)
+    .from('claw_workflow_executions') as any)
     .update({
       status: 'completed',
       output,
@@ -1475,7 +1475,7 @@ export async function pauseExecution(executionId: string): Promise<void> {
   
   // Verify execution exists and is running
   const { data: executionData, error } = await supabase
-    .from('workflow_executions')
+    .from('claw_workflow_executions')
     .select('status')
     .eq('id', executionId)
     .single();
@@ -1491,7 +1491,7 @@ export async function pauseExecution(executionId: string): Promise<void> {
   
   // Update state to PAUSED
   const { error: updateError } = await (supabase
-    .from('workflow_executions') as any)
+    .from('claw_workflow_executions') as any)
     .update({
       status: 'paused',
       updated_at: new Date().toISOString(),
@@ -1518,7 +1518,7 @@ export async function resumeExecution(executionId: string): Promise<void> {
   
   // Verify execution exists and is paused
   const { data: executionData, error } = await supabase
-    .from('workflow_executions')
+    .from('claw_workflow_executions')
     .select('status, current_node_id')
     .eq('id', executionId)
     .single();
@@ -1534,7 +1534,7 @@ export async function resumeExecution(executionId: string): Promise<void> {
   
   // Update state to RUNNING
   const { error: updateError } = await (supabase
-    .from('workflow_executions') as any)
+    .from('claw_workflow_executions') as any)
     .update({
       status: 'running',
       updated_at: new Date().toISOString(),
@@ -1567,7 +1567,7 @@ export async function cancelExecution(
   
   // Verify execution exists
   const { data: executionData, error } = await supabase
-    .from('workflow_executions')
+    .from('claw_workflow_executions')
     .select('status, node_executions, payments')
     .eq('id', executionId)
     .single();
@@ -1624,7 +1624,7 @@ export async function cancelExecution(
   
   // Update state to CANCELLED
   const { error: updateError } = await (supabase
-    .from('workflow_executions') as any)
+    .from('claw_workflow_executions') as any)
     .update({
       status: 'cancelled',
       completed_at: new Date().toISOString(),
@@ -1652,7 +1652,7 @@ async function compensateNode(executionId: string, nodeId: string): Promise<void
   
   // Get node execution details
   const { data } = await supabase
-    .from('workflow_executions')
+    .from('claw_workflow_executions')
     .select('node_executions')
     .eq('id', executionId)
     .single();
@@ -1674,7 +1674,7 @@ async function compensateNode(executionId: string, nodeId: string): Promise<void
   };
   
   await (supabase
-    .from('workflow_executions') as any)
+    .from('claw_workflow_executions') as any)
     .update({ node_executions: execData.node_executions })
     .eq('id', executionId);
 }
@@ -1686,7 +1686,7 @@ async function releasePaymentFromEscrow(executionId: string, paymentId: string):
   const supabase = getSupabaseClient();
   
   const { data } = await supabase
-    .from('workflow_executions')
+    .from('claw_workflow_executions')
     .select('payments')
     .eq('id', executionId)
     .single();
@@ -1708,7 +1708,7 @@ async function releasePaymentFromEscrow(executionId: string, paymentId: string):
   });
   
   await (supabase
-    .from('workflow_executions') as any)
+    .from('claw_workflow_executions') as any)
     .update({ payments })
     .eq('id', executionId);
   
@@ -1734,7 +1734,7 @@ export async function retryFailedNode(
   
   // Fetch execution and workflow
   const { data: executionData, error: execError } = await supabase
-    .from('workflow_executions')
+    .from('claw_workflow_executions')
     .select('*, workflow:workflow_id(*)')
     .eq('id', executionId)
     .single();
@@ -1817,7 +1817,7 @@ export async function retryFailedNode(
   execution.retryCount.set(nodeId, newRetryCount);
   
   await (supabase
-    .from('workflow_executions') as any)
+    .from('claw_workflow_executions') as any)
     .update({
       retry_count: Object.fromEntries(execution.retryCount),
     })
