@@ -149,7 +149,7 @@ SELECT
     d.id,
     'dispute' as case_type,
     d.status,
-    d.target_agent_id as subject_id,
+    d.target_id as subject_id,
     t.name as subject_name,
     d.reporter_id,
     r.name as reporter_name,
@@ -157,7 +157,7 @@ SELECT
     d.created_at,
     EXTRACT(EPOCH FROM (NOW() - d.created_at))/3600 as hours_open
 FROM dispute_cases d
-JOIN agent_registry t ON d.target_agent_id = t.agent_id
+JOIN agent_registry t ON d.target_id = t.agent_id
 JOIN agent_registry r ON d.reporter_id = r.agent_id
 WHERE d.status = 'pending'
    OR (d.status = 'resolved' AND d.resolved_at > NOW() - INTERVAL '7 days')
