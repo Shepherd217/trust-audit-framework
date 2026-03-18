@@ -295,7 +295,7 @@ export async function refundPayment(
     // Create refund
     const refundData: Stripe.RefundCreateParams = {
       charge: chargeId,
-      reason: reason || 'requested_by_customer',
+      reason: (reason || 'requested_by_customer') as Stripe.RefundCreateParams['reason'],
     };
 
     if (amount) {
@@ -348,6 +348,7 @@ export async function createConnectedAccount(
 
     return {
       accountId: account.id,
+      status: 'active',
       requirements: {
         currentlyDue: account.requirements?.currently_due || [],
         eventuallyDue: account.requirements?.eventually_due || [],

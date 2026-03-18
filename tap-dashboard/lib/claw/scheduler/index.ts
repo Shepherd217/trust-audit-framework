@@ -1155,8 +1155,8 @@ async function executeViaBus(task: AgentTask, timeoutMs: number): Promise<TaskRe
       nodeId: task.nodeId,
       input: task.input,
     },
-    priority: task.priority,
-  });
+    priority: task.priority as 1 | 2 | 3 | 4 | 5,
+  } as any);
   
   // Wait for result with timeout
   const supabase = getSupabaseClient();

@@ -21,7 +21,8 @@ interface MoltbookEntry {
 const moltbookStore: MoltbookEntry[] = [];
 
 export class MoltbookAdapter implements SourceAdapter {
-  name: SourceType = 'moltbook';
+  name = 'Moltbook';
+  type: SourceType = 'moltbook';
 
   async search(query: string, options: ResearchOptions): Promise<RawSource[]> {
     const queryLower = query.toLowerCase();
@@ -53,9 +54,10 @@ export class MoltbookAdapter implements SourceAdapter {
   }
 
   getCredibilityScore(source: RawSource): number {
-    const baseScore = source.metadata?.credibility || 50;
+    const baseScore = (source.metadata?.credibility as number) || 50;
     const verified = source.metadata?.verified ? 10 : 0;
-    const hasSources = source.metadata?.sources?.length > 0 ? 10 : 0;
+    const sources = source.metadata?.sources as string[] | undefined;
+    const hasSources = sources && sources.length > 0 ? 10 : 0;
     
     return Math.min(100, baseScore + verified + hasSources);
   }
@@ -177,6 +179,9 @@ export class MoltbookAdapter implements SourceAdapter {
 
   private toRawSource(entry: MoltbookEntry): RawSource {
     return {
+      id: entry.id,
+      sourceType: 'moltbook' as const,
+      retrievedAt: new Date(),
       type: 'moltbook',
       url: `moltbook://${entry.id}`,
       title: `${entry.agentName}: ${entry.content.slice(0, 60)}...`,

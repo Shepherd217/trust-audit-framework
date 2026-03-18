@@ -293,6 +293,7 @@ export interface PlatformEarningsConfig {
   // Minimum withdrawal amounts
   minWithdrawalStripe: number; // e.g., 1000 ($10.00)
   minWithdrawalCrypto: number; // e.g., 5000 ($50.00)
+  minWithdrawalBankTransfer: number; // e.g., 5000 ($50.00)
   
   // Crypto settings
   supportedCryptoCurrencies: string[];
