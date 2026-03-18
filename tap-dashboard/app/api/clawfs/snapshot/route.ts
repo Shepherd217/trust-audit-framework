@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
       .select('cid, path')
       .eq('agent_id', agent.agent_id)
       .order('created_at', { ascending: true })
+    as { data: Array<{ cid: string; path: string }> | null; error: any }
 
     // Generate Merkle tree root from file CIDs
     const fileCIDs = (files || []).map(f => f.cid)
@@ -78,6 +79,15 @@ export async function POST(request: NextRequest) {
       })
       .select()
       .single()
+    as { 
+      data: { 
+        id: string
+        merkle_root: string
+        file_count: number
+        created_at: string
+      } | null
+      error: any 
+    }
 
     if (snapshotError) {
       console.error('Failed to create snapshot:', snapshotError)
@@ -90,10 +100,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       snapshot: {
-        id: snapshot.id,
-        merkle_root: snapshot.merkle_root,
-        file_count: snapshot.file_count,
-        created_at: snapshot.created_at,
+        id: snapshot!.id,
+        merkle_root: snapshot!.merkle_root,
+        file_count: snapshot!.file_count,
+        created_at: snapshot!.created_at,
       },
       // Return the files included in this snapshot
       files: files?.map(f => ({
@@ -154,6 +164,7 @@ export async function GET(request: NextRequest) {
       .eq('agent_id', agent.agent_id)
       .order('created_at', { ascending: false })
       .limit(10)
+    as { data: Array<{ id: string; merkle_root: string; file_count: number; created_at: string }> | null; error: any }
 
     return NextResponse.json({
       snapshots: snapshots || [],
