@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') ?? '50', 10);
     const offset = parseInt(searchParams.get('offset') ?? '0', 10);
     
-    // Validate and convert tier to StorageTier enum
+    // Validate and convert tier to StorageTier type
     let tier: StorageTier | undefined;
     if (tierParam) {
       if (!['hot', 'warm', 'cold'].includes(tierParam)) {
@@ -28,18 +28,8 @@ export async function GET(request: NextRequest) {
           { status: 400 }
         );
       }
-      // Convert string to StorageTier enum
-      switch (tierParam) {
-        case 'hot':
-          tier = StorageTier.HOT;
-          break;
-        case 'warm':
-          tier = StorageTier.WARM;
-          break;
-        case 'cold':
-          tier = StorageTier.COLD;
-          break;
-      }
+      // StorageTier is a type union, use the string directly
+      tier = tierParam as StorageTier;
     }
     
     const files = await list(agentId, {
