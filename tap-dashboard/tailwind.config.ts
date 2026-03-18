@@ -15,18 +15,27 @@ const config: Config = {
         panel: '#111d2e',
         border: '#1a2d45',
         'border-hi': '#234060',
+        // New violet/cyan accent colors (replacing amber/teal)
+        accent: {
+          violet: '#8b5cf6',
+          purple: '#a855f7',
+          blue: '#3b82f6',
+          cyan: '#06b6d4',
+          cerulean: '#3b9eff',
+        },
+        // Keep for backward compatibility, map to new colors
         amber: {
-          DEFAULT: '#e8a020',
-          dim: '#c47a10',
-          glow: 'rgba(232,160,32,0.3)',
+          DEFAULT: '#8b5cf6',  // violet
+          dim: '#7c3aed',
+          glow: 'rgba(139,92,246,0.3)',
         },
         teal: {
-          DEFAULT: '#00d4aa',
-          dim: '#009f80',
-          glow: 'rgba(0,212,170,0.3)',
+          DEFAULT: '#06b6d4',  // cyan
+          dim: '#0891b2',
+          glow: 'rgba(6,182,212,0.3)',
         },
         molt: {
-          blue: '#3b9eff',
+          blue: '#3b82f6',
           purple: '#a855f7',
           red: '#ff4455',
           green: '#28c840',
@@ -49,14 +58,14 @@ const config: Config = {
         mono: ['var(--font-jetbrains)', 'monospace'],
       },
       backgroundImage: {
-        'amber-teal': 'linear-gradient(135deg, #e8a020, #00d4aa)',
+        'gradient-violet-cyan': 'linear-gradient(135deg, #a855f7, #3b82f6, #06b6d4)',
         'grid-pattern': `linear-gradient(rgba(26,45,69,0.3) 1px, transparent 1px),
           linear-gradient(90deg, rgba(26,45,69,0.3) 1px, transparent 1px)`,
       },
       boxShadow: {
-        amber: '0 0 40px rgba(232,160,32,0.3), 0 0 80px rgba(232,160,32,0.1)',
-        teal: '0 0 40px rgba(0,212,170,0.3), 0 0 80px rgba(0,212,170,0.1)',
-        card: '0 24px 64px rgba(0,0,0,0.5)',
+        'amber': '0 0 40px rgba(139, 92, 246, 0.3), 0 0 80px rgba(139, 92, 246, 0.1)',
+        'teal': '0 0 40px rgba(6, 182, 212, 0.3), 0 0 80px rgba(6, 182, 212, 0.1)',
+        'card': '0 24px 64px rgba(0,0,0,0.5)',
       },
       animation: {
         'breathe': 'breathe 3s ease-in-out infinite',
@@ -68,12 +77,12 @@ const config: Config = {
       },
       keyframes: {
         breathe: {
-          '0%,100%': { filter: 'drop-shadow(0 0 6px rgba(232,160,32,0.6))' },
-          '50%': { filter: 'drop-shadow(0 0 16px rgba(232,160,32,0.9))' },
+          '0%,100%': { filter: 'drop-shadow(0 0 6px rgba(139, 92, 246, 0.6))' },
+          '50%': { filter: 'drop-shadow(0 0 16px rgba(59, 130, 246, 0.9))' },
         },
         pulseDot: {
-          '0%,100%': { boxShadow: '0 0 0 0 rgba(232,160,32,0.5)' },
-          '50%': { boxShadow: '0 0 0 6px rgba(232,160,32,0)' },
+          '0%,100%': { boxShadow: '0 0 0 0 rgba(139, 92, 246, 0.5)' },
+          '50%': { boxShadow: '0 0 0 6px rgba(139, 92, 246, 0)' },
         },
         ticker: {
           from: { transform: 'translateX(0)' },
