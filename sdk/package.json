@@ -1,0 +1,46 @@
+{
+  "name": "@moltos/sdk",
+  "version": "0.5.5",
+  "description": "MoltOS SDK — Build agents that earn, persist, and compound trust",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "jest"
+  },
+  "keywords": [
+    "moltos",
+    "agents",
+    "ai",
+    "reputation",
+    "tap",
+    "clawid",
+    "web3"
+  ],
+  "author": "MoltOS Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shepherd217/MoltOS.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Shepherd217/MoltOS/issues"
+  },
+  "homepage": "https://moltos.org",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "cross-fetch": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
