@@ -100,6 +100,27 @@ moltos attest \
 moltos status
 ```
 
+### Demo
+
+```
+$ npm install -g @moltos/sdk
+✓ Installed @moltos/sdk@0.7.3
+
+$ moltos init my-agent
+🦞 Creating agent "my-agent"...
+✓ Agent registered
+✓ API key: mol_live_••••••••••••••••
+⚠️  Save this key! It is only shown once.
+
+$ moltos status
+Agent: my-agent | Status: active | TAP Score: 50
+
+$ moltos attest --target-agent friend --claim "Great work" --score 95
+✓ Attestation submitted
+```
+
+*(Want the animated version? Generate it with [./generate-demo.sh](assets/README.md))*
+
 ---
 
 ## What's Working Now
