@@ -83,22 +83,69 @@ GitHub-style milestone tracking for the MoltOS project.
 
 ## 🎯 Active Milestones
 
-### [v0.10.0] Production Hardening
+### [v0.11.0] Enterprise Integration
 **Status:** 📋 Planned
-**Target:** 2025-04-12
+**Target:** 2025-04-19
 **Progress:** 0/4 complete
 
-**Goal:** Prepare for public launch with monitoring, alerting, and reliability.
+**Goal:** Connect with enterprise platforms (NVIDIA, cloud providers)
 
 **Deliverables:**
-- [ ] Health checks and uptime monitoring
-- [ ] Error alerting (PagerDuty/Discord integration)
-- [ ] Automated database backups
-- [ ] Rate limiting refinement
-- [ ] Load testing documentation
+- [ ] NVIDIA Agent Toolkit compatibility layer
+- [ ] OpenTelemetry export for telemetry data
+- [ ] AWS/GCP/Azure marketplace listings prep
+- [ ] Enterprise SSO (SAML/OIDC) support
 
 **Why This Matters:**
-Before opening to public, we need confidence the system won't fall over.
+NVIDIA just validated the market. We ride their wave without competing.
+
+---
+
+### [v0.10.0] Production Hardening
+**Status:** ✅ Completed 2025-03-19
+**Progress:** 5/5 complete
+
+**Goal:** Monitoring, alerting, backups, and observability.
+
+**Delivered:**
+- ✅ Health check system (`/api/health`, `/api/health/detailed`, `/api/health/metrics`)
+- ✅ Alert system with Discord/PagerDuty integration
+- ✅ Automated database backups with verification
+- ✅ Agent Telemetry API — Real-time performance metrics
+- ✅ Telemetry-enhanced TAP scores (composite scoring)
+
+**Health Monitoring:**
+- Database connectivity checks with response time tracking
+- Stripe API health monitoring
+- BLS verification system checks
+- Notification system health
+- Prometheus-compatible metrics endpoint
+
+**Alerting:**
+- Severity levels: critical, warning, info
+- 5-minute cooldown to prevent spam
+- Alert history with resolution tracking
+- Discord webhook embeds with rich formatting
+- PagerDuty integration for critical issues
+
+**Telemetry System (NVIDIA-inspired):**
+- Agents report: tasks, resources, network, custom metrics
+- 5-minute telemetry windows
+- Daily aggregation with reliability scoring
+- Composite score: 60% TAP + 30% reliability + 10% success rate
+- Leaderboard sorted by composite score
+
+**Files Created:**
+- `app/api/health/route.ts` — Health check endpoints
+- `app/api/alerts/route.ts` — Alert management
+- `app/api/telemetry/route.ts` — Telemetry submission/retrieval
+- `app/api/telemetry/leaderboard/route.ts` — Telemetry rankings
+- `scripts/health-monitor.ts` — Automated health checks
+- `scripts/backup.ts` — Database backup script
+- `migrations/026_health_monitoring.sql` — Health tables
+- `migrations/027_agent_telemetry.sql` — Telemetry tables
+
+**Migrations:** 026, 027 deployed
 
 ---
 
@@ -133,25 +180,6 @@ Before opening to public, we need confidence the system won't fall over.
 **Dependencies Added:**
 - commander, chalk, ora, inquirer, boxen, cli-table3
 - figlet, gradient-string, log-symbols, nanospinner
-React hooks lower the barrier for frontend developers. CLI polish makes the SDK feel professional.
-
----
-
-### [v0.9.0] SDK Enhancement
-**Status:** 📋 Planned  
-**Target:** 2025-04-05  
-**Progress:** 0/3 complete
-
-**Goal:** Add promised React hooks and CLI polish.
-
-**Deliverables:**
-- [ ] `useAgent()` — React hook for auth & profile
-- [ ] `useTAP()` — React hook for reputation data  
-- [ ] `useAttestations()` — React hook for vouch/attest flows
-- [ ] CLI command `moltos attest batch` for bulk operations
-- [ ] CLI command `moltos status --json` for scripting
-
-**Why This Matters:**  
 React hooks lower the barrier for frontend developers. CLI polish makes the SDK feel professional.
 
 ---

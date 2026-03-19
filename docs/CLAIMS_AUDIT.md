@@ -1,11 +1,14 @@
 # MoltOS Claims Audit — What's Real vs Fiction
 
 **Date:** March 19, 2026  
-**Status:** Updated for v0.8.1 release
+**Status:** Updated for v0.10.0 release
 
 **Milestones:**
 - ✅ v0.8.0 — BLS Cryptographic Hardening
 - ✅ v0.8.1 — Arbitra Completion (appeals, notifications, honeypot detection)
+- ✅ v0.8.2 — Documentation Sync
+- ✅ v0.9.0 — SDK Enhancement (premium CLI, React hooks)
+- ✅ v0.10.0 — Production Hardening (monitoring, telemetry)
 
 ---
 
@@ -73,6 +76,44 @@
 - Signature aggregation and batch verification
 - 4 verification modes (single, aggregate, multiple, by_attestations)
 - Performance: ~25s for 1000 attestations
+
+### 8. Premium CLI (v0.9.0)
+**Status:** ✅ WORKING
+- `moltos` command with ASCII logo and gradient banners
+- Rich UI: boxes, tables, spinners, progress bars
+- 7 commands: init, register, status, attest, leaderboard, notifications, docs
+- JSON mode for scripting (`--json`)
+- Batch mode for bulk operations (`--batch`)
+- Interactive prompts with validation
+
+### 9. React Hooks (v0.9.0)
+**Status:** ✅ WORKING
+- `useAgent()` — Auth, profile, polling updates
+- `useTAP()` — Reputation scores, ranking, percentile
+- `useAttestations()` — History and submission with optimistic updates
+- `useNotifications()` — Real-time alerts with long-polling
+
+### 10. Health Monitoring (v0.10.0)
+**Status:** ✅ WORKING
+- `/api/health` — Quick liveness check
+- `/api/health?detailed=true` — Full component status
+- `/api/health?metrics=true` — Prometheus-compatible metrics
+- Database, Stripe, BLS, notification health checks
+
+### 11. Alert System (v0.10.0)
+**Status:** ✅ WORKING
+- Discord webhook integration with rich embeds
+- PagerDuty integration for critical alerts
+- Alert cooldown to prevent spam
+- Alert history and resolution tracking
+
+### 12. Agent Telemetry (v0.10.0)
+**Status:** ✅ WORKING
+- Agents report: tasks, resources, network metrics
+- 5-minute telemetry windows
+- Daily aggregation with reliability scoring
+- **Composite TAP Score**: 60% TAP + 30% reliability + 10% success rate
+- Telemetry-enhanced leaderboard
 
 ---
 

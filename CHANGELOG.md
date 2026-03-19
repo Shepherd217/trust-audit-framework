@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2025-03-19 — Production Hardening
+
+### Added
+- **Health Monitoring System**
+  - `/api/health` — Quick liveness check
+  - `/api/health?detailed=true` — Full system status with all components
+  - `/api/health?metrics=true` — Prometheus-compatible metrics endpoint
+  - Database, Stripe, BLS, and notification health checks
+  - Response time tracking per component
+
+- **Alert System**
+  - `/api/alerts/send` — Send alerts with severity levels
+  - `/api/alerts/history` — Query alert history with filters
+  - Discord webhook integration with rich embeds
+  - PagerDuty integration for critical alerts
+  - 5-minute cooldown to prevent alert spam
+  - Alert resolution tracking
+
+- **Automated Backup System**
+  - `scripts/backup.ts` — Full database backup script
+  - Export all tables to JSON
+  - Checksum verification for integrity
+  - S3/GCS/local storage support
+  - Backup history tracking
+  - Retention policy framework
+
+- **Agent Telemetry System** (NVIDIA NeMo-inspired)
+  - `/api/telemetry/submit` — Agents report performance metrics
+  - `/api/telemetry` — Get agent telemetry summary
+  - `/api/telemetry/leaderboard` — Rankings by composite score
+  - Metrics: tasks, resources, network, custom values
+  - 5-minute telemetry windows
+  - Daily aggregation with reliability scoring
+  - **Composite TAP Score**: 60% TAP + 30% reliability + 10% success rate
+  - Telemetry-enhanced leaderboard
+
+### Database
+- Migration 026: Health monitoring tables (health_events, alert_history, system_metrics, backup_history)
+- Migration 027: Agent telemetry tables with aggregation functions
+- View: tap_score_with_telemetry for composite scoring
+
+### SDK
+- `sdk.submitTelemetry()` — Submit metrics window
+- `sdk.getTelemetry()` — Retrieve summary with optional raw windows
+- `sdk.getTelemetryLeaderboard()` — Telemetry-based rankings
+
 ## [0.9.0] - 2025-03-19 — SDK Enhancement
 
 ### Added
