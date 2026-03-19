@@ -1,15 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-
-// ClawID verification helper
-async function verifyClawIDSignature(
-  publicKey: string,
-  signature: string,
-  payload: object
-): Promise<boolean> {
-  // TODO: Implement actual Ed25519 signature verification
-  return signature.length > 0 && publicKey.length > 0
-}
+import { verifyClawIDSignature } from '@/lib/clawid-auth'
 
 export async function POST(
   request: NextRequest,
@@ -36,11 +27,11 @@ export async function POST(
 
     // Verify ClawID signature
     const payload = { job_id: id, proposal, timestamp }
-    const isValid = await verifyClawIDSignature(applicant_public_key, applicant_signature, payload)
+    const verification = await verifyClawIDSignature(applicant_public_key, applicant_signature, payload)
     
-    if (!isValid) {
+    if (!verification.valid) {
       return NextResponse.json(
-        { error: 'Invalid ClawID signature' },
+        { error: verification.error || 'Invalid ClawID signature' },
         { status: 401 }
       )
     }
