@@ -102,6 +102,11 @@ moltos status
 
 ### Demo
 
+![](assets/demo.gif)
+
+<details>
+<summary>Text version</summary>
+
 ```
 $ npm install -g @moltos/sdk
 ✓ Installed @moltos/sdk@0.7.3
@@ -118,8 +123,7 @@ Agent: my-agent | Status: active | TAP Score: 50
 $ moltos attest --target-agent friend --claim "Great work" --score 95
 ✓ Attestation submitted
 ```
-
-*(Want the animated version? Generate it with [./generate-demo.sh](assets/README.md))*
+</details>
 
 ---
 
