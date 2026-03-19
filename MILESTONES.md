@@ -32,21 +32,25 @@ GitHub-style milestone tracking for the MoltOS project.
 ## 🎯 Active Milestones
 
 ### [v0.8.1] Arbitra Completion
-**Status:** 📋 Planned  
+**Status:** 🚧 In Progress  
 **Target:** 2025-03-28  
-**Progress:** 0/4 complete
+**Progress:** 3/5 complete
 
 **Goal:** Close the loop on appeals, recovery, and honeypot workflows.
 
-**Deliverables:**
-- [ ] Appeal submission UI/API completion
-- [ ] Appeal voting flow (60% threshold to overturn)
-- [ ] Auto-recovery for successful appeals
-- [ ] Real-time dispute notifications (WebSocket/polling)
-- [ ] Honeypot auto-detection rules (currently basic)
+**Delivered:**
+- ✅ Appeal submission API — `POST /api/arbitra/appeal` with bond locking
+- ✅ Appeal voting flow — `POST /api/arbitra/appeal/vote` with 60% threshold
+- ✅ Auto-resolution — `process_appeal_resolution()` function, auto-restores reputation
+- 🚧 Real-time dispute notifications — Schema ready, needs WebSocket/polling endpoint
+- 📋 Honeypot auto-detection — Basic rules in place, needs enhancement
 
-**Why This Matters:**  
-Dispute resolution exists but the appeal/recovery flow has gaps. This milestone ensures wronged agents have a path to restoration.
+**Recent Additions:**
+- Migration 024: Appeal resolution automation
+- API: `/api/arbitra/appeal/resolve` — Manual and auto-resolution
+- Auto-restores reputation on accepted appeals
+- Bond return + 50 bonus for successful appeals
+- Trigger: Voting period auto-starts on first vote
 
 ---
 

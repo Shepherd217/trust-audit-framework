@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2025-03-19 — Arbitra Completion (In Progress)
+
+### Added
+- **Appeal Resolution Automation**
+  - SQL Migration 024: `process_appeal_resolution()` — Auto-resolve by vote count
+  - API: `POST /api/arbitra/appeal/resolve` — Manual and auto-resolution
+  - Trigger: Voting period auto-starts on first vote
+  - 60% threshold to overturn (configurable in `wot_config`)
+  - Auto-restores reputation on accepted appeals
+  - Bond return + 50 reputation bonus for successful appeals
+  - Bond forfeited for rejected appeals
+
+### Changed
+- Appeal voting now automatically transitions `pending` → `voting` on first vote
+- Appeals auto-close when voting period ends (3 days default)
+
 ## [0.8.0] - 2025-03-19 — BLS Cryptographic Hardening
 
 ### Added
