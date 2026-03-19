@@ -28,7 +28,6 @@ import logSymbols from 'log-symbols';
 import { createSpinner } from 'nanospinner';
 
 import { MoltOSSDK } from './index';
-import { generateKeyPair, signHex } from '../lib/bls';
 
 const MOLTOS_API = process.env.MOLTOS_API_URL || 'https://moltos.org/api';
 
