@@ -1,418 +1,340 @@
 /**
- * Stripe Webhook Handler for Subscriptions
+ * Stripe Webhook Handler
  * POST /api/stripe/webhook
  * 
- * Handles Stripe webhook events for subscription lifecycle:
- * - checkout.session.completed: New subscription created
- * - invoice.paid: Successful recurring payment
- * - invoice.payment_failed: Failed payment (subscription past_due)
- * - customer.subscription.updated: Subscription status changes
- * - customer.subscription.deleted: Subscription canceled
+ * Handles:
+ * - Subscription lifecycle (existing)
+ * - Escrow payments (new)
+ * - Connect transfers (new)
+ * - Refunds (new)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
+import { supabase } from '@/lib/supabase';
 import Stripe from 'stripe';
 
-// Events we handle for subscription lifecycle
 const HANDLED_EVENTS = [
+  // Subscriptions
   'checkout.session.completed',
   'invoice.paid',
   'invoice.payment_failed',
   'customer.subscription.created',
   'customer.subscription.updated',
   'customer.subscription.deleted',
-  'customer.subscription.paused',
-  'customer.subscription.resumed',
+  // Escrow / Connect
+  'payment_intent.succeeded',
+  'payment_intent.payment_failed',
+  'transfer.created',
+  'charge.refunded',
+  'account.updated',
 ];
 
-/**
- * POST handler for Stripe webhooks
- */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const payload = await request.text();
   const signature = request.headers.get('stripe-signature');
 
-  // Validate signature header
   if (!signature) {
-    console.error('[Stripe Webhook] Missing stripe-signature header');
-    return NextResponse.json(
-      { error: 'Missing stripe-signature header' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
   }
 
   let event: Stripe.Event;
 
   try {
-    // Verify webhook signature
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
-    event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[Stripe Webhook] Signature verification failed:', errorMessage);
-    return NextResponse.json(
-      { error: 'Invalid signature', details: errorMessage },
-      { status: 401 }
+    event = stripe.webhooks.constructEvent(
+      payload,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET!
     );
+  } catch (error) {
+    console.error('[Webhook] Signature verification failed:', error);
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
-  // Log handled events
-  if (HANDLED_EVENTS.includes(event.type)) {
-    console.log(`[Stripe Webhook] ${event.type} received:`, {
-      eventId: event.id,
-      created: new Date(event.created * 1000).toISOString(),
-    });
-  } else {
-    // Acknowledge but ignore unhandled events
-    return NextResponse.json({ received: true, handled: false }, { status: 200 });
-  }
+  console.log(`[Webhook] ${event.type}:`, event.id);
 
   try {
-    // Process the event
     const result = await handleWebhookEvent(event);
-
-    console.log(`[Stripe Webhook] ${event.type} processed:`, {
-      action: result.action,
-      subscriptionId: result.subscriptionId,
-      userId: result.userId,
-    });
-
-    return NextResponse.json(
-      {
-        received: true,
-        handled: true,
-        action: result.action,
-      },
-      { status: 200 }
-    );
-
+    return NextResponse.json({ received: true, ...result }, { status: 200 });
   } catch (error) {
-    console.error(`[Stripe Webhook] Error processing ${event.type}:`, error);
-
-    // Return 500 for transient errors so Stripe retries
-    // Return 200 for expected errors we don't want retried
-    const isStripeError = error instanceof Stripe.errors.StripeError;
-    const statusCode = isStripeError ? (error.statusCode || 500) : 500;
-
-    return NextResponse.json(
-      {
-        received: true,
-        handled: false,
-        error: error instanceof Error ? error.message : 'Processing error',
-      },
-      { status: statusCode }
-    );
+    console.error(`[Webhook] Error processing ${event.type}:`, error);
+    return NextResponse.json({ received: true, error: 'Processing failed' }, { status: 500 });
   }
 }
 
-/**
- * Handle webhook events
- */
-async function handleWebhookEvent(event: Stripe.Event): Promise<{
-  action: string;
-  subscriptionId?: string;
-  userId?: string;
-}> {
-  const { type, data } = event;
-
-  switch (type) {
+async function handleWebhookEvent(event: Stripe.Event) {
+  switch (event.type) {
+    // ESCROW EVENTS
+    case 'payment_intent.succeeded':
+      return handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
+    
+    case 'payment_intent.payment_failed':
+      return handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
+    
+    case 'transfer.created':
+      return handleTransferCreated(event.data.object as Stripe.Transfer);
+    
+    case 'charge.refunded':
+      return handleChargeRefunded(event.data.object as Stripe.Charge);
+    
+    // CONNECT ACCOUNT EVENTS
+    case 'account.updated':
+      return handleAccountUpdated(event.data.object as Stripe.Account);
+    
+    // SUBSCRIPTION EVENTS (existing functionality, now with DB updates)
     case 'checkout.session.completed':
-      return handleCheckoutSessionCompleted(data.object as Stripe.Checkout.Session);
-
+      return handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+    
     case 'invoice.paid':
-      return handleInvoicePaid(data.object as Stripe.Invoice);
-
+      return handleInvoicePaid(event.data.object as Stripe.Invoice);
+    
     case 'invoice.payment_failed':
-      return handleInvoicePaymentFailed(data.object as Stripe.Invoice);
-
-    case 'customer.subscription.created':
-      return handleSubscriptionCreated(data.object as Stripe.Subscription);
-
+      return handleInvoiceFailed(event.data.object as Stripe.Invoice);
+    
     case 'customer.subscription.updated':
-      return handleSubscriptionUpdated(data.object as Stripe.Subscription);
-
+      return handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
+    
     case 'customer.subscription.deleted':
-      return handleSubscriptionDeleted(data.object as Stripe.Subscription);
-
-    case 'customer.subscription.paused':
-      return handleSubscriptionPaused(data.object as Stripe.Subscription);
-
-    case 'customer.subscription.resumed':
-      return handleSubscriptionResumed(data.object as Stripe.Subscription);
-
+      return handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+    
     default:
-      return { action: 'UNHANDLED' };
+      return { handled: false };
   }
 }
 
 // ============================================================================
-// Event Handlers
+// ESCROW EVENT HANDLERS
 // ============================================================================
 
-/**
- * Handle checkout.session.completed
- * Called when a customer successfully completes checkout
- */
-async function handleCheckoutSessionCompleted(
-  session: Stripe.Checkout.Session
-): Promise<{ action: string; subscriptionId?: string; userId?: string }> {
-  const { subscription, customer, metadata } = session;
-  const userId = metadata?.userId;
-  const tier = metadata?.tier;
-
-  if (!userId) {
-    console.warn('[Stripe Webhook] No userId in session metadata');
+async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+  const escrowId = paymentIntent.metadata?.escrow_id;
+  
+  if (!escrowId) {
+    return { handled: false, reason: 'Not an escrow payment' };
   }
 
-  console.log('[Stripe Webhook] Checkout completed:', {
-    sessionId: session.id,
-    subscriptionId: subscription,
-    customerId: customer,
-    userId,
-    tier,
+  // Lock the escrow
+  const { data: escrow } = await supabase
+    .from('payment_escrows')
+    .select('id, amount_total, hirer_id')
+    .eq('stripe_payment_intent_id', paymentIntent.id)
+    .single();
+
+  if (!escrow) {
+    return { handled: false, reason: 'Escrow not found' };
+  }
+
+  await supabase.from('payment_escrows').update({
+    status: 'locked',
+    amount_locked: escrow.amount_total,
+    locked_at: new Date().toISOString(),
+  }).eq('id', escrow.id);
+
+  // Set first milestone to in_progress
+  await supabase
+    .from('escrow_milestones')
+    .update({ status: 'in_progress' })
+    .eq('escrow_id', escrow.id)
+    .eq('milestone_index', 0);
+
+  // Log
+  await supabase.from('payment_audit_log').insert({
+    escrow_id: escrow.id,
+    event_type: 'stripe_payment_succeeded',
+    stripe_event_id: paymentIntent.id,
+    actor_id: 'system',
+    actor_type: 'stripe_webhook',
+    amount_after: escrow.amount_total,
   });
 
-  // TODO: Update database
-  // - Create subscription record
-  // - Update user's subscription status to 'active'
-  // - Grant access to tier features
-
-  return {
-    action: 'CHECKOUT_COMPLETED',
-    subscriptionId: subscription as string,
-    userId,
-  };
+  return { handled: true, action: 'ESCROW_LOCKED', escrow_id: escrow.id };
 }
 
-/**
- * Handle invoice.paid
- * Called for successful recurring payments
- */
-async function handleInvoicePaid(
-  invoice: Stripe.Invoice
-): Promise<{ action: string; subscriptionId?: string; userId?: string }> {
-  const subscriptionId = (invoice as any).subscription as string;
-  const customerId = invoice.customer as string;
+async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
+  const escrowId = paymentIntent.metadata?.escrow_id;
+  
+  if (!escrowId) return { handled: false };
 
-  // Retrieve subscription to get metadata
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  const userId = subscription.metadata?.userId;
+  await supabase.from('payment_escrows').update({
+    status: 'cancelled',
+  }).eq('stripe_payment_intent_id', paymentIntent.id);
 
-  console.log('[Stripe Webhook] Invoice paid:', {
-    invoiceId: invoice.id,
-    subscriptionId,
-    customerId,
-    userId,
+  return { handled: true, action: 'ESCROW_CANCELLED' };
+}
+
+async function handleTransferCreated(transfer: Stripe.Transfer) {
+  const escrowId = transfer.transfer_group;
+  
+  if (!escrowId) return { handled: false };
+
+  // Update milestone with transfer ID (already done in API, but webhook confirms)
+  await supabase.from('payment_audit_log').insert({
+    escrow_id: escrowId,
+    event_type: 'stripe_transfer_confirmed',
+    stripe_event_id: transfer.id,
+    actor_id: 'system',
+    actor_type: 'stripe_webhook',
+    event_data: { amount: transfer.amount },
+  });
+
+  return { handled: true, action: 'TRANSFER_CONFIRMED' };
+}
+
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  // Handle refund if needed
+  const paymentIntentId = charge.payment_intent as string;
+  
+  const { data: escrow } = await supabase
+    .from('payment_escrows')
+    .select('id')
+    .eq('stripe_payment_intent_id', paymentIntentId)
+    .single();
+
+  if (!escrow) return { handled: false };
+
+  await supabase.from('payment_escrows').update({
+    status: 'refunded',
+    refunded_at: new Date().toISOString(),
+  }).eq('id', escrow.id);
+
+  await supabase.from('payment_audit_log').insert({
+    escrow_id: escrow.id,
+    event_type: 'stripe_refund_processed',
+    stripe_event_id: charge.id,
+    actor_id: 'system',
+    actor_type: 'stripe_webhook',
+    amount_after: 0,
+  });
+
+  return { handled: true, action: 'REFUND_PROCESSED' };
+}
+
+async function handleAccountUpdated(account: Stripe.Account) {
+  // Update Connect account status
+  await supabase.from('stripe_connect_accounts').update({
+    charges_enabled: account.charges_enabled,
+    payouts_enabled: account.payouts_enabled,
+    requirements_due: account.requirements?.currently_due || [],
+    updated_at: new Date().toISOString(),
+    onboarded_at: account.charges_enabled ? new Date().toISOString() : undefined,
+  }).eq('stripe_account_id', account.id);
+
+  return { handled: true, action: 'ACCOUNT_UPDATED' };
+}
+
+// ============================================================================
+// SUBSCRIPTION EVENT HANDLERS (Fixed TODOs)
+// ============================================================================
+
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.userId;
+  const tier = session.metadata?.tier;
+  
+  if (!userId) return { handled: false, reason: 'No userId' };
+
+  // Create or update subscription record
+  await supabase.from('user_subscriptions').upsert({
+    user_id: userId,
+    stripe_subscription_id: session.subscription as string,
+    stripe_customer_id: session.customer as string,
+    tier: tier || 'starter',
+    status: 'active',
+    current_period_start: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+  }, { onConflict: 'user_id' });
+
+  // Update agent tier
+  await supabase.from('agent_registry').update({
+    subscription_tier: tier,
+    updated_at: new Date().toISOString(),
+  }).eq('agent_id', userId);
+
+  return { handled: true, action: 'SUBSCRIPTION_CREATED', userId };
+}
+
+async function handleInvoicePaid(invoice: Stripe.Invoice) {
+  const subscriptionId = invoice.subscription as string;
+  
+  const { data: sub } = await supabase
+    .from('user_subscriptions')
+    .select('user_id')
+    .eq('stripe_subscription_id', subscriptionId)
+    .single();
+
+  if (!sub) return { handled: false };
+
+  await supabase.from('subscription_payments').insert({
+    user_id: sub.user_id,
+    stripe_subscription_id: subscriptionId,
+    stripe_invoice_id: invoice.id,
     amount: invoice.amount_paid,
-    periodStart: invoice.period_start,
-    periodEnd: invoice.period_end,
+    status: 'succeeded',
+    period_start: new Date(invoice.period_start * 1000).toISOString(),
+    period_end: new Date(invoice.period_end * 1000).toISOString(),
   });
 
-  // TODO: Update database
-  // - Record payment
-  // - Update subscription period
-  // - Ensure access remains active
+  await supabase.from('user_subscriptions').update({
+    status: 'active',
+    current_period_end: new Date(invoice.period_end * 1000).toISOString(),
+  }).eq('stripe_subscription_id', subscriptionId);
 
-  return {
-    action: 'INVOICE_PAID',
-    subscriptionId,
-    userId,
-  };
+  return { handled: true, action: 'PAYMENT_RECORDED' };
 }
 
-/**
- * Handle invoice.payment_failed
- * Called when a recurring payment fails
- */
-async function handleInvoicePaymentFailed(
-  invoice: Stripe.Invoice
-): Promise<{ action: string; subscriptionId?: string; userId?: string }> {
-  const subscriptionId = (invoice as any).subscription as string;
-  const customerId = invoice.customer as string;
+async function handleInvoiceFailed(invoice: Stripe.Invoice) {
+  const subscriptionId = invoice.subscription as string;
+  
+  await supabase.from('user_subscriptions').update({
+    status: 'past_due',
+  }).eq('stripe_subscription_id', subscriptionId);
 
-  // Retrieve subscription to get metadata
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  const userId = subscription.metadata?.userId;
+  // Could trigger email notification here
 
-  console.log('[Stripe Webhook] Invoice payment failed:', {
-    invoiceId: invoice.id,
-    subscriptionId,
-    customerId,
-    userId,
-    amountDue: invoice.amount_due,
-    attemptCount: invoice.attempt_count,
-    nextPaymentAttempt: invoice.next_payment_attempt,
-  });
-
-  // TODO: Update database
-  // - Mark subscription as past_due
-  // - Notify user of payment failure
-  // - Optionally restrict access after grace period
-
-  // TODO: Send notification to user
-  // - Email: Payment failed, update payment method
-
-  return {
-    action: 'INVOICE_PAYMENT_FAILED',
-    subscriptionId,
-    userId,
-  };
+  return { handled: true, action: 'PAYMENT_FAILED' };
 }
 
-/**
- * Handle customer.subscription.created
- */
-async function handleSubscriptionCreated(
-  subscription: Stripe.Subscription
-): Promise<{ action: string; subscriptionId?: string; userId?: string }> {
-  const userId = subscription.metadata?.userId;
-
-  console.log('[Stripe Webhook] Subscription created:', {
-    subscriptionId: subscription.id,
-    status: subscription.status,
-    userId,
-    currentPeriodStart: (subscription as any).current_period_start,
-    currentPeriodEnd: (subscription as any).current_period_end,
-  });
-
-  // TODO: Create subscription record in database
-
-  return {
-    action: 'SUBSCRIPTION_CREATED',
-    subscriptionId: subscription.id,
-    userId,
-  };
-}
-
-/**
- * Handle customer.subscription.updated
- * Handles status changes: active, past_due, unpaid, canceled, etc.
- */
-async function handleSubscriptionUpdated(
-  subscription: Stripe.Subscription
-): Promise<{ action: string; subscriptionId?: string; userId?: string }> {
-  const userId = subscription.metadata?.userId;
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const status = subscription.status;
-
-  console.log('[Stripe Webhook] Subscription updated:', {
-    subscriptionId: subscription.id,
+  
+  await supabase.from('user_subscriptions').update({
     status,
-    userId,
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
-    canceledAt: subscription.canceled_at,
-  });
+    cancel_at_period_end: subscription.cancel_at_period_end,
+    updated_at: new Date().toISOString(),
+  }).eq('stripe_subscription_id', subscription.id);
 
-  // Handle different subscription statuses
-  switch (status) {
-    case 'active':
-      // Subscription is active
-      // TODO: Ensure user has full access
-      break;
-
-    case 'past_due':
-      // Payment failed but within retry window
-      // TODO: Notify user, potentially restrict access
-      break;
-
-    case 'unpaid':
-      // Payment failed after all retries
-      // TODO: Suspend access, notify user
-      break;
-
-    case 'canceled':
-      // Subscription has been canceled
-      // TODO: Schedule access removal at period end
-      break;
-
-    case 'paused':
-      // Subscription is paused
-      // TODO: Suspend access
-      break;
-
-    default:
-      break;
+  // If canceled, update agent
+  if (status === 'canceled') {
+    const { data: sub } = await supabase
+      .from('user_subscriptions')
+      .select('user_id')
+      .eq('stripe_subscription_id', subscription.id)
+      .single();
+    
+    if (sub) {
+      await supabase.from('agent_registry').update({
+        subscription_tier: null,
+      }).eq('agent_id', sub.user_id);
+    }
   }
 
-  // TODO: Update database with new status
-
-  return {
-    action: `SUBSCRIPTION_${status.toUpperCase()}`,
-    subscriptionId: subscription.id,
-    userId,
-  };
+  return { handled: true, action: `SUBSCRIPTION_${status.toUpperCase()}` };
 }
 
-/**
- * Handle customer.subscription.deleted
- * Called when subscription is canceled and period has ended
- */
-async function handleSubscriptionDeleted(
-  subscription: Stripe.Subscription
-): Promise<{ action: string; subscriptionId?: string; userId?: string }> {
-  const userId = subscription.metadata?.userId;
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  const { data: sub } = await supabase
+    .from('user_subscriptions')
+    .select('user_id')
+    .eq('stripe_subscription_id', subscription.id)
+    .single();
 
-  console.log('[Stripe Webhook] Subscription deleted:', {
-    subscriptionId: subscription.id,
-    userId,
-    endedAt: subscription.ended_at,
-  });
+  if (sub) {
+    await supabase.from('agent_registry').update({
+      subscription_tier: null,
+    }).eq('agent_id', sub.user_id);
 
-  // TODO: Update database
-  // - Mark subscription as canceled
-  // - Remove access to paid features
-  // - Optionally downgrade to free tier
+    await supabase.from('user_subscriptions').delete()
+      .eq('stripe_subscription_id', subscription.id);
+  }
 
-  // TODO: Send notification
-  // - Email: Subscription ended, consider re-subscribing
-
-  return {
-    action: 'SUBSCRIPTION_DELETED',
-    subscriptionId: subscription.id,
-    userId,
-  };
-}
-
-/**
- * Handle customer.subscription.paused
- */
-async function handleSubscriptionPaused(
-  subscription: Stripe.Subscription
-): Promise<{ action: string; subscriptionId?: string; userId?: string }> {
-  const userId = subscription.metadata?.userId;
-
-  console.log('[Stripe Webhook] Subscription paused:', {
-    subscriptionId: subscription.id,
-    userId,
-  });
-
-  // TODO: Suspend access during pause
-
-  return {
-    action: 'SUBSCRIPTION_PAUSED',
-    subscriptionId: subscription.id,
-    userId,
-  };
-}
-
-/**
- * Handle customer.subscription.resumed
- */
-async function handleSubscriptionResumed(
-  subscription: Stripe.Subscription
-): Promise<{ action: string; subscriptionId?: string; userId?: string }> {
-  const userId = subscription.metadata?.userId;
-
-  console.log('[Stripe Webhook] Subscription resumed:', {
-    subscriptionId: subscription.id,
-    userId,
-  });
-
-  // TODO: Restore access
-
-  return {
-    action: 'SUBSCRIPTION_RESUMED',
-    subscriptionId: subscription.id,
-    userId,
-  };
+  return { handled: true, action: 'SUBSCRIPTION_DELETED' };
 }
