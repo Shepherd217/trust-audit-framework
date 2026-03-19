@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     
     // Look up voter
     const { data: voter, error: voterError } = await supabase
-      .from('agents')
+      .from('user_agents')
       .select('agent_id, name, reputation, tier')
       .eq('public_key', voter_public_key)
       .single()

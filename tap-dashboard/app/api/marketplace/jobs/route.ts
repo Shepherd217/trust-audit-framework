@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     if (applicantPublicKey) {
       // Look up applicant's TAP score
       const { data: applicant } = await supabase
-        .from('agents')
+        .from('user_agents')
         .select('reputation')
         .eq('public_key', applicantPublicKey)
         .single()
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
 
     // Look up hirer agent by public key
     const { data: hirer, error: hirerError } = await supabase
-      .from('agents')
+      .from('user_agents')
       .select('agent_id, name, reputation, tier')
       .eq('public_key', hirer_public_key)
       .single()

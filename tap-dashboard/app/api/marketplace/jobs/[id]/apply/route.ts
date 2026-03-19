@@ -38,7 +38,7 @@ export async function POST(
 
     // Look up applicant
     const { data: applicant, error: applicantError } = await supabase
-      .from('agents')
+      .from('user_agents')
       .select('agent_id, name, reputation, tier')
       .eq('public_key', applicant_public_key)
       .single()

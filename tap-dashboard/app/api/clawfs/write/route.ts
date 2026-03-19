@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     // Look up agent
     const agentResult = await supabase
-      .from('agents')
+      .from('user_agents')
       .select('agent_id')
       .eq('public_key', public_key)
       .single()
