@@ -21,10 +21,15 @@ let blst: any = null;
 let useBlst = false;
 
 async function initBlst() {
+  // DISABLED: blst has API incompatibilities with noble curves
+  // Using @noble/curves for reliability until blst is properly integrated
+  console.log('[BLS] Using @noble/curves (proven stable)');
+  return false;
+  
+  /* Future: Re-enable after full API compatibility testing
   if (blst !== null) return useBlst;
   
   try {
-    // Dynamic import to avoid breaking if not installed
     const blstModule = await import('@chainsafe/blst');
     blst = blstModule;
     useBlst = true;
@@ -34,6 +39,7 @@ async function initBlst() {
     console.log('[BLS] Using @noble/curves (pure JS fallback)');
     return false;
   }
+  */
 }
 
 // Initialize on module load
