@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
 import Stripe from 'stripe';
+import { applyRateLimit, applySecurityHeaders } from '@/lib/security';
 
 const HANDLED_EVENTS = [
   // Subscriptions
@@ -31,11 +32,28 @@ const HANDLED_EVENTS = [
 ];
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const path = '/api/stripe/webhook';
+  
+  // Apply rate limiting (100 req/min - Stripe can burst)
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   const payload = await request.text();
   const signature = request.headers.get('stripe-signature');
 
   if (!signature) {
-    return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
+    const response = NextResponse.json({ error: 'Missing signature' }, { status: 400 });
+    return applySecurityHeaders(response);
+  }
+
+  // Verify webhook secret is configured
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error('[Webhook] STRIPE_WEBHOOK_SECRET not configured');
+    const response = NextResponse.json({ error: 'Webhook not configured' }, { status: 500 });
+    return applySecurityHeaders(response);
   }
 
   let event: Stripe.Event;
@@ -44,21 +62,51 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     event = stripe.webhooks.constructEvent(
       payload,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      webhookSecret
     );
   } catch (error) {
     console.error('[Webhook] Signature verification failed:', error);
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    const response = NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    
+    // Add rate limit headers even on auth failure
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
   }
 
   console.log(`[Webhook] ${event.type}:`, event.id);
 
+  // Only process handled events
+  if (!HANDLED_EVENTS.includes(event.type)) {
+    const response = NextResponse.json({ received: true, handled: false }, { status: 200 });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
+  }
+
   try {
     const result = await handleWebhookEvent(event);
-    return NextResponse.json({ received: true, ...result }, { status: 200 });
+    const response = NextResponse.json({ received: true, ...result }, { status: 200 });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
   } catch (error) {
     console.error(`[Webhook] Error processing ${event.type}:`, error);
-    return NextResponse.json({ received: true, error: 'Processing failed' }, { status: 500 });
+    const response = NextResponse.json({ received: true, error: 'Processing failed' }, { status: 500 });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
   }
 }
 

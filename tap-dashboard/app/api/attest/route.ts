@@ -1,5 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { 
+  applyRateLimit, 
+  applySecurityHeaders,
+  validateBodySize
+} from '@/lib/security';
 
 // Lazy initialization of Supabase client
 let supabase: ReturnType<typeof createClient> | null = null;
@@ -17,6 +22,10 @@ function getSupabase() {
   }
   return supabase;
 }
+
+// Rate limit configuration
+const RATE_LIMIT = { requests: 10, windowMs: 60 * 1000 }; // 10 per minute
+const MAX_BODY_SIZE_KB = 500; // 500KB max for reports
 
 // Input sanitization helper
 function sanitizeInput(input: any): any {
@@ -37,20 +46,45 @@ function sanitizeInput(input: any): any {
 }
 
 // Safe error response (don't expose schema)
-function safeError(message: string, status: number = 400) {
-  return NextResponse.json(
+function safeError(message: string, status: number = 400, headers?: Record<string, string>) {
+  const response = NextResponse.json(
     { error: message },
     { status }
   );
+  
+  if (headers) {
+    Object.entries(headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+  }
+  
+  return applySecurityHeaders(response);
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const path = '/api/attest';
+  
+  // Apply rate limiting
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
+    // Read body text for size validation
+    const bodyText = await request.text();
+    
+    // Validate body size
+    const sizeCheck = validateBodySize(bodyText, MAX_BODY_SIZE_KB);
+    if (!sizeCheck.valid) {
+      return safeError(sizeCheck.error!, 413, rateLimitHeaders);
+    }
+    
     let body;
     try {
-      body = await request.json();
+      body = JSON.parse(bodyText);
     } catch {
-      return safeError('Invalid JSON payload', 400);
+      return safeError('Invalid JSON payload', 400, rateLimitHeaders);
     }
 
     // Sanitize all inputs
@@ -60,16 +94,16 @@ export async function POST(request: Request) {
 
     // Validate required fields
     if (!repo || typeof repo !== 'string') {
-      return safeError('repo is required and must be a string', 400);
+      return safeError('repo is required and must be a string', 400, rateLimitHeaders);
     }
     
     if (!commit || typeof commit !== 'string') {
-      return safeError('commit is required and must be a string', 400);
+      return safeError('commit is required and must be a string', 400, rateLimitHeaders);
     }
 
     // Validate string lengths
     if (repo.length > 255 || commit.length > 255) {
-      return safeError('Input too long', 400);
+      return safeError('Input too long', 400, rateLimitHeaders);
     }
 
     // Calculate Integrity from report
@@ -103,11 +137,11 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('Database error:', error);
-      return safeError('Failed to create attestation', 500);
+      return safeError('Failed to create attestation', 500, rateLimitHeaders);
     }
 
-    // Return success
-    return NextResponse.json({
+    // Return success with security headers
+    const response = NextResponse.json({
       success: true,
       attestation: {
         id: data.id,
@@ -122,20 +156,46 @@ export async function POST(request: Request) {
         ? '✅ Accepted into TAP! Welcome to the trust layer.'
         : '❌ Preflight failed. Check issues and resubmit.'
     });
+    
+    // Add rate limit headers
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
 
   } catch (err: any) {
     console.error('Unexpected error:', err);
-    return safeError('Internal server error', 500);
+    return safeError('Internal server error', 500, rateLimitHeaders);
   }
 }
 
-export async function GET() {
-  return NextResponse.json({
+export async function GET(request: NextRequest) {
+  const path = '/api/attest';
+  
+  // Apply rate limiting
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
+  const response = NextResponse.json({
     status: 'TAP Attestation API',
     version: 'v0.1',
     endpoints: {
-      POST: '/api/attest - Submit attestation',
+      POST: '/api/attest - Submit attestation (10 req/min)',
       GET: '/api/attest - This info'
+    },
+    limits: {
+      maxBodySizeKB: MAX_BODY_SIZE_KB,
+      rateLimit: '10 requests per minute'
     }
   });
+  
+  // Add rate limit headers
+  Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+  
+  return applySecurityHeaders(response);
 }
