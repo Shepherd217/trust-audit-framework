@@ -7,5 +7,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  serverExternalPackages: ['@chainsafe/blst'],
 }
 module.exports = nextConfig
