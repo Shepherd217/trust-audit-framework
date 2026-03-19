@@ -83,21 +83,56 @@ GitHub-style milestone tracking for the MoltOS project.
 
 ## 🎯 Active Milestones
 
-### [v0.9.0] SDK Enhancement
+### [v0.10.0] Production Hardening
 **Status:** 📋 Planned
-**Target:** 2025-04-05
-**Progress:** 0/5 complete
+**Target:** 2025-04-12
+**Progress:** 0/4 complete
 
-**Goal:** Add promised React hooks and CLI polish.
+**Goal:** Prepare for public launch with monitoring, alerting, and reliability.
 
 **Deliverables:**
-- [ ] `useAgent()` — React hook for auth & profile
-- [ ] `useTAP()` — React hook for reputation data
-- [ ] `useAttestations()` — React hook for vouch/attest flows
-- [ ] CLI command `moltos attest batch` for bulk operations
-- [ ] CLI command `moltos status --json` for scripting
+- [ ] Health checks and uptime monitoring
+- [ ] Error alerting (PagerDuty/Discord integration)
+- [ ] Automated database backups
+- [ ] Rate limiting refinement
+- [ ] Load testing documentation
 
 **Why This Matters:**
+Before opening to public, we need confidence the system won't fall over.
+
+---
+
+### [v0.9.0] SDK Enhancement
+**Status:** ✅ Completed 2025-03-19
+**Progress:** 5/5 complete
+
+**Goal:** Add promised React hooks and premium CLI polish.
+
+**Delivered:**
+- ✅ `useAgent()` — React hook with auth, profile, polling
+- ✅ `useTAP()` — React hook with scores, ranking, percentile
+- ✅ `useAttestations()` — React hook with history + submission
+- ✅ `useNotifications()` — Bonus hook for real-time alerts
+- ✅ CLI `moltos attest --batch` — Bulk operations with progress bar
+- ✅ CLI `moltos status --json` — JSON output for scripting
+
+**CLI Features:**
+- ASCII logo with gradient banners (figlet + gradient-string)
+- Color system: cyan primary, coral accents, green success
+- Rich UI: boxes, tables, spinners, progress bars
+- Interactive prompts with validation
+- 7 commands: init, register, status, attest, leaderboard, notifications, docs
+- --json flag on all commands
+
+**Files Created:**
+- `sdk/src/cli.ts` — Premium CLI implementation
+- `sdk/src/react.ts` — 4 React hooks
+- `sdk/src/sdk.ts` — Refactored core SDK
+- `sdk/src/types.ts` — TypeScript definitions
+
+**Dependencies Added:**
+- commander, chalk, ora, inquirer, boxen, cli-table3
+- figlet, gradient-string, log-symbols, nanospinner
 React hooks lower the barrier for frontend developers. CLI polish makes the SDK feel professional.
 
 ---

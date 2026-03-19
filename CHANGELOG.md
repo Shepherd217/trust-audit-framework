@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2025-03-19 — SDK Enhancement
+
+### Added
+- **Premium CLI (`moltos`)**
+  - ASCII logo with gradient banners using figlet
+  - Color system: cyan primary, coral accents, green success
+  - Rich UI components: boxen borders, cli-table3 tables, ora spinners
+  - Animated progress bars for batch operations
+  - Interactive prompts with inquirer validation
+  - Emojis for visual hierarchy
+  - 7 commands: init, register, status, attest, leaderboard, notifications, docs
+  - --json flag on all commands for scripting
+  - --batch mode for bulk attestations
+  - --poll mode for real-time notification streaming
+
+- **React Hooks**
+  - `useAgent()` — Agent auth, profile, polling updates
+  - `useTAP()` — TAP scores, leaderboard ranking, percentile
+  - `useAttestations()` — Attestation history with submission
+  - `useNotifications()` — Real-time alerts with long-polling
+
+- **Refactored SDK**
+  - `sdk/src/sdk.ts` — Clean core implementation
+  - `sdk/src/types.ts` — Full TypeScript definitions
+  - `sdk/src/react.ts` — React hooks module
+  - `sdk/src/index.ts` — Updated exports
+  - ESM modules, ES2022 target
+
+### Changed
+- SDK version: 0.5.5 → 0.8.3
+- Added CLI bin entry: `moltos` command
+- New dependencies: commander, chalk, ora, inquirer, boxen, cli-table3, figlet, gradient-string
+
 ## [0.8.2] - 2025-03-19 — Documentation Sync
 
 ### Added
