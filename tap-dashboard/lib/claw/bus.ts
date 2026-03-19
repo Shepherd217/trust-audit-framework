@@ -14,6 +14,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
 // ============================================================================
 // TYPES
@@ -189,6 +190,7 @@ const memoryStore: InMemoryStore = {
 // ============================================================================
 
 export interface BusConfig {
+  supabase?: SupabaseClient;
   supabaseUrl?: string;
   supabaseKey?: string;
   enablePersistence?: boolean;
@@ -204,13 +206,11 @@ export class ClawBus {
   private localAgentId?: string;
 
   constructor(config: BusConfig = {}) {
-    this.enablePersistence = config.enablePersistence ?? false;
+    // Use shared Supabase client by default (production mode)
+    this.supabase = config.supabase || supabase;
+    this.enablePersistence = config.enablePersistence ?? true; // Default to persistence enabled
     this.maxMessageHistory = config.maxMessageHistory ?? 1000;
     this.defaultTTL = config.defaultTTL ?? 300; // 5 minutes default
-
-    if (config.supabaseUrl && config.supabaseKey) {
-      this.supabase = createClient(config.supabaseUrl, config.supabaseKey);
-    }
   }
 
   /**
