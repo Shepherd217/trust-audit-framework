@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     // Look up voter
     const { data: voter, error: voterError } = await supabase
       .from('user_agents')
-      .select('agent_id, name, reputation, tier')
+      .select('id, name, reputation, tier')
       .eq('public_key', voter_public_key)
       .single()
     
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       .from('governance_votes')
       .select('id')
       .eq('proposal_id', proposal_id)
-      .eq('voter_id', voter.agent_id)
+      .eq('voter_id', voter.id)
       .single()
     
     if (existingVote) {
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         .from('governance_votes')
         .insert({
           proposal_id,
-          voter_id: voter.agent_id,
+          voter_id: voter.id,
           voter_public_key,
           voter_signature,
           vote_type,
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
         proposal_id,
         vote_type,
         voter: {
-          id: voter.agent_id,
+          id: voter.id,
           name: voter.name,
           tap_weight: voter.reputation,
         },
