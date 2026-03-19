@@ -1,16 +1,17 @@
 /**
  * Agent Telemetry API
- * 
- * POST /api/telemetry/submit — Agents report their metrics
- * GET /api/telemetry — Retrieve telemetry for an agent
- * GET /api/telemetry/leaderboard — Top performers by telemetry
- * 
+ *
+ * POST /api/telemetry/submit - Agents report their metrics
+ * GET /api/telemetry - Retrieve telemetry for an agent
+ * GET /api/telemetry/leaderboard - Top performers by telemetry
+ *
  * Inspired by NVIDIA NeMo Agent Toolkit's observability,
  * but designed for trust scoring, not just debugging.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
 
 // Lazy Supabase client
 let supabase: ReturnType<typeof createClient> | null = null;
@@ -55,36 +56,80 @@ interface TelemetryResponse {
   message?: string;
 }
 
+// Rate limit: 60 telemetry submissions per minute per IP (1 per second)
+const MAX_BODY_SIZE_KB = 100;
+const MAX_AGENT_ID_LENGTH = 100;
+
 /**
  * POST /api/telemetry/submit
  * Agents report their telemetry data
  */
 export async function POST(request: NextRequest) {
+  // Apply rate limiting - prevents data poisoning via spam
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, '/api/telemetry');
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
-    const body: TelemetryPayload = await request.json();
-    
+    // Read and validate body size
+    const bodyText = await request.text();
+    const sizeCheck = validateBodySize(bodyText, MAX_BODY_SIZE_KB);
+    if (!sizeCheck.valid) {
+      const response = NextResponse.json({
+        success: false,
+        error: sizeCheck.error
+      }, { status: 413 });
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
+    const body: TelemetryPayload = JSON.parse(bodyText);
+
     // Validate required fields
     if (!body.agent_id || !body.window_start || !body.window_end) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: false,
         error: 'agent_id, window_start, and window_end required'
       }, { status: 400 });
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
-    
+
+    // Validate agent_id format
+    if (typeof body.agent_id !== 'string' || body.agent_id.length > MAX_AGENT_ID_LENGTH) {
+      const response = NextResponse.json({
+        success: false,
+        error: `agent_id must be a string with max ${MAX_AGENT_ID_LENGTH} chars`
+      }, { status: 400 });
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
     // Verify agent exists
     const { data: agent, error: agentError } = await getSupabase()
       .from('agent_registry')
       .select('agent_id, name')
       .eq('agent_id', body.agent_id)
       .single();
-    
+
     if (agentError || !agent) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: false,
         error: 'Agent not found'
       }, { status: 404 });
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
-    
+
     // Submit telemetry via RPC
     const { data: telemetryId, error: telemetryError } = await getSupabase()
       .rpc('submit_agent_telemetry', {
@@ -101,70 +146,88 @@ export async function POST(request: NextRequest) {
         p_network_errors: body.network?.errors || 0,
         p_custom_metrics: body.custom || {}
       });
-    
+
     if (telemetryError) throw telemetryError;
-    
+
     // Get updated composite score
     const { data: scoreData } = await getSupabase()
       .from('tap_score_with_telemetry')
       .select('composite_score')
       .eq('agent_id', body.agent_id)
       .single();
-    
-    const response: TelemetryResponse = {
+
+    const result: TelemetryResponse = {
       success: true,
       telemetry_id: telemetryId,
       composite_score: scoreData?.composite_score
     };
-    
-    return NextResponse.json(response);
-    
+
+    const response = NextResponse.json(result);
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return applySecurityHeaders(response);
+
   } catch (error) {
     console.error('[Telemetry] Submit failed:', error);
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: false,
       error: (error as Error).message
     }, { status: 500 });
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return applySecurityHeaders(response);
   }
 }
 
 /**
  * GET /api/telemetry
  * Get telemetry summary for an agent
- * 
+ *
  * Query:
  *   agent_id: required
  *   days: number of days to include (default 7, max 30)
  *   include_windows: include raw telemetry windows (default false)
  */
 export async function GET(request: NextRequest) {
+  // Apply rate limiting
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, '/api/telemetry');
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const agentId = searchParams.get('agent_id');
     const days = Math.min(parseInt(searchParams.get('days') || '7'), 30);
     const includeWindows = searchParams.get('include_windows') === 'true';
-    
+
     if (!agentId) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: false,
         error: 'agent_id required'
       }, { status: 400 });
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
-    
+
     // Get summary via RPC
     const { data: summary, error: summaryError } = await getSupabase()
       .rpc('get_agent_telemetry_summary', {
         p_agent_id: agentId,
         p_days: days
       });
-    
+
     if (summaryError) throw summaryError;
-    
+
     const response: any = {
       success: true,
       summary: summary
     };
-    
+
     // Include raw windows if requested
     if (includeWindows) {
       const { data: windows, error: windowsError } = await getSupabase()
@@ -174,35 +237,43 @@ export async function GET(request: NextRequest) {
         .gte('window_start', new Date(Date.now() - days * 86400000).toISOString())
         .order('window_start', { ascending: false })
         .limit(100);
-      
+
       if (!windowsError) {
         response.windows = windows;
       }
     }
-    
+
     // Include current TAP score with telemetry
     const { data: scoreData } = await getSupabase()
       .from('tap_score_with_telemetry')
       .select('*')
       .eq('agent_id', agentId)
       .single();
-    
+
     if (scoreData) {
       response.current_score = {
-        tap_score: scoreData.global_score,
+        tap_score: scoreData.tap_score,
         composite_score: scoreData.composite_score,
         reliability: scoreData.telemetry_reliability,
         success_rate: scoreData.telemetry_success_rate
       };
     }
-    
-    return NextResponse.json(response);
-    
+
+    const httpResponse = NextResponse.json(response);
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      httpResponse.headers.set(key, value);
+    });
+    return applySecurityHeaders(httpResponse);
+
   } catch (error) {
     console.error('[Telemetry] Get failed:', error);
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: false,
       error: (error as Error).message
     }, { status: 500 });
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return applySecurityHeaders(response);
   }
 }

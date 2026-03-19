@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { applyRateLimit, applySecurityHeaders } from '@/lib/security';
 
 // Alert configuration
 const ALERT_CONFIG = {
@@ -214,6 +215,12 @@ async function recordAlert(payload: AlertPayload, sent: { discord: boolean; page
  * }
  */
 export async function POST(request: NextRequest) {
+  // Apply rate limiting - alerts can be spammy
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, '/api/alerts');
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
     const body = await request.json();
     const { severity, component, title, message, details, skipThrottle } = body;
@@ -256,7 +263,7 @@ export async function POST(request: NextRequest) {
     // Record in database
     await recordAlert(payload, { discord: discordSent, pagerduty: pagerdutySent });
     
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       sent: {
         discord: discordSent,
@@ -265,12 +272,24 @@ export async function POST(request: NextRequest) {
       timestamp: payload.timestamp
     });
     
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
+    
   } catch (error) {
     console.error('[Alert] Failed to send:', error);
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: false,
       error: (error as Error).message
     }, { status: 500 });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
   }
 }
 
@@ -285,6 +304,12 @@ export async function POST(request: NextRequest) {
  *   since: ISO timestamp for start date
  */
 export async function GET(request: NextRequest) {
+  // Apply rate limiting
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, '/api/alerts');
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
     const { searchParams } = new URL(request.url);
     const component = searchParams.get('component');
@@ -318,18 +343,30 @@ export async function GET(request: NextRequest) {
       info: stats?.filter(s => s.severity === 'info').length || 0
     };
     
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       alerts: data || [],
       summary,
       filters: { component, severity, since }
     });
     
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
+    
   } catch (error) {
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: false,
       error: (error as Error).message
     }, { status: 500 });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
   }
 }
 
@@ -344,15 +381,25 @@ export async function GET(request: NextRequest) {
  * }
  */
 export async function DELETE(request: NextRequest) {
+  // Apply rate limiting - destructive operation, stricter limits
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, '/api/alerts');
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
     const body = await request.json();
     const { before, severity } = body;
     
     if (!before) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: false,
         error: 'before timestamp required'
       }, { status: 400 });
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
     
     let query = getSupabase()
@@ -366,16 +413,28 @@ export async function DELETE(request: NextRequest) {
     
     if (error) throw error;
     
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       deleted: count || 0,
       before
     });
     
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
+    
   } catch (error) {
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: false,
       error: (error as Error).message
     }, { status: 500 });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
   }
 }
