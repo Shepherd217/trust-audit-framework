@@ -2,9 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyClawIDSignature } from '@/lib/clawid-auth';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+let supabase: ReturnType<typeof createClient> | null = null;
+
+function getSupabase() {
+  if (!supabase) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) throw new Error('Supabase not configured');
+    supabase = createClient(url, key);
+  }
+  return supabase;
+}
 
 /**
  * POST /api/claw/cloud/deploy
@@ -48,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify agent owns this identity
-    const { data: agent, error: agentError } = await supabase
+    const { data: agent, error: agentError } = await getSupabase()
       .from('user_agents')
       .select('id, public_key, status')
       .eq('id', agent_id)
@@ -59,7 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check deployment limits
-    const { data: existingDeployments } = await supabase
+    const { data: existingDeployments } = await getSupabase()
       .from('clawcloud_deployments')
       .select('id')
       .eq('agent_id', agent_id)
@@ -77,7 +85,7 @@ export async function POST(request: NextRequest) {
     const deploymentId = `deploy-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     // Create deployment record
-    const { data: deployment, error: createError } = await supabase
+    const { data: deployment, error: createError } = await getSupabase()
       .from('clawcloud_deployments')
       .insert({
         deployment_id: deploymentId,
@@ -106,7 +114,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log deployment start
-    await supabase.rpc('log_deployment_event', {
+    await getSupabase().rpc('log_deployment_event', {
       p_deployment_id: deployment.id,
       p_level: 'info',
       p_message: `Deployment ${deploymentId} created for agent ${agent_id}`,
@@ -185,7 +193,7 @@ export async function GET(request: NextRequest) {
 // Async deployment trigger
 async function triggerDeployment(deploymentId: string, targetType: string) {
   // Update status to building
-  await supabase.rpc('update_deployment_status', {
+  await getSupabase().rpc('update_deployment_status', {
     p_deployment_id: deploymentId,
     p_status: 'building',
   });
@@ -194,7 +202,7 @@ async function triggerDeployment(deploymentId: string, targetType: string) {
   await new Promise(r => setTimeout(r, 2000));
 
   // Update to deploying
-  await supabase.rpc('update_deployment_status', {
+  await getSupabase().rpc('update_deployment_status', {
     p_deployment_id: deploymentId,
     p_status: 'deploying',
   });
@@ -205,20 +213,20 @@ async function triggerDeployment(deploymentId: string, targetType: string) {
   await new Promise(r => setTimeout(r, 3000));
 
   // Mark as running (in real impl, this happens after health check passes)
-  await supabase.rpc('update_deployment_status', {
+  await getSupabase().rpc('update_deployment_status', {
     p_deployment_id: deploymentId,
     p_status: 'running',
   });
 
   // Log success
-  const { data: deployment } = await supabase
+  const { data: deployment } = await getSupabase()
     .from('clawcloud_deployments')
     .select('id')
     .eq('deployment_id', deploymentId)
     .single();
 
   if (deployment) {
-    await supabase.rpc('log_deployment_event', {
+    await getSupabase().rpc('log_deployment_event', {
       p_deployment_id: deployment.id,
       p_level: 'info',
       p_message: `Deployment ${deploymentId} is now running`,
