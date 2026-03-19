@@ -703,6 +703,76 @@ export async function listWorkflows(filters: ListWorkflowsFilters = {}): Promise
 }
 
 /**
+ * Get a workflow by ID
+ */
+export async function getWorkflowById(id: string): Promise<Workflow> {
+  const supabase = getSupabaseClient();
+  
+  const { data, error } = await supabase
+    .from('claw_workflows')
+    .select('*')
+    .eq('id', id)
+    .single();
+  
+  if (error) {
+    if (error.code === 'PGRST116') {
+      throw new Error(`Workflow not found: ${id}`);
+    }
+    throw new Error(`Failed to fetch workflow: ${error.message}`);
+  }
+  
+  return mapRowToWorkflow(data as LocalWorkflowRow);
+}
+
+/**
+ * Delete a workflow by ID
+ * Only allows deletion if workflow is inactive and has no running executions
+ */
+export async function deleteWorkflow(id: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  // Check if workflow exists and is inactive
+  const { data: workflow, error: fetchError } = await supabase
+    .from('claw_workflows')
+    .select('is_active')
+    .eq('id', id)
+    .single();
+  
+  if (fetchError) {
+    if (fetchError.code === 'PGRST116') {
+      throw new Error(`Workflow not found: ${id}`);
+    }
+    throw new Error(`Failed to fetch workflow: ${fetchError.message}`);
+  }
+  
+  // Check for running executions
+  const { data: runningExecutions, error: execError } = await supabase
+    .from('claw_workflow_executions')
+    .select('id')
+    .eq('workflow_id', id)
+    .eq('status', 'running')
+    .limit(1);
+  
+  if (execError) {
+    throw new Error(`Failed to check running executions: ${execError.message}`);
+  }
+  
+  if (runningExecutions && runningExecutions.length > 0) {
+    throw new Error(`Cannot delete workflow with running executions. Cancel them first.`);
+  }
+  
+  // Soft delete: mark as inactive
+  const { error: updateError } = await (supabase
+    .from('claw_workflows') as any)
+    .update({ is_active: false, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  
+  if (updateError) {
+    throw new Error(`Failed to delete workflow: ${updateError.message}`);
+  }
+}
+
+/**
  * List executions with filtering and pagination
  */
 export async function listExecutions(filters: ListExecutionsFilters = {}): Promise<{

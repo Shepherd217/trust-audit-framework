@@ -1,25 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getWorkflowById, deleteWorkflow } from '@/lib/claw/scheduler';
+import { applyRateLimit, applySecurityHeaders } from '@/lib/security';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Apply rate limiting
+    const rateLimitResult = await applyRateLimit(request, 'public');
+    if (rateLimitResult.response) {
+      return rateLimitResult.response;
+    }
+
     const { id } = await params;
     
-    // TODO: Implement getWorkflowById in service
-    // const workflow = await getWorkflowById(id);
+    const workflow = await getWorkflowById(id);
     
-    return NextResponse.json({ 
-      error: 'Not implemented',
-      message: `Workflow ${id} retrieval not yet implemented`
-    }, { status: 501 });
+    const response = NextResponse.json({ 
+      success: true,
+      workflow
+    }, { status: 200 });
+    
+    return applySecurityHeaders(response);
+    
   } catch (error) {
     console.error('Get workflow error:', error);
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
+    const message = error instanceof Error ? error.message : 'Failed to fetch workflow';
+    const status = message.includes('not found') ? 404 : 500;
+    
+    const response = NextResponse.json(
+      { error: message },
+      { status }
     );
+    return applySecurityHeaders(response);
   }
 }
 
@@ -28,20 +42,34 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Apply rate limiting
+    const rateLimitResult = await applyRateLimit(request, 'critical');
+    if (rateLimitResult.response) {
+      return rateLimitResult.response;
+    }
+
     const { id } = await params;
     
-    // TODO: Implement deleteWorkflow in service
-    // await deleteWorkflow(id);
+    await deleteWorkflow(id);
     
-    return NextResponse.json({ 
-      error: 'Not implemented',
-      message: `Workflow ${id} deletion not yet implemented`
-    }, { status: 501 });
+    const response = NextResponse.json({ 
+      success: true,
+      message: `Workflow ${id} deleted successfully`,
+      workflowId: id
+    }, { status: 200 });
+    
+    return applySecurityHeaders(response);
+    
   } catch (error) {
     console.error('Delete workflow error:', error);
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
+    const message = error instanceof Error ? error.message : 'Failed to delete workflow';
+    const status = message.includes('not found') ? 404 : 
+                   message.includes('running executions') ? 409 : 500;
+    
+    const response = NextResponse.json(
+      { error: message },
+      { status }
     );
+    return applySecurityHeaders(response);
   }
 }
