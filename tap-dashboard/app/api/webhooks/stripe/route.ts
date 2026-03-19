@@ -10,12 +10,24 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import {
   constructWebhookEvent,
   handleWebhookEvent,
   PaymentError,
 } from '@/lib/payments/stripe';
 import { WebhookEvent } from '@/types/payments';
+import {
+  notifyEscrowFunded,
+  notifyEscrowReleased,
+  notifyPaymentFailed,
+  notifyDisputeOpened,
+} from '@/lib/notifications';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 // Events we care about for logging/tracking
 const TRACKED_EVENTS = [
@@ -72,14 +84,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Handle the event
     const result = await handleWebhookEvent(event);
 
-    if (result.handled) {
-      console.log(`[Stripe Webhook] ${event.type} processed:`, {
-        action: result.action,
-        data: result.data,
-      });
+  // Persist webhook event for audit
+  const { error: auditError } = await supabase
+    .from('webhook_events')
+    .insert({
+      event_id: event.id,
+      event_type: event.type,
+      payload: event,
+      processed: result.handled,
+      processed_at: new Date().toISOString(),
+    });
 
-      // TODO: Persist webhook event to database for audit trail
-      // TODO: Trigger business logic based on event type
+  if (auditError) {
+    console.error('[Stripe Webhook] Failed to persist audit log:', auditError);
+  }
+
+  if (result.handled) {
+    console.log(`[Stripe Webhook] ${event.type} processed:`, {
+      action: result.action,
+      data: result.data,
+    });
       // Examples:
       // - payment_intent.succeeded && escrow: notify task service payment ready
       // - payment_intent.captured: notify agent of payout
@@ -189,54 +213,135 @@ async function processBusinessLogic(
 // Business logic handlers
 async function handlePaymentAuthorized(data: any): Promise<void> {
   console.log('[Webhook Business Logic] Payment authorized:', data);
-  // TODO: Update task status in database
-  // TODO: Notify agent that task can begin
-  // TODO: Send confirmation email to customer
+  
+  // Update escrow status to locked
+  await supabase
+    .from('payment_escrows')
+    .update({ status: 'locked', locked_at: new Date().toISOString() })
+    .eq('stripe_payment_intent_id', data.paymentIntentId);
+  
+  // Notify worker that work can begin
+  if (data.workerId && data.hirerId) {
+    await notifyEscrowFunded({
+      escrowId: data.escrowId,
+      hirerId: data.hirerId,
+      workerId: data.workerId,
+      amount: data.amount,
+      jobTitle: data.jobTitle || 'Your Task',
+    });
+  }
 }
 
 async function handleEscrowReady(data: any): Promise<void> {
   console.log('[Webhook Business Logic] Escrow ready for capture:', data);
-  // TODO: Notify customer that payment is held in escrow
-  // TODO: Update payment status in database
+  
+  // Update payment status
+  await supabase
+    .from('payment_escrows')
+    .update({ status: 'funded' })
+    .eq('stripe_payment_intent_id', data.paymentIntentId);
 }
 
 async function handlePaymentCanceled(data: any): Promise<void> {
   console.log('[Webhook Business Logic] Payment canceled:', data);
-  // TODO: Update task status to 'canceled'
-  // TODO: Notify agent task is canceled
-  // TODO: If work started, handle compensation
+  
+  // Update escrow status
+  await supabase
+    .from('payment_escrows')
+    .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
+    .eq('stripe_payment_intent_id', data.paymentIntentId);
 }
 
 async function handlePaymentFailed(data: any): Promise<void> {
   console.log('[Webhook Business Logic] Payment failed:', data);
-  // TODO: Notify customer of payment failure
-  // TODO: Provide retry link
+  
+  // Update escrow status
+  await supabase
+    .from('payment_escrows')
+    .update({ status: 'failed' })
+    .eq('stripe_payment_intent_id', data.paymentIntentId);
+  
+  // Notify hirer of failure
+  if (data.hirerId) {
+    await notifyPaymentFailed({
+      hirerId: data.hirerId,
+      jobTitle: data.jobTitle || 'Your Task',
+      error: data.error || 'Payment was declined',
+    });
+  }
 }
 
 async function handleRefundProcessed(data: any): Promise<void> {
   console.log('[Webhook Business Logic] Refund processed:', data);
-  // TODO: Update task/payment status to 'refunded'
-  // TODO: Notify agent of refund (adjust payout if needed)
-  // TODO: Send confirmation to customer
+  
+  // Update escrow status
+  await supabase
+    .from('payment_escrows')
+    .update({ status: 'refunded' })
+    .eq('stripe_payment_intent_id', data.paymentIntentId);
+  
+  // Create audit log entry
+  await supabase.from('payment_audit_log').insert({
+    escrow_id: data.escrowId,
+    event: 'refund_processed',
+    amount: data.amount,
+    metadata: { refundId: data.refundId },
+  });
 }
 
 async function handleDisputeOpened(data: any): Promise<void> {
   console.log('[Webhook Business Logic] Dispute opened:', data);
-  // TODO: Alert admin immediately
-  // TODO: Freeze task and associated funds
-  // TODO: Gather evidence for dispute response
+  
+  // Update escrow status
+  await supabase
+    .from('payment_escrows')
+    .update({ status: 'disputed' })
+    .eq('stripe_payment_intent_id', data.paymentIntentId);
+  
+  // Notify both parties
+  if (data.hirerId && data.workerId) {
+    await notifyDisputeOpened({
+      disputeId: data.disputeId,
+      escrowId: data.escrowId,
+      hirerId: data.hirerId,
+      workerId: data.workerId,
+      jobTitle: data.jobTitle || 'Your Task',
+    });
+  }
+  
+  // Create dispute case
+  await supabase.from('dispute_cases').insert({
+    escrow_id: data.escrowId,
+    hirer_id: data.hirerId,
+    worker_id: data.workerId,
+    reason: 'Payment dispute opened via Stripe',
+    status: 'open',
+  });
 }
 
 async function handlePayoutFailed(data: any): Promise<void> {
   console.log('[Webhook Business Logic] Payout failed:', data);
-  // TODO: Retry transfer
-  // TODO: Alert admin if retry fails
-  // TODO: Update agent's pending balance
+  
+  // Log the failure
+  await supabase.from('payment_audit_log').insert({
+    escrow_id: data.escrowId,
+    event: 'payout_failed',
+    metadata: { error: data.error, retryable: data.retryable },
+  });
 }
 
 async function handleAccountUpdated(data: any): Promise<void> {
   console.log('[Webhook Business Logic] Account updated:', data);
-  // TODO: Update agent's onboarding status
-  // TODO: Notify agent if charges/payouts enabled
-  // TODO: Alert admin if requirements past due
+  
+  // Update Connect account status
+  await supabase
+    .from('stripe_connect_accounts')
+    .update({
+      charges_enabled: data.chargesEnabled,
+      payouts_enabled: data.payoutsEnabled,
+      requirements_due: data.requirementsDue,
+      onboarding_complete: data.chargesEnabled && data.payoutsEnabled,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('stripe_account_id', data.accountId);
 }
