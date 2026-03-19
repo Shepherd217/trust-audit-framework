@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
 import { 
   getCurrentUser, 
   getCurrentSubscription, 
@@ -15,16 +16,26 @@ import {
   hasFeatureAccess,
 } from '@/lib/auth-subscription';
 
+// Rate limits
+const MAX_BODY_SIZE_KB = 50;
+
 // ============================================================================
 // GET: Get Current User's Subscription
 // ============================================================================
 
 export async function GET(request: NextRequest) {
+  const path = '/api/user/subscription';
+  
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
     const user = await getCurrentUser();
     
     if (!user) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { 
           success: false, 
           error: { 
@@ -34,6 +45,10 @@ export async function GET(request: NextRequest) {
         },
         { status: 401 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
     
     const subscription = user.subscription;
@@ -63,7 +78,7 @@ export async function GET(request: NextRequest) {
       slaSupport: hasFeatureAccess(subscription.tier, 'sla-support'),
     };
     
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         user: {
@@ -106,9 +121,15 @@ export async function GET(request: NextRequest) {
       },
     });
     
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
+    
   } catch (error: any) {
     console.error('[Subscription API] Error:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { 
         success: false, 
         error: { 
@@ -118,6 +139,10 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     );
+    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return applySecurityHeaders(response);
   }
 }
 
@@ -126,14 +151,47 @@ export async function GET(request: NextRequest) {
 // ============================================================================
 
 export async function POST(request: NextRequest) {
+  const path = '/api/user/subscription';
+  
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
-    const body = await request.json();
+    const bodyText = await request.text();
+    const sizeCheck = validateBodySize(bodyText, MAX_BODY_SIZE_KB);
+    if (!sizeCheck.valid) {
+      const response = NextResponse.json(
+        { success: false, error: { code: 'PAYLOAD_TOO_LARGE', message: sizeCheck.error } },
+        { status: 413 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+    
+    let body;
+    try {
+      body = JSON.parse(bodyText);
+    } catch {
+      const response = NextResponse.json(
+        { success: false, error: { code: 'INVALID_JSON', message: 'Invalid JSON payload' } },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+    
     const { tier } = body;
     
     const validTiers: SubscriptionTier[] = ['starter', 'builder', 'pro', 'enterprise'];
     
     if (!tier || !validTiers.includes(tier)) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { 
           success: false, 
           error: { 
@@ -143,17 +201,14 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
     
-    // In a real implementation, this would:
-    // 1. Verify payment
-    // 2. Update database
-    // 3. Send confirmation email
-    // 4. Update Stripe subscription
-    
-    // For mock, we just return success
     const tierKey = tier as SubscriptionTier;
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         message: `Subscription updated to ${TIER_CONFIG[tierKey].name}`,
@@ -164,9 +219,15 @@ export async function POST(request: NextRequest) {
       },
     });
     
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
+    
   } catch (error: any) {
     console.error('[Subscription API] Error:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { 
         success: false, 
         error: { 
@@ -176,5 +237,9 @@ export async function POST(request: NextRequest) {
       },
       { status: 500 }
     );
+    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return applySecurityHeaders(response);
   }
 }

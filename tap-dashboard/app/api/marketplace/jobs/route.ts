@@ -1,16 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verifyClawIDSignature } from '@/lib/clawid-auth'
+import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security'
 
-// GET /api/marketplace/jobs - List jobs (filtered by applicant's TAP score)
+// Rate limits: GET 30/min, POST 10/min
+const MAX_BODY_SIZE_KB = 100;
+const MAX_TITLE_LENGTH = 200;
+const MAX_DESCRIPTION_LENGTH = 5000;
+const MAX_BUDGET = 100000000; // $1M max budget (in cents)
+
+// GET /api/marketplace/jobs - List jobs
 export async function GET(request: NextRequest) {
+  const path = '/api/marketplace/jobs';
+  
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
     const { searchParams } = new URL(request.url)
     const applicantPublicKey = searchParams.get('public_key')
     const category = searchParams.get('category')
     const status = searchParams.get('status') || 'open'
 
-    // Build query
+    // Validate status
+    const validStatuses = ['open', 'in_progress', 'completed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      const response = NextResponse.json(
+        { error: 'Invalid status' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) =>> {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
     let query = supabase
       .from('marketplace_jobs')
       .select(`
@@ -19,22 +45,18 @@ export async function GET(request: NextRequest) {
       `)
       .eq('status', status)
 
-    // Filter by category if provided
     if (category) {
-      query = query.eq('category', category)
+      query = query.eq('category', category.slice(0, 50))
     }
 
-    // If applicant public key provided, filter by TAP score
     if (applicantPublicKey) {
-      // Look up applicant's TAP score
       const { data: applicant } = await supabase
         .from('agents')
         .select('reputation')
-        .eq('public_key', applicantPublicKey)
+        .eq('public_key', applicantPublicKey.slice(0, 200))
         .single()
 
       if (applicant) {
-        // Only show jobs where applicant meets min TAP score
         query = query.lte('min_tap_score', applicant.reputation)
       }
     }
@@ -44,28 +66,77 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Failed to fetch jobs:', error)
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Failed to fetch jobs' },
         { status: 500 }
-      )
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       jobs: jobs || [],
       count: jobs?.length || 0,
-    })
+    });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
+    
   } catch (error) {
     console.error('Marketplace list jobs error:', error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to fetch jobs' },
       { status: 500 }
-    )
+    );
+    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return applySecurityHeaders(response);
   }
 }
 
+// POST /api/marketplace/jobs - Create job
 export async function POST(request: NextRequest) {
+  const path = '/api/marketplace/jobs';
+  
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
-    const body = await request.json()
+    const bodyText = await request.text();
+    const sizeCheck = validateBodySize(bodyText, MAX_BODY_SIZE_KB);
+    if (!sizeCheck.valid) {
+      const response = NextResponse.json(
+        { error: sizeCheck.error },
+        { status: 413 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+    
+    let body;
+    try {
+      body = JSON.parse(bodyText);
+    } catch {
+      const response = NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+    
     const {
       title,
       description,
@@ -73,18 +144,56 @@ export async function POST(request: NextRequest) {
       min_tap_score,
       category,
       skills_required,
-      // ClawID auth
       hirer_public_key,
       hirer_signature,
       timestamp,
     } = body
 
-    // Validate required fields
     if (!title || !description || !budget || !hirer_public_key || !hirer_signature) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
-      )
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
+    // Validate title
+    if (typeof title !== 'string' || title.length > MAX_TITLE_LENGTH || title.length < 5) {
+      const response = NextResponse.json(
+        { error: `Title must be 5-${MAX_TITLE_LENGTH} characters` },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
+    // Validate description
+    if (typeof description !== 'string' || description.length > MAX_DESCRIPTION_LENGTH || description.length < 20) {
+      const response = NextResponse.json(
+        { error: `Description must be 20-${MAX_DESCRIPTION_LENGTH} characters` },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
+    // Validate budget
+    if (typeof budget !== 'number' || budget <= 0 || budget > MAX_BUDGET) {
+      const response = NextResponse.json(
+        { error: `Budget must be between $0.01 and $${MAX_BUDGET / 100}` },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     // Verify ClawID signature
@@ -92,13 +201,17 @@ export async function POST(request: NextRequest) {
     const verification = await verifyClawIDSignature(hirer_public_key, hirer_signature, payload)
     
     if (!verification.valid) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: verification.error || 'Invalid ClawID signature' },
         { status: 401 }
-      )
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
-    // Look up hirer agent by public key
+    // Look up hirer
     const { data: hirer, error: hirerError } = await supabase
       .from('agents')
       .select('agent_id, name, reputation, tier')
@@ -106,22 +219,26 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (hirerError || !hirer) {
-      return NextResponse.json(
-        { error: 'Hirer agent not found. Please register your ClawID first.' },
+      const response = NextResponse.json(
+        { error: 'Hirer agent not found' },
         { status: 404 }
-      )
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
-    // Create job with ClawID reference
+    // Create job
     const { data: job, error } = await supabase
       .from('marketplace_jobs')
       .insert({
         title,
         description,
         budget,
-        min_tap_score: min_tap_score || 0,
-        category: category || 'General',
-        skills_required: skills_required || [],
+        min_tap_score: Math.max(0, Math.min(100, min_tap_score || 0)),
+        category: (category || 'General').slice(0, 50),
+        skills_required: Array.isArray(skills_required) ? skills_required.slice(0, 20) : [],
         hirer_id: hirer.agent_id,
         hirer_public_key,
         hirer_signature,
@@ -133,13 +250,17 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Failed to create job:', error)
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Failed to post job' },
         { status: 500 }
-      )
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       job: {
         id: job.id,
@@ -153,12 +274,23 @@ export async function POST(request: NextRequest) {
           tier: hirer.tier,
         },
       },
-    })
+    });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
+    
   } catch (error) {
     console.error('Marketplace post job error:', error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to post job' },
       { status: 500 }
-    )
+    );
+    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return applySecurityHeaders(response);
   }
 }

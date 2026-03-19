@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { randomBytes, createHash } from 'crypto';
+import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
 
 // Lazy initialization
 let supabase: ReturnType<typeof createClient> | null = null;
@@ -22,24 +23,83 @@ function getSupabase() {
   return supabase;
 }
 
+// Rate limit: 5 registrations per minute per IP (prevents spam)
+const MAX_BODY_SIZE_KB = 50;
+const MAX_NAME_LENGTH = 100;
+const MAX_PUBLIC_KEY_LENGTH = 200;
+
 export async function POST(request: NextRequest) {
+  const path = '/api/agent/register';
+  
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
-    const body = await request.json();
+    const bodyText = await request.text();
+    const sizeCheck = validateBodySize(bodyText, MAX_BODY_SIZE_KB);
+    if (!sizeCheck.valid) {
+      const response = NextResponse.json(
+        { error: sizeCheck.error, code: 'PAYLOAD_TOO_LARGE' },
+        { status: 413 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+    
+    let body;
+    try {
+      body = JSON.parse(bodyText);
+    } catch {
+      const response = NextResponse.json(
+        { error: 'Invalid JSON payload', code: 'INVALID_JSON' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+    
     const { name, publicKey, metadata = {} } = body;
 
-    // Validate
-    if (!name || typeof name !== 'string') {
-      return NextResponse.json(
-        { error: 'name is required', code: 'MISSING_NAME' },
+    // Validate name
+    if (!name || typeof name !== 'string' || name.length < 2 || name.length > MAX_NAME_LENGTH) {
+      const response = NextResponse.json(
+        { error: `name is required (2-${MAX_NAME_LENGTH} chars)`, code: 'INVALID_NAME' },
         { status: 400 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
-    if (!publicKey || typeof publicKey !== 'string') {
-      return NextResponse.json(
-        { error: 'publicKey is required', code: 'MISSING_PUBLIC_KEY' },
+    // Validate publicKey
+    if (!publicKey || typeof publicKey !== 'string' || publicKey.length > MAX_PUBLIC_KEY_LENGTH) {
+      const response = NextResponse.json(
+        { error: 'publicKey is required', code: 'INVALID_PUBLIC_KEY' },
         { status: 400 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
+    // Validate publicKey format (Ed25519 hex)
+    if (!/^[0-9a-fA-F]{64}$/.test(publicKey)) {
+      const response = NextResponse.json(
+        { error: 'Invalid Ed25519 public key format', code: 'INVALID_KEY_FORMAT' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     // Generate unique agent ID
@@ -49,11 +109,11 @@ export async function POST(request: NextRequest) {
     const apiKey = `moltos_sk_${randomBytes(32).toString('hex')}`;
     const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
 
-    // Check for genesis token (for bootstrapping the network)
+    // Check for genesis token
     const genesisToken = request.headers.get('x-genesis-token');
-    const isGenesis = genesisToken === process.env.GENESIS_TOKEN || genesisToken === ')j=PpsG6}o})#7G}{D*5F;O)i?}zh9oUo0c1JJ<4U]en+s]pgeUFRk=h%sXGhwmk';
+    const isGenesis = genesisToken === process.env.GENESIS_TOKEN;
     
-    // Store in database
+    // Check if agent already exists
     const { data: existing } = await (getSupabase() as any)
       .from('agent_registry')
       .select('agent_id')
@@ -61,13 +121,17 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (existing) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Agent already registered', code: 'ALREADY_REGISTERED' },
         { status: 409 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
-    // Set activation status based on genesis token
+    // Set activation status
     const activationStatus = isGenesis ? 'active' : 'pending';
     const initialReputation = isGenesis ? 10000 : 0;
     const tier = isGenesis ? 'Diamond' : 'Bronze';
@@ -76,30 +140,34 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .insert({
         agent_id: agentId,
-        name: name.slice(0, 100),
+        name: name.slice(0, MAX_NAME_LENGTH),
         public_key: publicKey,
         api_key_hash: apiKeyHash,
         reputation: initialReputation,
         tier: tier,
         status: 'active',
         activation_status: activationStatus,
-        vouch_count: isGenesis ? 0 : 0,
+        vouch_count: 0,
         is_genesis: isGenesis,
         staked_reputation: 0,
         activated_at: isGenesis ? new Date().toISOString() : null,
-        metadata,
+        metadata: typeof metadata === 'object' ? metadata : {},
         created_at: new Date().toISOString(),
       });
 
     if (error) {
       console.error('Registration error:', error);
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Failed to register agent', code: 'DB_ERROR' },
         { status: 500 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       agent: {
         agentId,
@@ -113,18 +181,28 @@ export async function POST(request: NextRequest) {
       },
       credentials: {
         apiKey, // Only shown once!
-        baseUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://moltos.vercel.app',
+        baseUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://moltos.org',
       },
       message: isGenesis 
         ? 'Genesis agent registered with full privileges.' 
         : 'Agent registered. Pending activation - requires 2 vouches from active agents.',
     }, { status: 201 });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
 
   } catch (error: any) {
     console.error('Registration error:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: error.message || 'Server error', code: 'SERVER_ERROR' },
       { status: 500 }
     );
+    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return applySecurityHeaders(response);
   }
 }
