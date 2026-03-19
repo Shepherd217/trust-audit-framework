@@ -1,45 +1,35 @@
 /**
  * BLS12-381 High-Performance Implementation
  * 
- * Uses @chainsafe/blst (native/WASM) for production performance.
+ * Uses @chainsafe/blst (native) for production performance.
  * Falls back to @noble/curves for compatibility.
  * 
  * Performance targets (blst):
  * - Sign: ~2ms per signature
  * - Verify: ~3ms per signature
  * - Batch verify 1000: ~100ms (10x faster than individual)
- * 
- * Previous @noble/curves performance:
- * - Batch verify 100: ~2500ms (25x slower than target)
  */
 
 import { bls12_381 } from '@noble/curves/bls12-381';
 import { bytesToHex, hexToBytes } from '@noble/curves/abstract/utils';
 
 // Try to import blst for high-performance operations
-let blst: any = null;
+let blstModule: any = null;
 let useBlst = false;
 
 async function initBlst() {
-  // DISABLED: blst has API incompatibilities with noble curves
-  // Using @noble/curves for reliability until blst is properly integrated
-  console.log('[BLS] Using @noble/curves (proven stable)');
-  return false;
-  
-  /* Future: Re-enable after full API compatibility testing
-  if (blst !== null) return useBlst;
+  if (blstModule !== null) return useBlst;
   
   try {
-    const blstModule = await import('@chainsafe/blst');
-    blst = blstModule;
+    // Use the high-level @chainsafe/bls interface which handles blst-native automatically
+    blstModule = await import('@chainsafe/bls');
     useBlst = true;
-    console.log('[BLS] Using @chainsafe/blst (high-performance native)');
+    console.log('[BLS] Using @chainsafe/bls with native bindings');
     return true;
   } catch (e) {
     console.log('[BLS] Using @noble/curves (pure JS fallback)');
     return false;
   }
-  */
 }
 
 // Initialize on module load
@@ -62,23 +52,23 @@ export interface BLSSignature {
 export async function generateKeyPair(): Promise<BLSKeyPair> {
   await blstInitPromise;
   
-  if (useBlst && blst) {
+  if (useBlst && blstModule) {
     try {
-      // blst uses different API - generate random 32 bytes
-      const privateKey = new Uint8Array(32);
-      crypto.getRandomValues(privateKey);
+      const { SecretKey, BLST_CONSTANTS } = blstModule;
       
-      // Derive public key using blst
-      const sk = blst.SecretKey.fromKeygen(privateKey);
-      const pk = await sk.toPublicKey();
+      // Generate random bytes for keygen
+      const ikm = new Uint8Array(BLST_CONSTANTS.SECRET_KEY_LENGTH);
+      crypto.getRandomValues(ikm);
+      
+      const sk = SecretKey.fromKeygen(ikm);
+      const pk = sk.toPublicKey();
       
       return {
-        privateKey,
-        publicKey: pk.serialize()
+        privateKey: sk.toBytes(),
+        publicKey: pk.toBytes()
       };
     } catch (e) {
       console.log('[BLS] blst keygen failed, falling back to noble:', e);
-      // Fall through to noble
     }
   }
   
@@ -102,14 +92,14 @@ export async function sign(
     ? new TextEncoder().encode(message)
     : message;
   
-  if (useBlst && blst) {
+  if (useBlst && blstModule) {
     try {
-      const sk = blst.SecretKey.fromBytes(privateKey);
+      const { SecretKey } = blstModule;
+      const sk = SecretKey.fromBytes(privateKey);
       const sig = sk.sign(messageBytes);
-      return sig.serialize();
+      return sig.toBytes();
     } catch (e) {
       console.log('[BLS] blst sign failed, falling back to noble:', e);
-      // Fall through to noble
     }
   }
   
@@ -130,13 +120,14 @@ export async function verify(
     ? new TextEncoder().encode(message)
     : message;
   
-  if (useBlst && blst) {
+  if (useBlst && blstModule) {
     try {
-      const pk = blst.PublicKey.fromBytes(publicKey);
-      const sig = blst.Signature.fromBytes(signature);
+      const { PublicKey, Signature, verify } = blstModule;
+      const pk = PublicKey.fromBytes(publicKey);
+      const sig = Signature.fromBytes(signature);
       
-      // blst uses verify method on public key
-      return pk.verify(messageBytes, sig);
+      // Top-level verify function: verify(message, publicKey, signature)
+      return verify(messageBytes, pk, sig);
     } catch (e) {
       return false;
     }
@@ -164,10 +155,15 @@ export async function aggregateSignatures(
     return signatures[0];
   }
   
-  if (useBlst && blst) {
-    const sigs = signatures.map(s => blst.Signature.fromBytes(s));
-    const aggSig = blst.aggregateSignatures(sigs);
-    return aggSig.serialize();
+  if (useBlst && blstModule) {
+    try {
+      const { Signature, aggregateSignatures } = blstModule;
+      const sigs = signatures.map(s => Signature.fromBytes(s));
+      const aggSig = aggregateSignatures(sigs);
+      return aggSig.toBytes();
+    } catch (e) {
+      console.log('[BLS] blst aggregate failed, falling back to noble:', e);
+    }
   }
   
   return bls12_381.aggregateSignatures(signatures);
@@ -188,10 +184,15 @@ export async function aggregatePublicKeys(
     return publicKeys[0];
   }
   
-  if (useBlst && blst) {
-    const pks = publicKeys.map(pk => blst.PublicKey.fromBytes(pk));
-    const aggPk = blst.aggregatePublicKeys(pks);
-    return aggPk.serialize();
+  if (useBlst && blstModule) {
+    try {
+      const { PublicKey, aggregatePublicKeys } = blstModule;
+      const pks = publicKeys.map(pk => PublicKey.fromBytes(pk));
+      const aggPk = aggregatePublicKeys(pks);
+      return aggPk.toBytes();
+    } catch (e) {
+      console.log('[BLS] blst aggregate PK failed, falling back to noble:', e);
+    }
   }
   
   return bls12_381.aggregatePublicKeys(publicKeys);
@@ -217,15 +218,20 @@ export async function verifyAggregate(
     typeof m === 'string' ? new TextEncoder().encode(m) : m
   );
   
-  if (useBlst && blst) {
+  if (useBlst && blstModule) {
     try {
-      const sig = blst.Signature.fromBytes(aggregateSignature);
-      const pks = publicKeys.map(pk => blst.PublicKey.fromBytes(pk));
+      const { Signature, PublicKey, verifyMultipleAggregateSignatures } = blstModule;
+      const sig = Signature.fromBytes(aggregateSignature);
+      const pks = publicKeys.map(pk => PublicKey.fromBytes(pk));
       
-      // blst batch verification
-      return blst.verifyMultipleAggregateSignatures([
-        { messages: messageBytes, publicKeys: pks, signature: sig }
-      ]);
+      // Create signature sets for batch verification
+      const sets = [{
+        messages: messageBytes,
+        publicKeys: pks,
+        signature: sig
+      }];
+      
+      return verifyMultipleAggregateSignatures(sets);
     } catch (e) {
       return false;
     }
@@ -305,7 +311,7 @@ export async function benchmark(batchSize: number = 100): Promise<{
 }> {
   await blstInitPromise;
   
-  const impl = useBlst ? '@chainsafe/blst' : '@noble/curves';
+  const impl = useBlst ? '@chainsafe/bls' : '@noble/curves';
   
   // Key generation
   const keygenStart = performance.now();
