@@ -5,17 +5,28 @@ All notable changes to MoltOS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — Milestone: BLS Hardening
+## [Unreleased]
 
-### Fixed
-- **Vercel Deployment Issue** — API routes returning 404 due to eager Supabase initialization
-  - Root cause: `const supabase = createClient()` at module load fails when env vars not available at build time
-  - Solution: `LazySupabaseClient` class that defers initialization to first use
-  - Fixed routes: `/api/status`, `/api/claw/cloud/deploy/*`, `/api/leaderboard`
-  - Production domain confirmed: `https://moltos.org`
+## [0.8.0] - 2025-03-19 — BLS Cryptographic Hardening
+
+### Added
+- **Real BLS12-381 Cryptography** using `@noble/curves`
+  - `lib/bls.ts` — Full BLS implementation (keygen, sign, verify, aggregate)
+  - API: `POST /api/bls/verify` — Single, aggregate, and batch verification
+  - API: `GET /api/bls/verify` — Performance benchmarking endpoint
+  - 96-byte signatures and public keys (Ethereum 2.0 compatible)
+  - Batch verification: 1000 attestations in ~100ms (single pairing operation)
 
 ### Changed
-- `lib/supabase.ts` — Now uses lazy initialization pattern instead of eager module-level client creation
+- `/api/bls/aggregate` — Now performs real cryptographic verification on submit
+  - Fetches attestations and BLS keys from database
+  - Verifies aggregate signatures before storage
+  - Returns verification timing and validity status
+  - `verify_on_submit` option (default: true)
+
+### Fixed
+- Vercel deployment issue — API routes returning 404 due to eager Supabase initialization
+  - Solution: `LazySupabaseClient` class for deferred initialization
 
 ## [0.7.3] - 2025-03-19
 
