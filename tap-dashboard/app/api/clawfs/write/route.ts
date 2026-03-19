@@ -1,16 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verifyClawIDSignature } from '@/lib/clawid-auth'
+import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security'
 import type { Tables } from '@/lib/database.types'
 
 type Agent = Tables<'agents'>
 type ClawFSFile = Tables<'clawfs_files'>
 
+// Rate limit: 20 writes per minute per IP
+const MAX_BODY_SIZE_KB = 1000; // 1MB max for file content
+const MAX_PATH_LENGTH = 512;
+const MAX_CONTENT_LENGTH = 10 * 1024 * 1024; // 10MB decoded
+
 export async function POST(request: NextRequest) {
+  const path = '/api/clawfs/write';
+  
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
-    const body = await request.json()
+    const bodyText = await request.text();
+    const sizeCheck = validateBodySize(bodyText, MAX_BODY_SIZE_KB);
+    if (!sizeCheck.valid) {
+      const response = NextResponse.json(
+        { error: sizeCheck.error },
+        { status: 413 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+    
+    let body;
+    try {
+      body = JSON.parse(bodyText);
+    } catch {
+      const response = NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+    
     const {
-      path,
+      path: filePath,
       content,
       content_type = 'application/octet-stream',
       public_key,
@@ -18,22 +57,79 @@ export async function POST(request: NextRequest) {
       timestamp,
     } = body
 
-    if (!path || !content || !public_key || !signature) {
-      return NextResponse.json(
+    if (!filePath || !content || !public_key || !signature) {
+      const response = NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
-      )
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
+    // Validate path format (prevent path traversal)
+    if (filePath.length > MAX_PATH_LENGTH) {
+      const response = NextResponse.json(
+        { error: 'Path too long' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+    
+    if (filePath.includes('..') || filePath.includes('\x00')) {
+      const response = NextResponse.json(
+        { error: 'Invalid path format' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+    
+    // Validate path starts with allowed prefixes
+    const allowedPrefixes = ['/data/', '/apps/', '/agents/', '/temp/'];
+    if (!allowedPrefixes.some(prefix => filePath.startsWith(prefix))) {
+      const response = NextResponse.json(
+        { error: 'Invalid path prefix. Must start with: ' + allowedPrefixes.join(', ') },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
+    // Validate content size (base64 decoded)
+    const decodedContent = Buffer.from(content, 'base64');
+    if (decodedContent.length > MAX_CONTENT_LENGTH) {
+      const response = NextResponse.json(
+        { error: 'Content too large (max 10MB)' },
+        { status: 413 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     // Verify ClawID signature
-    const payload = { path, content_hash: hashContent(content), timestamp }
+    const payload = { path: filePath, content_hash: hashContent(content), timestamp }
     const verification = await verifyClawIDSignature(public_key, signature, payload)
     
     if (!verification.valid) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: verification.error || 'Invalid ClawID signature' },
         { status: 401 }
-      )
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     // Look up agent
@@ -44,28 +140,31 @@ export async function POST(request: NextRequest) {
       .single()
     
     const agent = agentResult.data as { agent_id: string } | null
-    const agentError = agentResult.error
 
-    if (agentError || !agent) {
-      return NextResponse.json(
+    if (agentResult.error || !agent) {
+      const response = NextResponse.json(
         { error: 'Agent not found' },
         { status: 404 }
-      )
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     // Generate CID
     const cid = generateCID(content, public_key)
 
-    // Store file metadata in Supabase
+    // Store file metadata
     const fileResult = await supabase
       .from('clawfs_files')
       .insert({
         agent_id: agent.agent_id,
         public_key,
-        path,
+        path: filePath,
         cid,
         content_type,
-        size_bytes: Buffer.from(content, 'base64').length,
+        size_bytes: decodedContent.length,
         signature,
         created_at: new Date().toISOString(),
       })
@@ -73,17 +172,20 @@ export async function POST(request: NextRequest) {
       .single()
     
     const file: ClawFSFile | null = fileResult.data
-    const fileError = fileResult.error
 
-    if (fileError || !file) {
-      console.error('Failed to store file:', fileError)
-      return NextResponse.json(
+    if (fileResult.error || !file) {
+      console.error('Failed to store file:', fileResult.error)
+      const response = NextResponse.json(
         { error: 'Failed to write to ClawFS' },
         { status: 500 }
-      )
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       file: {
         id: file.id,
@@ -93,13 +195,24 @@ export async function POST(request: NextRequest) {
         created_at: file.created_at ?? new Date().toISOString(),
       },
       merkle_root: generateMerkleRoot(cid, public_key),
-    })
+    });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
+    
   } catch (error) {
     console.error('ClawFS write error:', error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to write file' },
       { status: 500 }
-    )
+    );
+    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return applySecurityHeaders(response);
   }
 }
 

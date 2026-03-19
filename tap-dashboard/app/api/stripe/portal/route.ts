@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
 
 // Lazy-load stripe client to avoid build-time errors
 let stripeClient: Stripe | null = null;
@@ -25,6 +26,19 @@ function getStripe(): Stripe {
   return stripeClient;
 }
 
+// Rate limit: 10 portal sessions per minute per IP
+const MAX_BODY_SIZE_KB = 50;
+
+// Validate URL to prevent open redirect
+function isValidUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Get or create a customer by email
  */
@@ -33,7 +47,6 @@ async function getOrCreateCustomer(
   metadata?: Record<string, string>
 ): Promise<Stripe.Customer> {
   const stripe = getStripe();
-  // Search for existing customer
   const customers = await stripe.customers.list({
     email,
     limit: 1,
@@ -41,36 +54,13 @@ async function getOrCreateCustomer(
 
   if (customers.data.length > 0) {
     const customer = customers.data[0];
-    
-    // Update metadata if provided
     if (metadata) {
       return stripe.customers.update(customer.id, { metadata });
     }
-    
     return customer;
   }
 
-  // Create new customer
-  return stripe.customers.create({
-    email,
-    metadata,
-  });
-}
-
-/**
- * Create a Stripe Customer Portal session
- */
-async function createCustomerPortalSession(
-  customerId: string,
-  returnUrl?: string
-): Promise<{ url: string }> {
-  const stripe = getStripe();
-  const session = await stripe.billingPortal.sessions.create({
-    customer: customerId,
-    return_url: returnUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/settings`,
-  });
-
-  return { url: session.url };
+  return stripe.customers.create({ email, metadata });
 }
 
 interface PortalRequest {
@@ -83,70 +73,133 @@ interface PortalRequest {
  * POST handler for creating a customer portal session
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const path = '/api/stripe/portal';
+  
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
-    const body: PortalRequest = await request.json();
+    const bodyText = await request.text();
+    const sizeCheck = validateBodySize(bodyText, MAX_BODY_SIZE_KB);
+    if (!sizeCheck.valid) {
+      const response = NextResponse.json(
+        { error: sizeCheck.error, code: 'PAYLOAD_TOO_LARGE' },
+        { status: 413 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+    
+    let body: PortalRequest;
+    try {
+      body = JSON.parse(bodyText);
+    } catch {
+      const response = NextResponse.json(
+        { error: 'Invalid JSON payload', code: 'INVALID_JSON' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+    
     const { userId, email, returnUrl } = body;
 
-    // Validate required fields
     if (!userId || !email) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Missing required fields: userId, email', code: 'MISSING_FIELDS' },
         { status: 400 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
+    // Validate userId format
+    if (!/^[a-zA-Z0-9_-]{1,64}$/.test(userId)) {
+      const response = NextResponse.json(
+        { error: 'Invalid userId format', code: 'INVALID_USERID' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
+    if (!emailRegex.test(email) || email.length > 255) {
+      const response = NextResponse.json(
         { error: 'Invalid email format', code: 'INVALID_EMAIL' },
         { status: 400 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
-    // Get or create customer
-    const customer = await getOrCreateCustomer(email, {
-      userId,
-      source: 'moltos_portal',
+    // Validate returnUrl if provided
+    if (returnUrl && !isValidUrl(returnUrl)) {
+      const response = NextResponse.json(
+        { error: 'Invalid returnUrl', code: 'INVALID_URL' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
+    const customer = await getOrCreateCustomer(email, { userId, source: 'moltos_portal' });
+
+    const session = await getStripe().billingPortal.sessions.create({
+      customer: customer.id,
+      return_url: returnUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://moltos.org'}/dashboard/settings`,
     });
 
-    // Create portal session
-    const portalSession = await createCustomerPortalSession(
-      customer.id,
-      returnUrl
-    );
+    console.log('[Stripe Portal] Created portal session:', { customerId: customer.id, userId });
 
-    console.log('[Stripe Portal] Created portal session:', {
-      customerId: customer.id,
-      userId,
-    });
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
-      url: portalSession.url,
+      url: session.url,
       customerId: customer.id,
     });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
 
   } catch (error) {
-    console.error('[Stripe Portal] Error creating portal session:', error);
+    console.error('[Stripe Portal] Error:', error);
 
     if (error instanceof Stripe.errors.StripeError) {
-      return NextResponse.json(
-        { 
-          error: error.message, 
-          code: error.code || 'STRIPE_ERROR',
-          type: error.type
-        },
+      const response = NextResponse.json(
+        { error: error.message, code: error.code || 'STRIPE_ERROR', type: error.type },
         { status: error.statusCode || 500 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
-    return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : 'Failed to create portal session',
-        code: 'PORTAL_ERROR'
-      },
+    const response = NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to create portal session', code: 'PORTAL_ERROR' },
       { status: 500 }
     );
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return applySecurityHeaders(response);
   }
 }

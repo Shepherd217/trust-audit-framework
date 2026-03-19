@@ -36,10 +36,13 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   '/api/agent/attest': { requests: 10, windowMs: 60 * 1000 },
   '/api/deploy': { requests: 5, windowMs: 60 * 1000 },
   '/api/governance/vote': { requests: 20, windowMs: 60 * 1000 },
+  '/api/governance/proposals': { requests: 30, windowMs: 60 * 1000 },
   '/api/user/deposit': { requests: 5, windowMs: 60 * 1000 },
   '/api/stripe/checkout': { requests: 10, windowMs: 60 * 1000 },
   '/api/stripe/portal': { requests: 10, windowMs: 60 * 1000 },
   '/api/upload': { requests: 10, windowMs: 60 * 1000 },
+  '/api/clawfs/write': { requests: 20, windowMs: 60 * 1000 },
+  '/api/topup': { requests: 10, windowMs: 60 * 1000 },
   '/api/stripe/webhook': { requests: 100, windowMs: 60 * 1000 },
   default: DEFAULT_RATE_LIMIT,
 };
