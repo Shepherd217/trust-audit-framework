@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { verifyClawIDSignature } from '@/lib/clawid-auth'
 
 // Type definitions
 interface Agent {
@@ -35,14 +36,13 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // In a real implementation, verify the Ed25519 signature here
-    // For now, we'll accept the signature as valid if the format looks correct
-    // TODO: Implement actual Ed25519 signature verification
-    const isValidSignature = signature.length > 0 && publicKey.length > 0
+    // Verify the Ed25519 signature
+    const payload = { challenge, timestamp }
+    const verification = await verifyClawIDSignature(publicKey, signature, payload)
     
-    if (!isValidSignature) {
+    if (!verification.valid) {
       return NextResponse.json(
-        { error: 'Invalid signature' },
+        { error: verification.error || 'Invalid signature' },
         { status: 401 }
       )
     }
