@@ -1,38 +1,42 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
 
-let supabaseClient: ReturnType<typeof createClient<Database>> | null = null
-let serviceClient: ReturnType<typeof createClient<Database>> | null = null
+let supabaseClient: SupabaseClient<Database> | null = null
 
-export const supabase = new Proxy({} as ReturnType<typeof createClient<Database>>, {
-  get(target, prop) {
-    if (!supabaseClient) {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
-      if (!url || !key) throw new Error('Supabase not configured')
-      supabaseClient = createClient<Database>(url, key, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      })
+function getClient(): SupabaseClient<Database> {
+  if (!supabaseClient) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!url || !key) {
+      throw new Error('Supabase not configured')
     }
-    return supabaseClient[prop as keyof typeof supabaseClient]
+    supabaseClient = createClient<Database>(url, key, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
   }
-})
+  return supabaseClient
+}
 
-// For server-side usage with service role key
+// Lazy wrapper that delegates all property access to the actual client
+class LazySupabaseClient {
+  private get client() {
+    return getClient()
+  }
+  
+  // Delegate all methods/properties to the real client
+  get auth() { return this.client.auth }
+  get from() { return this.client.from.bind(this.client) }
+  get rpc() { return this.client.rpc.bind(this.client) }
+  get channel() { return this.client.channel.bind(this.client) }
+  get removeChannel() { return this.client.removeChannel.bind(this.client) }
+  get removeAllChannels() { return this.client.removeAllChannels.bind(this.client) }
+}
+
+export const supabase = new LazySupabaseClient() as SupabaseClient<Database>
+
 export function getSupabaseClient() {
   if (typeof window !== 'undefined') {
     throw new Error('getSupabaseClient should only be used on the server')
   }
-  
-  if (!serviceClient) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!url || !serviceKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured')
-    
-    serviceClient = createClient<Database>(url, serviceKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    })
-  }
-  
-  return serviceClient
+  return getClient()
 }
