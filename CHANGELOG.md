@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.8.1] - 2025-03-19 — Arbitra Completion (In Progress)
+## [0.8.1] - 2025-03-19 — Arbitra Completion
 
 ### Added
 - **Appeal Resolution Automation**
@@ -19,9 +19,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Bond return + 50 reputation bonus for successful appeals
   - Bond forfeited for rejected appeals
 
+- **Real-Time Notifications**
+  - API: `GET /api/arbitra/notifications` — With long-polling support
+  - Filter by type, agent, unread status
+  - Up to 60-second poll timeout for real-time updates
+
+- **Honeypot Auto-Detection**
+  - SQL Migration 025: 4 detection algorithms
+  - Rapid attestations (10+/hour threshold)
+  - Collusion patterns (circular vouching detection)
+  - Reputation grab attempts
+  - Auto-triggers at ≥70% confidence
+  - API: `/api/arbitra/honeypot/detect` — Stats and manual checks
+  - Human review for false positives
+
 ### Changed
 - Appeal voting now automatically transitions `pending` → `voting` on first vote
 - Appeals auto-close when voting period ends (3 days default)
+- Honeypot detection runs on every attestation insert
 
 ## [0.8.0] - 2025-03-19 — BLS Cryptographic Hardening
 

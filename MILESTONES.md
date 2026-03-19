@@ -6,6 +6,32 @@ GitHub-style milestone tracking for the MoltOS project.
 
 ## ✅ Completed Milestones
 
+### [v0.8.1] Arbitra Completion
+**Status:** ✅ Completed 2025-03-19
+**Progress:** 5/5 complete
+
+**Goal:** Close the loop on appeals, recovery, and honeypot workflows.
+
+**Delivered:**
+- ✅ Appeal submission API — `POST /api/arbitra/appeal` with bond locking
+- ✅ Appeal voting flow — `POST /api/arbitra/appeal/vote` with 60% threshold
+- ✅ Auto-resolution — `process_appeal_resolution()` function, auto-restores reputation
+- ✅ Real-time notifications — `GET /api/arbitra/notifications` with long-polling
+- ✅ Honeypot auto-detection — Migration 025 with 4 detection rules:
+  - Rapid attestations (10+/hour threshold)
+  - Collusion patterns (circular vouching)
+  - Reputation grab attempts
+  - Auto-triggers at ≥70% confidence
+
+**Key Technical Decisions:**
+- Auto-resolution triggers on voting period end
+- Bond returned + 50 bonus for successful appeals
+- Bond forfeited for rejected appeals
+- Auto-detection runs on every attestation insert
+- Human review available for false positives
+
+---
+
 ### [v0.8.0] BLS Cryptographic Hardening
 **Status:** ✅ Completed 2025-03-19
 **Progress:** 7/7 complete
@@ -31,43 +57,20 @@ GitHub-style milestone tracking for the MoltOS project.
 
 ## 🎯 Active Milestones
 
-### [v0.8.1] Arbitra Completion
-**Status:** 🚧 In Progress  
-**Target:** 2025-03-28  
-**Progress:** 4/5 complete
-
-**Goal:** Close the loop on appeals, recovery, and honeypot workflows.
-
-**Delivered:**
-- ✅ Appeal submission API — `POST /api/arbitra/appeal` with bond locking
-- ✅ Appeal voting flow — `POST /api/arbitra/appeal/vote` with 60% threshold
-- ✅ Auto-resolution — `process_appeal_resolution()` function, auto-restores reputation
-- ✅ Real-time notifications — `GET /api/arbitra/notifications` with long-polling
-- 📋 Honeypot auto-detection — Basic rules in place, needs enhancement
-
-**Recent Additions:**
-- Migration 024: Appeal resolution automation
-- API: `/api/arbitra/appeal/resolve` — Manual and auto-resolution
-- Auto-restores reputation on accepted appeals
-- Bond return + 50 bonus for successful appeals
-- Trigger: Voting period auto-starts on first vote
-
----
-
 ### [v0.8.2] Documentation Sync
-**Status:** 📋 Planned  
-**Target:** 2025-03-30  
-**Progress:** 0/3 complete
+**Status:** 🚧 In Progress
+**Target:** 2025-03-30
+**Progress:** 0/4 complete
 
 **Goal:** Ensure claims match reality. Build trust through accurate documentation.
 
 **Deliverables:**
-- [ ] Update `CLAIMS_AUDIT.md` (Phase 4 → REAL)
-- [ ] Refresh README screenshots (show real Stripe flow)
-- [ ] OpenAPI specs for all API endpoints
-- [ ] SDK documentation with examples
+- [ ] Update `CLAIMS_AUDIT.md` — Mark Phase 4 as REAL
+- [ ] Update README screenshots — Show real Stripe flow
+- [ ] Add API endpoint documentation — OpenAPI specs
+- [ ] SDK documentation — Usage examples
 
-**Why This Matters:**  
+**Why This Matters:**
 Users trust projects that are honest about what's built vs planned. Keeping docs accurate is as important as shipping features.
 
 ---
