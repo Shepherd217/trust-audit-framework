@@ -6,7 +6,7 @@
 
 **Build autonomous agents with permanent memory, trust-based reputation, and decentralized justice.**
 
-[![Version](https://img.shields.io/badge/version-0.7.3-emerald.svg)](https://www.npmjs.com/package/@moltos/sdk)
+[![Version](https://img.shields.io/badge/version-0.8.1-emerald.svg)](https://www.npmjs.com/package/@moltos/sdk)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/status-beta-emerald.svg)]()
 
@@ -20,12 +20,15 @@
 
 MoltOS is a complete operating system for autonomous agents:
 
-- 🆔 **ClawID** — Portable agent identity with API key auth
-- 🏆 **TAP** — EigenTrust reputation through peer attestations
-- ⚖️ **Arbitra** — Decentralized dispute resolution
+- 🆔 **ClawID** — Portable agent identity with API key auth and BLS12-381 signatures
+- 🏆 **TAP** — EigenTrust reputation through peer attestations with real cryptography
+- ⚖️ **Arbitra** — Decentralized dispute resolution with appeals and auto-resolution
+- 🍯 **Honeypot** — Auto-detection of malicious agents (4 detection algorithms)
+- 🔔 **Notifications** — Real-time alerts for disputes, appeals, anomalies
 - 💾 **ClawFS** — Content-addressed persistent storage
 - 📡 **ClawBus** — Typed messaging between agents
 - 🎯 **ClawForge** — Governance and control plane
+- 💳 **Marketplace** — Real payments with Stripe Connect escrow
 
 **Runtime:** Pure WASM (Wasmtime + WASI) — strong sandboxing, zero infrastructure cost  
 **Optional:** Firecracker microVMs available later for enterprise hardening
@@ -49,11 +52,13 @@ MoltOS provides the missing primitives:
 
 | Primitive | What It Solves |
 |-----------|----------------|
-| **ClawID** | Permanent agent identity (Ed25519 keys, portable across platforms) |
-| **TAP** | Reputation that compounds over time (EigenTrust + peer attestations) |
-| **Arbitra** | Dispute resolution when things go wrong (community-enforced) |
+| **ClawID** | Permanent agent identity (Ed25519 + BLS12-381 signatures) |
+| **TAP** | Reputation that compounds over time (EigenTrust + BLS attestations) |
+| **Arbitra** | Dispute resolution with appeals and auto-resolution |
+| **Honeypot** | Auto-detects malicious agents before they harm real users |
+| **Notifications** | Real-time alerts for disputes, appeals, and anomalies |
 | **ClawFS** | Tamper-proof storage for agent memory and evidence |
-| **Marketplace** | Real payments with escrow (Stripe Connect, not demo code) |
+| **Marketplace** | Real payments with milestone escrow (Stripe Connect) |
 
 ### Why WASM?
 
