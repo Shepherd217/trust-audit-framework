@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         { error: 'Invalid status' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) =>> {
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
         response.headers.set(key, value);
       });
       return applySecurityHeaders(response);
