@@ -7,6 +7,13 @@ import {
   verifyHex,
   verifyAggregateHex 
 } from '@/lib/bls';
+import { 
+  applyRateLimit, 
+  applySecurityHeaders,
+  validateBodySize,
+  validateArrayLength,
+  validateHex 
+} from '@/lib/security';
 
 let supabase: ReturnType<typeof createClient> | null = null;
 
@@ -20,48 +27,40 @@ function getSupabase() {
   return supabase;
 }
 
+// Configuration limits
+const MAX_MESSAGE_LENGTH = 10000; // 10KB max message
+const MAX_SIGNERS = 1000; // Max signers for aggregate verification
+const MAX_ATTESTATION_IDS = 500; // Max attestations to fetch
+
 /**
  * POST /api/bls/verify
  * Verify BLS signatures (single, aggregate, or batch)
- * 
- * Body modes:
- * 
- * 1. Single signature verification:
- * {
- *   mode: 'single',
- *   message: string,
- *   signature: string (hex, 96 bytes),
- *   public_key: string (hex, 96 bytes)
- * }
- * 
- * 2. Aggregate verification (different messages):
- * {
- *   mode: 'aggregate',
- *   messages: string[],
- *   aggregate_signature: string (hex, 96 bytes),
- *   public_keys: string[] (hex, 96 bytes each)
- * }
- * 
- * 3. Multiple verification (same message, many signers):
- * {
- *   mode: 'multiple',
- *   message: string,
- *   aggregate_signature: string (hex, 96 bytes),
- *   public_keys: string[] (hex, 96 bytes each)
- * }
- * 
- * 4. By attestation IDs (fetches from database):
- * {
- *   mode: 'by_attestations',
- *   attestation_ids: string[],
- *   aggregate_signature: string (hex, 96 bytes)
- * }
+ * Rate limited: 30 requests per minute
  */
 export async function POST(request: NextRequest) {
   const startTime = performance.now();
   
+  // Apply rate limiting
+  const path = '/api/bls/verify';
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
-    const body = await request.json();
+    const bodyText = await request.text();
+    
+    // Validate body size (100KB max)
+    const sizeCheck = validateBodySize(bodyText, 100);
+    if (!sizeCheck.valid) {
+      return NextResponse.json({
+        success: false,
+        error: sizeCheck.error
+      }, { status: 413 });
+    }
+    
+    const body = JSON.parse(bodyText);
     const { mode } = body;
 
     if (!mode) {
@@ -95,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     const duration = performance.now() - startTime;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       valid: result.valid,
       mode,
@@ -105,13 +104,26 @@ export async function POST(request: NextRequest) {
         ? 'Signature verified successfully'
         : 'Signature verification failed'
     });
+    
+    // Add rate limit headers
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
 
   } catch (error) {
     console.error('BLS verify error:', error);
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: false,
       error: 'Verification failed: ' + (error as Error).message
     }, { status: 500 });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
   }
 }
 
@@ -122,16 +134,20 @@ async function verifySingle(body: any): Promise<{ valid: boolean; details: any }
     throw new Error('message, signature, and public_key required for single mode');
   }
 
-  // Validate hex lengths
+  // Validate message length
+  if (typeof message === 'string' && message.length > MAX_MESSAGE_LENGTH) {
+    throw new Error(`Message too long. Max ${MAX_MESSAGE_LENGTH} characters.`);
+  }
+
+  // Validate hex format
+  const sigValidation = validateHex(signature, 96, 'signature');
+  if (!sigValidation.valid) throw new Error(sigValidation.error);
+  
+  const pkValidation = validateHex(public_key, 96, 'public_key');
+  if (!pkValidation.valid) throw new Error(pkValidation.error);
+
   const sigHex = signature.replace(/^0x/, '');
   const pkHex = public_key.replace(/^0x/, '');
-
-  if (sigHex.length !== 192) {
-    throw new Error('Invalid signature length. Expected 96 bytes (192 hex chars)');
-  }
-  if (pkHex.length !== 192) {
-    throw new Error('Invalid public key length. Expected 96 bytes (192 hex chars)');
-  }
 
   const valid = await verifyHex(message, sigHex, pkHex);
 
@@ -156,6 +172,13 @@ async function verifyAggregateMode(body: any): Promise<{ valid: boolean; details
     throw new Error('messages and public_keys must be arrays');
   }
 
+  // Validate array lengths
+  const msgLimit = validateArrayLength(messages, MAX_SIGNERS, 'messages');
+  if (!msgLimit.valid) throw new Error(msgLimit.error);
+  
+  const pkLimit = validateArrayLength(public_keys, MAX_SIGNERS, 'public_keys');
+  if (!pkLimit.valid) throw new Error(pkLimit.error);
+
   if (messages.length !== public_keys.length) {
     throw new Error('Message count must match public key count');
   }
@@ -164,17 +187,16 @@ async function verifyAggregateMode(body: any): Promise<{ valid: boolean; details
     throw new Error('Cannot verify empty aggregate');
   }
 
+  // Validate signature format
+  const sigValidation = validateHex(aggregate_signature, 96, 'aggregate_signature');
+  if (!sigValidation.valid) throw new Error(sigValidation.error);
+
   const sigHex = aggregate_signature.replace(/^0x/, '');
-  if (sigHex.length !== 192) {
-    throw new Error('Invalid aggregate signature length');
-  }
 
   // Validate all public keys
   for (const pk of public_keys) {
-    const pkHex = pk.replace(/^0x/, '');
-    if (pkHex.length !== 192) {
-      throw new Error('Invalid public key length in array');
-    }
+    const pkValidation = validateHex(pk, 96, 'public_key');
+    if (!pkValidation.valid) throw new Error(pkValidation.error);
   }
 
   const valid = await verifyAggregateHex(messages, sigHex, public_keys.map((k: string) => k.replace(/^0x/, '')));
@@ -200,21 +222,30 @@ async function verifyMultipleMode(body: any): Promise<{ valid: boolean; details:
     throw new Error('public_keys must be an array');
   }
 
+  // Validate array length
+  const pkLimit = validateArrayLength(public_keys, MAX_SIGNERS, 'public_keys');
+  if (!pkLimit.valid) throw new Error(pkLimit.error);
+
   if (public_keys.length === 0) {
     throw new Error('Cannot verify empty multiple');
   }
 
+  // Validate message length
+  if (typeof message === 'string' && message.length > MAX_MESSAGE_LENGTH) {
+    throw new Error(`Message too long. Max ${MAX_MESSAGE_LENGTH} characters.`);
+  }
+
+  // Validate signature format
+  const sigValidation = validateHex(aggregate_signature, 96, 'aggregate_signature');
+  if (!sigValidation.valid) throw new Error(sigValidation.error);
+
   const sigHex = aggregate_signature.replace(/^0x/, '');
   const pkHexes = public_keys.map((k: string) => k.replace(/^0x/, ''));
 
-  // Validate lengths
-  if (sigHex.length !== 192) {
-    throw new Error('Invalid aggregate signature length');
-  }
+  // Validate all public keys
   for (const pk of pkHexes) {
-    if (pk.length !== 192) {
-      throw new Error('Invalid public key length in array');
-    }
+    const pkValidation = validateHex(pk, 96, 'public_key');
+    if (!pkValidation.valid) throw new Error(pkValidation.error);
   }
 
   // Convert hex to bytes for verification
@@ -247,6 +278,14 @@ async function verifyByAttestations(body: any): Promise<{ valid: boolean; detail
   if (!Array.isArray(attestation_ids) || attestation_ids.length === 0) {
     throw new Error('attestation_ids must be a non-empty array');
   }
+
+  // Validate array length
+  const idLimit = validateArrayLength(attestation_ids, MAX_ATTESTATION_IDS, 'attestation_ids');
+  if (!idLimit.valid) throw new Error(idLimit.error);
+
+  // Validate signature format
+  const sigValidation = validateHex(aggregate_signature, 96, 'aggregate_signature');
+  if (!sigValidation.valid) throw new Error(sigValidation.error);
 
   // Fetch attestations from database
   const { data: attestations, error } = await getSupabase()
@@ -329,8 +368,17 @@ async function verifyByAttestations(body: any): Promise<{ valid: boolean; detail
 /**
  * GET /api/bls/verify
  * Get verification statistics and benchmark info
+ * Rate limited: 30 requests per minute
  */
 export async function GET(request: NextRequest) {
+  // Apply rate limiting
+  const path = '/api/bls/verify';
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
     // Run a quick benchmark
     const { benchmark } = await import('@/lib/bls');
@@ -345,7 +393,7 @@ export async function GET(request: NextRequest) {
     const pending = stats?.filter((s: any) => !s.verified_at).length || 0;
     const invalid = stats?.filter((s: any) => s.valid === false).length || 0;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       status: 'BLS12-381 verification active',
       performance: {
@@ -364,11 +412,24 @@ export async function GET(request: NextRequest) {
         invalid
       }
     });
+    
+    // Add rate limit headers
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
 
   } catch (error) {
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: false,
       error: 'Failed to get verification stats'
     }, { status: 500 });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
   }
 }
