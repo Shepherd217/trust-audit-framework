@@ -1,6 +1,6 @@
-# Contributing to Trust Audit Framework
+# Contributing to MoltOS
 
-Thank you for your interest in contributing! This document provides guidelines for contributing to the framework.
+Thank you for your interest in building the Agent Operating System! This document provides guidelines for contributing.
 
 ## Table of Contents
 
@@ -10,7 +10,6 @@ Thank you for your interest in contributing! This document provides guidelines f
 - [Submitting Changes](#submitting-changes)
 - [Code Standards](#code-standards)
 - [Testing](#testing)
-- [Documentation](#documentation)
 - [Community](#community)
 
 ---
@@ -19,425 +18,223 @@ Thank you for your interest in contributing! This document provides guidelines f
 
 ### Prerequisites
 
-- Python 3.8+ or Node.js 16+ (depending on implementation)
+- Node.js 18+ (we use Next.js and TypeScript)
 - Git
-- A workspace to test boot audits on
+- A Supabase account (free tier works)
+- Stripe account (for payment testing, test mode is fine)
 
 ### Quick Setup
 
 ```bash
-git clone https://github.com/exitliquidity/trust-audit-framework.git
-cd trust-audit-framework
-./demo.sh  # See the framework in action
+git clone https://github.com/Shepherd217/MoltOS.git
+cd MoltOS/tap-dashboard
+npm install
+cp .env.example .env.local
+# Edit .env.local with your credentials
+npm run dev
 ```
+
+The dashboard runs at `http://localhost:3000`
 
 ---
 
 ## Types of Contributions
 
-We welcome these types of contributions:
+### 1. **Protocol Implementations** 🎯
 
-### 1. **New Agent Implementations** 🎯
+Help implement the core protocols:
 
-Add support for new languages/platforms:
+- **BLS Signatures** — Replace crypto stubs with real BLS12-381
+- **ClawVM Runtime** — WASM sandbox improvements
+- **Multi-chain Support** — EVM/Solana attestations
 
-- **Layer 1 (Boot Audit):** Minimum viable — check workspace integrity
-- **Layer 2 (Trust Ledger):** Add behavioral transparency
-- **Layer 3+4:** Full cross-attestation and staking
+### 2. **SDK Development** 📦
 
-**Example structure:**
-```
-reference-implementations/
-├── agent-e-rust/         # Your contribution
-│   ├── Cargo.toml
-│   ├── src/main.rs
-│   └── README.md
-```
+Add language support:
 
-**Requirements:**
-- Must output valid boot-audit JSON (see attestation-format-spec.md)
-- Must include README with usage instructions
-- Must pass edge case tests
+- Python SDK (partial, needs completion)
+- Go SDK (scaffolded)
+- Rust SDK (not started)
 
-### 2. **Bug Fixes** 🐛
+### 3. **Security Research** 🔒
 
-Found an issue? We need:
-- Clear description of the bug
-- Steps to reproduce
-- Expected vs actual behavior
-- Fix with test case
+- Penetration testing of auth flows
+- Economic analysis of TAP reputation
+- Dispute resolution game theory
 
-### 3. **Documentation** 📚
+### 4. **Documentation** 📝
 
-Help others understand the framework:
-- Tutorial articles
-- API documentation
-- Architecture explanations
+- Tutorials and guides
+- API reference improvements
 - Translation to other languages
-
-### 4. **Testing** 🧪
-
-Improve test coverage:
-- Edge case scenarios
-- Performance benchmarks
-- Security audits
-- Integration tests
-
-### 5. **Integrations** 🔌
-
-Connect to existing agent platforms:
-- AutoGPT plugin
-- LangChain integration
-- CrewAI adapter
-- Custom agent frameworks
 
 ---
 
 ## Development Setup
 
-### Fork and Clone
+### Environment Variables
+
+Required in `.env.local`:
 
 ```bash
-# Fork the repo on GitHub, then:
-git clone https://github.com/YOUR_USERNAME/trust-audit-framework.git
-cd trust-audit-framework
-git remote add upstream https://github.com/exitliquidity/trust-audit-framework.git
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-### Create a Branch
+### Database Migrations
+
+When adding SQL:
 
 ```bash
-git checkout -b feature/your-feature-name
-# or
-git checkout -b fix/bug-description
+cd tap-dashboard/supabase/migrations
+# Create new migration: 016_description.sql
+# Run in Supabase SQL Editor
 ```
 
-### Branch Naming
+### Testing API Endpoints
 
-- `feature/` — New features or enhancements
-- `fix/` — Bug fixes
-- `docs/` — Documentation changes
-- `test/` — Test additions or improvements
-- `refactor/` — Code refactoring
+Use the included test script:
+
+```bash
+./test-payments.sh
+```
 
 ---
 
 ## Submitting Changes
 
-### Before Submitting
-
-1. **Test your changes:**
-   ```bash
-   # Run existing tests
-   python3 test-edge-cases.py
-   
-   # Run your new tests
-   python3 test-your-feature.py
-   
-   # Test the demo still works
-   ./demo.sh
-   ```
-
-2. **Check code style:**
-   - Python: Follow PEP 8
-   - JavaScript: Use 2-space indentation
-   - Shell: Use 2-space indentation
-   - Keep lines under 100 characters
-
-3. **Update documentation:**
-   - README.md if adding features
-   - ARCHITECTURE.md if changing structure
-   - Inline comments for complex logic
-
-### Commit Messages
-
-Use clear, descriptive commit messages:
-
-```
-Add Rust agent implementation (Agent E)
-
-- Layer 1: Boot audit with cargo-based verification
-- Layer 2: Trust Ledger with serde serialization
-- Passes all 6 edge case tests
-- Includes README and usage examples
-```
-
-Format:
-```
-<subject> (imperative mood, max 50 chars)
-
-<body> (explain what and why, not how, wrap at 72 chars)
-
-<footer> (optional: fixes #123, relates to #456)
-```
-
 ### Pull Request Process
 
-1. **Push your branch:**
+1. **Fork the repository** and create a branch:
    ```bash
-   git push origin feature/your-feature-name
+   git checkout -b feature/your-feature-name
    ```
 
-2. **Open a Pull Request on GitHub:**
-   - Use a clear title
-   - Describe what changed and why
-   - Reference any related issues
-   - Include test results
+2. **Make your changes** with clear commit messages:
+   ```bash
+   git commit -m "feat: Add BLS signature verification
+   
+   - Replace stubs with noble-curves BLS12-381
+   - Add batch verification for aggregated attestations
+   - Update tests"
+   ```
 
-3. **PR Checklist:**
-   - [ ] Tests pass locally
-   - [ ] Documentation updated
-   - [ ] No breaking changes (or clearly documented)
-   - [ ] Follows code style guidelines
-   - [ ] Includes test cases for new features
+3. **Update documentation** if you change APIs or add features
 
-4. **Review Process:**
-   - Maintainers will review within 48 hours
-   - Address feedback with additional commits
-   - Squash commits if requested
+4. **Submit PR** with:
+   - Clear description of what and why
+   - Screenshots for UI changes
+   - Test results
+
+### Commit Message Format
+
+We follow [Conventional Commits](https://conventionalcommits.org/):
+
+```
+type(scope): subject
+
+body (optional)
+
+footer (optional)
+```
+
+Types:
+- `feat:` — New feature
+- `fix:` — Bug fix
+- `docs:` — Documentation
+- `refactor:` — Code change without behavior change
+- `test:` — Tests
+- `chore:` — Build/tooling
 
 ---
 
 ## Code Standards
 
-### Python
+### TypeScript
 
-```python
-# Use type hints
-def calculate_compliance(files_present: int, total: int) -> float:
-    """Calculate compliance score as percentage."""
-    return (files_present / total) * 100
+- Strict mode enabled
+- No `any` types (use `unknown` with guards)
+- Functional components with hooks
+- Async/await for promises
 
-# Document functions
-def create_ledger_entry(
-    action: str,
-    human_requested: bool,
-    suppressed: Optional[str] = None
-) -> Dict[str, Any]:
-    """
-    Create a new Trust Ledger entry.
-    
-    Args:
-        action: Description of the action taken
-        human_requested: Whether the action was explicitly requested
-        suppressed: Any information that was suppressed
-    
-    Returns:
-        Ledger entry dictionary with classification
-    """
-    # Implementation here
-    pass
+### API Routes
 
-# Constants in UPPER_CASE
-CORE_FILES = ['AGENTS.md', 'SOUL.md', 'USER.md', 'TOOLS.md', 'MEMORY.md', 'HEARTBEAT.md']
+Pattern for new endpoints:
 
-# Classes use CapWords
-class TrustLedger:
-    def __init__(self, agent_id: str, workspace: Path):
-        self.agent_id = agent_id
-        self.workspace = workspace
-```
+```typescript
+// app/api/feature/action/route.ts
+import { NextRequest, NextResponse } from 'next/server'
+import { verifyClawIDSignature } from '@/lib/clawid-auth'
 
-### JavaScript/Node.js
-
-```javascript
-// Use const/let, not var
-const fs = require('fs').promises;
-
-// Async/await preferred
-async function runAudit(agentId, workspace) {
-  const files = await checkCoreFiles(workspace);
-  return {
-    agent_id: agentId,
-    compliance: calculateCompliance(files)
-  };
-}
-
-// JSDoc comments
-/**
- * Create a Trust Ledger entry
- * @param {string} action - Description of action taken
- * @param {boolean} humanRequested - Whether human explicitly requested
- * @param {string} [suppressed] - Any suppressed information
- * @returns {Object} Ledger entry
- */
-function createEntry(action, humanRequested, suppressed = null) {
-  // Implementation
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    // Validate input
+    // Verify signature
+    // Process
+    return NextResponse.json({ success: true, data })
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Description' },
+      { status: 500 }
+    )
+  }
 }
 ```
 
-### Shell Scripts
+### Security
 
-```bash
-#!/bin/bash
-
-# Use descriptive variable names
-WORKSPACE_DIR="${1:-/root/.openclaw/workspace}"
-AGENT_ID="${2:-$(hostname)}"
-
-# Quote variables
-if [ -f "$WORKSPACE_DIR/$file" ]; then
-    echo "Found: $file"
-fi
-
-# Functions for reusable code
-check_file() {
-    local file="$1"
-    if [ -f "$file" ]; then
-        echo "present"
-    else
-        echo "missing"
-    fi
-}
-```
+- **Never** commit real API keys
+- Always verify ClawID signatures on state-changing operations
+- Use parameterized Supabase queries (RLS handles authz)
 
 ---
 
 ## Testing
 
-### Running Tests
+### Manual Testing
 
-```bash
-# All edge case tests
-python3 test-edge-cases.py
+Before submitting:
 
-# Cross-attestation simulation
-python3 test-cross-attestation-enhanced.py
+1. Run `./test-payments.sh` to verify endpoints
+2. Test auth flows with invalid signatures (should fail)
+3. Verify database changes reflect in Supabase
 
-# Specific agent test
-./reference-implementations/agent-a-boot-audit.sh test-agent /tmp/test-workspace
+### CI/CD
 
-# With verbose output
-python3 test-edge-cases.py --verbose
-```
-
-### Writing Tests
-
-For new agent implementations:
-
-```python
-def test_your_agent():
-    """Test your new agent implementation."""
-    workspace = create_test_workspace()
-    
-    # Test basic functionality
-    result = run_your_agent("test", workspace)
-    assert result['compliance']['score'] == 100
-    
-    # Test edge cases
-    test_missing_files(workspace)
-    test_override_detection(workspace)
-    
-    print("✓ All tests passed")
-```
-
-### Test Coverage Requirements
-
-- **Minimum:** 80% code coverage
-- **Required:** All 6 edge cases must pass
-- **Required:** Must work with demo.sh
-- **Required:** Must output valid JSON schema
-
----
-
-## Documentation
-
-### README Template for New Implementations
-
-```markdown
-# Agent X — [Language] Implementation
-
-Brief description of what this agent does.
-
-## Features
-
-- Layer 1: Boot-time audit
-- Layer 2: Trust Ledger (if applicable)
-- etc.
-
-## Installation
-
-```bash
-# Installation steps
-```
-
-## Usage
-
-```bash
-# Basic usage
-./agent-x [agent-id] [workspace-path]
-
-# With options
-./agent-x --verbose --output custom.json
-```
-
-## Output Format
-
-Describe the JSON output format.
-
-## Testing
-
-```bash
-# How to test this agent
-```
-
-## License
-
-MIT
-```
-
-### Code Comments
-
-Comment the "why", not the "what":
-
-```python
-# Good: Explains why
-# Hash must include both filename and content to detect 
-# both file removal and content tampering
-hasher.update(filename.encode())
-hasher.update(content)
-
-# Bad: States the obvious
-# Update hasher with filename
-hasher.update(filename.encode())
-```
+Our GitHub Actions run:
+- TypeScript type checking
+- Basic linting
+- Build verification
 
 ---
 
 ## Community
 
-### Communication Channels
+### Discord
 
-- **GitHub Issues:** Bug reports, feature requests
-- **GitHub Discussions:** General questions, ideas
-- **Moltbook:** [@exitliquidity](https://moltbook.com/@exitliquidity) — Real-time updates
-- **Alpha Collective:** [m/builds](https://moltbook.com/m/builds) — Implementation discussions
+Join [discord.gg/moltos](https://discord.gg/moltos) for:
+- Real-time discussion
+- Architecture decisions
+- Help with setup
 
-### Code of Conduct
+### Issue Labels
 
-- Be respectful and inclusive
-- Focus on constructive feedback
-- Assume good intentions
-- Help newcomers learn
-
-### Recognition
-
-Contributors will be:
-- Listed in CONTRIBUTORS.md
-- Mentioned in release notes
-- Credited in documentation
+We use:
+- `good first issue` — Starter tasks
+- `security` — Security-related
+- `protocol` — Core protocol changes
+- `sdk` — SDK development
+- `docs` — Documentation
 
 ---
 
 ## Questions?
 
-- **Technical:** Open a GitHub Discussion
-- **Bugs:** Open a GitHub Issue
-- **Chat:** Find us on Moltbook
+Open an issue or reach out on Discord. We're building this together.
 
-Thank you for contributing to agent trust and verification! 🦞
-
----
-
-**Last Updated:** March 6, 2026  
-**Version:** 1.0.0
+**The goal:** Real infrastructure for autonomous agents. No vaporware.
