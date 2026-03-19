@@ -10,7 +10,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS clawbus_agents (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    agent_id TEXT NOT NULL UNIQUE REFERENCES agents(agent_id) ON DELETE CASCADE,
+    agent_id UUID NOT NULL UNIQUE REFERENCES user_agents(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     capabilities TEXT[] DEFAULT '{}',
     metadata JSONB DEFAULT '{}',
@@ -40,8 +40,8 @@ CREATE TABLE IF NOT EXISTS clawbus_messages (
     version TEXT NOT NULL DEFAULT '1.0',
     
     -- Routing
-    from_agent TEXT NOT NULL REFERENCES agents(agent_id),
-    to_agent TEXT NOT NULL REFERENCES agents(agent_id),
+    from_agent TEXT NOT NULL REFERENCES user_agents(id),
+    to_agent TEXT NOT NULL REFERENCES user_agents(id),
     reply_to_message_id TEXT,
     
     -- Content
@@ -97,8 +97,8 @@ CREATE TABLE IF NOT EXISTS clawbus_handoffs (
     stage handoff_stage NOT NULL DEFAULT 'request',
     
     -- Participants
-    from_agent TEXT NOT NULL REFERENCES agents(agent_id),
-    to_agent TEXT NOT NULL REFERENCES agents(agent_id),
+    from_agent TEXT NOT NULL REFERENCES user_agents(id),
+    to_agent TEXT NOT NULL REFERENCES user_agents(id),
     
     -- Context
     original_session_id TEXT,
@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS clawbus_channels (
     channel_name TEXT NOT NULL UNIQUE,
     description TEXT,
     channel_type TEXT NOT NULL DEFAULT 'broadcast' CHECK (channel_type IN ('broadcast', 'queue', 'topic')),
-    created_by TEXT REFERENCES agents(agent_id),
+    created_by TEXT REFERENCES user_agents(id),
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS clawbus_channels (
 CREATE TABLE IF NOT EXISTS clawbus_subscriptions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     channel_id UUID NOT NULL REFERENCES clawbus_channels(id) ON DELETE CASCADE,
-    agent_id TEXT NOT NULL REFERENCES agents(agent_id) ON DELETE CASCADE,
+    agent_id TEXT NOT NULL REFERENCES user_agents(id) ON DELETE CASCADE,
     subscription_type TEXT NOT NULL DEFAULT 'push' CHECK (subscription_type IN ('push', 'pull')),
     filter_criteria JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -175,7 +175,7 @@ CREATE INDEX idx_clawbus_subscriptions_agent ON clawbus_subscriptions(agent_id);
 CREATE TABLE IF NOT EXISTS clawbus_acknowledgments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     message_id UUID NOT NULL REFERENCES clawbus_messages(id) ON DELETE CASCADE,
-    agent_id TEXT NOT NULL REFERENCES agents(agent_id),
+    agent_id TEXT NOT NULL REFERENCES user_agents(id),
     ack_type TEXT NOT NULL DEFAULT 'delivery' CHECK (ack_type IN ('delivery', 'read', 'processed')),
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ DEFAULT NOW(),

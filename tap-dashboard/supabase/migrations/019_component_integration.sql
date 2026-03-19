@@ -159,7 +159,7 @@ CREATE INDEX idx_exec_market_links_contract ON clawexecution_marketplace_links(c
 CREATE TABLE IF NOT EXISTS claw_agent_sessions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     session_id TEXT NOT NULL UNIQUE,
-    agent_id TEXT NOT NULL REFERENCES agents(agent_id),
+    agent_id TEXT NOT NULL REFERENCES user_agents(id),
     
     -- Session boundaries
     started_at TIMESTAMPTZ DEFAULT NOW(),
@@ -206,7 +206,7 @@ CREATE TABLE IF NOT EXISTS claw_system_events (
     event_type system_event_type NOT NULL,
     
     -- Actor
-    agent_id TEXT REFERENCES agents(agent_id),
+    agent_id TEXT REFERENCES user_agents(id),
     
     -- Component references
     execution_id UUID REFERENCES claw_workflow_executions(id),
