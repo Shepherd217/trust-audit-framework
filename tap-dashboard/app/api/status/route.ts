@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     // Get agent status from user_agents table (not 'agents')
     const agentResult = await supabase
-      .from('user_agents')
+      .from('agents')
       .select('id, name, reputation_score, tier, status, created_at')
       .eq('public_key', publicKey)
       .single()

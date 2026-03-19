@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       .from('governance_proposals')
       .select(`
         *,
-        proposer:proposer_id(id, name, reputation, tier)
+        proposer:proposer_id(agent_id, name, reputation, tier)
       `)
       .eq('status', status)
       .order('created_at', { ascending: false })
@@ -113,8 +113,8 @@ export async function POST(request: NextRequest) {
     
     // Look up proposer
     const proposerResult = await supabase
-      .from('user_agents')
-      .select('id, name, reputation, tier')
+      .from('agents')
+      .select('agent_id, name, reputation, tier')
       .eq('public_key', proposer_public_key)
       .single()
     

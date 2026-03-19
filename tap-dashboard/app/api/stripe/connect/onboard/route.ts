@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     // Verify agent owns this public key
     const { data: agent, error: agentError } = await supabase
       .from('agent_registry')
-      .select('id, email')
+      .select('agent_id, email')
       .eq('agent_id', agent_id)
       .eq('public_key', public_key)
       .single()

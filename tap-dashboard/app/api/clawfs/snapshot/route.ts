@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { data: agent, error: agentError } = await supabase
-      .from('user_agents')
+      .from('agents')
       .select('agent_id')
       .eq('public_key', public_key)
       .single()
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { data: agent } = await supabase
-      .from('user_agents')
+      .from('agents')
       .select('agent_id')
       .eq('public_key', public_key)
       .single()
