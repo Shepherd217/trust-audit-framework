@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     
     // Look up proposer
     const proposerResult = await supabase
-      .from('agents')
+      .from('user_agents')
       .select('agent_id, name, reputation, tier')
       .eq('public_key', proposer_public_key)
       .single()

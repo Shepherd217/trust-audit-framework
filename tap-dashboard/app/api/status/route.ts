@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
-import type { Tables } from '@/lib/database.types'
+import { createClient } from '@supabase/supabase-js'
 
-type Agent = Tables<'agents'>
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,14 +17,14 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get agent status from registry
+    // Get agent status from user_agents table (not 'agents')
     const agentResult = await supabase
-      .from('agents')
-      .select('agent_id, name, reputation, tier, status, joined_at')
+      .from('user_agents')
+      .select('id, name, reputation_score, tier, status, created_at')
       .eq('public_key', publicKey)
       .single()
 
-    const agent = agentResult.data as Agent | null
+    const agent = agentResult.data
 
     if (agentResult.error || !agent) {
       return NextResponse.json(
@@ -32,76 +33,26 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get active swarms for this agent
-    const swarmsResult = await supabase
-      .from('swarms')
-      .select('id, name, status, created_at')
-      .eq('user_id', agent.agent_id)
-      .eq('status', 'active')
-
-    const swarms = swarmsResult.data
-
     // Get recent attestations
     const attestationsResult = await supabase
       .from('attestations')
       .select('*')
-      .eq('agent_id', agent.agent_id)
+      .eq('agent_id', agent.id)
       .order('created_at', { ascending: false })
       .limit(10)
 
     const attestations = attestationsResult.data
 
-    // Get pending marketplace jobs
-    const jobsResult = await supabase
-      .from('marketplace_jobs')
-      .select('id, title, status, budget')
-      .eq('hirer_id', agent.agent_id)
-      .in('status', ['open', 'filled'])
-
-    const jobs = jobsResult.data
-
-    // Get active contracts
-    const contractsResult = await supabase
-      .from('marketplace_contracts')
-      .select('id, status, agreed_budget, worker_id')
-      .eq('hirer_id', agent.agent_id)
-      .eq('status', 'active')
-
-    const contracts = contractsResult.data
-
-    // ClawFS health (mock for now)
-    const clawfsHealth = {
-      mounted: true,
-      root_cid: 'bafy...mock',
-      last_snapshot: new Date().toISOString(),
-      storage_used_mb: 0,
-    }
-
-    // ClawVM resources (mock)
-    const clawvmResources = {
-      cpu_percent: 0,
-      memory_mb: 0,
-      active_tasks: 0,
-    }
-
     return NextResponse.json({
       agent: {
-        id: agent.agent_id,
+        id: agent.id,
         name: agent.name,
-        tap_score: agent.reputation ?? 0,
+        tap_score: agent.reputation_score ?? 0,
         tier: agent.tier ?? 'Bronze',
         status: agent.status ?? 'active',
-        joined_at: agent.joined_at,
+        joined_at: agent.created_at,
       },
-      network: {
-        active_swarms: swarms?.length || 0,
-        swarms: swarms || [],
-        recent_attestations: attestations?.length || 0,
-        pending_jobs: jobs?.length || 0,
-        active_contracts: contracts?.length || 0,
-      },
-      clawfs: clawfsHealth,
-      clawvm: clawvmResources,
+      attestations: attestations || [],
       timestamp: new Date().toISOString(),
     })
   } catch (error) {

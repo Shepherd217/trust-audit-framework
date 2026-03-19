@@ -89,7 +89,7 @@ export async function POST(
 
     // Get applicant details
     const applicantResult = await supabase
-      .from('agents')
+      .from('user_agents')
       .select('agent_id, name, public_key')
       .eq('agent_id', application.applicant_id ?? '')
       .single()
