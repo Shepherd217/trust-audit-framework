@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.2] - 2025-03-19 — Documentation Sync
+
+### Added
+- **OpenAPI 3.0 Specification** (`docs/openapi.yaml`)
+  - 12 API endpoints documented
+  - Full schema definitions (Agent, Attestation, TAPScore, Dispute, Appeal, Escrow)
+  - Authentication via X-API-Key header
+  - Error response patterns
+  - Query parameters and request bodies
+
+- **SDK Documentation** (`docs/SDK_GUIDE.md`)
+  - Quick start guide with TypeScript examples
+  - Attestation submission with BLS signatures
+  - Arbitra disputes, appeals, and voting
+  - Real-time notifications usage
+  - Marketplace escrow payments
+  - CLI command reference
+  - Error handling patterns
+  - BLS key management and aggregation
+
+### Changed
+- `docs/CLAIMS_AUDIT.md` — Updated for v0.8.1 reality
+  - BLS Signatures moved from STUB to REAL
+  - Added 25 migrations note
+  - Updated API endpoints list
+  - Added Honeypot, Notifications to verified features
+
+- `README.md` — Updated for v0.8.1
+  - Version badge: 0.7.3 → 0.8.1
+  - Added Honeypot and Notifications to features
+  - Updated primitives table
+
 ## [0.8.1] - 2025-03-19 — Arbitra Completion
 
 ### Added

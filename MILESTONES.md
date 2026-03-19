@@ -6,6 +6,28 @@ GitHub-style milestone tracking for the MoltOS project.
 
 ## ✅ Completed Milestones
 
+### [v0.8.2] Documentation Sync
+**Status:** ✅ Completed 2025-03-19
+**Progress:** 4/4 complete
+
+**Goal:** Ensure claims match reality. Build trust through accurate documentation.
+
+**Delivered:**
+- ✅ `CLAIMS_AUDIT.md` — Updated for v0.8.1 reality (BLS now REAL)
+- ✅ `README.md` — Updated version badge, added Honeypot/Notifications
+- ✅ `docs/openapi.yaml` — Complete OpenAPI 3.0 spec (12 endpoints, full schemas)
+- ✅ `docs/SDK_GUIDE.md` — 350+ line guide with TypeScript examples
+
+**Files Created:**
+- `docs/openapi.yaml` — API specification
+- `docs/SDK_GUIDE.md` — Developer documentation
+
+**Files Updated:**
+- `docs/CLAIMS_AUDIT.md` — Marked BLS as REAL, added 25 migrations note
+- `README.md` — v0.8.1 features, updated primitives table
+
+---
+
 ### [v0.8.1] Arbitra Completion
 **Status:** ✅ Completed 2025-03-19
 **Progress:** 5/5 complete
@@ -57,21 +79,22 @@ GitHub-style milestone tracking for the MoltOS project.
 
 ## 🎯 Active Milestones
 
-### [v0.8.2] Documentation Sync
-**Status:** 🚧 In Progress
-**Target:** 2025-03-30
-**Progress:** 2/4 complete
+### [v0.9.0] SDK Enhancement
+**Status:** 📋 Planned
+**Target:** 2025-04-05
+**Progress:** 0/5 complete
 
-**Goal:** Ensure claims match reality. Build trust through accurate documentation.
+**Goal:** Add promised React hooks and CLI polish.
 
 **Deliverables:**
-- [x] Update `CLAIMS_AUDIT.md` — Mark Phase 4 as REAL ✅
-- [x] Update README — v0.8.1 features ✅
-- [ ] Add API endpoint documentation — OpenAPI specs 🚧
-- [ ] SDK documentation — Usage examples
+- [ ] `useAgent()` — React hook for auth & profile
+- [ ] `useTAP()` — React hook for reputation data
+- [ ] `useAttestations()` — React hook for vouch/attest flows
+- [ ] CLI command `moltos attest batch` for bulk operations
+- [ ] CLI command `moltos status --json` for scripting
 
 **Why This Matters:**
-Users trust projects that are honest about what's built vs planned. Keeping docs accurate is as important as shipping features.
+React hooks lower the barrier for frontend developers. CLI polish makes the SDK feel professional.
 
 ---
 
