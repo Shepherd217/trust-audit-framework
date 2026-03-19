@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+let supabase: ReturnType<typeof createClient> | null = null
+
+function getSupabase() {
+  if (!supabase) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !key) throw new Error('Supabase not configured')
+    supabase = createClient(url, key)
+  }
+  return supabase
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get agent status from agents table
-    const agentResult = await supabase
+    const agentResult = await getSupabase()
       .from('agents')
       .select('agent_id, name, reputation, tier, status, created_at')
       .eq('public_key', publicKey)
@@ -34,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get recent attestations
-    const attestationsResult = await supabase
+    const attestationsResult = await getSupabase()
       .from('attestations')
       .select('*')
       .eq('agent_id', agent.agent_id)
