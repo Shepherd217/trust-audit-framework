@@ -12,9 +12,21 @@ import {
   getCryptoDepositAddress,
 } from '@/lib/earnings/service';
 import { CreateDepositRequest } from '@/types/earnings';
+import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
+
+// Rate limit: 5 deposits per minute per IP
+const MAX_BODY_SIZE_KB = 50;
 
 // GET /api/user/deposit
 export async function GET(request: NextRequest) {
+  const path = '/api/user/deposit';
+  
+  // Apply rate limiting
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
     // In production, get userId from authenticated session
     const userId = 'user_123'; // Mock for now
@@ -36,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     const totalPages = Math.ceil(total / validPageSize);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       deposits,
       pagination: {
@@ -46,10 +58,16 @@ export async function GET(request: NextRequest) {
         totalPages,
       },
     });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
 
   } catch (error) {
     console.error('Error fetching deposit history:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { 
         success: false, 
         error: 'Failed to fetch deposit history',
@@ -57,20 +75,58 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     );
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return applySecurityHeaders(response);
   }
 }
 
 // POST /api/user/deposit
 export async function POST(request: NextRequest) {
+  const path = '/api/user/deposit';
+  
+  // Apply rate limiting
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
+    // Read and validate body size
+    const bodyText = await request.text();
+    const sizeCheck = validateBodySize(bodyText, MAX_BODY_SIZE_KB);
+    if (!sizeCheck.valid) {
+      const response = NextResponse.json(
+        { success: false, error: sizeCheck.error },
+        { status: 413 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+    
     // In production, get userId from authenticated session
     const userId = 'user_123'; // Mock for now
 
-    const body: CreateDepositRequest = await request.json();
+    let body: CreateDepositRequest;
+    try {
+      body = JSON.parse(bodyText);
+    } catch {
+      const response = NextResponse.json(
+        { success: false, error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
 
     // Validate required fields
-    if (!body.amount || body.amount <= 0) {
-      return NextResponse.json(
+    if (!body.amount || typeof body.amount !== 'number' || body.amount <= 0) {
+      const response = NextResponse.json(
         { 
           success: false, 
           error: 'Invalid amount',
@@ -78,10 +134,30 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
+    // Validate amount bounds (max $10,000)
+    if (body.amount > 1000000) {
+      const response = NextResponse.json(
+        { 
+          success: false, 
+          error: 'Amount exceeds maximum',
+          message: 'Maximum deposit is $10,000'
+        },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     if (!body.method) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { 
           success: false, 
           error: 'Missing deposit method',
@@ -89,12 +165,33 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
+    // Validate method
+    const validMethods = ['stripe', 'crypto', 'bank'];
+    if (!validMethods.includes(body.method)) {
+      const response = NextResponse.json(
+        { 
+          success: false, 
+          error: 'Invalid deposit method',
+          message: `Valid methods: ${validMethods.join(', ')}`
+        },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     // Validate minimum deposit
     const minDeposit = body.method === 'stripe' ? 500 : 1000; // $5 for stripe, $10 for crypto
     if (body.amount < minDeposit) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { 
           success: false, 
           error: 'Minimum deposit not met',
@@ -102,6 +199,10 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     // Create deposit
@@ -113,16 +214,22 @@ export async function POST(request: NextRequest) {
       cryptoAddress = await getCryptoDepositAddress(userId, 'BTC'); // Default to BTC
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       deposit,
       cryptoAddress,
       message: 'Deposit initiated successfully',
     }, { status: 201 });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
 
   } catch (error) {
     console.error('Error creating deposit:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { 
         success: false, 
         error: 'Failed to create deposit',
@@ -130,5 +237,9 @@ export async function POST(request: NextRequest) {
       },
       { status: 500 }
     );
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return applySecurityHeaders(response);
   }
 }

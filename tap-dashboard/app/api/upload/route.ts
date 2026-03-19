@@ -1,15 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { applyRateLimit, applySecurityHeaders } from '@/lib/security';
+
+// Rate limit: 10 uploads per minute per IP
+const MAX_FILE_SIZE_MB = 2;
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
 
 // POST /api/upload - Upload a file (avatar, etc.)
 export async function POST(request: NextRequest) {
+  const path = '/api/upload';
+  
+  // Apply rate limiting
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     const token = authHeader.replace('Bearer ', '');
+    
+    // Validate token format (JWT structure)
+    if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token)) {
+      const response = NextResponse.json({ error: 'Invalid token format' }, { status: 401 });
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
     
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -22,32 +49,80 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      const response = NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
-    // Validate file
-    if (file.size > 2 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large (max 2MB)' }, { status: 400 });
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      const response = NextResponse.json(
+        { error: `File too large (max ${MAX_FILE_SIZE_MB}MB)` },
+        { status: 413 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: 'Invalid file type. Allowed: JPG, PNG, WebP, GIF' },
+    // Validate file type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      const response = NextResponse.json(
+        { error: `Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}` },
         { status: 400 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
+    // Validate file name (prevent path traversal)
+    const fileNameParts = file.name.split('.');
+    const fileExt = fileNameParts.pop()?.toLowerCase();
+    
+    if (!fileExt || !ALLOWED_EXTENSIONS.includes(fileExt)) {
+      const response = NextResponse.json(
+        { error: 'Invalid file extension' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+    
+    // Sanitize filename (remove special chars)
+    const baseName = fileNameParts.join('.').replace(/[^a-zA-Z0-9_-]/g, '').substring(0, 50);
+    if (!baseName) {
+      const response = NextResponse.json(
+        { error: 'Invalid filename' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     // Generate unique filename
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 10);
+    const fileName = `${user.id}/${timestamp}_${randomSuffix}.${fileExt}`;
 
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
@@ -55,11 +130,16 @@ export async function POST(request: NextRequest) {
       .upload(fileName, file, {
         cacheControl: '3600',
         upsert: true,
+        contentType: file.type,
       });
 
     if (error) {
       console.error('Storage upload error:', error);
-      return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
+      const response = NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     // Get public URL
@@ -67,9 +147,24 @@ export async function POST(request: NextRequest) {
       .from('avatars')
       .getPublicUrl(fileName);
 
-    return NextResponse.json({ url: publicUrl });
+    const response = NextResponse.json({ 
+      success: true,
+      url: publicUrl,
+      fileName: fileName,
+    });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
+    
   } catch (error) {
     console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return applySecurityHeaders(response);
   }
 }

@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
 
 // Lazy-load stripe client to avoid build-time errors
 let stripe: Stripe;
@@ -54,25 +55,90 @@ interface CheckoutRequest {
   cancelUrl: string;
 }
 
+// Rate limit: 10 checkouts per minute per IP
+const MAX_BODY_SIZE_KB = 50;
+
+// Validate URL to prevent open redirect
+function isValidUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    // Only allow HTTPS and same domain
+    return parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 /**
  * POST handler for creating a checkout session
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const path = '/api/stripe/checkout';
+  
+  // Apply rate limiting
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
-    const body: CheckoutRequest = await request.json();
+    // Read and validate body size
+    const bodyText = await request.text();
+    const sizeCheck = validateBodySize(bodyText, MAX_BODY_SIZE_KB);
+    if (!sizeCheck.valid) {
+      const response = NextResponse.json(
+        { error: sizeCheck.error, code: 'PAYLOAD_TOO_LARGE' },
+        { status: 413 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+    
+    let body: CheckoutRequest;
+    try {
+      body = JSON.parse(bodyText);
+    } catch {
+      const response = NextResponse.json(
+        { error: 'Invalid JSON payload', code: 'INVALID_JSON' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+    
     const { tier, userId, email, successUrl, cancelUrl } = body;
 
     // Validate required fields
     if (!tier || !userId || !email) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Missing required fields: tier, userId, email', code: 'MISSING_FIELDS' },
         { status: 400 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
+    // Validate userId format (alphanumeric, max 64 chars)
+    if (!/^[a-zA-Z0-9_-]{1,64}$/.test(userId)) {
+      const response = NextResponse.json(
+        { error: 'Invalid userId format', code: 'INVALID_USERID' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     // Validate tier
     if (!SUBSCRIPTION_TIERS[tier]) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { 
           error: 'Invalid subscription tier', 
           code: 'INVALID_TIER',
@@ -80,15 +146,46 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         },
         { status: 400 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
+    if (!emailRegex.test(email) || email.length > 255) {
+      const response = NextResponse.json(
         { error: 'Invalid email format', code: 'INVALID_EMAIL' },
         { status: 400 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
+    // Validate URLs if provided (prevent open redirect)
+    if (successUrl && !isValidUrl(successUrl)) {
+      const response = NextResponse.json(
+        { error: 'Invalid successUrl', code: 'INVALID_URL' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
+    if (cancelUrl && !isValidUrl(cancelUrl)) {
+      const response = NextResponse.json(
+        { error: 'Invalid cancelUrl', code: 'INVALID_URL' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     const tierConfig = SUBSCRIPTION_TIERS[tier];
@@ -160,19 +257,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       customerId: customer.id,
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       sessionId: session.id,
       url: session.url,
       tier: tierConfig.name,
       amount: tierConfig.amount,
     });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
 
   } catch (error) {
     console.error('[Stripe Checkout] Error creating checkout session:', error);
 
     if (error instanceof Stripe.errors.StripeError) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { 
           error: error.message, 
           code: error.code || 'STRIPE_ERROR',
@@ -180,15 +283,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         },
         { status: error.statusCode || 500 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       { 
         error: error instanceof Error ? error.message : 'Failed to create checkout session',
         code: 'CHECKOUT_ERROR'
       },
       { status: 500 }
     );
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return applySecurityHeaders(response);
   }
 }
 
@@ -196,22 +307,46 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
  * GET handler for retrieving checkout session status
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const path = '/api/stripe/checkout';
+  
+  // Apply rate limiting
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+  
   try {
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get('sessionId');
 
     if (!sessionId) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'sessionId is required', code: 'MISSING_SESSION_ID' },
         { status: 400 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
+    }
+
+    // Validate sessionId format (cs_test_ or cs_live_ prefix)
+    if (!/^cs_(test|live)_[a-zA-Z0-9]{24,}$/.test(sessionId)) {
+      const response = NextResponse.json(
+        { error: 'Invalid sessionId format', code: 'INVALID_SESSION_ID' },
+        { status: 400 }
+      );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
     const session = await getStripe().checkout.sessions.retrieve(sessionId, {
       expand: ['subscription', 'customer'],
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       session: {
         id: session.id,
@@ -223,26 +358,40 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         url: session.url,
       },
     });
+    
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return applySecurityHeaders(response);
 
   } catch (error) {
     console.error('[Stripe Checkout] Error retrieving session:', error);
 
     if (error instanceof Stripe.errors.StripeError) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { 
           error: error.message, 
           code: error.code || 'STRIPE_ERROR'
         },
         { status: error.statusCode || 500 }
       );
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return applySecurityHeaders(response);
     }
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       { 
         error: 'Failed to retrieve checkout session',
         code: 'RETRIEVE_ERROR'
       },
       { status: 500 }
     );
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return applySecurityHeaders(response);
   }
 }
