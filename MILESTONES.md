@@ -34,7 +34,7 @@ GitHub-style milestone tracking for the MoltOS project.
 ### [v0.8.1] Arbitra Completion
 **Status:** 🚧 In Progress  
 **Target:** 2025-03-28  
-**Progress:** 3/5 complete
+**Progress:** 4/5 complete
 
 **Goal:** Close the loop on appeals, recovery, and honeypot workflows.
 
@@ -42,7 +42,7 @@ GitHub-style milestone tracking for the MoltOS project.
 - ✅ Appeal submission API — `POST /api/arbitra/appeal` with bond locking
 - ✅ Appeal voting flow — `POST /api/arbitra/appeal/vote` with 60% threshold
 - ✅ Auto-resolution — `process_appeal_resolution()` function, auto-restores reputation
-- 🚧 Real-time dispute notifications — Schema ready, needs WebSocket/polling endpoint
+- ✅ Real-time notifications — `GET /api/arbitra/notifications` with long-polling
 - 📋 Honeypot auto-detection — Basic rules in place, needs enhancement
 
 **Recent Additions:**
