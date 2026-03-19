@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS claw_workflows (
     version TEXT NOT NULL DEFAULT '1.0.0',
     
     -- Ownership
-    owner_agent_id TEXT NOT NULL REFERENCES agents(agent_id),
+    owner_agent_id TEXT NOT NULL REFERENCES user_agents(id),
     owner_public_key TEXT NOT NULL,
     
     -- Status
@@ -202,7 +202,7 @@ CREATE TABLE IF NOT EXISTS claw_node_executions (
     node_id TEXT NOT NULL,
     
     -- Assignment
-    assigned_agent_id TEXT REFERENCES agents(agent_id),
+    assigned_agent_id TEXT REFERENCES user_agents(id),
     
     -- Status
     status node_execution_status NOT NULL DEFAULT 'pending',
@@ -265,7 +265,7 @@ CREATE TABLE IF NOT EXISTS claw_workflow_events (
     payload JSONB DEFAULT '{}',
     
     -- Actor
-    agent_id TEXT REFERENCES agents(agent_id),
+    agent_id TEXT REFERENCES user_agents(id),
     
     -- Timestamp (for ordering)
     sequence_number BIGINT,
@@ -338,7 +338,7 @@ CREATE TABLE IF NOT EXISTS claw_scheduled_workflows (
     -- Input
     default_input JSONB DEFAULT '{}',
     
-    created_by TEXT NOT NULL REFERENCES agents(agent_id),
+    created_by TEXT NOT NULL REFERENCES user_agents(id),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

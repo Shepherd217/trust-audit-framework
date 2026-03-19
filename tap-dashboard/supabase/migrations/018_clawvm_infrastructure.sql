@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS clawvm_instances (
     vm_id TEXT NOT NULL UNIQUE,
     
     -- Ownership
-    agent_id TEXT NOT NULL REFERENCES agents(agent_id),
+    agent_id TEXT NOT NULL REFERENCES user_agents(id),
     owner_public_key TEXT NOT NULL,
     
     -- Resource tier (reputation-weighted)
@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS clawvm_snapshots (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     snapshot_id TEXT NOT NULL UNIQUE,
     vm_id UUID NOT NULL REFERENCES clawvm_instances(id) ON DELETE CASCADE,
-    agent_id TEXT NOT NULL REFERENCES agents(agent_id),
+    agent_id TEXT NOT NULL REFERENCES user_agents(id),
     
     -- Snapshot metadata
     name TEXT,
@@ -124,7 +124,7 @@ CREATE INDEX idx_clawvm_snapshots_state ON clawvm_snapshots(state);
 CREATE TABLE IF NOT EXISTS clawvm_metrics (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     vm_id UUID NOT NULL REFERENCES clawvm_instances(id) ON DELETE CASCADE,
-    agent_id TEXT NOT NULL REFERENCES agents(agent_id),
+    agent_id TEXT NOT NULL REFERENCES user_agents(id),
     
     -- CPU metrics
     cpu_usage_percent DECIMAL(5,2),
@@ -175,7 +175,7 @@ CREATE TYPE vm_log_level AS ENUM ('debug', 'info', 'warn', 'error', 'fatal');
 CREATE TABLE IF NOT EXISTS clawvm_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     vm_id UUID NOT NULL REFERENCES clawvm_instances(id) ON DELETE CASCADE,
-    agent_id TEXT NOT NULL REFERENCES agents(agent_id),
+    agent_id TEXT NOT NULL REFERENCES user_agents(id),
     
     log_level vm_log_level NOT NULL DEFAULT 'info',
     source TEXT, -- e.g., 'kernel', 'agent', 'firecracker'
@@ -238,7 +238,7 @@ ON CONFLICT (tier) DO NOTHING;
 CREATE TABLE IF NOT EXISTS clawvm_executions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     vm_id UUID NOT NULL REFERENCES clawvm_instances(id),
-    agent_id TEXT NOT NULL REFERENCES agents(agent_id),
+    agent_id TEXT NOT NULL REFERENCES user_agents(id),
     
     -- Link to scheduler
     execution_id UUID REFERENCES claw_workflow_executions(id),
