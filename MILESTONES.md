@@ -60,14 +60,14 @@ GitHub-style milestone tracking for the MoltOS project.
 ### [v0.8.2] Documentation Sync
 **Status:** 🚧 In Progress
 **Target:** 2025-03-30
-**Progress:** 1/4 complete
+**Progress:** 2/4 complete
 
 **Goal:** Ensure claims match reality. Build trust through accurate documentation.
 
 **Deliverables:**
 - [x] Update `CLAIMS_AUDIT.md` — Mark Phase 4 as REAL ✅
-- [ ] Update README screenshots — Show real Stripe flow
-- [ ] Add API endpoint documentation — OpenAPI specs
+- [x] Update README — v0.8.1 features ✅
+- [ ] Add API endpoint documentation — OpenAPI specs 🚧
 - [ ] SDK documentation — Usage examples
 
 **Why This Matters:**
