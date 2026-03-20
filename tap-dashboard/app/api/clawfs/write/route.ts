@@ -1,3 +1,4 @@
+// Force redeploy timestamp: 2026-03-21T02:15:00Z
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { supabase } from '@/lib/supabase'
