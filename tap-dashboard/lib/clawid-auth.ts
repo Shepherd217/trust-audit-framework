@@ -99,12 +99,13 @@ export async function verifyClawIDSignature(
 
     // Look up agent by public key
     const { data: agent, error } = await supabase
-      .from('agent_registry')
+      .from('agents')
       .select('agent_id')
       .eq('public_key', publicKey)
       .single()
     
     if (error || !agent) {
+      console.error('[ClawID] Agent lookup error:', error)
       return { valid: false, error: 'Agent not found for public key' }
     }
 
