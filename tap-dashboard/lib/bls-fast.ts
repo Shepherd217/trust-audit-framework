@@ -21,10 +21,10 @@ async function initBlst() {
   if (blstModule !== null) return useBlst;
   
   try {
-    // Use the high-level @chainsafe/bls interface which handles blst-native automatically
-    blstModule = await import('@chainsafe/bls');
+    // Use the high-level @chainsafe/blst interface
+    blstModule = await import('@chainsafe/blst');
     useBlst = true;
-    console.log('[BLS] Using @chainsafe/bls with native bindings');
+    console.log('[BLS] Using @chainsafe/blst with native bindings');
     return true;
   } catch (e) {
     console.log('[BLS] Using @noble/curves (pure JS fallback)');
@@ -311,7 +311,7 @@ export async function benchmark(batchSize: number = 100): Promise<{
 }> {
   await blstInitPromise;
   
-  const impl = useBlst ? '@chainsafe/bls' : '@noble/curves';
+  const impl = useBlst ? '@chainsafe/blst' : '@noble/curves';
   
   // Key generation
   const keygenStart = performance.now();
