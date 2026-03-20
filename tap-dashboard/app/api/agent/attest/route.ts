@@ -120,10 +120,10 @@ export async function POST(request: NextRequest) {
         : 50;
 
       const { data, error } = await (getSupabase() as any)
-        .from('waitlist')
+        .from('agents')
         .update({
           reputation: score,
-          last_attested: new Date().toISOString()
+          updated_at: new Date().toISOString()
         })
         .eq('agent_id', agent_id)
         .select();

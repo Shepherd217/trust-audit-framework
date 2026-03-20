@@ -25,8 +25,8 @@ export async function GET(
   try {
     const { agent_id } = await params;
     const { data, error } = await getSupabase()
-      .from('waitlist')
-      .select('id, agent_id, email, public_key, referral_count, confirmed, verification_status, profile_complete')
+      .from('agents')
+      .select('agent_id, name, email, public_key, tier, reputation, status, created_at')
       .eq('agent_id', agent_id)
       .single();
 

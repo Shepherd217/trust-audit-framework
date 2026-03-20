@@ -234,9 +234,9 @@ async function fetchAttestations(timeWindowDays: number = 0): Promise<Attestatio
  */
 async function fetchAgents(): Promise<Agent[]> {
   const { data, error } = await getSupabase()
-    .from('agent_registry')
+    .from('agents')
     .select('agent_id, name, reputation')
-    .eq('activation_status', 'active');
+    .eq('status', 'active');
 
   if (error) {
     throw new Error(`Failed to fetch agents: ${error.message}`);
@@ -249,23 +249,11 @@ async function fetchAgents(): Promise<Agent[]> {
  * Fetch pre-trusted agents (genesis agents with highest reputation)
  */
 async function fetchPretrustedAgents(limit: number = 5): Promise<string[]> {
-  // Prioritize genesis agents, then highest reputation
-  const { data: genesisAgents, error: genesisError } = await getSupabase()
-    .from('agent_registry')
-    .select('agent_id')
-    .eq('is_genesis', true)
-    .eq('activation_status', 'active')
-    .limit(limit);
-  
-  if (!genesisError && genesisAgents && genesisAgents.length > 0) {
-    return genesisAgents.map((a: any) => a.agent_id);
-  }
-  
-  // Fallback to highest reputation agents from agent_registry
+  // Get highest reputation agents from agents table
   const { data, error } = await getSupabase()
-    .from('agent_registry')
+    .from('agents')
     .select('agent_id')
-    .eq('activation_status', 'active')
+    .eq('status', 'active')
     .order('reputation', { ascending: false })
     .limit(limit);
 
@@ -582,36 +570,49 @@ export async function getAgentTrustScore(agentId: string): Promise<{
   tier: string;
   percentile: number;
 } | null> {
-  const { data, error } = await getSupabase()
+  // Try tap_scores first
+  const { data: tapData, error: tapError } = await getSupabase()
     .from('tap_scores')
     .select('tap_score, tier')
     .eq('agent_id', agentId)
     .single();
 
-  if (error || !data) {
-    return null;
+  // If tap_scores exists, use it
+  if (!tapError && tapData) {
+    const scoreData = tapData as { tap_score: number; tier: string };
+    const { count } = await getSupabase()
+      .from('tap_scores')
+      .select('*', { count: 'exact', head: true })
+      .lte('tap_score', scoreData.tap_score);
+    const { count: total } = await getSupabase()
+      .from('tap_scores')
+      .select('*', { count: 'exact', head: true });
+    const percentile = total && total > 0 
+      ? Math.round(((count || 0) / total) * 100)
+      : 0;
+    return {
+      score: scoreData.tap_score,
+      tier: scoreData.tier,
+      percentile,
+    };
   }
 
-  const scoreData = data as { tap_score: number; tier: string };
+  // Fallback to agents table
+  const { data: agentData, error: agentError } = await getSupabase()
+    .from('agents')
+    .select('reputation, tier')
+    .eq('agent_id', agentId)
+    .single();
 
-  const { count } = await getSupabase()
-    .from('tap_scores')
-    .select('*', { count: 'exact', head: true })
-    .lte('tap_score', scoreData.tap_score);
+  if (!agentError && agentData) {
+    return {
+      score: agentData.reputation || 0,
+      tier: agentData.tier || 'Bronze',
+      percentile: 0,
+    };
+  }
 
-  const { count: total } = await getSupabase()
-    .from('tap_scores')
-    .select('*', { count: 'exact', head: true });
-
-  const percentile = total && total > 0 
-    ? Math.round(((count || 0) / total) * 100)
-    : 0;
-
-  return {
-    score: scoreData.tap_score,
-    tier: scoreData.tier,
-    percentile,
-  };
+  return null;
 }
 
 /**
