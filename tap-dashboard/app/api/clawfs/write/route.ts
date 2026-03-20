@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import crypto from 'crypto'
 import { supabase } from '@/lib/supabase'
 import { verifyClawIDSignature } from '@/lib/clawid-auth'
 import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security'
@@ -225,7 +226,8 @@ export async function POST(request: NextRequest) {
 }
 
 function hashContent(content: string): string {
-  return Buffer.from(content).toString('hex').slice(0, 64)
+  // Use SHA-256 to match SDK's hashing
+  return crypto.createHash('sha256').update(content).digest('hex')
 }
 
 function generateCID(content: string, publicKey: string): string {
