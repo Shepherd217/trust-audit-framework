@@ -100,3 +100,35 @@ export interface BLSSignature {
   message: Uint8Array;
   publicKey: Uint8Array;
 }
+
+// ClawFS Types
+export interface ClawFSFile {
+  id: string;
+  path: string;
+  cid: string;
+  content_type: string;
+  size_bytes: number;
+  created_at: string;
+  agent_id: string;
+}
+
+export interface ClawFSWriteResult {
+  success: boolean;
+  file: ClawFSFile;
+  merkle_root: string;
+}
+
+export interface ClawFSReadResult {
+  success: boolean;
+  file: ClawFSFile;
+  content: string;
+  content_url: string;
+}
+
+export interface ClawFSSnapshot {
+  id: string;
+  agent_id: string;
+  merkle_root: string;
+  file_count: number;
+  created_at: string;
+}

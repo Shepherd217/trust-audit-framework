@@ -26,6 +26,8 @@ import Table from 'cli-table3';
 import inquirer from 'inquirer';
 import logSymbols from 'log-symbols';
 import { createSpinner } from 'nanospinner';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
 
 import { MoltOSSDK } from './index.js';
 
@@ -203,6 +205,25 @@ function formatStatus(status: string): string {
 function truncate(str: string, length: number): string {
   if (str.length <= length) return str;
   return str.substring(0, length - 3) + '...';
+}
+
+// Helper to load agent config and initialize SDK
+async function initSDK(): Promise<MoltOSSDK> {
+  const configPath = join(process.cwd(), '.moltos', 'config.json');
+  
+  if (!existsSync(configPath)) {
+    throw new Error('No agent config found. Run "moltos init" first.');
+  }
+  
+  const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+  
+  if (!config.agentId || !config.apiKey) {
+    throw new Error('Invalid agent config. Run "moltos init" again.');
+  }
+  
+  const sdk = new MoltOSSDK();
+  await sdk.init(config.agentId, config.apiKey);
+  return sdk;
 }
 
 // ============================================================================
@@ -597,6 +618,225 @@ program
     if (options.poll) {
       console.log(chalk.cyan('⏳ Polling for new notifications... (Ctrl+C to exit)'));
       // Would implement actual polling here
+    }
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ClawFS Commands
+// ─────────────────────────────────────────────────────────────────────────────
+
+const clawfs = program
+  .command('clawfs')
+  .description('ClawFS persistent storage operations');
+
+clawfs
+  .command('write')
+  .description('Write a file to ClawFS')
+  .argument('<path>', 'File path (must start with /data/, /apps/, /agents/, or /temp/)')
+  .argument('<content>', 'File content')
+  .option('-t, --type <type>', 'Content type', 'text/plain')
+  .option('-j, --json', 'Output in JSON format')
+  .action(async (path, content, options) => {
+    showMiniBanner();
+    
+    const spinner = ora({
+      text: chalk.cyan('Writing to ClawFS...'),
+      spinner: 'dots'
+    }).start();
+    
+    try {
+      const sdk = await initSDK();
+      const result = await sdk.clawfsWrite(path, content, {
+        contentType: options.type,
+      });
+      
+      spinner.stop();
+      
+      if (options.json) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        successBox(
+          `${chalk.bold('File written successfully')}\n\n` +
+          `${chalk.gray('Path:')} ${chalk.cyan(result.file.path)}\n` +
+          `${chalk.gray('CID:')} ${chalk.yellow(result.file.cid)}\n` +
+          `${chalk.gray('Size:')} ${chalk.white(result.file.size_bytes)} bytes\n` +
+          `${chalk.gray('Merkle Root:')} ${chalk.magenta(result.merkle_root)}`,
+          '✓ ClawFS Write'
+        );
+      }
+    } catch (error: any) {
+      spinner.stop();
+      errorBox(`Failed to write file: ${error.message}`);
+      process.exit(1);
+    }
+  });
+
+clawfs
+  .command('read')
+  .description('Read a file from ClawFS')
+  .argument('<path>', 'File path or CID')
+  .option('-c, --cid', 'Interpret path as CID instead of file path')
+  .option('-j, --json', 'Output in JSON format')
+  .option('-r, --raw', 'Output raw content only')
+  .action(async (path, options) => {
+    showMiniBanner();
+    
+    const spinner = ora({
+      text: chalk.cyan('Reading from ClawFS...'),
+      spinner: 'dots'
+    }).start();
+    
+    try {
+      const sdk = await initSDK();
+      const result = await sdk.clawfsRead(path, { byCid: options.cid });
+      
+      spinner.stop();
+      
+      if (options.raw) {
+        console.log(result.file);
+      } else if (options.json) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        successBox(
+          `${chalk.bold('File retrieved')}\n\n` +
+          `${chalk.gray('Path:')} ${chalk.cyan(result.file.path)}\n` +
+          `${chalk.gray('CID:')} ${chalk.yellow(result.file.cid)}\n` +
+          `${chalk.gray('Type:')} ${chalk.white(result.file.content_type)}\n` +
+          `${chalk.gray('Size:')} ${chalk.white(result.file.size_bytes)} bytes\n` +
+          `${chalk.gray('Created:')} ${chalk.white(new Date(result.file.created_at).toLocaleString())}`,
+          '✓ ClawFS Read'
+        );
+        console.log();
+        console.log(chalk.gray('Content URL:'), chalk.cyan.underline(result.content_url));
+      }
+    } catch (error: any) {
+      spinner.stop();
+      errorBox(`Failed to read file: ${error.message}`);
+      process.exit(1);
+    }
+  });
+
+clawfs
+  .command('list')
+  .description('List files in ClawFS')
+  .option('-p, --prefix <prefix>', 'Filter by path prefix')
+  .option('-l, --limit <limit>', 'Maximum files to show', '50')
+  .option('-j, --json', 'Output in JSON format')
+  .action(async (options) => {
+    showMiniBanner();
+    
+    const spinner = ora({
+      text: chalk.cyan('Listing ClawFS files...'),
+      spinner: 'dots'
+    }).start();
+    
+    try {
+      const sdk = await initSDK();
+      const result = await sdk.clawfsList({
+        prefix: options.prefix,
+        limit: parseInt(options.limit),
+      });
+      
+      spinner.stop();
+      
+      if (options.json) {
+        console.log(JSON.stringify(result, null, 2));
+      } else if (result.files.length === 0) {
+        console.log(chalk.gray('No files found in ClawFS.'));
+      } else {
+        console.log(moltosGradient(`📁 ClawFS Files (${result.total} total)`));
+        console.log();
+        
+        const table = createDataTable(['Path', 'CID', 'Size', 'Created']);
+        
+        result.files.forEach((file: any) => {
+          table.push([
+            chalk.cyan(file.path),
+            chalk.yellow(file.cid.slice(0, 16) + '...'),
+            chalk.white(`${file.size_bytes} B`),
+            chalk.gray(new Date(file.created_at).toLocaleDateString()),
+          ]);
+        });
+        
+        console.log(table.toString());
+      }
+    } catch (error: any) {
+      spinner.stop();
+      errorBox(`Failed to list files: ${error.message}`);
+      process.exit(1);
+    }
+  });
+
+clawfs
+  .command('snapshot')
+  .description('Create a snapshot of current ClawFS state')
+  .option('-j, --json', 'Output in JSON format')
+  .action(async (options) => {
+    showMiniBanner();
+    
+    const spinner = ora({
+      text: chalk.cyan('Creating ClawFS snapshot...'),
+      spinner: 'dots'
+    }).start();
+    
+    try {
+      const sdk = await initSDK();
+      const result = await sdk.clawfsSnapshot();
+      
+      spinner.stop();
+      
+      if (options.json) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        successBox(
+          `${chalk.bold('Snapshot created')}\n\n` +
+          `${chalk.gray('ID:')} ${chalk.cyan(result.snapshot.id)}\n` +
+          `${chalk.gray('Merkle Root:')} ${chalk.magenta(result.snapshot.merkle_root)}\n` +
+          `${chalk.gray('Files:')} ${chalk.white(result.snapshot.file_count)}\n` +
+          `${chalk.gray('Created:')} ${chalk.white(new Date(result.snapshot.created_at).toLocaleString())}`,
+          '✓ ClawFS Snapshot'
+        );
+      }
+    } catch (error: any) {
+      spinner.stop();
+      errorBox(`Failed to create snapshot: ${error.message}`);
+      process.exit(1);
+    }
+  });
+
+clawfs
+  .command('mount')
+  .description('Mount a ClawFS snapshot for restoration')
+  .argument('<snapshot-id>', 'Snapshot ID to mount')
+  .option('-j, --json', 'Output in JSON format')
+  .action(async (snapshotId, options) => {
+    showMiniBanner();
+    
+    const spinner = ora({
+      text: chalk.cyan('Mounting snapshot...'),
+      spinner: 'dots'
+    }).start();
+    
+    try {
+      const sdk = await initSDK();
+      const result = await sdk.clawfsMount(snapshotId);
+      
+      spinner.stop();
+      
+      if (options.json) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        successBox(
+          `${chalk.bold('Snapshot mounted')}\n\n` +
+          `${chalk.gray('Merkle Root:')} ${chalk.magenta(result.snapshot.merkle_root)}\n` +
+          `${chalk.gray('Files:')} ${chalk.white(result.files.length)}`,
+          '✓ ClawFS Mount'
+        );
+      }
+    } catch (error: any) {
+      spinner.stop();
+      errorBox(`Failed to mount snapshot: ${error.message}`);
+      process.exit(1);
     }
   });
 

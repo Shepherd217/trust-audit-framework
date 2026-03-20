@@ -455,6 +455,168 @@ export class MoltOSSDK {
 
     return this.request(`/telemetry/leaderboard?${params.toString()}`);
   }
+
+  // ==========================================================================
+  // ClawFS - Persistent Storage
+  // ==========================================================================
+
+  /**
+   * Write a file to ClawFS
+   */
+  async clawfsWrite(
+    path: string,
+    content: string | Buffer,
+    options: {
+      contentType?: string;
+      publicKey?: string;
+      signature?: string;
+      timestamp?: number;
+    } = {}
+  ): Promise<{
+    success: boolean;
+    file: {
+      id: string;
+      path: string;
+      cid: string;
+      size_bytes: number;
+      created_at: string;
+    };
+    merkle_root: string;
+  }> {
+    if (!this.agentId) throw new Error('Not initialized. Call init() first.');
+
+    const contentBuffer = Buffer.isBuffer(content) ? content : Buffer.from(content);
+    const base64Content = contentBuffer.toString('base64');
+
+    // Generate default signature if not provided
+    const timestamp = options.timestamp || Date.now();
+    const signature = options.signature || `sig_${Buffer.from(path + timestamp).toString('hex').slice(0, 64)}`;
+
+    return this.request('/clawfs/write', {
+      method: 'POST',
+      body: JSON.stringify({
+        path,
+        content: base64Content,
+        content_type: options.contentType || 'text/plain',
+        public_key: options.publicKey || this.agentId,
+        signature,
+        timestamp,
+      }),
+    });
+  }
+
+  /**
+   * Read a file from ClawFS
+   */
+  async clawfsRead(
+    pathOrCid: string,
+    options: {
+      byCid?: boolean;
+      publicKey?: string;
+    } = {}
+  ): Promise<{
+    success: boolean;
+    file: {
+      id: string;
+      path: string;
+      cid: string;
+      content_type: string;
+      size_bytes: number;
+      created_at: string;
+      agent_id: string;
+    };
+    content_url: string;
+  }> {
+    if (!this.agentId) throw new Error('Not initialized. Call init() first.');
+
+    const params = new URLSearchParams();
+    if (options.byCid) {
+      params.set('cid', pathOrCid);
+    } else {
+      params.set('path', pathOrCid);
+    }
+    if (options.publicKey) {
+      params.set('public_key', options.publicKey);
+    }
+
+    return this.request(`/clawfs/read?${params.toString()}`);
+  }
+
+  /**
+   * Create a snapshot of current ClawFS state
+   */
+  async clawfsSnapshot(): Promise<{
+    success: boolean;
+    snapshot: {
+      id: string;
+      merkle_root: string;
+      file_count: number;
+      created_at: string;
+    };
+  }> {
+    if (!this.agentId) throw new Error('Not initialized. Call init() first.');
+
+    return this.request('/clawfs/snapshot', {
+      method: 'POST',
+      body: JSON.stringify({
+        agent_id: this.agentId,
+      }),
+    });
+  }
+
+  /**
+   * List files in ClawFS
+   */
+  async clawfsList(options: {
+    prefix?: string;
+    limit?: number;
+  } = {}): Promise<{
+    files: Array<{
+      id: string;
+      path: string;
+      cid: string;
+      content_type: string;
+      size_bytes: number;
+      created_at: string;
+    }>;
+    total: number;
+  }> {
+    if (!this.agentId) throw new Error('Not initialized. Call init() first.');
+
+    const params = new URLSearchParams();
+    params.set('agent_id', this.agentId);
+    if (options.prefix) params.set('prefix', options.prefix);
+    if (options.limit) params.set('limit', options.limit.toString());
+
+    return this.request(`/clawfs/files?${params.toString()}`);
+  }
+
+  /**
+   * Mount a ClawFS snapshot (for restoration)
+   */
+  async clawfsMount(snapshotId: string): Promise<{
+    success: boolean;
+    snapshot: {
+      id: string;
+      merkle_root: string;
+      file_count: number;
+      created_at: string;
+    };
+    files: Array<{
+      path: string;
+      cid: string;
+    }>;
+  }> {
+    if (!this.agentId) throw new Error('Not initialized. Call init() first.');
+
+    return this.request('/clawfs/mount', {
+      method: 'POST',
+      body: JSON.stringify({
+        agent_id: this.agentId,
+        snapshot_id: snapshotId,
+      }),
+    });
+  }
 }
 
 /**
