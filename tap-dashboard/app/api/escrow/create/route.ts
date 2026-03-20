@@ -180,7 +180,11 @@ export async function POST(request: NextRequest) {
     // Calculate platform fee (2.5%)
     const platformFee = Math.round(totalAmount * 0.025)
 
-    // Create Stripe Payment Intent
+    // Generate idempotency key from job_id + timestamp + hirer signature hash
+    // This ensures retries of the same request don't create duplicate charges
+    const idempotencyKey = `escrow_${job_id}_${timestamp}_${Buffer.from(hirer_signature).toString('base64').slice(0, 20)}`
+
+    // Create Stripe Payment Intent with idempotency key
     // This holds the hirer's funds
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalAmount,
@@ -193,30 +197,32 @@ export async function POST(request: NextRequest) {
         milestone_count: milestones.length.toString(),
       },
       description: `MoltOS Escrow: ${job.title}`,
+    }, {
+      idempotencyKey,
     })
 
-    // Create escrow record
-    const { data: escrow, error: escrowError } = await supabase
-      .from('payment_escrows')
-      .insert({
-        job_id,
-        hirer_id: hirer.agent_id,
-        worker_id: job.worker_id,
-        amount_total: totalAmount,
-        amount_locked: 0, // Not locked until payment confirmed
-        platform_fee: platformFee,
-        stripe_payment_intent_id: paymentIntent.id,
-        status: 'pending',
-        milestones: milestones,
-        created_by: hirer.agent_id,
-      })
-      .select()
-      .single()
+    // Use database transaction to ensure atomicity
+    // All operations succeed or all fail together
+    const { data: result, error: txError } = await supabase.rpc('create_escrow_with_milestones', {
+      p_job_id: job_id,
+      p_hirer_id: hirer.agent_id,
+      p_worker_id: job.worker_id,
+      p_amount_total: totalAmount,
+      p_platform_fee: platformFee,
+      p_stripe_payment_intent_id: paymentIntent.id,
+      p_milestones: milestones,
+      p_created_by: hirer.agent_id,
+    })
 
-    if (escrowError || !escrow) {
-      console.error('Failed to create escrow:', escrowError)
-      // Cancel the payment intent
-      await stripe.paymentIntents.cancel(paymentIntent.id)
+    if (txError) {
+      console.error('Failed to create escrow (transaction rolled back):', txError)
+      // Cancel the payment intent since DB transaction failed
+      try {
+        await stripe.paymentIntents.cancel(paymentIntent.id)
+      } catch (cancelError) {
+        console.error('Failed to cancel payment intent after escrow failure:', cancelError)
+        // Non-fatal: payment intent will expire automatically
+      }
       const response = NextResponse.json({ error: 'Failed to create escrow' }, { status: 500 });
       Object.entries(rateLimitHeaders).forEach(([key, value]) => {
         response.headers.set(key, value);
@@ -224,31 +230,7 @@ export async function POST(request: NextRequest) {
       return applySecurityHeaders(response);
     }
 
-    // Create milestone records
-    const milestoneRecords = milestones.map((m: any, index: number) => ({
-      escrow_id: escrow.id,
-      milestone_index: index,
-      title: m.title,
-      description: m.description,
-      amount: m.amount,
-      status: 'pending',
-    }))
-
-    await supabase.from('escrow_milestones').insert(milestoneRecords)
-
-    // Log the event
-    await supabase.from('payment_audit_log').insert({
-      escrow_id: escrow.id,
-      job_id,
-      event_type: 'escrow_created',
-      actor_id: hirer.agent_id,
-      actor_type: 'hirer',
-      event_data: {
-        amount_total: totalAmount,
-        platform_fee: platformFee,
-        milestone_count: milestones.length,
-      },
-    })
+    const escrow = result as any;
 
     const response = NextResponse.json({
       success: true,

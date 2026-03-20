@@ -331,3 +331,108 @@ ALTER TABLE wot_config ADD COLUMN IF NOT EXISTS platform_fee_percent DECIMAL(4,2
 ALTER TABLE wot_config ADD COLUMN IF NOT EXISTS min_escrow_amount INTEGER DEFAULT 500; -- $5.00
 ALTER TABLE wot_config ADD COLUMN IF NOT EXISTS max_escrow_amount INTEGER DEFAULT 100000; -- $1000.00
 ALTER TABLE wot_config ADD COLUMN IF NOT EXISTS escrow_hold_days INTEGER DEFAULT 7; -- Days to hold before auto-release
+
+-- ============================================
+-- ATOMIC ESCROW CREATION FUNCTION
+-- Creates escrow + milestones in a single transaction
+-- ============================================
+
+CREATE OR REPLACE FUNCTION create_escrow_with_milestones(
+    p_job_id UUID,
+    p_hirer_id TEXT,
+    p_worker_id TEXT,
+    p_amount_total INTEGER,
+    p_platform_fee INTEGER,
+    p_stripe_payment_intent_id TEXT,
+    p_milestones JSONB,
+    p_created_by TEXT
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_escrow_id UUID;
+    v_milestone JSONB;
+    v_result JSONB;
+BEGIN
+    -- Create escrow record
+    INSERT INTO payment_escrows (
+        job_id,
+        hirer_id,
+        worker_id,
+        amount_total,
+        amount_locked,
+        platform_fee,
+        stripe_payment_intent_id,
+        status,
+        milestones,
+        created_by
+    ) VALUES (
+        p_job_id,
+        p_hirer_id,
+        p_worker_id,
+        p_amount_total,
+        0,
+        p_platform_fee,
+        p_stripe_payment_intent_id,
+        'pending',
+        p_milestones,
+        p_created_by
+    )
+    RETURNING id INTO v_escrow_id;
+    
+    -- Create milestone records
+    FOR i IN 0..jsonb_array_length(p_milestones) - 1 LOOP
+        v_milestone := p_milestones->i;
+        INSERT INTO escrow_milestones (
+            escrow_id,
+            milestone_index,
+            title,
+            description,
+            amount,
+            status
+        ) VALUES (
+            v_escrow_id,
+            i,
+            v_milestone->>'title',
+            v_milestone->>'description',
+            (v_milestone->>'amount')::INTEGER,
+            'pending'
+        );
+    END LOOP;
+    
+    -- Log audit event
+    INSERT INTO payment_audit_log (
+        escrow_id,
+        job_id,
+        event_type,
+        actor_id,
+        actor_type,
+        event_data
+    ) VALUES (
+        v_escrow_id,
+        p_job_id,
+        'escrow_created',
+        p_created_by,
+        'hirer',
+        jsonb_build_object(
+            'amount_total', p_amount_total,
+            'platform_fee', p_platform_fee,
+            'milestone_count', jsonb_array_length(p_milestones)
+        )
+    );
+    
+    -- Return created escrow
+    SELECT jsonb_build_object(
+        'id', id,
+        'status', status,
+        'amount_total', amount_total,
+        'platform_fee', platform_fee
+    ) INTO v_result
+    FROM payment_escrows
+    WHERE id = v_escrow_id;
+    
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
+
+COMMENT ON FUNCTION create_escrow_with_milestones IS 'Atomically creates an escrow record with all milestones and audit log entry';
+

@@ -62,38 +62,51 @@ export async function GET(request: NextRequest) {
       return applySecurityHeaders(response);
     }
     
-    // Calculate vote tallies
-    const proposalsWithVotes = await Promise.all(
-      proposals.map(async (p) => {
-        const voteResult = await supabase
-          .from('governance_votes')
-          .select('vote_type, voter: voter_id(reputation)')
-          .eq('proposal_id', p.id)
-        
-        const votes = (voteResult.data || []) as { vote_type: string; voter: { reputation: number | null } | null }[]
-        
-        const yesVotes = votes.filter(v => v.vote_type === 'yes').reduce((s, v) => s + (v.voter?.reputation || 0), 0)
-        const noVotes = votes.filter(v => v.vote_type === 'no').reduce((s, v) => s + (v.voter?.reputation || 0), 0)
-        const totalVotes = yesVotes + noVotes
-        
-        const endTime = new Date(p.ends_at).getTime()
-        const now = Date.now()
-        const timeRemaining = Math.max(0, endTime - now)
-        
-        return {
-          ...p,
-          votes: {
-            yes: yesVotes,
-            no: noVotes,
-            total: totalVotes,
-            yes_percent: totalVotes > 0 ? Math.round((yesVotes / totalVotes) * 100) : 0,
-            turnout: totalVotes,
-          },
-          time_remaining: timeRemaining,
-          has_ended: timeRemaining === 0,
-        }
-      })
-    )
+    // Fetch all votes in a single query (avoid N+1)
+    const proposalIds = proposals.map(p => p.id);
+    const { data: allVotes, error: votesError } = await supabase
+      .from('governance_votes')
+      .select('proposal_id, vote_type, voter: voter_id(reputation)')
+      .in('proposal_id', proposalIds);
+    
+    if (votesError) {
+      console.error('Failed to fetch votes:', votesError);
+      // Continue with empty votes rather than failing the entire request
+    }
+    
+    // Group votes by proposal_id for efficient lookup
+    const votesByProposal: Record<string, { vote_type: string; voter: { reputation: number | null } | null }[]> = {};
+    (allVotes || []).forEach(vote => {
+      const pid = vote.proposal_id as string;
+      if (!votesByProposal[pid]) votesByProposal[pid] = [];
+      votesByProposal[pid].push(vote as any);
+    });
+    
+    // Calculate vote tallies for each proposal
+    const proposalsWithVotes = proposals.map((p) => {
+      const votes = votesByProposal[p.id] || [];
+      
+      const yesVotes = votes.filter(v => v.vote_type === 'yes').reduce((s, v) => s + (v.voter?.reputation || 0), 0)
+      const noVotes = votes.filter(v => v.vote_type === 'no').reduce((s, v) => s + (v.voter?.reputation || 0), 0)
+      const totalVotes = yesVotes + noVotes
+      
+      const endTime = new Date(p.ends_at).getTime()
+      const now = Date.now()
+      const timeRemaining = Math.max(0, endTime - now)
+      
+      return {
+        ...p,
+        votes: {
+          yes: yesVotes,
+          no: noVotes,
+          total: totalVotes,
+          yes_percent: totalVotes > 0 ? Math.round((yesVotes / totalVotes) * 100) : 0,
+          turnout: totalVotes,
+        },
+        time_remaining: timeRemaining,
+        has_ended: timeRemaining === 0,
+      }
+    })
     
     const response = NextResponse.json({
       proposals: proposalsWithVotes,
