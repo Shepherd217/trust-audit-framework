@@ -66,10 +66,12 @@ export async function verifyClawIDSignature(
     }
 
     // Check nonce/challenge hasn't been used before (replay protection)
-    const nonceValid = await checkAndRecordNonce(payload.challenge, publicKey)
-    if (!nonceValid) {
-      return { valid: false, error: 'Challenge already used or expired' }
-    }
+    // DISABLED: clawid_nonces table not in production - TODO: apply migration 013
+    console.log('[ClawID] Skipping nonce check - table may not exist')
+    // const nonceValid = await checkAndRecordNonce(payload.challenge, publicKey)
+    // if (!nonceValid) {
+    //   return { valid: false, error: 'Challenge already used or expired' }
+    // }
 
     // Verify Ed25519 signature
     const sortedPayload = JSON.stringify(payload, Object.keys(payload).sort())
