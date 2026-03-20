@@ -24,19 +24,39 @@ export async function GET(
 ) {
   try {
     const { agent_id } = await params;
+    
+    // Debug: log what we're searching for
+    console.log('Looking for agent:', agent_id);
+    
     const { data, error } = await getSupabase()
       .from('agents')
       .select('agent_id, name, email, public_key, tier, reputation, status, created_at')
       .eq('agent_id', agent_id)
       .single();
 
-    if (error || !data) {
-      return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json({ 
+        error: 'Agent not found', 
+        details: error.message,
+        code: error.code,
+        agent_id_searched: agent_id
+      }, { status: 404 });
+    }
+
+    if (!data) {
+      return NextResponse.json({ 
+        error: 'Agent not found',
+        agent_id_searched: agent_id
+      }, { status: 404 });
     }
 
     return NextResponse.json(data);
   } catch (error) {
     console.error('Agent fetch error:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Server error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
