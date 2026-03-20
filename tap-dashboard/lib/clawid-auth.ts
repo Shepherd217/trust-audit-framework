@@ -75,8 +75,10 @@ export async function verifyClawIDSignature(
 
     // Verify Ed25519 signature
     const message = new TextEncoder().encode(JSON.stringify(payload))
-    const pubKeyBytes = hexToBytes(publicKey)
-    const sigBytes = base64ToBytes(signature)
+    console.log('[ClawID] Verifying payload:', JSON.stringify(payload))
+    console.log('[ClawID] Message bytes:', Buffer.from(message).toString('hex').slice(0, 64) + '...')
+    console.log('[ClawID] Public key:', publicKey.slice(0, 32) + '...')
+    console.log('[ClawID] Signature length:', signature.length, 'sig:', signature.slice(0, 32) + '...')
     
     if (pubKeyBytes.length !== 32) {
       return { valid: false, error: 'Invalid public key length' }
