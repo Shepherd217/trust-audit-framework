@@ -13,6 +13,10 @@
 secrets/
 config/secrets/
 
+# Deployment scripts that may contain credentials
+scripts/deploy-migrations*.js
+!scripts/deploy-migrations-safe.js
+
 # Dependencies
 node_modules/
 npm-debug.log*
