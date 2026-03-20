@@ -131,14 +131,19 @@ async function checkAndRecordNonce(nonce: string, publicKey: string): Promise<bo
     }
     
     // First, check if nonce exists
-    const { data: existing } = await supabase
+    const { data: existing, error: existingError } = await supabase
       .from('clawid_nonces')
       .select('id')
       .eq('nonce', nonce)
       .eq('public_key', publicKey)
       .single()
     
+    if (existingError && !existingError.message?.includes('0 rows')) {
+      console.error('[ClawID] Error checking existing nonce:', existingError)
+    }
+    
     if (existing) {
+      console.error('[ClawID] Nonce already exists:', nonce.slice(0, 20) + '...')
       return false // Nonce already used
     }
     
@@ -152,7 +157,7 @@ async function checkAndRecordNonce(nonce: string, publicKey: string): Promise<bo
       })
     
     if (error) {
-      console.error('Failed to record nonce:', error)
+      console.error('[ClawID] Failed to record nonce:', error)
       // Defensive: If insert fails due to missing table, allow operation
       if (error.code === '42P01' || error.message?.includes('does not exist')) {
         console.warn('[ClawID] Nonce table missing during insert - allowing operation')
@@ -161,6 +166,7 @@ async function checkAndRecordNonce(nonce: string, publicKey: string): Promise<bo
       return false
     }
     
+    console.log('[ClawID] Nonce recorded successfully for:', publicKey.slice(0, 16) + '...')
     return true
   } catch (err: any) {
     console.error('Nonce check error:', err)
