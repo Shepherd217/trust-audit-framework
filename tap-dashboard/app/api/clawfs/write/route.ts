@@ -14,6 +14,14 @@ const MAX_BODY_SIZE_KB = 1000; // 1MB max for file content
 const MAX_PATH_LENGTH = 512;
 const MAX_CONTENT_LENGTH = 10 * 1024 * 1024; // 10MB decoded
 
+export async function GET(request: NextRequest) {
+  return NextResponse.json({
+    version: 'ba1ba5f',
+    timestamp: '2026-03-21T02:45:00Z',
+    note: 'ClawFS write endpoint - version check'
+  });
+}
+
 export async function POST(request: NextRequest) {
   const path = '/api/clawfs/write';
   
