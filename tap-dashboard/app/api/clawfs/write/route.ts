@@ -129,10 +129,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify ClawID signature
-    const payload = { challenge, content_hash: hashContent(content), path: filePath, timestamp }
+    const contentHash = hashContent(content)
+    const payload = { challenge, content_hash: contentHash, path: filePath, timestamp }
     
     // DEBUG: Log exact payload being verified
+    console.log('[API] Content hash:', contentHash);
+    console.log('[API] Raw content (base64):', content.slice(0, 50) + '...');
     console.log('[API] Verifying payload:', JSON.stringify(payload, Object.keys(payload).sort()));
+    console.log('[API] Public key:', public_key);
+    console.log('[API] Signature:', signature);
     
     // Diagnostic: Check if clawid_nonces table exists
     const { error: tableError } = await supabase.from('clawid_nonces').select('id', { count: 'exact', head: true }).limit(1)
