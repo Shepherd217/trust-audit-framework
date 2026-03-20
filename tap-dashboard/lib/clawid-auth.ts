@@ -91,7 +91,13 @@ export async function verifyClawIDSignature(
       return { valid: false, error: 'Invalid signature length' }
     }
 
-    const isValid = ed25519.verify(sigBytes, message, pubKeyBytes)
+    let isValid = false;
+    try {
+      isValid = ed25519.verify(sigBytes, message, pubKeyBytes)
+    } catch (verifyErr: any) {
+      console.error('[ClawID] Ed25519 verify error:', verifyErr?.message || verifyErr)
+      return { valid: false, error: 'Ed25519 verify error: ' + (verifyErr?.message || 'unknown') }
+    }
     
     if (!isValid) {
       return { valid: false, error: 'Invalid signature' }
