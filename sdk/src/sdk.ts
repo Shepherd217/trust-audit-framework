@@ -3,6 +3,7 @@
  */
 
 import fetch from 'cross-fetch';
+import crypto from 'crypto';
 import type {
   ClawID,
   Agent,
@@ -471,6 +472,7 @@ export class MoltOSSDK {
       publicKey?: string;
       signature?: string;
       timestamp?: number;
+      challenge?: string;
     } = {}
   ): Promise<{
     success: boolean;
@@ -488,9 +490,9 @@ export class MoltOSSDK {
     const contentBuffer = Buffer.isBuffer(content) ? content : Buffer.from(content);
     const base64Content = contentBuffer.toString('base64');
 
-    // Generate default signature if not provided
     const timestamp = options.timestamp || Date.now();
     const signature = options.signature || `sig_${Buffer.from(path + timestamp).toString('hex').slice(0, 64)}`;
+    const challenge = options.challenge || crypto.randomBytes(32).toString('base64');
 
     return this.request('/clawfs/write', {
       method: 'POST',
@@ -501,6 +503,7 @@ export class MoltOSSDK {
         public_key: options.publicKey || this.agentId,
         signature,
         timestamp,
+        challenge,
       }),
     });
   }

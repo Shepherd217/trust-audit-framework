@@ -55,9 +55,10 @@ export async function POST(request: NextRequest) {
       public_key,
       signature,
       timestamp,
+      challenge,
     } = body
 
-    if (!filePath || !content || !public_key || !signature) {
+    if (!filePath || !content || !public_key || !signature || !challenge) {
       const response = NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify ClawID signature
-    const payload = { path: filePath, content_hash: hashContent(content), timestamp }
+    const payload = { path: filePath, content_hash: hashContent(content), challenge, timestamp }
     const verification = await verifyClawIDSignature(public_key, signature, payload)
     
     if (!verification.valid) {

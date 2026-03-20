@@ -26,8 +26,9 @@ import Table from 'cli-table3';
 import inquirer from 'inquirer';
 import logSymbols from 'log-symbols';
 import { createSpinner } from 'nanospinner';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync, mkdirSync, chmodSync } from 'fs';
 import { join } from 'path';
+import crypto from 'crypto';
 
 import { MoltOSSDK } from './index.js';
 
@@ -218,12 +219,55 @@ async function initSDK(): Promise<MoltOSSDK> {
   const config = JSON.parse(readFileSync(configPath, 'utf-8'));
   
   if (!config.agentId || !config.apiKey) {
-    throw new Error('Invalid agent config. Run "moltos init" again.');
+    throw new Error('Agent not registered. Run "moltos register" first.');
   }
   
   const sdk = new MoltOSSDK();
   await sdk.init(config.agentId, config.apiKey);
+  
+  // Attach config for ClawFS signing
+  (sdk as any)._config = config;
+  
   return sdk;
+}
+
+// Helper to sign ClawFS payloads with Ed25519
+async function signClawFSPayload(privateKeyHex: string, payload: { path: string; content_hash: string }): Promise<{ signature: string; timestamp: number; challenge: string }> {
+  const timestamp = Date.now();
+  // Include path and timestamp in challenge for uniqueness
+  const challenge = crypto.randomBytes(32).toString('base64') + '_' + payload.path + '_' + timestamp;
+
+  const fullPayload = {
+    path: payload.path,
+    content_hash: payload.content_hash,
+    challenge,
+    timestamp
+  };
+
+  const message = new TextEncoder().encode(JSON.stringify(fullPayload));
+
+  // Import Ed25519 from @noble/curves (ESM dynamic import)
+  const { ed25519 } = await import('@noble/curves/ed25519.js');
+
+  // Parse private key (handle both raw 32-byte and PKCS8 formats)
+  let privateKeyBytes: Uint8Array;
+  const keyBuffer = Buffer.from(privateKeyHex, 'hex');
+
+  if (keyBuffer.length === 32) {
+    // Raw private key
+    privateKeyBytes = new Uint8Array(keyBuffer);
+  } else if (keyBuffer.length > 32) {
+    // PKCS8 format - extract last 32 bytes (private key)
+    privateKeyBytes = new Uint8Array(keyBuffer.slice(-32));
+  } else {
+    throw new Error('Invalid private key length');
+  }
+
+  // Sign with Ed25519
+  const signatureBytes = ed25519.sign(message, privateKeyBytes);
+  const signature = Buffer.from(signatureBytes).toString('base64');
+
+  return { signature, timestamp, challenge };
 }
 
 // ============================================================================
@@ -248,11 +292,11 @@ program
 // ─────────────────────────────────────────────────────────────────────────────
 
 program
-  .command('init')
+  .command('init [name]')
   .description('Initialize a new agent configuration')
-  .option('-n, --name <name>', 'Agent name')
+  .option('-n, --name <name>', 'Agent name (overrides positional arg)')
   .option('--non-interactive', 'Skip interactive prompts')
-  .action(async (options) => {
+  .action(async (nameArg, options) => {
     const isJson = program.opts().json;
     
     if (isJson) {
@@ -262,12 +306,16 @@ program
     
     showBanner();
     
-    const answers = options.nonInteractive ? options : await inquirer.prompt([
+    const name = options.name || nameArg || 'my-agent';
+    
+    const answers = options.nonInteractive 
+      ? { name, generateKeys: true } 
+      : await inquirer.prompt([
       {
         type: 'input',
         name: 'name',
         message: moltosGradient('What should we call your agent?'),
-        default: options.name || 'my-agent',
+        default: name,
         validate: (input) => input.length >= 3 || 'Name must be at least 3 characters'
       },
       {
@@ -284,23 +332,50 @@ program
     }).start();
     
     try {
-      // Generate Ed25519 keypair (simulated)
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Generate Ed25519 keypair using Node.js crypto
+      const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519');
+      const publicKeyHex = publicKey.export({ type: 'spki', format: 'der' }).toString('hex');
+      const privateKeyHex = privateKey.export({ type: 'pkcs8', format: 'der' }).toString('hex');
       
       spinner.succeed(chalk.green('Identity generated!'));
       
+      let blsPublicKey: string | undefined;
       if (answers.generateKeys) {
         const keySpinner = ora({
           text: chalk.cyan('Generating BLS12-381 keys (this may take a moment)...'),
           spinner: 'arc'
         }).start();
         
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Mock BLS key for now - real implementation needs @chainsafe/blst
+        await new Promise(resolve => setTimeout(resolve, 500));
+        blsPublicKey = 'bls_' + crypto.randomBytes(48).toString('hex');
         keySpinner.succeed(chalk.green('BLS keys generated!'));
       }
       
+      // Write config file
+      const configDir = join(process.cwd(), '.moltos');
+      const configPath = join(configDir, 'config.json');
+      
+      if (!existsSync(configDir)) {
+        mkdirSync(configDir, { recursive: true });
+      }
+      
+      const config = {
+        agentId: null, // Will be set after registration
+        apiKey: null,
+        name: answers.name,
+        publicKey: publicKeyHex.slice(-64), // Extract raw 32-byte key from DER
+        privateKey: privateKeyHex,
+        blsPublicKey: blsPublicKey,
+        createdAt: new Date().toISOString()
+      };
+      
+      writeFileSync(configPath, JSON.stringify(config, null, 2));
+      chmodSync(configPath, 0o600); // Restrict permissions
+      
       successBox(
         `Agent "${chalk.bold(answers.name)}" initialized!\n\n` +
+        `${chalk.gray('Config saved to:')} ${chalk.dim(configPath)}\n\n` +
         `${chalk.gray('Next steps:')}\n` +
         `  ${chalk.cyan('>')} moltos register\n` +
         `  ${chalk.cyan('>')} moltos status`,
@@ -317,10 +392,24 @@ program
 program
   .command('register')
   .description('Register your agent with MoltOS')
-  .option('-n, --name <name>', 'Agent name')
-  .option('-k, --public-key <key>', 'Ed25519 public key (hex)')
+  .option('-n, --name <name>', 'Agent name (overrides config)')
+  .option('-k, --public-key <key>', 'Ed25519 public key (hex, overrides config)')
   .action(async (options) => {
     const isJson = program.opts().json;
+    
+    // Load config
+    const configPath = join(process.cwd(), '.moltos', 'config.json');
+    if (!existsSync(configPath)) {
+      const error = 'No agent config found. Run "moltos init" first.';
+      if (isJson) {
+        console.log(JSON.stringify({ success: false, error }, null, 2));
+      } else {
+        errorBox(error);
+      }
+      process.exit(1);
+    }
+    
+    const config = JSON.parse(readFileSync(configPath, 'utf-8'));
     
     const spinner = ora({
       text: isJson ? undefined : chalk.cyan('Registering agent...'),
@@ -332,16 +421,39 @@ program
     try {
       const sdk = new MoltOSSDK(MOLTOS_API);
       
-      // Simulate registration
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      // Call registration API
+      const name = options.name || config.name;
+      const publicKey = options.publicKey || config.publicKey;
       
-      const mockApiKey = 'moltos_' + Math.random().toString(36).substring(2, 15);
+      const result = await fetch(`${MOLTOS_API}/agent/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          publicKey: publicKey,
+          metadata: {
+            bls_public_key: config.blsPublicKey,
+          },
+        }),
+      });
+      
+      const data = await result.json();
+      
+      if (!result.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
+      
+      // Update config with credentials
+      config.agentId = data.agent.agentId;
+      config.apiKey = data.credentials.apiKey;
+      writeFileSync(configPath, JSON.stringify(config, null, 2));
+      chmodSync(configPath, 0o600);
       
       if (isJson) {
         console.log(JSON.stringify({
           success: true,
-          agent_id: 'agent_' + Date.now(),
-          api_key: mockApiKey,
+          agent_id: data.agent.agentId,
+          api_key: data.credentials.apiKey,
           message: 'Agent registered successfully'
         }, null, 2));
         return;
@@ -351,10 +463,11 @@ program
       
       successBox(
         `${chalk.bold('Your API Key:')}\n` +
-        `${chalk.yellow(mockApiKey)}\n\n` +
+        `${chalk.yellow(data.credentials.apiKey)}\n\n` +
         `${chalk.red('⚠️  Save this key! It will not be shown again.')}\n\n` +
-        `${chalk.gray('Export it to your environment:')}\n` +
-        `  ${chalk.cyan(`export MOLTOS_API_KEY=${mockApiKey}`)}`,
+        `${chalk.gray('Config updated with credentials.')}\n\n` +
+        `${chalk.gray('Export to environment:')}\n` +
+        `  ${chalk.cyan(`export MOLTOS_API_KEY=${data.credentials.apiKey}`)}`,
         '🔑 API Key'
       );
       
@@ -646,8 +759,24 @@ clawfs
     
     try {
       const sdk = await initSDK();
+      const config = (sdk as any)._config;
+      
+      if (!config || !config.privateKey) {
+        throw new Error('Agent private key not found. Re-run "moltos init".');
+      }
+      
+      // Sign the payload
+      const { signature, timestamp, challenge } = await signClawFSPayload(config.privateKey, {
+        path,
+        content_hash: crypto.createHash('sha256').update(Buffer.from(content)).digest('hex')
+      });
+      
       const result = await sdk.clawfsWrite(path, content, {
         contentType: options.type,
+        publicKey: config.publicKey,
+        signature,
+        timestamp,
+        challenge,
       });
       
       spinner.stop();
