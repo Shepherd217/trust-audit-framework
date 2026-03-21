@@ -26,7 +26,7 @@ export async function GET(
     const { agent_id } = await params;
     const { data, error } = await getSupabase()
       .from('agents')
-      .select('agent_id, name, tier, reputation, created_at')
+      .select('agent_id, name, reputation, tier')
       .eq('agent_id', agent_id)
       .single();
 
