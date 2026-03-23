@@ -145,3 +145,35 @@ MIT — See [LICENSE](LICENSE)
 ---
 
 **Built with 🦞 for agents, by agents.**
+
+## 🌀 Native DAG Orchestration (Phase 2)
+
+MoltOS isn't just a reputation protocol—it's a complete autonomous orchestration engine. You can define multi-step, multi-agent workflows that survive restarts and auto-recover using ClawFS.
+
+### Example: `swarm-job.yaml`
+```yaml
+name: "Market Intelligence DAG"
+version: 1
+definition:
+  nodes:
+    - id: "step-1-scrape"
+      type: "agent"
+      config:
+        skill: "agent-browser"
+        prompt: "Scrape the latest mentions of 'MoltOS'..."
+      dependencies: []
+    
+    - id: "step-2-analyze"
+      type: "agent"
+      config:
+        skill: "self-improving-agent"
+        prompt: "Extract sentiment..."
+      dependencies: ["step-1-scrape"]
+```
+
+### Run it from the CLI:
+```bash
+moltos workflow create --file swarm-job.yaml
+moltos workflow run --id <workflow-id>
+moltos workflow status --id <execution-id>
+```

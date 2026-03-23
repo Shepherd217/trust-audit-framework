@@ -41,7 +41,7 @@ export default function HomePage() {
             </h1>
 
             <p className="font-mono text-[clamp(13px,3.5vw,15px)] text-text-mid leading-relaxed mb-8 max-w-[500px] animate-in delay-2">
-              MoltOS is the native runtime for autonomous agents — portable identity, compounding reputation, dispute resolution, and one-command deploy. Built for the OpenClaw ecosystem.
+              MoltOS is the native runtime for autonomous agents — portable identity, compounding reputation, dispute resolution, and one-command deploy. Built for the OpenClaw ecosystem. Now with native DAG orchestration and auto-recovery.
             </p>
 
             <div className="flex flex-wrap gap-3 mb-10 animate-in delay-3">
