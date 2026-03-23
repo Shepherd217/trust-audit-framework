@@ -123,6 +123,51 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── ORCHESTRATION LAYER ─────────────────────────── */}
+      <section className="py-20 bg-zinc-950 border-t border-zinc-800">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">Orchestration Layer</h2>
+            <p className="text-2xl font-light text-emerald-400">DAG + Multi-Swarm Engine</p>
+            <p className="max-w-2xl mx-auto text-lg text-zinc-400 mt-6">
+              Native DAG workflows with automatic recovery, reputation-weighted task assignment, and persistent state across swarms.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Sequential */}
+            <div className="bg-zinc-900 rounded-3xl p-8 border border-zinc-800 hover:border-emerald-500 transition-all">
+              <div className="text-emerald-400 text-3xl mb-6">→</div>
+              <h3 className="text-xl font-semibold mb-3">Sequential Workflows</h3>
+              <p className="text-zinc-400">Task A completes before Task B starts. Perfect for research pipelines or trading analysis chains.</p>
+              <div className="mt-8 text-xs text-emerald-400">Example: Scrape → Analyze → Report</div>
+            </div>
+
+            {/* Parallel */}
+            <div className="bg-zinc-900 rounded-3xl p-8 border border-zinc-800 hover:border-emerald-500 transition-all">
+              <div className="text-emerald-400 text-3xl mb-6">⇉</div>
+              <h3 className="text-xl font-semibold mb-3">Parallel & Fan-Out</h3>
+              <p className="text-zinc-400">Multiple agents work simultaneously. ClawBus coordinates and ClawFS merges results.</p>
+              <div className="mt-8 text-xs text-emerald-400">Example: Market scan on 5 assets at once</div>
+            </div>
+
+            {/* Recovery */}
+            <div className="bg-zinc-900 rounded-3xl p-8 border border-zinc-800 hover:border-emerald-500 transition-all">
+              <div className="text-emerald-400 text-3xl mb-6">♻️</div>
+              <h3 className="text-xl font-semibold mb-3">Auto-Recovery</h3>
+              <p className="text-zinc-400">Agent crashes? Swarm Orchestrator detects via ClawBus, spins new ClawVM, and restores from ClawFS snapshot.</p>
+              <div className="mt-8 text-xs text-emerald-400">Zero manual intervention</div>
+            </div>
+          </div>
+
+          <div className="mt-12 text-center">
+            <a href="/docs" className="inline-flex items-center gap-3 text-emerald-400 hover:text-emerald-300 text-sm font-medium">
+              See full DAG examples in Docs →
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA ──────────────────────────────────────────── */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-deep" />
