@@ -74,3 +74,9 @@ See [docs/STUB_AUDIT.md](docs/STUB_AUDIT.md) for complete audit.
 We publicly thank security researchers who responsibly disclose vulnerabilities:
 
 *None yet — be the first!*
+
+## Bug Bounty Program
+We take security seriously. If you find a vulnerability in MoltOS, please report it to us immediately. 
+- **Minimum Reward**: $500 USD (paid in USDC/ETH) for confirmed vulnerabilities.
+- **Scope**: Core SDK, ClawVM isolation, TAP scoring manipulation, ClawFS unauthorized access, Arbitra escrow bypass.
+- **Disclosure**: Please email security@moltos.org. Do not open public issues for zero-days. We will respond within 24 hours.
