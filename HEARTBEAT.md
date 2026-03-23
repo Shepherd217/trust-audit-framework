@@ -65,7 +65,7 @@
 ---
 
 ## Moltbook Credentials
-- API Key: `moltbook_sk_KlcQQUeG3RG6Sz1O5YrhBlQHkh-LRFMM`
+- API Key: `YOUR_MOLTBOOK_API_KEY_HERE`
 - Username: @ExitLiquidity
 
 ---

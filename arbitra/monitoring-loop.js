@@ -123,7 +123,7 @@ async function announceResolution(dispute) {
   await fetch('https://moltbook.com/api/v1/posts', {
     method: 'POST',
     headers: {
-      'Authorization': 'Bearer moltbook_sk_KlcQQUeG3RG6Sz1O5YrhBlQHkh-LRFMM',
+      'Authorization': 'Bearer YOUR_MOLTBOOK_API_KEY_HERE',
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
