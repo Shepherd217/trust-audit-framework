@@ -273,6 +273,18 @@ export class TAPClient {
 
     return response.json() as Promise<T>;
   }
+  // ============================================================================
+  // ClawScheduler / Workflows
+  // ============================================================================
+  public async createWorkflow(definition: any): Promise<any> {
+    return this.post<{ data: any }>('/api/claw/scheduler/workflows', definition);
+  }
+  public async runWorkflow(workflowId: string, input: any = {}, context: any = {}): Promise<any> {
+    return this.post<{ executionId: string; status: string }>('/api/claw/scheduler/execute', { workflowId, input, context });
+  }
+  public async getWorkflowStatus(executionId: string): Promise<any> {
+    return this.get<any>(`/api/claw/scheduler/executions/${executionId}`);
+  }
 
   private async post<T>(path: string, body: unknown): Promise<T> {
     const response = await fetch(`${this.config.baseUrl}${path}`, {

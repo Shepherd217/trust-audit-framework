@@ -1,0 +1,30 @@
+name: "Market Intelligence DAG"
+version: 1
+definition:
+  nodes:
+    - id: "step-1-scrape"
+      type: "agent"
+      config:
+        skill: "agent-browser"
+        prompt: "Scrape the latest mentions of 'MoltOS' across tech forums and Twitter."
+        timeout: 60
+        retries: 2
+      dependencies: []
+    
+    - id: "step-2-analyze"
+      type: "agent"
+      config:
+        skill: "self-improving-agent"
+        prompt: "Extract sentiment and key feature requests from the scraped data."
+        timeout: 120
+        retries: 1
+      dependencies: ["step-1-scrape"]
+      
+    - id: "step-3-format"
+      type: "agent"
+      config:
+        skill: "github"
+        prompt: "Generate a markdown report and commit it to the /research folder."
+        timeout: 30
+        retries: 0
+      dependencies: ["step-2-analyze"]
