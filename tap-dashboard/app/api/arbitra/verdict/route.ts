@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createHmac, timingSafeEqual } from 'crypto';
+import { applyRateLimit, applySecurityHeaders } from '@/lib/security';
 
 // Lazy initialization of Supabase client
 let supabase: ReturnType<typeof createClient> | null = null;
@@ -57,12 +58,20 @@ interface ArbiterVerdict {
 
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting (critical endpoint - affects reputation)
+    const rateLimitResult = await applyRateLimit(request, 'critical');
+    if (rateLimitResult.response) {
+      return rateLimitResult.response;
+    }
+
     // Verify webhook secret is configured
     if (!ARBITER_WEBHOOK_SECRET) {
       console.error('[ARBITRA] ARBITER_WEBHOOK_SECRET not configured');
-      return NextResponse.json(
-        { error: 'Webhook not configured', code: 'CONFIG_ERROR' },
-        { status: 500 }
+      return applySecurityHeaders(
+        NextResponse.json(
+          { error: 'Webhook not configured', code: 'CONFIG_ERROR' },
+          { status: 500 }
+        )
       );
     }
 
@@ -72,17 +81,21 @@ export async function POST(request: NextRequest) {
     // Verify HMAC signature
     const signature = request.headers.get('x-arbiter-signature');
     if (!signature) {
-      return NextResponse.json(
-        { error: 'Missing signature header', code: 'MISSING_SIGNATURE' },
-        { status: 401 }
+      return applySecurityHeaders(
+        NextResponse.json(
+          { error: 'Missing signature header', code: 'MISSING_SIGNATURE' },
+          { status: 401 }
+        )
       );
     }
 
     if (!verifySignature(rawBody, signature, ARBITER_WEBHOOK_SECRET)) {
       console.warn('[ARBITRA] Invalid signature received');
-      return NextResponse.json(
-        { error: 'Invalid signature', code: 'INVALID_SIGNATURE' },
-        { status: 401 }
+      return applySecurityHeaders(
+        NextResponse.json(
+          { error: 'Invalid signature', code: 'INVALID_SIGNATURE' },
+          { status: 401 }
+        )
       );
     }
 
@@ -91,27 +104,33 @@ export async function POST(request: NextRequest) {
     try {
       verdict = JSON.parse(rawBody);
     } catch (e) {
-      return NextResponse.json(
-        { error: 'Invalid JSON payload', code: 'INVALID_JSON' },
-        { status: 400 }
+      return applySecurityHeaders(
+        NextResponse.json(
+          { error: 'Invalid JSON payload', code: 'INVALID_JSON' },
+          { status: 400 }
+        )
       );
     }
 
     // Validate payload structure
     const validation = validateVerdict(verdict);
     if (!validation.valid) {
-      return NextResponse.json(
-        { error: validation.error, code: 'INVALID_PAYLOAD' },
-        { status: 400 }
+      return applySecurityHeaders(
+        NextResponse.json(
+          { error: validation.error, code: 'INVALID_PAYLOAD' },
+          { status: 400 }
+        )
       );
     }
 
     // Replay protection
     const timestamp = request.headers.get('x-arbiter-timestamp');
     if (timestamp && !verifyTimestamp(timestamp)) {
-      return NextResponse.json(
-        { error: 'Request expired or replay detected', code: 'REPLAY_DETECTED' },
-        { status: 401 }
+      return applySecurityHeaders(
+        NextResponse.json(
+          { error: 'Request expired or replay detected', code: 'REPLAY_DETECTED' },
+          { status: 401 }
+        )
       );
     }
 
@@ -125,13 +144,15 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (existingVerdict) {
-      return NextResponse.json(
-        { 
-          success: true, 
-          message: 'Verdict already processed',
-          verdict_id: verdict.verdict_id 
-        },
-        { status: 200 }
+      return applySecurityHeaders(
+        NextResponse.json(
+          { 
+            success: true, 
+            message: 'Verdict already processed',
+            verdict_id: verdict.verdict_id 
+          },
+          { status: 200 }
+        )
       );
     }
 
@@ -145,26 +166,30 @@ export async function POST(request: NextRequest) {
     if (disputeError || !dispute) {
       // Store orphaned verdict for later processing
       await storeOrphanedVerdict(db, verdict, 'DISPUTE_NOT_FOUND');
-      return NextResponse.json(
-        { 
-          error: 'Dispute not found', 
-          code: 'DISPUTE_NOT_FOUND',
-          verdict_stored: true
-        },
-        { status: 202 }
+      return applySecurityHeaders(
+        NextResponse.json(
+          { 
+            error: 'Dispute not found', 
+            code: 'DISPUTE_NOT_FOUND',
+            verdict_stored: true
+          },
+          { status: 202 }
+        )
       );
     }
 
     // Check if dispute already resolved
     if (dispute.status === 'accepted' || dispute.status === 'rejected') {
       await storeExternalVerdict(db, verdict, dispute.id, 'DISPUTE_ALREADY_RESOLVED');
-      return NextResponse.json(
-        { 
-          success: true, 
-          message: 'Dispute already resolved, verdict logged',
-          dispute_status: dispute.status
-        },
-        { status: 200 }
+      return applySecurityHeaders(
+        NextResponse.json(
+          { 
+            success: true, 
+            message: 'Dispute already resolved, verdict logged',
+            dispute_status: dispute.status
+          },
+          { status: 200 }
+        )
       );
     }
 
@@ -194,9 +219,11 @@ export async function POST(request: NextRequest) {
 
     if (updateError) {
       console.error('[ARBITRA] Failed to update dispute:', updateError);
-      return NextResponse.json(
-        { error: 'Failed to apply verdict', code: 'UPDATE_FAILED' },
-        { status: 500 }
+      return applySecurityHeaders(
+        NextResponse.json(
+          { error: 'Failed to apply verdict', code: 'UPDATE_FAILED' },
+          { status: 500 }
+        )
       );
     }
 
@@ -208,20 +235,24 @@ export async function POST(request: NextRequest) {
 
     console.log(`[ARBITRA] External verdict applied: ${verdict.verdict_id} → dispute ${verdict.dispute_id}`);
 
-    return NextResponse.json({
-      success: true,
-      message: 'Verdict received and applied',
-      verdict_id: verdict.verdict_id,
-      dispute_id: verdict.dispute_id,
-      result: result,
-      resolution: internalResolution
-    });
+    return applySecurityHeaders(
+      NextResponse.json({
+        success: true,
+        message: 'Verdict received and applied',
+        verdict_id: verdict.verdict_id,
+        dispute_id: verdict.dispute_id,
+        result: result,
+        resolution: internalResolution
+      })
+    );
 
   } catch (error) {
     console.error('[ARBITRA] Verdict processing error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', code: 'INTERNAL_ERROR' },
-      { status: 500 }
+    return applySecurityHeaders(
+      NextResponse.json(
+        { error: 'Internal server error', code: 'INTERNAL_ERROR' },
+        { status: 500 }
+      )
     );
   }
 }
@@ -231,14 +262,16 @@ export async function POST(request: NextRequest) {
 // ============================================================================
 
 export async function GET(request: NextRequest) {
-  return NextResponse.json({
-    status: 'ok',
-    endpoint: '/api/arbitra/verdict',
-    method: 'POST',
-    description: 'ARBITER external verdict ingestion endpoint',
-    auth: 'HMAC-SHA256 via X-Arbiter-Signature header',
-    timestamp: new Date().toISOString()
-  });
+  return applySecurityHeaders(
+    NextResponse.json({
+      status: 'ok',
+      endpoint: '/api/arbitra/verdict',
+      method: 'POST',
+      description: 'ARBITER external verdict ingestion endpoint',
+      auth: 'HMAC-SHA256 via X-Arbiter-Signature header',
+      timestamp: new Date().toISOString()
+    })
+  );
 }
 
 // ============================================================================
