@@ -271,7 +271,7 @@ export class TAPClient {
       throw new Error(`TAP API error: ${response.status} ${response.statusText}`);
     }
 
-    return response.json();
+    return response.json() as Promise<T>;
   }
 
   private async post<T>(path: string, body: unknown): Promise<T> {
@@ -289,7 +289,7 @@ export class TAPClient {
       throw new Error(`TAP API error: ${response.status} ${error}`);
     }
 
-    return response.json();
+    return response.json() as Promise<T>;
   }
 
   private generateNonce(): string {
@@ -334,14 +334,4 @@ export const VERSION = '0.1.0-alpha.1';
 // ============================================================================
 // Exports
 // ============================================================================
-
-export type {
-  TAPConfig,
-  AttestationRequest,
-  AttestationResponse,
-  TAPScore,
-  NetworkStats,
-  ArbitraEligibility,
-};
-
 export default TAPClient;

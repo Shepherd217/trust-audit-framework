@@ -80,3 +80,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 }
+
+// GET - List connected accounts
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  try {
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    
+    // In a real implementation, you would list connected accounts from your DB
+    // or fetch directly from Stripe.
+    const accounts = await stripe.accounts.list({ limit });
+    
+    return NextResponse.json({
+      success: true,
+      data: accounts.data,
+      has_more: accounts.has_more,
+    });
+  } catch (error) {
+    console.error('List connected accounts error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

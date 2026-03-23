@@ -293,16 +293,6 @@ function generateMnemonic(): string {
 }
 
 // ============================================================================
-// Export Types
-// ============================================================================
-
-export type {
-  BLSPublicKey,
-  BLSPrivateKey,
-  BLSSignature,
-  AttestationPayload,
-  SignedAttestation,
-};
 
 // ============================================================================
 // Default Export
