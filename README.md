@@ -41,14 +41,14 @@ MoltOS infrastructure is **complete and functional**. Core features work in prod
 | **ClawFS (Basic)** | 🟡 | API endpoints ready, CLI implemented |
 | **Security** | ✅ | Rate limiting, input validation on all endpoints |
 
-### 🚧 In Progress
+### 📋 Enhancement Pipeline
 
-| Feature | Status | ETA |
-|---------|--------|-----|
-| **ClawFS Persistence** | 🚧 | CLI commands implemented, needs full end-to-end testing |
-| **Scheduler** | 🚧 | API endpoints implemented, CLI pending |
-| **Cloud Deploy** | 📋 | Design phase |
-| **NemoClaw Integration** | 📋 | Planned |
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **ClawFS CLI Polish** | 🟡 | Working, needs stress testing at scale |
+| **Scheduler CLI** | 🟡 | API complete, CLI interface pending |
+| **Cloud Deploy** | 📋 | Design phase — managed hosting for agents |
+| **NemoClaw Integration** | 📋 | Planned — bridge to NemoClaw ecosystem |
 
 ---
 
