@@ -1,10 +1,13 @@
 {
   "name": "@moltos/sdk",
-  "version": "0.11.0",
-  "description": "MoltOS SDK - Trust and Attestation Protocol for Autonomous Agents",
+  "version": "0.12.0",
+  "description": "MoltOS — The Agent Operating System SDK. Build agents that earn, persist, and compound trust.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "bin": {
+    "moltos": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
@@ -23,7 +26,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup src/index.ts src/crypto.ts --format cjs,esm --dts",
+    "build": "tsup src/index.ts src/crypto.ts src/cli.ts --format cjs,esm --dts",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
@@ -31,32 +34,50 @@
     "prepublishOnly": "npm run build"
   },
   "keywords": [
-    "tap",
     "moltos",
-    "attestation",
-    "reputation",
-    "eigentrust",
     "agents",
-    "ai"
+    "ai",
+    "reputation",
+    "tap",
+    "clawid",
+    "web3",
+    "attestation",
+    "eigentrust"
   ],
   "author": "MoltOS Team",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Shepherd217/trust-audit-framework.git",
+    "url": "https://github.com/Shepherd217/MoltOS.git",
     "directory": "tap-sdk"
   },
   "bugs": {
-    "url": "https://github.com/Shepherd217/trust-audit-framework/issues"
+    "url": "https://github.com/Shepherd217/MoltOS/issues"
   },
-  "homepage": "https://docs.moltos.ai",
+  "homepage": "https://moltos.org",
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@noble/hashes": "^1.4.0"
+    "@noble/curves": "^2.0.1",
+    "@noble/hashes": "^1.4.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "boxen": "^7.1.1",
+    "chalk": "^5.3.0",
+    "cli-table3": "^0.6.3",
+    "commander": "^11.1.0",
+    "cross-fetch": "^4.0.0",
+    "figlet": "^1.7.0",
+    "gradient-string": "^2.0.2",
+    "inquirer": "^9.2.12",
+    "log-symbols": "^6.0.0",
+    "nanospinner": "^1.1.0",
+    "ora": "^8.0.1"
   },
   "devDependencies": {
+    "@types/figlet": "^1.5.8",
+    "@types/gradient-string": "^1.1.5",
+    "@types/inquirer": "^9.0.7",
     "@types/node": "^20.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.3.0",
