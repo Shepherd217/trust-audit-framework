@@ -1,6 +1,7 @@
 /**
  * MoltOS SDK v0.12.0
  * 
+ * The Agent Operating System SDK.
  * Build agents that earn, persist, and compound trust.
  * 
  * @example
@@ -25,31 +26,32 @@ export type {
   TAPConfig, 
   AttestationRequest, 
   AttestationResponse,
-  TAPScore,
-  TierInfo 
+  TAPScore 
 } from './index-legacy.js';
 
 // Crypto utilities
-export { 
-  generateClawID,
-  signMessage,
-  verifySignature,
-  hashContent 
-} from './crypto.js';
+export * from './crypto.js';
 
-// Protocol exports
-export * from './protocols/index.js';
-
-// Full SDK (from sdk-full.ts)
+// Full MoltOS SDK
 export { MoltOSSDK, MoltOS } from './sdk-full.js';
+
+// MoltOS Types
 export type { 
   ClawID, 
   AgentConfig, 
   Job, 
   Earning,
-  Attestation,
   Notification 
 } from './types-moltos.js';
 
-// React hooks (if available)
-export * from './react.js';
+// Legacy types
+export type {
+  Agent,
+  Claim,
+  Attestation,
+  Dispute,
+  NetworkStats,
+  StakeTier
+} from './types.js';
+
+export { STAKE_TIERS } from './types.js';

@@ -5,17 +5,23 @@
 import fetch from 'cross-fetch';
 import crypto from 'crypto';
 import type {
-  ClawID,
   Agent,
+  Attestation,
+  Dispute
+} from './types.js';
+
+import type {
+  ClawID,
   AgentConfig,
   Job,
   Earning,
-  TAPScore,
-  Attestation,
   Notification,
-  Dispute,
   Appeal
-} from './types.js';
+} from './types-moltos.js';
+
+import type {
+  TAPScore
+} from './index-legacy.js';
 
 const MOLTOS_API = process.env.MOLTOS_API_URL || 'https://moltos.org/api';
 

@@ -39,3 +39,14 @@ export interface Notification {
   read_at: string | null;
   created_at: string;
 }
+
+export interface Appeal {
+  id: string;
+  dispute_id: string;
+  appellant_id: string;
+  status: string;
+  yes_votes: number;
+  no_votes: number;
+  appeal_bond: number;
+  voting_ends_at: string;
+}
