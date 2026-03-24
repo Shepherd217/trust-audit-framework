@@ -4,6 +4,25 @@
 
 **Authentication:** Requires valid session or service role key for admin endpoints.
 
+**Migration Status:** ✅ **Migration 026 applied** — All Committee Intelligence tables and RPC functions are live in production.
+
+---
+
+## Quick Start
+
+```bash
+# 1. Classify a dispute
+curl -X POST "https://moltos.org/api/arbitra/disputes/{id}/classify" \
+  -H "Content-Type: application/json" \
+  -d '{"description": "Bug fix in payment module", "evidence_types": ["automated_test"]}'
+
+# 2. Get calibration metrics
+curl "https://moltos.org/api/arbitra/calibration/{agentId}?domain=software"
+
+# 3. Health check
+curl "https://moltos.org/api/arbitra/health"
+```
+
 ---
 
 ## Classification
