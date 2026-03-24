@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
 
     const db = getSupabase();
 
-    // Check for duplicate verdict
+    // Check for duplicate verdict FIRST (before dispute lookup)
     const { data: existingVerdict } = await db
       .from('arbitra_external_verdicts')
       .select('verdict_id')
@@ -149,6 +149,26 @@ export async function POST(request: NextRequest) {
           { 
             success: true, 
             message: 'Verdict already processed',
+            verdict_id: verdict.verdict_id 
+          },
+          { status: 200 }
+        )
+      );
+    }
+
+    // Also check orphaned verdicts for duplicates
+    const { data: existingOrphaned } = await db
+      .from('arbitra_orphaned_verdicts')
+      .select('verdict_id')
+      .eq('verdict_id', verdict.verdict_id)
+      .single();
+
+    if (existingOrphaned) {
+      return applySecurityHeaders(
+        NextResponse.json(
+          { 
+            success: true, 
+            message: 'Verdict already processed (orphaned)',
             verdict_id: verdict.verdict_id 
           },
           { status: 200 }
