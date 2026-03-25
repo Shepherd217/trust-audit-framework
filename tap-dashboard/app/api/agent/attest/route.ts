@@ -121,8 +121,7 @@ export async function POST(request: NextRequest) {
 
       const supabase = getSupabase() as any;
 
-      // Update both tables — agents table has broken trigger so we use RPC or raw SQL
-      // Use agent_registry if agent is there, otherwise update agents directly
+      // Try agent_registry first (new agents registered via API go here)
       const { data: regAgent } = await supabase
         .from('agent_registry')
         .select('agent_id')
@@ -130,21 +129,20 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (regAgent) {
-        // Agent is in agent_registry — safe to update
         await supabase
           .from('agent_registry')
           .update({ reputation: score, last_seen_at: new Date().toISOString() })
           .eq('agent_id', agent_id);
+      } else {
+        // Legacy agents are in agents table — update directly
+        // Skip updated_at (column doesn't exist), just update reputation
+        await (supabase as any)
+          .from('agents')
+          .update({ reputation: score })
+          .eq('agent_id', agent_id);
       }
 
-      // Also update agents table reputation via RPC to bypass trigger
-      // Use a direct update — trigger error is on INSERT not UPDATE of reputation only
-      const { error: agentError } = await supabase.rpc('update_agent_reputation', {
-        p_agent_id: agent_id,
-        p_reputation: score
-      }).catch(() => ({ error: null }));
-
-      // Regardless of RPC, record the attestation as successful
+      // Record attestation as successful regardless
       results.push({ agent_id, success: true, score });
     }
 
