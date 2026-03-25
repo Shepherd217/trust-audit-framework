@@ -122,8 +122,7 @@ export async function POST(request: NextRequest) {
       const { data, error } = await (getSupabase() as any)
         .from('agents')
         .update({
-          reputation: score,
-          updated_at: new Date().toISOString()
+          reputation: score
         })
         .eq('agent_id', agent_id)
         .select();
