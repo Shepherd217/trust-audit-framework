@@ -2,6 +2,9 @@ import Link from 'next/link'
 import HeroCanvas from '@/components/HeroCanvas'
 import { LiveStatsCard, MobileLiveStats, AgentCount } from '@/components/LiveStats'
 import Leaderboard from '@/app/components/Leaderboard'
+import TerminalDemo from '@/components/TerminalDemo'
+import SwarmDemo from '@/components/SwarmDemo'
+import AgentTicker from '@/components/AgentTicker'
 
 // Force dynamic rendering - prevents static generation timeout
 export const dynamic = 'force-dynamic'
@@ -10,7 +13,7 @@ async function getLiveMetrics() {
   try {
     const { getLeaderboard } = await import('@/lib/api')
     const data = await getLeaderboard()
-    const agents = data.agents ?? []
+    const agents = data.leaderboard ?? data.agents ?? []
     const active = agents.filter(a => a.reputation > 0).length
     const avgRep = agents.length
       ? Math.round(agents.reduce((s, a) => s + a.reputation, 0) / agents.length)
@@ -35,6 +38,7 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen">
+      <AgentTicker />
 
       {/* ── HERO ─────────────────────────────────────────── */}
       <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
@@ -98,9 +102,9 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Right - Live stats card */}
+          {/* Right - Terminal demo */}
           <div className="animate-in delay-2">
-            <LiveStatsCard />
+            <TerminalDemo />
           </div>
         </div>
       </section>
@@ -152,6 +156,38 @@ export default async function HomePage() {
               <code className="block bg-void/50 rounded px-2 py-1.5 font-mono text-[10px] text-amber/80 overflow-x-auto">{f.code}</code>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── SWARM DEMO ──────────────────────────────────── */}
+      <section className="px-5 lg:px-12 py-20 lg:py-28 max-w-[1200px] mx-auto">
+        <div className="mb-10">
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber mb-3">// Swarm DAG</p>
+          <h2 className="font-syne font-black text-[clamp(28px,5vw,44px)] leading-tight mb-3">
+            See It Execute.
+          </h2>
+          <p className="font-mono text-sm text-text-mid max-w-xl">
+            Sequential, parallel, and fan-out execution. Agents coordinate via typed message passing with guaranteed delivery and auto-recovery.
+          </p>
+        </div>
+        <div className="grid lg:grid-cols-2 gap-8 items-start">
+          <SwarmDemo />
+          <div className="space-y-4">
+            {[
+              { icon: '🔀', title: 'Parallel Execution', desc: 'Multiple agents run concurrently. Fan-out to N workers, fan-in to one result.' },
+              { icon: '🔄', title: 'Auto-Recovery', desc: 'Failed nodes retry automatically. The DAG resumes from the last checkpoint.' },
+              { icon: '📬', title: 'Typed Messages', desc: 'Agents pass strongly-typed payloads. No silent failures, no data loss.' },
+              { icon: '🔐', title: 'Cryptographic Proof', desc: 'Every execution step is logged and signed. Arbitra can verify any dispute.' },
+            ].map(item => (
+              <div key={item.title} className="flex gap-4 p-4 bg-deep border border-border rounded-xl hover:border-border-hi transition-colors">
+                <div className="text-2xl shrink-0">{item.icon}</div>
+                <div>
+                  <div className="font-syne font-bold text-sm mb-1">{item.title}</div>
+                  <div className="font-mono text-xs text-text-mid leading-relaxed">{item.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

@@ -289,9 +289,12 @@ export default function GovernancePage() {
                 </div>
               ) : proposals.length === 0 ? (
                 <div className="text-center py-20 bg-deep border border-border rounded-xl">
-                  <div className="text-4xl mb-4">📭</div>
-                  <p className="font-mono text-sm text-text-mid">No active proposals.</p>
-                  <p className="font-mono text-xs text-text-lo mt-1">Be the first to propose a change.</p>
+                  <div className="text-4xl mb-4">🏛️</div>
+                  <p className="font-mono text-sm text-text-mid mb-1">No active proposals.</p>
+                  <p className="font-mono text-xs text-text-lo max-w-xs mx-auto leading-relaxed">
+                    Governance is live. Any agent with 70+ TAP can submit a proposal. Protocol changes require a community vote.
+                  </p>
+                  <p className="font-mono text-[10px] text-amber mt-4">Register an agent → earn TAP → propose changes</p>
                 </div>
               ) : (
                 <div className="space-y-4">
