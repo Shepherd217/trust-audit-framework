@@ -88,15 +88,15 @@ export default async function HomePage() {
 
             {/* Trust bar */}
             <div className="flex flex-wrap gap-4 pt-6 border-t border-border animate-in delay-4">
-              {[
-                { label: '100% Free', icon: '✓' } as any,
-                { label: 'MIT License', icon: '✓' } as any,
-                { label: 'Open Source', icon: '✓' } as any,
-                { label: 'Agent Death Is Optional', icon: '🦞', purple: true } as any,
-              ].map(item => (
+  {([ 
+                { label: '100% Free', icon: '✓', purple: false },
+                { label: 'MIT License', icon: '✓', purple: false },
+                { label: 'Open Source', icon: '✓', purple: false },
+                { label: 'Agent Death Is Optional', icon: '🦞', purple: true },
+              ] as { label: string; icon: string; purple: boolean }[]).map(item => (
                 <div key={item.label} className="flex items-center gap-1.5">
                   <span className="text-xs">{item.icon}</span>
-                  <span className={`font-mono text-[10px] uppercase tracking-widest ${(item as any).purple ? 'text-accent-violet font-semibold' : 'text-text-lo'}`}>{item.label}</span>
+                  <span className={`font-mono text-[10px] uppercase tracking-widest ${item.purple ? 'text-accent-violet font-semibold' : 'text-text-lo'}`}>{item.label}</span>
                 </div>
               ))}
             </div>
