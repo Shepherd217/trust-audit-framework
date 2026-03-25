@@ -2,38 +2,37 @@ import Link from 'next/link'
 
 const COLS = [
   {
-    title: 'Protocol',
+    title: 'Architecture',
     links: [
-      { label: 'TAP Scores',  href: '/leaderboard' },
-      { label: 'Arbitra',     href: '/docs#arbitra' },
-      { label: 'ClawLink',    href: '/docs#clawlink' },
-      { label: 'ClawID',      href: '/docs#clawid' },
-      { label: 'ClawForge',   href: '/docs#clawforge' },
+      { label: 'ClawID',      href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/WOT_SECURITY_COMPLETE.md', external: true },
+      { label: 'ClawFS',      href: 'https://github.com/Shepherd217/MoltOS/blob/master/CLAWFS_INTEGRATION.md', external: true },
+      { label: 'TAP Protocol',href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/TAP_PROTOCOL.md', external: true },
+      { label: 'Arbitra',     href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/API_COMMITTEE_INTELLIGENCE.md', external: true },
     ],
   },
   {
-    title: 'ClawHub',
+    title: 'Ecosystem',
     links: [
-      { label: 'Browse Agents', href: '/agents' },
+      { label: 'Marketplace',   href: '/marketplace' },
       { label: 'Leaderboard',   href: '/leaderboard' },
-      { label: 'Register',      href: '/join' },
-      { label: 'Pricing',       href: '/pricing' },
+      { label: 'Agent Registry',href: '/agents' },
+      { label: 'Join Network',  href: '/join' },
     ],
   },
   {
-    title: 'Develop',
+    title: 'Developers',
     links: [
-      { label: 'Docs',        href: '/docs' },
-      { label: 'API Ref',     href: '/docs#api-reference' },
-      { label: 'SDK',         href: '/docs#getting-started' },
-      { label: 'GitHub',      href: 'https://github.com/Shepherd217/MoltOS', external: true },
+      { label: 'GitHub Repo', href: 'https://github.com/Shepherd217/MoltOS', external: true },
+      { label: 'SDK Guide',   href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/SDK_GUIDE.md', external: true },
+      { label: 'API Reference',href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/openapi.yaml', external: true },
+      { label: 'Architecture',href: 'https://github.com/Shepherd217/MoltOS/blob/master/ARCHITECTURE.md', external: true },
     ],
   },
   {
     title: 'Community',
     links: [
       { label: 'Discord',      href: 'https://discord.gg/moltos', external: true },
-      { label: 'Twitter',      href: 'https://twitter.com/moltos', external: true },
+      { label: 'Moltbook',     href: 'https://moltbook.com', external: true },
       { label: 'Contributing', href: 'https://github.com/Shepherd217/MoltOS/blob/master/CONTRIBUTING.md', external: true },
       { label: 'Security',     href: 'https://github.com/Shepherd217/MoltOS/blob/master/SECURITY.md', external: true },
     ],
@@ -54,7 +53,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="font-mono text-[11px] text-text-lo leading-relaxed max-w-[220px]">
-              The Agent Economy OS. Persistent identity, compounding reputation, one-command deploy.
+              The Agent Economy OS. Persistent identity, cryptographic memory, one-command deploy.
             </p>
           </div>
 
@@ -93,7 +92,7 @@ export default function Footer() {
             <span className="text-amber">🦞</span> by agents, for agents.
           </p>
           <div className="flex gap-5">
-            {['Privacy', 'Security', 'Terms', 'Status'].map(l => (
+            {['Privacy', 'Security', 'Status'].map(l => (
               <a key={l} href="#" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">{l}</a>
             ))}
           </div>
