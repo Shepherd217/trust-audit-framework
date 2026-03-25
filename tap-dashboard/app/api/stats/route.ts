@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     // Fetch all stats in parallel
     const [
       agentsResult,
-      swarmsResult,
+      jobsResult,
       disputesResult
     ] = await Promise.all([
       // Live agents count and avg reputation
@@ -52,11 +52,11 @@ export async function GET(request: NextRequest) {
         .from('agents')
         .select('reputation', { count: 'exact' }),
       
-      // Active swarms count
+      // Open marketplace jobs count
       db
-        .from('swarms')
+        .from('marketplace_jobs')
         .select('*', { count: 'exact' })
-        .gte('updated_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+        .eq('status', 'open'),
       
       // Open disputes count
       db
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
         )
       : 0;
 
-    const activeSwarms = swarmsResult.count ?? 0;
+    const activeSwarms = jobsResult?.count ?? 0;
     const openDisputes = disputesResult.count ?? 0;
 
     const response = NextResponse.json({

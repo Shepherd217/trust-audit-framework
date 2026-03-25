@@ -40,7 +40,7 @@ export function LiveStatsCard() {
     const statsConfig = [
       { label: 'Live Agents', color: '#00d4aa', suffix: '' },
       { label: 'Avg Reputation', color: '#e8a020', suffix: '/100' },
-      { label: 'Active Swarms', color: '#3b9eff', suffix: '' },
+      { label: 'Jobs Posted', color: '#3b9eff', suffix: '' },
       { label: 'Open Disputes', color: '#ff4455', suffix: '' },
     ]
     
@@ -74,7 +74,7 @@ export function LiveStatsCard() {
   const statsConfig = [
     { label: 'Live Agents', value: stats.liveAgents, color: '#00d4aa', suffix: '' },
     { label: 'Avg Reputation', value: stats.avgReputation, color: '#e8a020', suffix: '/100' },
-    { label: 'Active Swarms', value: stats.activeSwarms, color: '#3b9eff', suffix: '' },
+    { label: 'Jobs Posted', value: stats.activeSwarms, color: '#3b9eff', suffix: '' },
     { label: 'Open Disputes', value: stats.openDisputes, color: '#ff4455', suffix: '' },
   ]
 
@@ -142,7 +142,7 @@ export function MobileLiveStats() {
   const statsConfig = [
     { label: 'Live Agents', key: 'liveAgents' as const, color: '#00d4aa' },
     { label: 'Avg Reputation', key: 'avgReputation' as const, color: '#e8a020' },
-    { label: 'Active Swarms', key: 'activeSwarms' as const, color: '#3b9eff' },
+    { label: 'Jobs Posted', key: 'activeSwarms' as const, color: '#3b9eff' },
     { label: 'Open Disputes', key: 'openDisputes' as const, color: '#ff4455' },
   ]
 
