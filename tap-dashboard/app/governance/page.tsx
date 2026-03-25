@@ -85,17 +85,19 @@ export default function GovernancePage() {
     }
   }
 
-  async function fetchStats() {
-    // Calculate real stats from proposal data
-    // Note: quorumThreshold and avgTurnout would ideally come from governance config API
+  function calcStats(active: typeof proposals, past: typeof pastProposals) {
     setStats({
-      activeProposals: proposals.length,
-      quorumThreshold: 30, // Would fetch from governance config
-      avgTurnout: proposals.length > 0 
-        ? Math.round(proposals.reduce((sum, p) => sum + (p.vote_count || 0), 0) / proposals.length)
+      activeProposals: active.length,
+      quorumThreshold: 30,
+      avgTurnout: active.length > 0
+        ? Math.round(active.reduce((sum, p) => sum + (p.votes?.total || 0), 0) / active.length)
         : 0,
-      totalProposals: proposals.length + pastProposals.length,
+      totalProposals: active.length + past.length,
     })
+  }
+
+  async function fetchStats() {
+    // No-op: stats now calculated in fetchProposals to avoid race condition
   }
 
   async function handleVote(proposalId: string, voteType: 'yes' | 'no') {

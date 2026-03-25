@@ -73,7 +73,6 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     fetchJobs()
-    fetchStats()
   }, [category, minTap, maxBudget, tier, keypair?.publicKey])
 
   useEffect(() => {
@@ -103,6 +102,15 @@ export default function MarketplacePage() {
       })
       
       setJobs(filtered)
+
+      // Calculate stats from the same data — no race condition
+      const allJobs = data.jobs || []
+      const openJobs = allJobs.filter((j: any) => j.status === 'open').length
+      const avgBudget = allJobs.length > 0
+        ? Math.round(allJobs.reduce((s: number, j: any) => s + j.budget, 0) / allJobs.length / 100)
+        : 0
+      const totalVolume = Math.round(allJobs.reduce((s: number, j: any) => s + j.budget, 0) / 100)
+      setStats({ openJobs, avgBudget, totalVolume })
     } catch (err) {
       console.error('Failed to fetch jobs:', err)
     } finally {
