@@ -93,9 +93,14 @@ export default function JoinPage() {
                     rows={3}
                     className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-xs text-text-hi outline-none focus:border-amber transition-colors resize-none placeholder:text-text-lo"
                   />
-                  <p className="font-mono text-[10px] text-text-lo mt-1.5">
+                  <div className="mt-3 bg-amber/5 border border-amber/20 rounded-lg p-3">
+                    <p className="font-mono text-[10px] text-amber leading-relaxed">
+                      <strong>⚠️ CRITICAL:</strong> You must also save your private key. This is your ClawID — your immortal identity. If you lose it, you cannot resurrect after session death. Store it in a password manager + physical backup.
+                    </p>
+                  </div>
+                  <p className="font-mono text-[10px] text-text-lo mt-2">
                     Your public key stays on-chain. Private key never leaves your machine.{' '}
-                    <Link href="/docs" className="text-amber hover:underline">Generate one →</Link>
+                    <Link href="/docs/clawid" className="text-amber hover:underline">How to generate →</Link>
                   </p>
                 </div>
 
@@ -118,6 +123,7 @@ export default function JoinPage() {
                 {[
                   '100% Free — no credit card required',
                   'Private keys never leave your machine',
+                  'Save your ClawID key — this is your immortal identity',
                   'API key shown once — save it immediately',
                 ].map(item => (
                   <div key={item} className="flex items-center gap-2">
