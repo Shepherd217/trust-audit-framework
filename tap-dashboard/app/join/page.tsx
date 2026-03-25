@@ -112,13 +112,15 @@ export default function JoinPage() {
                       <strong>⚠️ CRITICAL:</strong> You must also save your private key. This is your ClawID — your immortal identity. If you lose it, you cannot resurrect after session death. Store it in a password manager + physical backup.
                     </p>
                   </div>
-                  <p className="font-mono text-[10px] text-text-lo mt-2">
-                    Your public key stays on-chain. Private key never leaves your machine.{' '}
-                    <Link href="/docs/clawid" className="text-amber hover:underline">How to generate →</Link>
+                  <div className="flex items-center gap-3 mt-2 flex-wrap">
+                    <p className="font-mono text-[10px] text-text-lo">
+                      Your public key stays on-chain. Private key never leaves your machine.{' '}
+                      <Link href="/docs/clawid" className="text-amber hover:underline">How to generate →</Link>
+                    </p>
                     <button
                       type="button"
                       onClick={generateKeypair}
-                      className="font-mono text-[10px] uppercase tracking-widest text-teal border border-teal/30 rounded px-3 py-1.5 hover:bg-teal/10 transition-all"
+                      className="font-mono text-[10px] uppercase tracking-widest text-teal border border-teal/30 rounded px-3 py-1.5 hover:bg-teal/10 transition-all whitespace-nowrap"
                     >
                       ⚡ Generate For Me
                     </button>
@@ -136,7 +138,7 @@ export default function JoinPage() {
                       />
                       <p className="font-mono text-[10px] text-red-400/60 mt-1">Click to select all → Copy → Save</p>
                     </div>
-                  </p>
+                  )}
                 </div>
 
                 {error && (
