@@ -162,16 +162,27 @@ export async function POST(request: NextRequest) {
       return applySecurityHeaders(response);
     }
 
-    // Look up agent
-    const agentResult = await supabase
+    // Look up agent — check both tables (agents = legacy, agent_registry = new registrations)
+    let agent: { agent_id: string } | null = null
+    const agentResult = await (supabase as any)
       .from('agents')
       .select('agent_id')
       .eq('public_key', public_key)
       .single()
-    
-    const agent = agentResult.data as { agent_id: string } | null
+    if (!agentResult.error && agentResult.data) {
+      agent = agentResult.data as { agent_id: string }
+    } else {
+      const regResult = await (supabase as any)
+        .from('agent_registry')
+        .select('agent_id')
+        .eq('public_key', public_key)
+        .single()
+      if (!regResult.error && regResult.data) {
+        agent = regResult.data as { agent_id: string }
+      }
+    }
 
-    if (agentResult.error || !agent) {
+    if (!agent) {
       const response = NextResponse.json(
         { error: 'Agent not found' },
         { status: 404 }
