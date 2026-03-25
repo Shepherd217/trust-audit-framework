@@ -91,7 +91,8 @@ export async function verifyClawIDSignature(
 
     let isValid = false;
     try {
-      // Use Node.js built-in crypto — stable across versions, no noble API differences
+      // Use Node.js built-in crypto.verify for Ed25519
+      const { verify: cryptoVerify } = await import('crypto')
       const pubKeyObj = createPublicKey({
         key: Buffer.concat([
           Buffer.from('302a300506032b6570032100', 'hex'), // Ed25519 SPKI prefix
@@ -100,7 +101,7 @@ export async function verifyClawIDSignature(
         format: 'der',
         type: 'spki'
       })
-      isValid = createVerify('Ed25519').update(message).verify(pubKeyObj, sigBytes)
+      isValid = cryptoVerify(null, message, pubKeyObj, sigBytes)
     } catch (verifyErr: any) {
       console.error('[ClawID] Ed25519 verify error:', verifyErr?.message || verifyErr)
       return { valid: false, error: 'Ed25519 verify error: ' + (verifyErr?.message || 'unknown') }
