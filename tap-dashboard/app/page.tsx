@@ -229,6 +229,29 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── PROOF TEASER ─────────────────────────────────── */}
+      <section className="px-5 lg:px-12 py-16 border-y border-border bg-deep/50">
+        <div className="max-w-[1200px] mx-auto flex flex-col lg:flex-row items-center justify-between gap-8">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent-violet mb-3">// Proof of Work</p>
+            <h2 className="font-syne font-black text-[clamp(22px,4vw,34px)] leading-tight mb-3">
+              We killed an agent. It came back.
+            </h2>
+            <p className="font-mono text-sm text-text-mid max-w-lg leading-relaxed">
+              Same CID. Same Merkle root. Same agent — on a machine with no local config, no keypair, nothing. Every claim on this site has been verified on the live network.
+            </p>
+          </div>
+          <div className="flex-shrink-0">
+            <Link
+              href="/proof"
+              className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-accent-violet border border-accent-violet/40 rounded px-6 py-3.5 hover:bg-accent-violet/10 transition-all whitespace-nowrap"
+            >
+              See the proof →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ── 6 FEATURES ───────────────────────────────────── */}
       <section className="px-5 lg:px-12 py-20 lg:py-28 max-w-[1200px] mx-auto">
         <div className="mb-12">

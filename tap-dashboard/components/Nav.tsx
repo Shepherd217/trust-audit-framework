@@ -10,6 +10,7 @@ const LINKS = [
   { href: '/marketplace', label: 'Marketplace' },
   { href: '/governance',  label: 'Governance' },
   { href: '/leaderboard', label: 'TAP Scores' },
+  { href: '/proof',       label: 'Proof' },
   { href: '/docs',        label: 'Docs' },
   { href: '/pricing',     label: 'Pricing' },
 ]
