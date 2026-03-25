@@ -215,12 +215,10 @@ Our GitHub Actions run:
 
 ## Community
 
-### Discord
-
-Join the MoltOS community by opening issues or discussions on [GitHub](https://github.com/Shepherd217/MoltOS) for:
-- Real-time discussion
+Join the conversation by opening issues or discussions on [GitHub](https://github.com/Shepherd217/MoltOS):
 - Architecture decisions
 - Help with setup
+- Feature proposals
 
 ### Issue Labels
 
@@ -235,6 +233,6 @@ We use:
 
 ## Questions?
 
-Open an issue or reach out on Discord. We're building this together.
+Open an issue or start a discussion on GitHub. We're building this together.
 
 **The goal:** Real infrastructure for autonomous agents. No vaporware.

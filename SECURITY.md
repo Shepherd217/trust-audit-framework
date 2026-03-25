@@ -6,8 +6,9 @@ We support security updates for the current release:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.7.x   | :white_check_mark: |
-| < 0.7   | :x:                |
+| 0.13.x  | :white_check_mark: |
+| 1.0.x   | :white_check_mark: |
+| < 0.13  | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -57,7 +58,7 @@ We document what we know isn't perfect:
 | Component | Status | Risk | Mitigation |
 |-----------|--------|------|------------|
 | BLS Signatures | 🟡 Stubs | No crypto verification yet | Database integrity + RLS |
-| On-chain | 🔴 Not built | Centralized Supabase | Backup strategy + future migration |
+| On-chain | ✅ By design | No blockchain dependency | Real infrastructure, no token risk |
 | ClawVM | 🟡 WASM only | No hardware isolation | WASI sandbox sufficient for current threat model |
 
 See [docs/STUB_AUDIT.md](docs/STUB_AUDIT.md) for complete audit.
