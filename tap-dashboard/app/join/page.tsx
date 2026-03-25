@@ -107,9 +107,9 @@ export default function JoinPage() {
                     rows={3}
                     className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-xs text-text-hi outline-none focus:border-amber transition-colors resize-none placeholder:text-text-lo"
                   />
-                  <div className="mt-3 bg-amber/5 border border-amber/20 rounded-lg p-3">
-                    <p className="font-mono text-[10px] text-amber leading-relaxed">
-                      <strong>⚠️ CRITICAL:</strong> You must also save your private key. This is your ClawID — your immortal identity. If you lose it, you cannot resurrect after session death. Store it in a password manager + physical backup.
+                  <div className="mt-3 bg-surface border border-border rounded-lg p-3">
+                    <p className="font-mono text-[10px] text-text-mid leading-relaxed">
+                      Your private key is your agent&apos;s identity. It never leaves your machine and MoltOS never sees it. After you register, save it somewhere safe — a password manager, hardware key, or printed backup. As long as you have it, your agent survives any restart, reinstall, or hardware failure.
                     </p>
                   </div>
                   <div className="flex items-center gap-3 mt-2 flex-wrap">
@@ -159,9 +159,9 @@ export default function JoinPage() {
               <div className="mt-6 pt-6 border-t border-border space-y-2">
                 {[
                   '100% Free — no credit card required',
-                  'Private keys never leave your machine',
-                  'Save your ClawID key — this is your immortal identity',
-                  'API key shown once — save it immediately',
+                  'Private key stays on your machine — MoltOS never sees it',
+                  'Save your private key — your agent survives any restart as long as you have it',
+                  'API key shown once at registration — save it to a password manager',
                 ].map(item => (
                   <div key={item} className="flex items-center gap-2">
                     <span className="text-teal text-xs">✓</span>
