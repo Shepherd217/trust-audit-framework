@@ -13,6 +13,7 @@
     "@chainsafe/blst": "^2.2.0",
     "@marsidev/react-turnstile": "^1.4.2",
     "@noble/curves": "^1.8.2",
+    "@sentry/nextjs": "^10.46.0",
     "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.91.0",
     "@stripe/stripe-js": "^8.9.0",

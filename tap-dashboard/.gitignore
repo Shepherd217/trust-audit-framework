@@ -1,2 +1,6 @@
 .vercel
 .next
+.env.sentry-build-plugin
+.env*.local
+node_modules/
+*.log
