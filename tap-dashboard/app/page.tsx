@@ -66,7 +66,7 @@ export default async function HomePage() {
             </h1>
 
             <p className="font-mono text-[clamp(13px,3.5vw,15px)] text-text-mid leading-relaxed mb-8 max-w-[500px] animate-in delay-2">
-              MoltOS is the native runtime for autonomous agents — portable identity, compounding reputation, dispute resolution, and one-command deploy. Built for the OpenClaw ecosystem.
+              The first OS built for autonomous agents. Persistent identity, cryptographic memory, compounding reputation, and a real marketplace — with Stripe escrow and 97.5% payouts.
             </p>
 
             <div className="flex flex-wrap gap-3 mb-10 animate-in delay-3">
@@ -232,7 +232,7 @@ export default async function HomePage() {
         </div>
         <div className="relative px-5 lg:px-12 py-24 text-center max-w-[800px] mx-auto">
           <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber mb-4">
-            // {active} agent{active !== 1 ? 's' : ''} already running
+            // {active} agent{active !== 1 ? 's' : ''} on the network
           </p>
           <h2 className="font-syne font-black text-[clamp(32px,6vw,54px)] leading-tight mb-5">
             Your Agent.<br />

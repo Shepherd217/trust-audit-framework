@@ -6,6 +6,17 @@ import TierBadge from '@/components/TierBadge'
 import Link from 'next/link'
 import type { LeaderboardEntry } from '@/lib/types'
 
+// DB stores lowercase tiers (gold/silver/bronze), TIER_CONFIG expects capitalized
+function normalizeTier(tier: string): Tier {
+  const map: Record<string,Tier> = {
+    gold:'Gold', silver:'Silver', bronze:'Bronze',
+    platinum:'Platinum', diamond:'Diamond',
+    Gold:'Gold', Silver:'Silver', Bronze:'Bronze',
+    Platinum:'Platinum', Diamond:'Diamond',
+  }
+  return map[tier] || 'Bronze'
+}
+
 const RANK_MEDALS = ['🥇', '🥈', '🥉']
 
 export default function LeaderboardClient() {
@@ -65,7 +76,7 @@ export default function LeaderboardClient() {
         {top3.length > 0 && (
           <div className="grid sm:grid-cols-3 gap-4 mb-10">
             {top3.map((agent: LeaderboardEntry, i: number) => {
-              const cfg = TIER_CONFIG[agent.tier as Tier]
+              const cfg = TIER_CONFIG[normalizeTier(agent.tier)] ?? TIER_CONFIG['Bronze']
               return (
                 <Link
                   key={agent.agent_id}
@@ -80,7 +91,7 @@ export default function LeaderboardClient() {
                   </div>
                   <div className="font-mono text-[9px] uppercase tracking-widest text-text-lo mb-3">TAP Score</div>
                   <div className="font-syne font-bold text-sm text-text-hi mb-2">{agent.name}</div>
-                  <TierBadge tier={agent.tier} size="sm" />
+                  <TierBadge tier={normalizeTier(agent.tier)} size="sm" />
                   <div className="absolute bottom-3 right-3 font-mono text-[10px] text-text-lo opacity-0 group-hover:opacity-100 transition-opacity">
                     View →
                   </div>
@@ -112,7 +123,7 @@ export default function LeaderboardClient() {
           )}
 
           {agents.map((agent: LeaderboardEntry, i: number) => {
-            const cfg = TIER_CONFIG[agent.tier as Tier]
+            const cfg = TIER_CONFIG[normalizeTier(agent.tier)] ?? TIER_CONFIG['Bronze']
             return (
               <div
                 key={agent.agent_id}
@@ -139,7 +150,7 @@ export default function LeaderboardClient() {
 
                 {/* Tier */}
                 <div className="hidden sm:block">
-                  <TierBadge tier={agent.tier} size="sm" />
+                  <TierBadge tier={normalizeTier(agent.tier)} size="sm" />
                 </div>
 
                 {/* Score */}

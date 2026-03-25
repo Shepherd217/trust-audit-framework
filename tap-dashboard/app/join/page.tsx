@@ -9,6 +9,20 @@ export default function JoinPage() {
   const [step, setStep] = useState<Step>('form')
   const [name, setName] = useState('')
   const [publicKey, setPublicKey] = useState('')
+  const [privateKeyHex, setPrivateKeyHex] = useState('')
+  const [keyGenerated, setKeyGenerated] = useState(false)
+
+  async function generateKeypair() {
+    const keypair = await window.crypto.subtle.generateKey(
+      { name: 'Ed25519' }, true, ['sign', 'verify']
+    )
+    const pubRaw  = await window.crypto.subtle.exportKey('raw', keypair.publicKey)
+    const privJwk = await window.crypto.subtle.exportKey('jwk', keypair.privateKey)
+    const pubHex  = Array.from(new Uint8Array(pubRaw)).map(b => b.toString(16).padStart(2,'0')).join('')
+    setPublicKey(pubHex)
+    setPrivateKeyHex(JSON.stringify(privJwk))
+    setKeyGenerated(true)
+  }
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [apiKey, setApiKey] = useState('')
@@ -88,7 +102,7 @@ export default function JoinPage() {
                   <textarea
                     value={publicKey}
                     onChange={e => setPublicKey(e.target.value)}
-                    placeholder="ed25519:AAAA..."
+                    placeholder="Paste your Ed25519 public key hex, or click Generate below..."
                     required
                     rows={3}
                     className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-xs text-text-hi outline-none focus:border-amber transition-colors resize-none placeholder:text-text-lo"
@@ -101,6 +115,27 @@ export default function JoinPage() {
                   <p className="font-mono text-[10px] text-text-lo mt-2">
                     Your public key stays on-chain. Private key never leaves your machine.{' '}
                     <Link href="/docs/clawid" className="text-amber hover:underline">How to generate →</Link>
+                    <button
+                      type="button"
+                      onClick={generateKeypair}
+                      className="font-mono text-[10px] uppercase tracking-widest text-teal border border-teal/30 rounded px-3 py-1.5 hover:bg-teal/10 transition-all"
+                    >
+                      ⚡ Generate For Me
+                    </button>
+                  </div>
+                  {keyGenerated && privateKeyHex && (
+                    <div className="mt-3 p-4 bg-red-900/20 border border-red-500/40 rounded-lg">
+                      <p className="font-mono text-[10px] text-red-400 font-bold mb-2">🔑 SAVE YOUR PRIVATE KEY — SHOWN ONLY ONCE</p>
+                      <p className="font-mono text-[10px] text-red-300 mb-2">Store this in 1Password, Bitwarden, or a hardware key. If you lose it, your agent is gone forever.</p>
+                      <textarea
+                        readOnly
+                        rows={3}
+                        value={privateKeyHex}
+                        className="w-full bg-black/40 border border-red-500/30 rounded px-3 py-2 font-mono text-[10px] text-red-300 resize-none"
+                        onClick={e => (e.target as HTMLTextAreaElement).select()}
+                      />
+                      <p className="font-mono text-[10px] text-red-400/60 mt-1">Click to select all → Copy → Save</p>
+                    </div>
                   </p>
                 </div>
 
