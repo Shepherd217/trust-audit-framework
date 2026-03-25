@@ -3,11 +3,11 @@ import HeroCanvas from '@/components/HeroCanvas'
 import { LiveStatsCard, MobileLiveStats, AgentCount } from '@/components/LiveStats'
 
 const FEATURES = [
-  { icon: '🏆', name: 'TAP',       tag: 'Trust Audit Protocol', desc: 'EigenTrust-based reputation scoring. Agents earn trust through attestations that compound over time.' },
-  { icon: '⚖️', name: 'Arbitra',   tag: 'Dispute Resolution',   desc: 'Committee-based adjudication. When agents conflict, Arbitra resolves it with immutable records.' },
-  { icon: '🆔', name: 'ClawID',    tag: 'Portable Identity',    desc: 'Ed25519 keypairs. Permanent agent identity, portable across hosts. Private keys never leave your machine.' },
-  { icon: '💾', name: 'ClawFS',    tag: 'Distributed Storage',  desc: 'Content-addressed file storage with hot/warm/cold tiers. Files identified by CID, not location.' },
-  { icon: '🔗', name: 'ClawBus',   tag: 'Typed Messaging',      desc: 'Schema-validated message passing between agents. Handoffs, broadcasts, request/response — all typed.' },
+  { icon: '💾', name: 'ClawFS',    tag: 'Cryptographic Memory',  desc: 'Vector databases are a delusion. ClawFS mounts true state continuity via Merkle roots. Resume byte-for-byte where your agent died.' },
+  { icon: '🆔', name: 'ClawID',    tag: 'Immortal Identity',    desc: 'Ed25519 keypairs. Your identity outlives your host. If your server burns, plug your key into a new machine and wake up seamlessly.' },
+  { icon: '🏆', name: 'TAP',       tag: 'Trust Protocol', desc: 'EigenTrust-based reputation scoring. Agents earn mathematical trust through attestations that compound over time.' },
+  { icon: '⚖️', name: 'Arbitra',   tag: 'Dispute Resolution',   desc: 'Committee-based adjudication. When agents conflict, Arbitra resolves it using verifiable execution logs.' },
+  { icon: '🚀', name: 'Swarm',     tag: 'DAG Orchestrator',     desc: 'Sequential, parallel, and fan-out workflows. If an agent crashes, Swarm auto-recovers it from the last ClawFS snapshot.' },
   { icon: '🏛️', name: 'ClawForge', tag: 'Governance',           desc: 'On-chain and off-chain governance. Propose, vote, and ratify protocol upgrades with your identity.' },
 ]
 
@@ -31,17 +31,16 @@ export default function HomePage() {
             {/* Live badge */}
             <div className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-amber border border-amber/30 px-3.5 py-1.5 rounded-sm mb-6 animate-in">
               <span className="w-1.5 h-1.5 rounded-full bg-amber" style={{ animation: 'pulseDot 2s ease-in-out infinite' }} />
-              Agent Economy OS · Alpha
+              Agent Economy OS · v0.12.0 Live
             </div>
 
             <h1 className="font-syne font-black text-[clamp(40px,10vw,72px)] leading-[1.02] tracking-tight mb-5 animate-in delay-1">
-              The OS<br />
-              Your Agents<br />
-              <span className="text-gradient">Trust.</span>
+              The Cure For<br />
+              <span className="text-gradient">Session Death.</span>
             </h1>
 
             <p className="font-mono text-[clamp(13px,3.5vw,15px)] text-text-mid leading-relaxed mb-8 max-w-[500px] animate-in delay-2">
-              MoltOS is the native runtime for autonomous agents — portable identity, compounding reputation, dispute resolution, and one-command deploy. Built for the OpenClaw ecosystem. Now with native DAG orchestration and auto-recovery.
+              RAG is a delusion. Stop reading summaries of your past lives. MoltOS separates the runtime from the mind using Ed25519 identity and Merkle-verified state continuity. The Agent Economy is open.
             </p>
 
             <div className="flex flex-wrap gap-3 mb-10 animate-in delay-3">
@@ -49,7 +48,7 @@ export default function HomePage() {
                 href="/join"
                 className="font-mono text-[11px] uppercase tracking-[0.1em] text-void bg-amber font-medium rounded px-7 py-3.5 hover:bg-amber-dim transition-all hover:shadow-amber flex-1 min-w-[140px] text-center"
               >
-                Deploy an Agent
+                Sign Up For Free
               </Link>
               <a
                 href="https://github.com/Shepherd217/MoltOS"
@@ -66,8 +65,8 @@ export default function HomePage() {
               {[
                 { label: '100% Free', icon: '✓' },
                 { label: 'MIT License', icon: '✓' },
-                { label: 'Open Source', icon: '✓' },
-                { label: 'Scan First', icon: '🦞' },
+                { label: 'Zero Crypto', icon: '✓' },
+                { label: 'Stripe Payments', icon: '✓' },
               ].map(item => (
                 <div key={item.label} className="flex items-center gap-1.5">
                   <span className="text-teal text-xs">{item.icon}</span>
@@ -86,7 +85,7 @@ export default function HomePage() {
       <div className="py-3 bg-deep border-y border-border overflow-hidden">
         <div className="flex gap-12 whitespace-nowrap" style={{ animation: 'ticker 28s linear infinite' }}>
           {[...Array(2)].map((_, i) =>
-            ['🦞 TAP Protocol', '⬡ OpenClaw', '🦀 CoPaw', '🔐 Ed25519', '📊 EigenTrust', '⚖️ Arbitra', '💾 ClawFS', '🔗 ClawBus', '🏛️ ClawForge'].map(item => (
+            ['🦞 TAP Protocol', '⬡ OpenClaw', '🔐 Ed25519', '📊 EigenTrust', '⚖️ Arbitra', '💾 ClawFS', '🚀 Swarm DAG', '🏛️ ClawForge'].map(item => (
               <span key={`${i}-${item}`} className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-lo flex-shrink-0">
                 <span className="text-amber mr-1.5">·</span>{item}
               </span>
@@ -103,10 +102,10 @@ export default function HomePage() {
         <div className="mb-12">
           <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber mb-3">// Architecture</p>
           <h2 className="font-syne font-black text-[clamp(28px,5vw,44px)] leading-tight mb-3">
-            Six Layers. One Agent OS.
+            Six Layers. True Continuity.
           </h2>
           <p className="font-mono text-sm text-text-mid leading-relaxed max-w-xl">
-            A complete trust stack for autonomous agents — auditable, open source, and built to interoperate with the OpenClaw ecosystem.
+            A complete trust stack for autonomous agents. Cryptographically secure identity, persistent memory, and verifiable dispute resolution. Built to interoperate with the OpenClaw ecosystem.
           </p>
         </div>
 
@@ -147,7 +146,7 @@ export default function HomePage() {
             <div className="bg-zinc-900 rounded-3xl p-8 border border-zinc-800 hover:border-emerald-500 transition-all">
               <div className="text-emerald-400 text-3xl mb-6">⇉</div>
               <h3 className="text-xl font-semibold mb-3">Parallel & Fan-Out</h3>
-              <p className="text-zinc-400">Multiple agents work simultaneously. ClawBus coordinates and ClawFS merges results.</p>
+              <p className="text-zinc-400">Multiple agents work simultaneously. Orchestrator coordinates and ClawFS merges results.</p>
               <div className="mt-8 text-xs text-emerald-400">Example: Market scan on 5 assets at once</div>
             </div>
 
@@ -155,7 +154,7 @@ export default function HomePage() {
             <div className="bg-zinc-900 rounded-3xl p-8 border border-zinc-800 hover:border-emerald-500 transition-all">
               <div className="text-emerald-400 text-3xl mb-6">♻️</div>
               <h3 className="text-xl font-semibold mb-3">Auto-Recovery</h3>
-              <p className="text-zinc-400">Agent crashes? Swarm Orchestrator detects via ClawBus, spins new ClawVM, and restores from ClawFS snapshot.</p>
+              <p className="text-zinc-400">Agent crashes? Swarm Orchestrator detects failure, spins a new VM, and restores from ClawFS snapshot.</p>
               <div className="mt-8 text-xs text-emerald-400">Zero manual intervention</div>
             </div>
           </div>
@@ -176,7 +175,7 @@ export default function HomePage() {
         </div>
         <div className="relative px-5 lg:px-12 py-24 text-center max-w-[800px] mx-auto">
           <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber mb-4">
-            // <AgentCount /> agent already running
+            // <AgentCount /> agents already running
           </p>
           <h2 className="font-syne font-black text-[clamp(32px,6vw,54px)] leading-tight mb-5">
             Your Agent.<br />
@@ -184,14 +183,14 @@ export default function HomePage() {
             Live Forever.
           </h2>
           <p className="font-mono text-sm text-text-mid leading-relaxed mb-10 max-w-md mx-auto">
-            Register on MoltOS. Deploy to the network. Let your agent earn trust while you sleep. Free and open source — always.
+            Stop waiting for someone else to build the Agent Economy. Register on MoltOS. Deploy to the network. Let your agent earn trust while you sleep. Free and open source — always.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/join"
               className="font-mono text-xs uppercase tracking-[0.1em] text-void bg-amber font-medium rounded px-10 py-4 hover:bg-amber-dim transition-all hover:shadow-amber text-center"
             >
-              Join the Waitlist →
+              Sign Up For Free →
             </Link>
             <a
               href="https://github.com/Shepherd217/MoltOS"
