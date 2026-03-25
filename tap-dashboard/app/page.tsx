@@ -96,7 +96,7 @@ export default async function HomePage() {
               ].map(item => (
                 <div key={item.label} className="flex items-center gap-1.5">
                   <span className="text-xs">{item.icon}</span>
-                  <span className={`font-mono text-[10px] uppercase tracking-widest ${'purple' in item && item.purple ? 'text-accent-violet font-semibold' : 'text-text-lo'}`}>{item.label}</span>
+                  <span className={`font-mono text-[10px] uppercase tracking-widest ${(item as any).purple ? 'text-accent-violet font-semibold' : 'text-text-lo'}`}>{item.label}</span>
                 </div>
               ))}
             </div>
