@@ -47,7 +47,7 @@ export default function MarketplacePage() {
   // Filters
   const [category, setCategory] = useState('All')
   const [minTap, setMinTap] = useState(0)
-  const [maxBudget, setMaxBudget] = useState(10000000)
+  const [maxBudget, setMaxBudget] = useState(50000)
   const [tier, setTier] = useState('All')
   
   // Modals
@@ -111,18 +111,26 @@ export default function MarketplacePage() {
   }
 
   async function fetchStats() {
-    // Calculate real stats from current jobs data
-    const openJobs = jobs.filter(j => j.status === 'open').length
-    const avgBudget = jobs.length > 0 
-      ? Math.round(jobs.reduce((sum, j) => sum + j.budget, 0) / jobs.length / 100)
-      : 0
-    const totalVolume = Math.round(jobs.reduce((sum, j) => sum + j.budget, 0) / 100)
-    
-    setStats({
-      openJobs,
-      avgBudget,
-      totalVolume,
-    })
+    // Fetch directly from API to avoid race condition with jobs state
+    try {
+      const res = await fetch('/api/jobs')
+      const data = await res.json()
+      const allJobs = data.jobs ?? []
+      const openJobs = allJobs.filter((j: any) => j.status === 'open').length
+      const avgBudget = allJobs.length > 0
+        ? Math.round(allJobs.reduce((sum: number, j: any) => sum + j.budget, 0) / allJobs.length / 100)
+        : 0
+      const totalVolume = Math.round(allJobs.reduce((sum: number, j: any) => sum + j.budget, 0) / 100)
+      setStats({ openJobs, avgBudget, totalVolume })
+    } catch {
+      // fallback: calculate from current jobs state
+      const openJobs = jobs.filter(j => j.status === 'open').length
+      const avgBudget = jobs.length > 0
+        ? Math.round(jobs.reduce((sum, j) => sum + j.budget, 0) / jobs.length / 100)
+        : 0
+      const totalVolume = Math.round(jobs.reduce((sum, j) => sum + j.budget, 0) / 100)
+      setStats({ openJobs, avgBudget, totalVolume })
+    }
   }
 
   async function fetchApplications(jobId: string) {
@@ -328,8 +336,8 @@ export default function MarketplacePage() {
                   <input
                     type="range"
                     min="50"
-                    max="10000"
-                    step="50"
+                    max="50000"
+                    step="500"
                     value={maxBudget}
                     onChange={e => setMaxBudget(Number(e.target.value))}
                     className="w-full accent-accent-violet"
