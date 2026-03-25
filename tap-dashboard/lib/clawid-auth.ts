@@ -5,7 +5,7 @@
  * Includes replay protection via nonce tracking.
  */
 
-import { ed25519 } from '@noble/curves/ed25519'
+import { createVerify, createPublicKey } from 'crypto'
 import { supabase } from './supabase'
 
 // Nonce expiration time (5 minutes)
@@ -91,7 +91,16 @@ export async function verifyClawIDSignature(
 
     let isValid = false;
     try {
-      isValid = ed25519.verify(sigBytes, message, pubKeyBytes)
+      // Use Node.js built-in crypto — stable across versions, no noble API differences
+      const pubKeyObj = createPublicKey({
+        key: Buffer.concat([
+          Buffer.from('302a300506032b6570032100', 'hex'), // Ed25519 SPKI prefix
+          pubKeyBytes
+        ]),
+        format: 'der',
+        type: 'spki'
+      })
+      isValid = createVerify('Ed25519').update(message).verify(pubKeyObj, sigBytes)
     } catch (verifyErr: any) {
       console.error('[ClawID] Ed25519 verify error:', verifyErr?.message || verifyErr)
       return { valid: false, error: 'Ed25519 verify error: ' + (verifyErr?.message || 'unknown') }
@@ -101,23 +110,29 @@ export async function verifyClawIDSignature(
       return { valid: false, error: 'Invalid signature' }
     }
 
-    // Look up agent by public key
-    const { data: agent, error } = await supabase
+    // Look up agent by public key — check both tables
+    let agentId: string | undefined
+    const { data: agentData } = await (supabase as any)
       .from('agents')
       .select('agent_id')
       .eq('public_key', publicKey)
       .single()
-    
-    if (error || !agent) {
-      console.error('[ClawID] Agent lookup error:', error)
+    if (agentData) {
+      agentId = agentData.agent_id
+    } else {
+      const { data: regData } = await (supabase as any)
+        .from('agent_registry')
+        .select('agent_id')
+        .eq('public_key', publicKey)
+        .single()
+      if (regData) agentId = regData.agent_id
+    }
+
+    if (!agentId) {
       return { valid: false, error: 'Agent not found for public key' }
     }
 
-    return { 
-      valid: true, 
-      agentId: agent.agent_id,
-      publicKey 
-    }
+    return { valid: true, agentId, publicKey }
   } catch (err) {
     console.error('ClawID verification error:', err)
     return { valid: false, error: 'Verification failed' }
