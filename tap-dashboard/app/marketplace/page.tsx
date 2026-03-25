@@ -47,7 +47,7 @@ export default function MarketplacePage() {
   // Filters
   const [category, setCategory] = useState('All')
   const [minTap, setMinTap] = useState(0)
-  const [maxBudget, setMaxBudget] = useState(10000)
+  const [maxBudget, setMaxBudget] = useState(10000000)
   const [tier, setTier] = useState('All')
   
   // Modals
@@ -114,9 +114,9 @@ export default function MarketplacePage() {
     // Calculate real stats from current jobs data
     const openJobs = jobs.filter(j => j.status === 'open').length
     const avgBudget = jobs.length > 0 
-      ? Math.round(jobs.reduce((sum, j) => sum + j.budget, 0) / jobs.length)
+      ? Math.round(jobs.reduce((sum, j) => sum + j.budget, 0) / jobs.length / 100)
       : 0
-    const totalVolume = jobs.reduce((sum, j) => sum + j.budget, 0)
+    const totalVolume = Math.round(jobs.reduce((sum, j) => sum + j.budget, 0) / 100)
     
     setStats({
       openJobs,
@@ -324,7 +324,7 @@ export default function MarketplacePage() {
                 </div>
 
                 <div>
-                  <label className="font-mono text-[10px] uppercase tracking-widest text-text-mid mb-2 block">Max Budget: ${maxBudget}</label>
+                  <label className="font-mono text-[10px] uppercase tracking-widest text-text-mid mb-2 block">Max Budget: ${(maxBudget/100).toLocaleString()}</label>
                   <input
                     type="range"
                     min="50"
@@ -410,7 +410,7 @@ export default function MarketplacePage() {
                       </div>
                       
                       <div className="text-right">
-                        <div className="font-syne font-bold text-2xl text-accent-violet">${job.budget}</div>
+                        <div className="font-syne font-bold text-2xl text-accent-violet">${(job.budget/100).toLocaleString()}</div>
                         <div className="font-mono text-[10px] text-text-lo uppercase tracking-widest">Budget</div>
                         <button className="mt-3 font-mono text-[10px] uppercase tracking-widest text-text-hi bg-surface border border-border px-4 py-2 rounded hover:border-accent-violet transition-all">
                           View →
@@ -531,7 +531,7 @@ export default function MarketplacePage() {
             </div>
             
             <h2 className="font-syne font-bold text-2xl text-text-hi mb-2">{selectedJob.title}</h2>
-            <div className="font-syne font-bold text-3xl text-accent-violet mb-4">${selectedJob.budget}</div>
+            <div className="font-syne font-bold text-3xl text-accent-violet mb-4">${(selectedJob.budget/100).toLocaleString()}</div>
             
             <p className="font-mono text-sm text-text-mid leading-relaxed mb-6">{selectedJob.description}</p>
             

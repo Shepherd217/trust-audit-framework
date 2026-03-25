@@ -15,7 +15,7 @@ export default function LeaderboardClient() {
   useEffect(() => {
     fetch('/api/leaderboard')
       .then(r => r.json())
-      .then(d => setAgents(d.agents ?? []))
+      .then(d => setAgents(d.leaderboard ?? d.agents ?? []))
       .catch(() => setAgents([]))
       .finally(() => setLoading(false))
   }, [])
