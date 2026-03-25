@@ -1,6 +1,6 @@
 /**
  * POST /api/payments/refund
- * 
+ *
  * Handles refunds for captured payments.
  */
 
@@ -28,18 +28,24 @@ async function getPaymentDetails(paymentIntentId: string) {
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
     process.env.SUPABASE_SERVICE_ROLE_KEY || ''
   );
-  
+
   const { data, error } = await supabase
-    .from('escrow_transactions')
-    .select('hirer_id, worker_id, amount, job_id')
-    .eq('payment_intent_id', paymentIntentId)
+    .from('payment_escrows')
+    .select('hirer_id, worker_id, amount_total, job_id')
+    .eq('stripe_payment_intent_id', paymentIntentId)
     .single();
-    
+
   if (error || !data) {
     return null;
   }
-  
-  return data;
+
+  // Normalize field names for downstream compatibility
+  return {
+    hirer_id: data.hirer_id,
+    worker_id: data.worker_id,
+    amount: data.amount_total,
+    job_id: data.job_id
+  };
 }
 
 // Notify parties of refund
@@ -53,7 +59,7 @@ async function notifyRefund(
 ): Promise<void> {
   try {
     const bus = getClawBusService();
-    
+
     // Notify hirer
     await bus.send({
       type: 'notification',
@@ -70,7 +76,7 @@ async function notifyRefund(
       },
       priority: 4,
     });
-    
+
     // Notify worker
     await bus.send({
       type: 'notification',
@@ -87,14 +93,14 @@ async function notifyRefund(
       },
       priority: 4,
     });
-    
+
     // Update job status if jobId exists
     if (jobId) {
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL || '',
         process.env.SUPABASE_SERVICE_ROLE_KEY || ''
       );
-      
+
       await supabase
         .from('marketplace_jobs')
         .update({ status: 'refunded', refunded_at: new Date().toISOString() })
@@ -158,7 +164,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Get payment details for notifications
     const paymentDetails = await getPaymentDetails(body.paymentIntentId);
-    
+
     // Notify parties
     if (paymentDetails) {
       await notifyRefund(
@@ -186,7 +192,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (error instanceof PaymentError) {
       let statusCode = 400;
-      
+
       switch (error.code) {
         case 'NO_CHARGE_FOUND':
           statusCode = 404;

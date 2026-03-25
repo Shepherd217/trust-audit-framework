@@ -22,16 +22,22 @@ async function getPaymentDetails(paymentIntentId: string) {
   );
   
   const { data, error } = await supabase
-    .from('escrow_transactions')
-    .select('hirer_id, worker_id, amount, job_id')
-    .eq('payment_intent_id', paymentIntentId)
+    .from('payment_escrows')
+    .select('hirer_id, worker_id, amount_total, job_id')
+    .eq('stripe_payment_intent_id', paymentIntentId)
     .single();
     
   if (error || !data) {
     return null;
   }
   
-  return data;
+  // Normalize field names for downstream compatibility
+  return {
+    hirer_id: data.hirer_id,
+    worker_id: data.worker_id,
+    amount: data.amount_total,
+    job_id: data.job_id
+  };
 }
 
 // Notify parties of payment capture
