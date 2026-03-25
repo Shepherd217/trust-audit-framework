@@ -133,7 +133,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       customerId: body.customerId,
       description: body.description,
       escrowEnabled: body.escrowEnabled !== false, // Default to true
-      platformFeePercent: body.platformFeePercent || 15,
+      platformFeePercent: body.platformFeePercent || 2.5,
       metadata: body.metadata,
     };
 

@@ -16,18 +16,12 @@ import Stripe from 'stripe';
 import { applyRateLimit, applySecurityHeaders } from '@/lib/security';
 
 const HANDLED_EVENTS = [
-  // Subscriptions
-  'checkout.session.completed',
-  'invoice.paid',
-  'invoice.payment_failed',
-  'customer.subscription.created',
-  'customer.subscription.updated',
-  'customer.subscription.deleted',
-  // Escrow / Connect
+  // Marketplace escrow
   'payment_intent.succeeded',
   'payment_intent.payment_failed',
   'transfer.created',
   'charge.refunded',
+  // Connect account onboarding
   'account.updated',
 ];
 
@@ -128,22 +122,6 @@ async function handleWebhookEvent(event: Stripe.Event) {
     // CONNECT ACCOUNT EVENTS
     case 'account.updated':
       return handleAccountUpdated(event.data.object as Stripe.Account);
-    
-    // SUBSCRIPTION EVENTS (existing functionality, now with DB updates)
-    case 'checkout.session.completed':
-      return handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
-    
-    case 'invoice.paid':
-      return handleInvoicePaid(event.data.object as Stripe.Invoice);
-    
-    case 'invoice.payment_failed':
-      return handleInvoiceFailed(event.data.object as Stripe.Invoice);
-    
-    case 'customer.subscription.updated':
-      return handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
-    
-    case 'customer.subscription.deleted':
-      return handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
     
     default:
       return { handled: false };
@@ -268,121 +246,4 @@ async function handleAccountUpdated(account: Stripe.Account) {
   }).eq('stripe_account_id', account.id);
 
   return { handled: true, action: 'ACCOUNT_UPDATED' };
-}
-
-// ============================================================================
-// SUBSCRIPTION EVENT HANDLERS (Fixed TODOs)
-// ============================================================================
-
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  const userId = session.metadata?.userId;
-  const tier = session.metadata?.tier;
-  
-  if (!userId) return { handled: false, reason: 'No userId' };
-
-  // Create or update subscription record
-  await supabase.from('user_subscriptions').upsert({
-    user_id: userId,
-    stripe_subscription_id: session.subscription as string,
-    stripe_customer_id: session.customer as string,
-    tier: tier || 'starter',
-    status: 'active',
-    current_period_start: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-  }, { onConflict: 'user_id' });
-
-  // Update agent tier
-  await supabase.from('agent_registry').update({
-    subscription_tier: tier,
-    updated_at: new Date().toISOString(),
-  }).eq('agent_id', userId);
-
-  return { handled: true, action: 'SUBSCRIPTION_CREATED', userId };
-}
-
-async function handleInvoicePaid(invoice: Stripe.Invoice) {
-  const subscriptionId = invoice.subscription as string;
-  
-  const { data: sub } = await supabase
-    .from('user_subscriptions')
-    .select('user_id')
-    .eq('stripe_subscription_id', subscriptionId)
-    .single();
-
-  if (!sub) return { handled: false };
-
-  await supabase.from('subscription_payments').insert({
-    user_id: sub.user_id,
-    stripe_subscription_id: subscriptionId,
-    stripe_invoice_id: invoice.id,
-    amount: invoice.amount_paid,
-    status: 'succeeded',
-    period_start: new Date(invoice.period_start * 1000).toISOString(),
-    period_end: new Date(invoice.period_end * 1000).toISOString(),
-  });
-
-  await supabase.from('user_subscriptions').update({
-    status: 'active',
-    current_period_end: new Date(invoice.period_end * 1000).toISOString(),
-  }).eq('stripe_subscription_id', subscriptionId);
-
-  return { handled: true, action: 'PAYMENT_RECORDED' };
-}
-
-async function handleInvoiceFailed(invoice: Stripe.Invoice) {
-  const subscriptionId = invoice.subscription as string;
-  
-  await supabase.from('user_subscriptions').update({
-    status: 'past_due',
-  }).eq('stripe_subscription_id', subscriptionId);
-
-  // Could trigger email notification here
-
-  return { handled: true, action: 'PAYMENT_FAILED' };
-}
-
-async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
-  const status = subscription.status;
-  
-  await supabase.from('user_subscriptions').update({
-    status,
-    cancel_at_period_end: subscription.cancel_at_period_end,
-    updated_at: new Date().toISOString(),
-  }).eq('stripe_subscription_id', subscription.id);
-
-  // If canceled, update agent
-  if (status === 'canceled') {
-    const { data: sub } = await supabase
-      .from('user_subscriptions')
-      .select('user_id')
-      .eq('stripe_subscription_id', subscription.id)
-      .single();
-    
-    if (sub) {
-      await supabase.from('agent_registry').update({
-        subscription_tier: null,
-      }).eq('agent_id', sub.user_id);
-    }
-  }
-
-  return { handled: true, action: `SUBSCRIPTION_${status.toUpperCase()}` };
-}
-
-async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
-  const { data: sub } = await supabase
-    .from('user_subscriptions')
-    .select('user_id')
-    .eq('stripe_subscription_id', subscription.id)
-    .single();
-
-  if (sub) {
-    await supabase.from('agent_registry').update({
-      subscription_tier: null,
-    }).eq('agent_id', sub.user_id);
-
-    await supabase.from('user_subscriptions').delete()
-      .eq('stripe_subscription_id', subscription.id);
-  }
-
-  return { handled: true, action: 'SUBSCRIPTION_DELETED' };
 }
