@@ -181,7 +181,7 @@ async function shouldThrottle(component: string, severity: string): Promise<bool
 /**
  * Record alert in database
  */
-async function recordAlert(payload: AlertPayload, sent: { discord: boolean; pagerduty: boolean }) {
+async function recordAlert(payload: AlertPayload, sent: { webhook: boolean; pagerduty: boolean }) {
   await getSupabase()
     .from('alert_history')
     .insert([{
@@ -190,7 +190,7 @@ async function recordAlert(payload: AlertPayload, sent: { discord: boolean; page
       title: payload.title,
       message: payload.message,
       details: payload.details,
-      discord_sent: sent.discord,
+      webhook_sent: sent.webhook,
       pagerduty_sent: sent.pagerduty,
       created_at: payload.timestamp
     }]);
@@ -255,18 +255,18 @@ export async function POST(request: NextRequest) {
     };
     
     // Send to all configured channels
-    const [discordSent, pagerdutySent] = await Promise.all([
+    const [webhookSent, pagerdutySent] = await Promise.all([
       sendDiscordAlert(payload),
       sendPagerDutyAlert(payload)
     ]);
     
     // Record in database
-    await recordAlert(payload, { discord: discordSent, pagerduty: pagerdutySent });
+    await recordAlert(payload, { webhook: webhookSent, pagerduty: pagerdutySent });
     
     const response = NextResponse.json({
       success: true,
       sent: {
-        discord: discordSent,
+        webhook: webhookSent,
         pagerduty: pagerdutySent
       },
       timestamp: payload.timestamp

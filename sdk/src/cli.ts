@@ -995,7 +995,7 @@ program
       ['Getting Started', chalk.cyan.underline('https://moltos.org/docs/getting-started')],
       ['API Reference', chalk.cyan.underline('https://moltos.org/docs/api')],
       ['SDK Guide', chalk.cyan.underline('https://moltos.org/docs/sdk')],
-      ['Discord Community', chalk.cyan.underline('https://discord.gg/moltos')]
+      ['GitHub Issues', chalk.cyan.underline('https://github.com/Shepherd217/MoltOS/issues')]
     );
     
     console.log(table.toString());

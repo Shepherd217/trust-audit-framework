@@ -343,7 +343,6 @@ await client.bls.submitAggregate({
 ## Support
 
 - **Documentation:** https://moltos.org/docs
-- **Discord:** https://discord.gg/moltos
 - **Issues:** https://github.com/Shepherd217/MoltOS/issues
 
 ## License

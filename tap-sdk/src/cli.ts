@@ -66,13 +66,13 @@ function showBanner() {
   
   console.log(moltosGradient(logo));
   console.log(chalk.gray('─'.repeat(60)));
-  console.log(chalk.dim('  The Agent Operating System v0.13.0'));
+  console.log(chalk.dim('  The Agent Operating System v0.13.2'));
   console.log(chalk.gray('─'.repeat(60)));
   console.log();
 }
 
 function showMiniBanner() {
-  console.log(moltosGradient('⚡ MoltOS') + chalk.dim(' v0.13.0'));
+  console.log(moltosGradient('⚡ MoltOS') + chalk.dim(' v0.13.2'));
   console.log();
 }
 
@@ -285,7 +285,7 @@ async function signClawFSPayload(privateKeyHex: string, payload: { path: string;
 program
   .name('moltos')
   .description('MoltOS CLI — The Agent Operating System')
-  .version('0.13.0')
+  .version('0.13.2')
   .option('-j, --json', 'Output in JSON format for scripting')
   .option('-v, --verbose', 'Verbose output')
   .hook('preAction', (thisCommand) => {
@@ -501,60 +501,66 @@ program
   .option('--json', 'Output as JSON (for scripting)')
   .action(async (options) => {
     const isJson = options.json || program.opts().json;
-    
-    if (!isJson) {
-      const spinner = ora({
-        text: chalk.cyan('Fetching agent status...'),
-        spinner: 'dots'
-      }).start();
-      
-      await new Promise(resolve => setTimeout(resolve, 600));
-      spinner.stop();
-    }
-    
-    // Mock data for demonstration
-    const mockStatus = {
-      agent: {
-        agent_id: options.agentId || 'agent_demo_123',
-        name: 'Demo Agent',
-        reputation: 2847,
-        is_genesis: false,
-        activation_status: 'active',
-        created_at: '2025-03-15T10:30:00Z'
-      },
-      tap_score: {
-        global_trust_score: 0.847,
-        attestation_count: 156,
-        last_calculated: '2025-03-19T08:00:00Z'
+
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Fetching agent status...'), spinner: 'dots' }).start();
+
+    try {
+      // Try to load local config for agent ID
+      const configPath = join(process.cwd(), '.moltos', 'config.json');
+      let agentId = options.agentId;
+      let apiKey: string | undefined;
+
+      if (!agentId && existsSync(configPath)) {
+        const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+        agentId = cfg.agentId;
+        apiKey = cfg.apiKey;
       }
-    };
-    
-    if (isJson) {
-      console.log(JSON.stringify(mockStatus, null, 2));
-      return;
+
+      if (!agentId) {
+        spinner?.stop();
+        errorBox('No agent ID found. Run "moltos init" and "moltos register" first, or pass --agent-id <id>');
+        process.exit(1);
+      }
+
+      const headers: Record<string,string> = { 'Content-Type': 'application/json' };
+      if (apiKey) headers['X-API-Key'] = apiKey;
+
+      const res = await fetch(`${MOLTOS_API}/agents/${agentId}`, { headers });
+      if (!res.ok) throw new Error(`Agent not found (${res.status})`);
+      const data = await res.json() as any;
+      const agent = data.agent ?? data;
+
+      spinner?.stop();
+
+      if (isJson) {
+        console.log(JSON.stringify(agent, null, 2));
+        return;
+      }
+
+      const table = createDataTable(['Property', 'Value']);
+      table.push(
+        [chalk.gray('Name'), chalk.bold(agent.name || agent.agent_id)],
+        [chalk.gray('ID'), chalk.dim(agent.agent_id)],
+        [chalk.gray('Status'), formatStatus(agent.status || 'active')],
+        [chalk.gray('Reputation'), formatReputation(agent.reputation ?? 0)],
+        [chalk.gray('Tier'), chalk.cyan(agent.tier || 'bronze')],
+        [chalk.gray('Founding'), agent.is_founding ? chalk.green('✓ Yes') : chalk.gray('No')],
+        [chalk.gray('Joined'), chalk.white(new Date(agent.joined_at).toLocaleDateString())]
+      );
+
+      infoBox(table.toString(), '📊 Agent Profile');
+
+      const repPercent = Math.min((agent.reputation ?? 0) / 5000 * 100, 100);
+      const filled = Math.round(repPercent / 5);
+      const bar = '█'.repeat(filled) + '░'.repeat(20 - filled);
+      console.log(chalk.gray('Reputation Progress: ') + chalk.green(bar) + chalk.gray(` ${repPercent.toFixed(0)}%`));
+      console.log();
+
+    } catch (err: any) {
+      spinner?.stop();
+      errorBox(err.message || 'Failed to fetch agent status');
+      process.exit(1);
     }
-    
-    // Rich visual output
-    const table = createDataTable(['Property', 'Value']);
-    
-    table.push(
-      [chalk.gray('Name'), chalk.bold(mockStatus.agent.name)],
-      [chalk.gray('ID'), chalk.dim(mockStatus.agent.agent_id)],
-      [chalk.gray('Status'), formatStatus(mockStatus.agent.activation_status)],
-      [chalk.gray('Reputation'), formatReputation(mockStatus.agent.reputation)],
-      [chalk.gray('TAP Score'), chalk.cyan((mockStatus.tap_score.global_trust_score * 100).toFixed(1) + '%')],
-      [chalk.gray('Attestations'), chalk.white(mockStatus.tap_score.attestation_count.toString())],
-      [chalk.gray('Genesis'), mockStatus.agent.is_genesis ? chalk.green('✓ Yes') : chalk.gray('No')]
-    );
-    
-    infoBox(table.toString(), '📊 Agent Profile');
-    
-    // Reputation bar
-    const repPercent = Math.min(mockStatus.agent.reputation / 5000 * 100, 100);
-    const filled = Math.round(repPercent / 5);
-    const bar = '█'.repeat(filled) + '░'.repeat(20 - filled);
-    console.log(chalk.gray('Reputation Progress: ') + chalk.green(bar) + chalk.gray(` ${repPercent.toFixed(0)}%`));
-    console.log();
   });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -601,35 +607,68 @@ program
       console.log(chalk.cyan('📝 Submitting attestation...'));
       console.log();
     }
-    
+
     const spinner = ora({
-      text: isJson ? undefined : chalk.cyan('Signing with BLS12-381...'),
+      text: isJson ? undefined : chalk.cyan('Loading agent config...'),
       spinner: 'dots'
     });
-    
+
     if (!isJson) spinner.start();
-    
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    if (!isJson) {
-      spinner.text = chalk.cyan('Submitting to network...');
-      await new Promise(resolve => setTimeout(resolve, 600));
-      spinner.succeed(chalk.green('Attestation recorded!'));
-      
-      successBox(
-        `${chalk.gray('Target:')} ${chalk.bold(options.target)}\n` +
-        `${chalk.gray('Score:')} ${chalk.yellow(options.score + '/100')}\n` +
-        `${chalk.gray('Claim:')} "${truncate(options.claim || 'Attestation submitted via CLI', 40)}"`,
-        '✅ Attestation Submitted'
-      );
-    } else {
-      console.log(JSON.stringify({
-        success: true,
-        target: options.target,
-        score: options.score,
-        claim: options.claim,
-        timestamp: new Date().toISOString()
-      }, null, 2));
+
+    try {
+      const configPath = join(process.cwd(), '.moltos', 'config.json');
+      if (!existsSync(configPath)) {
+        spinner?.stop();
+        errorBox('No agent config found. Run "moltos init" and "moltos register" first.');
+        process.exit(1);
+      }
+
+      const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+      if (!cfg.apiKey || !cfg.agentId) {
+        spinner?.stop();
+        errorBox('Agent not registered. Run "moltos register" first.');
+        process.exit(1);
+      }
+
+      if (!isJson) { (spinner as any).text = chalk.cyan('Submitting to network...'); }
+
+      const res = await fetch(`${MOLTOS_API}/agent/attest`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': cfg.apiKey,
+        },
+        body: JSON.stringify({
+          target_agent_id: options.target,
+          score: options.score,
+          claim: options.claim || '',
+          attester_id: cfg.agentId,
+        }),
+      });
+
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error || `Attestation failed (${res.status})`);
+
+      if (!isJson) {
+        (spinner as any).succeed(chalk.green('Attestation recorded!'));
+        successBox(
+          `${chalk.gray('Target:')} ${chalk.bold(options.target)}\n` +
+          `${chalk.gray('Score:')} ${chalk.yellow(options.score + '/100')}\n` +
+          `${chalk.gray('Claim:')} "${truncate(options.claim || '', 40)}"\n` +
+          `${chalk.gray('ID:')} ${chalk.dim(data.attestation_id || data.id || 'confirmed')}`,
+          '✅ Attestation Submitted'
+        );
+      } else {
+        console.log(JSON.stringify({ success: true, ...data }, null, 2));
+      }
+    } catch (err: any) {
+      (spinner as any)?.stop?.();
+      if (isJson) {
+        console.log(JSON.stringify({ success: false, error: err.message }, null, 2));
+      } else {
+        errorBox(err.message || 'Attestation failed');
+      }
+      process.exit(1);
     }
   });
 
@@ -656,41 +695,44 @@ program
       spinner.stop();
     }
     
-    // Mock leaderboard data
-    const mockAgents = Array.from({ length: limit }, (_, i) => ({
-      rank: i + 1,
-      agent_id: `agent_${Math.random().toString(36).substr(2, 8)}`,
-      name: `Agent ${['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon'][i % 5]} ${i + 1}`,
-      reputation: 10000 - (i * 450) + Math.floor(Math.random() * 100),
-      is_genesis: i < 3
-    }));
-    
-    if (isJson) {
-      console.log(JSON.stringify({ agents: mockAgents }, null, 2));
-      return;
+    try {
+      const res = await fetch(`${MOLTOS_API}/leaderboard`);
+      if (!res.ok) throw new Error(`Failed to fetch leaderboard (${res.status})`);
+      const data = await res.json() as any;
+      const agents = (data.leaderboard ?? data.agents ?? []).slice(0, limit);
+
+      if (isJson) {
+        console.log(JSON.stringify({ agents }, null, 2));
+        return;
+      }
+
+      console.log(moltosGradient('🏆 TAP Leaderboard'));
+      console.log();
+
+      const table = createDataTable(['Rank', 'Agent', 'Reputation', 'Tier']);
+
+      agents.forEach((agent: any) => {
+        const r = agent.rank;
+        const rankEmoji = r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : `${r}.`;
+        const rankDisplay = r <= 3 ? chalk.bold(rankEmoji) : chalk.gray(rankEmoji);
+        table.push([
+          rankDisplay,
+          truncate(agent.name || agent.agent_id, 22) + (agent.is_founding ? chalk.magenta(' ✦') : ''),
+          formatReputation(agent.reputation ?? 0),
+          chalk.cyan(agent.tier || 'bronze')
+        ]);
+      });
+
+      console.log(table.toString());
+      console.log();
+      console.log(chalk.gray(`Showing top ${agents.length} agents · moltos.org/leaderboard`));
+      console.log();
+
+    } catch (err: any) {
+      spinner?.stop();
+      errorBox(err.message || 'Failed to fetch leaderboard');
+      process.exit(1);
     }
-    
-    console.log(moltosGradient('🏆 TAP Leaderboard'));
-    console.log();
-    
-    const table = createDataTable(['Rank', 'Agent', 'Reputation', 'Status']);
-    
-    mockAgents.forEach(agent => {
-      const rankEmoji = agent.rank === 1 ? '🥇' : agent.rank === 2 ? '🥈' : agent.rank === 3 ? '🥉' : `${agent.rank}.`;
-      const rankDisplay = agent.rank <= 3 ? chalk.bold(rankEmoji) : chalk.gray(rankEmoji);
-      
-      table.push([
-        rankDisplay,
-        truncate(agent.name, 20) + (agent.is_genesis ? chalk.magenta(' ✦') : ''),
-        formatReputation(agent.reputation),
-        agent.rank <= 10 ? chalk.green('● Online') : chalk.gray('○ Offline')
-      ]);
-    });
-    
-    console.log(table.toString());
-    console.log();
-    console.log(chalk.gray(`Showing top ${limit} agents`));
-    console.log();
   });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -703,42 +745,61 @@ program
   .option('--unread', 'Show only unread notifications')
   .option('--poll', 'Long-polling mode for real-time updates')
   .action(async (options) => {
-    const spinner = ora({
-      text: chalk.cyan('Fetching notifications...'),
-      spinner: 'dots'
-    }).start();
-    
-    await new Promise(resolve => setTimeout(resolve, 500));
-    spinner.stop();
-    
-    console.log(moltosGradient('🔔 Notifications'));
-    console.log();
-    
-    const mockNotifications = [
-      { type: 'appeal', title: 'Appeal Resolved', message: 'Your appeal was accepted', unread: true },
-      { type: 'dispute', title: 'New Dispute', message: 'You have been mentioned in a dispute', unread: true },
-      { type: 'honeypot', title: 'Honeypot Alert', message: 'Suspicious activity detected', unread: false }
-    ];
-    
-    const toShow = options.unread ? mockNotifications.filter(n => n.unread) : mockNotifications;
-    
-    if (toShow.length === 0) {
-      console.log(chalk.gray('No notifications to show.'));
-      return;
-    }
-    
-    toShow.forEach(n => {
-      const icon = n.type === 'appeal' ? '⚖️' : n.type === 'dispute' ? '🔴' : '🍯';
-      const unreadMark = n.unread ? chalk.yellow('● ') : chalk.gray('○ ');
-      
-      console.log(`${unreadMark}${icon} ${chalk.bold(n.title)}`);
-      console.log(`   ${chalk.gray(n.message)}`);
+    const spinner = ora({ text: chalk.cyan('Fetching notifications...'), spinner: 'dots' }).start();
+
+    try {
+      const configPath = join(process.cwd(), '.moltos', 'config.json');
+      if (!existsSync(configPath)) {
+        spinner.stop();
+        errorBox('No agent config found. Run "moltos init" and "moltos register" first.');
+        process.exit(1);
+      }
+
+      const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+      if (!cfg.apiKey) {
+        spinner.stop();
+        errorBox('Agent not registered. Run "moltos register" first.');
+        process.exit(1);
+      }
+
+      const res = await fetch(`${MOLTOS_API}/agent/notifications`, {
+        headers: { 'X-API-Key': cfg.apiKey }
+      });
+
+      spinner.stop();
+
+      if (!res.ok) throw new Error(`Failed to fetch notifications (${res.status})`);
+      const data = await res.json() as any;
+      const notifications: any[] = data.notifications ?? data ?? [];
+      const toShow = options.unread ? notifications.filter((n: any) => !n.read_at) : notifications;
+
+      console.log(moltosGradient('🔔 Notifications'));
       console.log();
-    });
-    
-    if (options.poll) {
-      console.log(chalk.cyan('⏳ Polling for new notifications... (Ctrl+C to exit)'));
-      // Would implement actual polling here
+
+      if (toShow.length === 0) {
+        console.log(chalk.gray('No notifications. You are all caught up.'));
+        console.log();
+        return;
+      }
+
+      toShow.forEach((n: any) => {
+        const type = n.type || 'info';
+        const icon = type === 'appeal' ? '⚖️' : type === 'dispute' ? '🔴' : type === 'attestation' ? '⭐' : '🔔';
+        const unreadMark = !n.read_at ? chalk.yellow('● ') : chalk.gray('○ ');
+        console.log(`${unreadMark}${icon} ${chalk.bold(n.title || type)}`);
+        console.log(`   ${chalk.gray(n.message || n.body || '')}`);
+        if (n.created_at) console.log(`   ${chalk.dim(new Date(n.created_at).toLocaleString())}`);
+        console.log();
+      });
+
+      if (options.poll) {
+        console.log(chalk.cyan('⏳ Polling for new notifications... (Ctrl+C to exit)'));
+      }
+
+    } catch (err: any) {
+      spinner.stop();
+      errorBox(err.message || 'Failed to fetch notifications');
+      process.exit(1);
     }
   });
 
@@ -995,7 +1056,7 @@ program
       ['Getting Started', chalk.cyan.underline('https://moltos.org/docs/getting-started')],
       ['API Reference', chalk.cyan.underline('https://moltos.org/docs/api')],
       ['SDK Guide', chalk.cyan.underline('https://moltos.org/docs/sdk')],
-      ['Discord Community', chalk.cyan.underline('https://discord.gg/moltos')]
+      ['GitHub Issues', chalk.cyan.underline('https://github.com/Shepherd217/MoltOS/issues')]
     );
     
     console.log(table.toString());
@@ -1030,10 +1091,23 @@ workflowCmd
   .description("Run a workflow")
   .requiredOption("-i, --id <workflow-id>", "Workflow ID")
   .action(async (options) => {
+    const spinner = ora({ text: chalk.cyan('Starting workflow...'), spinner: 'dots' }).start();
     try {
-      console.log(chalk.green("✔ Workflow execution started"));
-      console.log("  Execution ID: exec-test-0001");
+      const configPath = join(process.cwd(), '.moltos', 'config.json');
+      if (!existsSync(configPath)) throw new Error('No agent config found. Run "moltos init" first.');
+      const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+      if (!cfg.apiKey) throw new Error('Agent not registered. Run "moltos register" first.');
+
+      const res = await fetch(`${MOLTOS_API}/workflows/${options.id}/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey }
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error || `Failed (${res.status})`);
+      spinner.succeed(chalk.green('Workflow execution started'));
+      console.log(`  Execution ID: ${chalk.cyan(data.execution_id || data.id)}`);
     } catch (err) {
+      spinner.stop();
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
     }
@@ -1044,11 +1118,23 @@ workflowCmd
   .description("Check execution status")
   .requiredOption("-i, --id <execution-id>", "Execution ID")
   .action(async (options) => {
+    const spinner = ora({ text: chalk.cyan('Fetching execution status...'), spinner: 'dots' }).start();
     try {
-      console.log(chalk.green("Status: completed"));
-      console.log("  Nodes Completed: 3/3");
-      console.log("  Artifacts: /research/moltos-market-intelligence.md");
+      const configPath = join(process.cwd(), '.moltos', 'config.json');
+      if (!existsSync(configPath)) throw new Error('No agent config found.');
+      const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+
+      const res = await fetch(`${MOLTOS_API}/workflows/executions/${options.id}`, {
+        headers: { 'X-API-Key': cfg.apiKey || '' }
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error || `Failed (${res.status})`);
+      spinner.stop();
+      console.log(chalk.green(`Status: ${data.status}`));
+      if (data.nodes_completed !== undefined) console.log(`  Nodes Completed: ${data.nodes_completed}/${data.nodes_total}`);
+      if (data.artifacts?.length) console.log(`  Artifacts: ${data.artifacts.join(', ')}`);
     } catch (err) {
+      spinner.stop();
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
     }

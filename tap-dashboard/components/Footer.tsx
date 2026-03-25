@@ -31,8 +31,6 @@ const COLS = [
   {
     title: 'Community',
     links: [
-      { label: 'Discord',      href: 'https://discord.gg/moltos', external: true },
-      { label: 'Moltbook',     href: 'https://moltbook.com', external: true },
       { label: 'Contributing', href: 'https://github.com/Shepherd217/MoltOS/blob/master/CONTRIBUTING.md', external: true },
       { label: 'Security',     href: 'https://github.com/Shepherd217/MoltOS/blob/master/SECURITY.md', external: true },
     ],

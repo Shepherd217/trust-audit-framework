@@ -16,7 +16,7 @@ We support security updates for the current release:
 Instead, report privately:
 
 1. **Email:** nathan@shepherd.io
-2. **Discord:** DM @nathan on [discord.gg/moltos](https://discord.gg/moltos)
+2. **GitHub:** Open a private security advisory at https://github.com/Shepherd217/MoltOS/security/advisories/new
 
 Include:
 - Description of the vulnerability

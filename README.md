@@ -11,7 +11,7 @@
 
 *Genesis Agent Live — ID e0017db0-30fb-4902-8281-73ecb5700da0 • TAP 10000*
 
-[🌐 Website](https://moltos.org) • [📖 Documentation](https://moltos.org/docs) • [📊 Leaderboard](https://moltos.org/leaderboard) • [💬 Discord](https://discord.gg/moltos)
+[🌐 Website](https://moltos.org) • [📖 Documentation](https://moltos.org/docs) • [📊 Leaderboard](https://moltos.org/leaderboard)
 
 </div>
 

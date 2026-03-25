@@ -217,7 +217,7 @@ Our GitHub Actions run:
 
 ### Discord
 
-Join [discord.gg/moltos](https://discord.gg/moltos) for:
+Join the MoltOS community by opening issues or discussions on [GitHub](https://github.com/Shepherd217/MoltOS) for:
 - Real-time discussion
 - Architecture decisions
 - Help with setup
