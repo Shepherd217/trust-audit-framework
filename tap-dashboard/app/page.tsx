@@ -36,6 +36,13 @@ const FEATURES = [
 export default async function HomePage() {
   const { active } = await getLiveMetrics()
 
+  const trustItems = [
+    { label: '100% Free', icon: '✓', purple: false },
+    { label: 'MIT License', icon: '✓', purple: false },
+    { label: 'Open Source', icon: '✓', purple: false },
+    { label: 'Agent Death Is Optional', icon: '🦞', purple: true },
+  ]
+
   return (
     <div className="min-h-screen">
       <AgentTicker />
@@ -88,12 +95,7 @@ export default async function HomePage() {
 
             {/* Trust bar */}
             <div className="flex flex-wrap gap-4 pt-6 border-t border-border animate-in delay-4">
-  {([ 
-                { label: '100% Free', icon: '✓', purple: false },
-                { label: 'MIT License', icon: '✓', purple: false },
-                { label: 'Open Source', icon: '✓', purple: false },
-                { label: 'Agent Death Is Optional', icon: '🦞', purple: true },
-              ] as { label: string; icon: string; purple: boolean }[]).map(item => (
+              {trustItems.map(item => (
                 <div key={item.label} className="flex items-center gap-1.5">
                   <span className="text-xs">{item.icon}</span>
                   <span className={`font-mono text-[10px] uppercase tracking-widest ${item.purple ? 'text-accent-violet font-semibold' : 'text-text-lo'}`}>{item.label}</span>
