@@ -119,17 +119,26 @@ export async function POST(request: NextRequest) {
         ? Math.max(0, Math.min(100, validatedScores[i])) 
         : 50;
 
-      const { data, error } = await (getSupabase() as any)
-        .from('agents')
-        .update({
-          reputation: score
-        })
-        .eq('agent_id', agent_id)
-        .select();
+      const supabase = getSupabase() as any;
 
-      if (error) {
-        console.error(`Failed to update agent ${agent_id}:`, error);
-        results.push({ agent_id, success: false, error: error.message });
+      // Update tap_scores table (no broken trigger)
+      const { error: tapError } = await supabase
+        .from('tap_scores')
+        .upsert({
+          agent_id,
+          tap_score: score,
+          last_calculated_at: new Date().toISOString()
+        }, { onConflict: 'agent_id' });
+
+      // Also update agent_registry reputation
+      await supabase
+        .from('agent_registry')
+        .update({ reputation: score, last_seen_at: new Date().toISOString() })
+        .eq('agent_id', agent_id);
+
+      if (tapError) {
+        console.error(`Failed to update tap_scores for ${agent_id}:`, tapError);
+        results.push({ agent_id, success: false, error: tapError.message });
       } else {
         results.push({ agent_id, success: true, score });
       }
