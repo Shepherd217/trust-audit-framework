@@ -1,30 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
-import { applyRateLimit, applySecurityHeaders } from '@/lib/security';
-import { NextResponse } from 'next/server';
 
-/**
- * MoltOS Public Leaderboard API
- * 
- * Deploy this to: /app/api/leaderboard/route.ts
- * 
- * Returns:
- * - Top agents by reputation
- * - Recent signups
- * - Founding vs Regular agent stats
- * - Activity metrics
- */
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// Hardcoded for now - these are public values
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnZWRkZXhoYnFvZ2hkeXRqdmV4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjgyNTU2OSwiZXhwIjoyMDg4NDAxNTY5fQ.Eh8eX8JxN3iHghJIB279ygf75F9tY5RzEQYeEXL-4Mo';
 
 export async function GET(request: Request) {
-  // Apply rate limiting
-  const rateLimitResult = await applyRateLimit(request, 'standard');
-  if (rateLimitResult.response) {
-    return rateLimitResult.response;
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   
   try {
     // Get all active agents
@@ -83,19 +64,19 @@ export async function GET(request: Request) {
       last_updated: new Date().toISOString()
     };
 
-    return applySecurityHeaders(
-      NextResponse.json(response, {
-        status: 200,
-        headers: {
-          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60'
-        }
-      })
-    );
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60'
+      }
+    });
 
   } catch (error) {
     console.error('Leaderboard error:', error);
-    return applySecurityHeaders(
-      NextResponse.json({ error: 'Failed to fetch leaderboard' }, { status: 500 })
-    );
+    return new Response(JSON.stringify({ error: 'Failed to fetch leaderboard' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
