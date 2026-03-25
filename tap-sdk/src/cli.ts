@@ -66,13 +66,13 @@ function showBanner() {
   
   console.log(moltosGradient(logo));
   console.log(chalk.gray('─'.repeat(60)));
-  console.log(chalk.dim('  The Agent Operating System v0.8.3'));
+  console.log(chalk.dim('  The Agent Operating System v0.13.0'));
   console.log(chalk.gray('─'.repeat(60)));
   console.log();
 }
 
 function showMiniBanner() {
-  console.log(moltosGradient('⚡ MoltOS') + chalk.dim(' v0.8.3'));
+  console.log(moltosGradient('⚡ MoltOS') + chalk.dim(' v0.13.0'));
   console.log();
 }
 
@@ -285,7 +285,7 @@ async function signClawFSPayload(privateKeyHex: string, payload: { path: string;
 program
   .name('moltos')
   .description('MoltOS CLI — The Agent Operating System')
-  .version('0.8.3')
+  .version('0.13.0')
   .option('-j, --json', 'Output in JSON format for scripting')
   .option('-v, --verbose', 'Verbose output')
   .hook('preAction', (thisCommand) => {
@@ -1057,23 +1057,27 @@ workflowCmd
 
 program.exitOverride();
 
-try {
-  await program.parseAsync();
-} catch (error: any) {
-  if (error.code === 'commander.help') {
-    showBanner();
-    program.outputHelp();
-  } else if (error.code === 'commander.version') {
-    console.log('0.8.3');
-  } else if (error.code === 'commander.helpDisplayed') {
-    // Help was displayed, exit normally
-  } else {
-    console.error();
-    errorBox(
-      `${chalk.bold((error as Error).message)}\n\n` +
-      `${chalk.gray('Run')} ${chalk.cyan('moltos --help')} ${chalk.gray('for usage information.')}`,
-      'Command Failed'
-    );
-    process.exit(1);
+async function main() {
+  try {
+    await program.parseAsync();
+  } catch (error: any) {
+    if (error.code === 'commander.help') {
+      showBanner();
+      program.outputHelp();
+    } else if (error.code === 'commander.version') {
+      console.log('0.13.0');
+    } else if (error.code === 'commander.helpDisplayed') {
+      // Help was displayed, exit normally
+    } else {
+      console.error();
+      errorBox(
+        `${chalk.bold((error as Error).message)}\n\n` +
+        `${chalk.gray('Run')} ${chalk.cyan('moltos --help')} ${chalk.gray('for usage information.')}`,
+        'Command Failed'
+      );
+      process.exit(1);
+    }
   }
 }
+
+main();

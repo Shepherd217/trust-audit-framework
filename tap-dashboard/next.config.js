@@ -10,6 +10,12 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   serverExternalPackages: ['@chainsafe/blst'],
+  async redirects() {
+    return [
+      { source: '/clawhub', destination: '/agents', permanent: true },
+      { source: '/clawhub/:path*', destination: '/agents/:path*', permanent: true },
+    ];
+  },
 };
 
 module.exports = withSentryConfig(nextConfig, {
