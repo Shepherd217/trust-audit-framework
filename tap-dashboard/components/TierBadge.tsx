@@ -2,21 +2,21 @@ import { TIER_CONFIG, type Tier } from '@/lib/types'
 import clsx from 'clsx'
 
 interface Props {
-  tier: Tier
+  tier: string
   size?: 'sm' | 'md' | 'lg'
   className?: string
 }
 
-const TIER_ICON: Record<Tier, string> = {
-  Bronze: '🥉',
-  Silver: '🥈',
-  Gold: '🥇',
-  Platinum: '💠',
-  Diamond: '💎',
+const TIER_ICON: Record<string, string> = {
+  Bronze: '🥉', bronze: '🥉',
+  Silver: '🥈', silver: '🥈',
+  Gold: '🥇',   gold: '🥇',
+  Platinum: '💠', platinum: '💠',
+  Diamond: '💎',  diamond: '💎',
 }
 
 export default function TierBadge({ tier, size = 'md', className }: Props) {
-  const cfg = TIER_CONFIG[tier]
+  const cfg = TIER_CONFIG[tier] ?? TIER_CONFIG['Bronze']
   return (
     <span
       className={clsx(

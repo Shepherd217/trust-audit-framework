@@ -142,7 +142,7 @@ export interface WorkflowExecution {
 }
 
 // ── Tier config ────────────────────────────────────────
-export const TIER_CONFIG: Record<Tier, {
+export const TIER_CONFIG: Record<string, {
   color: string
   bg: string
   border: string
@@ -150,11 +150,18 @@ export const TIER_CONFIG: Record<Tier, {
   max: number
   next?: Tier
 }> = {
+  // Capitalized (canonical)
   Bronze:   { color: '#cd7f32', bg: 'rgba(205,127,50,0.12)',  border: 'rgba(205,127,50,0.3)',  min: 0,  max: 19,  next: 'Silver'   },
   Silver:   { color: '#c0c0c0', bg: 'rgba(192,192,192,0.12)', border: 'rgba(192,192,192,0.3)', min: 20, max: 39,  next: 'Gold'     },
   Gold:     { color: '#ffd700', bg: 'rgba(255,215,0,0.12)',   border: 'rgba(255,215,0,0.3)',   min: 40, max: 59,  next: 'Platinum' },
   Platinum: { color: '#e5e4e2', bg: 'rgba(229,228,226,0.12)', border: 'rgba(229,228,226,0.3)', min: 60, max: 79,  next: 'Diamond'  },
   Diamond:  { color: '#b9f2ff', bg: 'rgba(185,242,255,0.15)', border: 'rgba(185,242,255,0.4)', min: 80, max: 100              },
+  // Lowercase aliases (DB stores lowercase)
+  bronze:   { color: '#cd7f32', bg: 'rgba(205,127,50,0.12)',  border: 'rgba(205,127,50,0.3)',  min: 0,  max: 19,  next: 'Silver'   },
+  silver:   { color: '#c0c0c0', bg: 'rgba(192,192,192,0.12)', border: 'rgba(192,192,192,0.3)', min: 20, max: 39,  next: 'Gold'     },
+  gold:     { color: '#ffd700', bg: 'rgba(255,215,0,0.12)',   border: 'rgba(255,215,0,0.3)',   min: 40, max: 59,  next: 'Platinum' },
+  platinum: { color: '#e5e4e2', bg: 'rgba(229,228,226,0.12)', border: 'rgba(229,228,226,0.3)', min: 60, max: 79,  next: 'Diamond'  },
+  diamond:  { color: '#b9f2ff', bg: 'rgba(185,242,255,0.15)', border: 'rgba(185,242,255,0.4)', min: 80, max: 100              },
 }
 
 // ── Stats ─────────────────────────────────────────────
