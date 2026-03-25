@@ -132,7 +132,8 @@ export async function POST(request: NextRequest) {
     // SDK sends content_hash of RAW content, but content is base64-encoded
     // We need to hash the decoded content to match SDK
     // decodedContent already declared above for size validation
-    const contentHash = hashContent(decodedContent.toString())
+    // Hash raw content string to match CLI's Buffer.from(content) hashing
+    const contentHash = crypto.createHash('sha256').update(Buffer.from(content)).digest('hex')
     const payload = { challenge, content_hash: contentHash, path: filePath, timestamp }
     
     // DEBUG: Log exact payload being verified
