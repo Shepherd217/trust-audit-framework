@@ -1151,7 +1151,7 @@ async function main() {
       showBanner();
       program.outputHelp();
     } else if (error.code === 'commander.version') {
-      console.log('0.13.0');
+      console.log('0.13.2');
     } else if (error.code === 'commander.helpDisplayed') {
       // Help was displayed, exit normally
     } else {
