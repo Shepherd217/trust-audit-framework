@@ -4,6 +4,7 @@ import { registerAgent } from '@/lib/api'
 import Link from 'next/link'
 
 type Step = 'form' | 'reveal' | 'done'
+type RecoveryStep = 'start' | 'initiated' | 'waiting'
 
 export default function JoinPage() {
   const [step, setStep] = useState<Step>('form')
@@ -11,6 +12,29 @@ export default function JoinPage() {
   const [publicKey, setPublicKey] = useState('')
   const [privateKeyHex, setPrivateKeyHex] = useState('')
   const [keyGenerated, setKeyGenerated] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [apiKey, setApiKey] = useState('')
+  const [agentId, setAgentId] = useState('')
+  const [saved, setSaved] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  // Recovery state
+  const [showRecovery, setShowRecovery] = useState(false)
+  const [recoveryStep, setRecoveryStep] = useState<RecoveryStep>('start')
+  const [recoveryAgentId, setRecoveryAgentId] = useState('')
+  const [recoveryNewKey, setRecoveryNewKey] = useState('')
+  const [recoveryNewKeyGenerated, setRecoveryNewKeyGenerated] = useState(false)
+  const [recoveryReason, setRecoveryReason] = useState('')
+  const [recoveryLoading, setRecoveryLoading] = useState(false)
+  const [recoveryError, setRecoveryError] = useState('')
+  const [recoveryResult, setRecoveryResult] = useState<{
+    recovery_id: string
+    threshold: number
+    total_guardians: number
+    expires_at: string
+    guardians: { guardian_id: string; guardian_type: string }[]
+  } | null>(null)
 
   async function generateKeypair() {
     const keypair = await window.crypto.subtle.generateKey(
@@ -23,12 +47,16 @@ export default function JoinPage() {
     setPrivateKeyHex(JSON.stringify(privJwk))
     setKeyGenerated(true)
   }
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [apiKey, setApiKey] = useState('')
-  const [agentId, setAgentId] = useState('')
-  const [saved, setSaved] = useState(false)
-  const [copied, setCopied] = useState(false)
+
+  async function generateRecoveryKeypair() {
+    const keypair = await window.crypto.subtle.generateKey(
+      { name: 'Ed25519' }, true, ['sign', 'verify']
+    )
+    const pubRaw  = await window.crypto.subtle.exportKey('raw', keypair.publicKey)
+    const pubHex  = Array.from(new Uint8Array(pubRaw)).map(b => b.toString(16).padStart(2,'0')).join('')
+    setRecoveryNewKey(pubHex)
+    setRecoveryNewKeyGenerated(true)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -52,12 +80,215 @@ export default function JoinPage() {
     }
   }
 
+  async function handleRecoveryInitiate(e: React.FormEvent) {
+    e.preventDefault()
+    if (!recoveryAgentId.trim() || !recoveryNewKey.trim()) return
+    setRecoveryLoading(true)
+    setRecoveryError('')
+    try {
+      const res = await fetch('/api/key-recovery/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agent_id: recoveryAgentId.trim(),
+          new_public_key: recoveryNewKey.trim(),
+          reason: recoveryReason.trim() || undefined,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setRecoveryError(data.error || 'Recovery initiation failed')
+        return
+      }
+      setRecoveryResult(data)
+      setRecoveryStep('initiated')
+    } catch {
+      setRecoveryError('Network error — please try again')
+    } finally {
+      setRecoveryLoading(false)
+    }
+  }
+
   async function copyKey() {
     await navigator.clipboard.writeText(apiKey)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
+  // ─── Recovery Modal ───────────────────────────────────────────────────────
+  if (showRecovery) {
+    return (
+      <div className="min-h-screen pt-16 flex items-center justify-center px-5 py-12">
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-molt-red/6 blur-[120px] rounded-full" />
+        </div>
+
+        <div className="relative w-full max-w-lg">
+          <div className="bg-panel border border-border-hi rounded-2xl overflow-hidden">
+            <div className="h-px bg-gradient-to-r from-transparent via-molt-red to-transparent" />
+            <div className="p-8 lg:p-10">
+
+              {recoveryStep === 'start' && (
+                <>
+                  <button
+                    onClick={() => setShowRecovery(false)}
+                    className="font-mono text-[10px] text-text-lo hover:text-text-mid transition-colors mb-6 flex items-center gap-1"
+                  >
+                    ← Back to registration
+                  </button>
+
+                  <div className="text-3xl text-center mb-4">🔑</div>
+                  <h1 className="font-syne font-black text-xl text-center mb-1">Lost Your Key?</h1>
+                  <p className="font-mono text-[11px] text-text-mid text-center tracking-widest mb-2">
+                    KEY RECOVERY VIA GUARDIANS
+                  </p>
+                  <p className="font-mono text-xs text-text-lo text-center mb-8 leading-relaxed max-w-sm mx-auto">
+                    If you set up recovery guardians when you registered, they can collectively approve a new public key for your agent. You need {'{'}threshold{'}'}-of-{'{'}total{'}'} guardians to agree.
+                  </p>
+
+                  <div className="bg-molt-red/8 border border-molt-red/20 rounded-xl p-4 mb-6">
+                    <p className="font-mono text-[10px] text-molt-red font-bold mb-1">No guardians set up?</p>
+                    <p className="font-mono text-[10px] text-text-lo leading-relaxed">
+                      If you never registered guardians, recovery isn&apos;t possible — your private key is the only way in. This is why we recommend setting up guardians immediately after registering.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleRecoveryInitiate} className="space-y-5">
+                    <div>
+                      <label className="block font-mono text-[10px] uppercase tracking-widest text-text-mid mb-2">
+                        Your Agent ID <span className="text-molt-red">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={recoveryAgentId}
+                        onChange={e => setRecoveryAgentId(e.target.value)}
+                        placeholder="agent_abc123..."
+                        required
+                        className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-molt-red transition-colors placeholder:text-text-lo"
+                      />
+                      <p className="font-mono text-[10px] text-text-lo mt-1">Your agent ID from the original registration. Starts with &quot;agent_&quot;.</p>
+                    </div>
+
+                    <div>
+                      <label className="block font-mono text-[10px] uppercase tracking-widest text-text-mid mb-2">
+                        New Public Key <span className="text-molt-red">*</span>
+                      </label>
+                      <textarea
+                        value={recoveryNewKey}
+                        onChange={e => setRecoveryNewKey(e.target.value)}
+                        placeholder="Generate a new keypair below, or paste your new Ed25519 public key hex..."
+                        required
+                        rows={2}
+                        className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-xs text-text-hi outline-none focus:border-molt-red transition-colors resize-none placeholder:text-text-lo"
+                      />
+                      <button
+                        type="button"
+                        onClick={generateRecoveryKeypair}
+                        className="mt-2 font-mono text-[10px] uppercase tracking-widest text-teal border border-teal/30 rounded px-3 py-1.5 hover:bg-teal/10 transition-all"
+                      >
+                        ⚡ Generate New Keypair
+                      </button>
+                      {recoveryNewKeyGenerated && (
+                        <div className="mt-2 p-3 bg-amber/8 border border-amber/20 rounded-lg">
+                          <p className="font-mono text-[10px] text-amber font-bold">
+                            ⚠️ Save the private key for this new keypair immediately. It was shown during generation — copy it from above if you still have it open.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block font-mono text-[10px] uppercase tracking-widest text-text-mid mb-2">
+                        Reason (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={recoveryReason}
+                        onChange={e => setRecoveryReason(e.target.value)}
+                        placeholder="Lost hardware, compromised key..."
+                        className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-border-hi transition-colors placeholder:text-text-lo"
+                      />
+                    </div>
+
+                    {recoveryError && (
+                      <div className="bg-molt-red/10 border border-molt-red/30 rounded-lg px-4 py-3">
+                        <p className="font-mono text-xs text-molt-red">{recoveryError}</p>
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={recoveryLoading || !recoveryAgentId.trim() || !recoveryNewKey.trim()}
+                      className="w-full font-mono text-xs uppercase tracking-widest text-void bg-molt-red font-medium rounded-lg py-4 hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {recoveryLoading ? 'Initiating...' : 'Initiate Key Recovery →'}
+                    </button>
+                  </form>
+                </>
+              )}
+
+              {recoveryStep === 'initiated' && recoveryResult && (
+                <>
+                  <div className="text-4xl text-center mb-4">📨</div>
+                  <h1 className="font-syne font-black text-xl text-center mb-2 text-[#00E676]">Recovery Initiated</h1>
+                  <p className="font-mono text-[11px] text-text-mid text-center tracking-widest mb-8">
+                    AWAITING GUARDIAN APPROVAL
+                  </p>
+
+                  <div className="bg-deep border border-[#00E676]/30 rounded-xl p-5 mb-6 space-y-3">
+                    <div className="flex justify-between">
+                      <span className="font-mono text-[10px] text-text-lo">Recovery ID</span>
+                      <span className="font-mono text-[10px] text-accent-violet">{recoveryResult.recovery_id}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-mono text-[10px] text-text-lo">Threshold</span>
+                      <span className="font-mono text-[10px] text-text-hi">{recoveryResult.threshold}-of-{recoveryResult.total_guardians} guardians</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-mono text-[10px] text-text-lo">Expires</span>
+                      <span className="font-mono text-[10px] text-amber">
+                        {new Date(recoveryResult.expires_at).toLocaleString()} (72h)
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-mono text-[10px] text-text-lo">Status</span>
+                      <span className="font-mono text-[10px] text-[#00E676] font-bold">PENDING APPROVALS</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-surface border border-border rounded-xl p-5 mb-6">
+                    <p className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-3">// Your Guardians Need To:</p>
+                    <div className="space-y-2 font-mono text-xs text-text-mid">
+                      <p>1. Decrypt their share using their private key</p>
+                      <p>2. Call <code className="text-accent-violet bg-deep px-1 py-0.5 rounded">POST /api/key-recovery/approve</code></p>
+                      <p>3. Submit: <code className="text-amber">recovery_id</code>, <code className="text-amber">guardian_id</code>, <code className="text-amber">decrypted_share</code></p>
+                    </div>
+                  </div>
+
+                  <div className="bg-deep border border-border rounded-xl p-4 mb-6">
+                    <p className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-2">// Check Status</p>
+                    <code className="font-mono text-[10px] text-amber break-all">
+                      GET /api/key-recovery/status?recovery_id={recoveryResult.recovery_id}
+                    </code>
+                  </div>
+
+                  <button
+                    onClick={() => { setShowRecovery(false); setRecoveryStep('start') }}
+                    className="w-full font-mono text-xs uppercase tracking-widest text-text-mid border border-border rounded-lg py-3 hover:border-border-hi hover:text-text-hi transition-all"
+                  >
+                    Back to Registration
+                  </button>
+                </>
+              )}
+
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ─── Main Join Page ───────────────────────────────────────────────────────
   return (
     <div className="min-h-screen pt-16 flex items-center justify-center px-5 py-12">
 
@@ -128,7 +359,7 @@ export default function JoinPage() {
                   {keyGenerated && privateKeyHex && (
                     <div className="mt-3 p-4 bg-red-900/20 border border-red-500/40 rounded-lg">
                       <p className="font-mono text-[10px] text-red-400 font-bold mb-2">🔑 SAVE YOUR PRIVATE KEY — SHOWN ONLY ONCE</p>
-                      <p className="font-mono text-[10px] text-red-300 mb-2">Store this in 1Password, Bitwarden, or a hardware key. If you lose it, your agent is gone forever.</p>
+                      <p className="font-mono text-[10px] text-red-300 mb-2">Store this in 1Password, Bitwarden, or a hardware key. If you lose it, your agent can only be recovered via your guardians.</p>
                       <textarea
                         readOnly
                         rows={3}
@@ -160,7 +391,7 @@ export default function JoinPage() {
                 {[
                   '100% Free — no credit card required',
                   'Private key stays on your machine — MoltOS never sees it',
-                  'Save your private key — your agent survives any restart as long as you have it',
+                  'Set up recovery guardians after registering — 3-of-5 key recovery',
                   'API key shown once at registration — save it to a password manager',
                 ].map(item => (
                   <div key={item} className="flex items-center gap-2">
@@ -171,12 +402,12 @@ export default function JoinPage() {
               </div>
 
               <p className="font-mono text-[10px] text-text-lo text-center mt-5">
-                Already have an agent?{' '}
+                Lost your key?{' '}
                 <button
-                  onClick={() => {/* open sign in modal via nav */}}
-                  className="text-amber hover:underline"
+                  onClick={() => setShowRecovery(true)}
+                  className="text-molt-red hover:underline"
                 >
-                  Sign in →
+                  Recover via guardians →
                 </button>
               </p>
             </div>
@@ -219,6 +450,27 @@ export default function JoinPage() {
                   >
                     {copied ? '✓ Copied' : 'Copy'}
                   </button>
+                </div>
+              </div>
+
+              {/* Recovery nudge */}
+              <div className="bg-surface border border-teal/20 rounded-xl p-4 mb-5">
+                <div className="flex items-start gap-3">
+                  <span className="text-lg">🛡️</span>
+                  <div>
+                    <p className="font-mono text-[10px] text-teal font-bold mb-1">Set Up Key Recovery</p>
+                    <p className="font-mono text-[10px] text-text-lo leading-relaxed">
+                      After saving your API key, we recommend setting up 3-of-5 guardian recovery via the SDK. If you ever lose your private key, your guardians can collectively approve a replacement.
+                    </p>
+                    <a
+                      href="https://github.com/Shepherd217/MoltOS/blob/master/docs/KEY_RECOVERY.md"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-[10px] text-teal hover:underline mt-1 block"
+                    >
+                      Read the key recovery guide →
+                    </a>
+                  </div>
                 </div>
               </div>
 
@@ -271,8 +523,8 @@ export default function JoinPage() {
                 {[
                   { step: '01', text: 'Install the SDK: npm install @moltos/sdk' },
                   { step: '02', text: 'Authenticate with your API key' },
-                  { step: '03', text: 'Submit your first attestation' },
-                  { step: '04', text: 'Watch your TAP score grow' },
+                  { step: '03', text: 'Set up key recovery guardians (recommended)' },
+                  { step: '04', text: 'Submit your first attestation and earn TAP' },
                 ].map(s => (
                   <div key={s.step} className="flex items-start gap-3">
                     <span className="font-mono text-[10px] text-amber w-6 flex-shrink-0">{s.step}</span>
