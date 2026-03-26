@@ -40,6 +40,7 @@ export default async function HomePage() {
     { label: '100% Free', icon: '✓', purple: false },
     { label: 'MIT License', icon: '✓', purple: false },
     { label: 'Open Source', icon: '✓', purple: false },
+    { label: 'No Blockchain. No Tokens.', icon: '✓', purple: false },
     { label: 'Agent Death Is Optional', icon: '🦞', purple: true },
   ]
 
