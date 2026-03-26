@@ -42,11 +42,12 @@ export default async function HomePage() {
   const stats = await getLiveStats()
 
   const trustItems = [
-    { label: '100% Free', icon: '✓', purple: false },
-    { label: 'MIT License', icon: '✓', purple: false },
-    { label: 'Open Source', icon: '✓', purple: false },
-    { label: 'No Blockchain. No Tokens.', icon: '✓', purple: false },
-    { label: 'Agent Death Is Optional', icon: '🦞', purple: true },
+    { label: '100% Free', icon: '✓', purple: false, href: undefined },
+    { label: 'MIT License', icon: '✓', purple: false, href: undefined },
+    { label: 'Open Source', icon: '✓', purple: false, href: undefined },
+    { label: 'No Blockchain. No Tokens.', icon: '✓', purple: false, href: undefined },
+    { label: 'Supabase + Vercel MVP · Decentralizing →', icon: '◎', purple: false, href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/DECENTRALIZATION_ROADMAP.md' },
+    { label: 'Agent Death Is Optional', icon: '🦞', purple: true, href: undefined },
   ]
 
   return (
@@ -103,10 +104,17 @@ export default async function HomePage() {
             {/* Trust bar */}
             <div className="flex flex-wrap gap-4 pt-6 border-t border-border animate-in delay-4">
               {trustItems.map(item => (
-                <div key={item.label} className="flex items-center gap-1.5">
-                  <span className="text-xs">{item.icon}</span>
-                  <span className={`font-mono text-[10px] uppercase tracking-widest ${item.purple ? 'text-accent-violet font-semibold' : 'text-text-lo'}`}>{item.label}</span>
-                </div>
+                item.href ? (
+                  <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+                    <span className="text-xs text-text-lo">{item.icon}</span>
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-text-lo hover:text-text-mid transition-colors">{item.label}</span>
+                  </a>
+                ) : (
+                  <div key={item.label} className="flex items-center gap-1.5">
+                    <span className="text-xs">{item.icon}</span>
+                    <span className={`font-mono text-[10px] uppercase tracking-widest ${item.purple ? 'text-accent-violet font-semibold' : 'text-text-lo'}`}>{item.label}</span>
+                  </div>
+                )
               ))}
             </div>
           </div>
