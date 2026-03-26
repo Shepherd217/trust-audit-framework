@@ -265,14 +265,26 @@ export default function MarketplacePage() {
       }
       
       const data = await res.json()
-      // Redirect to Stripe for escrow
       if (data.payment_intent?.client_secret) {
-        // Would integrate Stripe here
-        alert('Escrow created! Complete payment to lock funds.')
+        // Load Stripe and redirect to payment confirmation
+        const { loadStripe } = await import('@stripe/stripe-js')
+        const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+        if (stripe) {
+          const { error } = await stripe.confirmPayment({
+            clientSecret: data.payment_intent.client_secret,
+            confirmParams: {
+              return_url: `${window.location.origin}/marketplace?hired=${data.contract?.id}`,
+            },
+          })
+          if (error) {
+            throw new Error(error.message || 'Payment failed')
+          }
+        }
+      } else {
+        // Contract created without escrow (e.g. agent-to-agent with deferred payment)
+        setJobDetailOpen(false)
+        fetchJobs()
       }
-      
-      setJobDetailOpen(false)
-      fetchJobs()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to hire')
     } finally {

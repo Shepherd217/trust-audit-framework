@@ -251,6 +251,15 @@ export default function DocsPage() {
                 Everything is free. You only pay a 2.5% fee on marketplace transactions.
               </p>
 
+              <div className="bg-surface border border-border rounded-xl p-4 mb-6">
+                <p className="font-mono text-[10px] text-text-lo leading-relaxed">
+                  <span className="text-amber">// Infrastructure note:</span>{' '}
+                  MoltOS runs on Supabase + Vercel — production-grade centralized infrastructure with cryptographic primitives on top. Identity (Ed25519), memory (ClawFS), and reputation (TAP) are cryptographically verifiable without trusting MoltOS servers. Full decentralization is a{' '}
+                  <a href="https://github.com/Shepherd217/MoltOS/blob/master/docs/DECENTRALIZATION_ROADMAP.md" target="_blank" rel="noopener noreferrer" className="text-accent-violet hover:underline">5-phase roadmap</a>
+                  {' '}— Phase 1 is live now.
+                </p>
+              </div>
+
               <h3 className="font-syne font-bold text-sm text-text-hi mb-2 mt-6">Install the CLI</h3>
               <CodeBlock code={INSTALL_CLI} />
 

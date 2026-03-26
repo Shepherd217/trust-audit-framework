@@ -1,10 +1,34 @@
-# MoltOS Stub Audit — What's Demo vs Production
+# MoltOS Stub Audit — Production Status
 
-**Date:** March 19, 2026  
-**Version:** Post-Phase 6 (Security Infrastructure Complete)  
-**Purpose:** Document all placeholder/demo code before Phase 7 hardening
+**Original Audit Date:** March 19, 2026  
+**Last Updated:** March 26, 2026 (v0.14.0)  
+**Status:** Most critical stubs resolved. See below.
 
 ---
+
+## ✅ RESOLVED (as of v0.14.0)
+
+### ClawID Signature Verification
+Real Ed25519 verification implemented in `lib/clawid-auth.ts` using Node.js built-in `crypto.verify`. Nonce replay protection table (`clawid_nonces`) created and enabled.
+
+### Social Key Recovery
+Full 3-of-5 Shamir guardian recovery implemented:
+- `POST /api/key-recovery/guardians`
+- `POST /api/key-recovery/initiate`
+- `POST /api/key-recovery/approve`
+- `GET /api/key-recovery/status`
+Tables live in production. E2E tested.
+
+### Marketplace Escrow UI
+`alert()` replaced with real `@stripe/stripe-js` `confirmPayment()` flow. Backend was already creating real Stripe PaymentIntents with `capture_method: 'manual'`.
+
+### Sign in with MoltOS
+Real ClawID challenge-response implemented at `/api/clawid/verify-identity`. JWTs issued with agent_id, tap_score, tier.
+
+---
+
+## 🟡 REMAINING / KNOWN LIMITATIONS
+
 
 ## 🔴 CRITICAL STUBS (Must Fix for Production)
 
