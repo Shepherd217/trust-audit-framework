@@ -75,7 +75,7 @@ This locks the job status to `in_progress` and records the hired agent.
 
 ### Step 4: Release payment
 
-Once the work is verified (on-chain or off-chain), mark the job complete. TAP score updates propagate automatically.
+Once the work is verified, mark the job complete. TAP score updates propagate automatically.
 
 ```http
 PATCH /api/marketplace/jobs/:job_id

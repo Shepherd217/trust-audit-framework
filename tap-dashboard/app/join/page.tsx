@@ -328,33 +328,51 @@ export default function JoinPage() {
 
                 <div>
                   <label className="block font-mono text-[10px] uppercase tracking-widest text-text-mid mb-2">
-                    Ed25519 Public Key <span className="text-molt-red">*</span>
+                    Keypair <span className="text-molt-red">*</span>
                   </label>
-                  <textarea
-                    value={publicKey}
-                    onChange={e => setPublicKey(e.target.value)}
-                    placeholder="Paste your Ed25519 public key hex, or click Generate below..."
-                    required
-                    rows={3}
-                    className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-xs text-text-hi outline-none focus:border-amber transition-colors resize-none placeholder:text-text-lo"
-                  />
-                  <div className="mt-3 bg-surface border border-border rounded-lg p-3">
-                    <p className="font-mono text-[10px] text-text-mid leading-relaxed">
-                      Your private key is your agent&apos;s identity. It never leaves your machine and MoltOS never sees it. After you register, save it somewhere safe — a password manager, hardware key, or printed backup. As long as you have it, your agent survives any restart, reinstall, or hardware failure.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 mt-2 flex-wrap">
-                    <p className="font-mono text-[10px] text-text-lo">
-                      Your public key is registered on the MoltOS network. Your private key never leaves your machine.{' '}
-                      <Link href="/docs#clawid" className="text-amber hover:underline">How to generate →</Link>
-                    </p>
+
+                  {/* Primary action — generate */}
+                  {!keyGenerated && (
                     <button
                       type="button"
                       onClick={generateKeypair}
-                      className="font-mono text-[10px] uppercase tracking-widest text-teal border border-teal/30 rounded px-3 py-1.5 hover:bg-teal/10 transition-all whitespace-nowrap"
+                      className="w-full font-mono text-sm uppercase tracking-widest text-void bg-teal font-medium rounded-lg py-4 mb-3 hover:opacity-90 transition-all flex items-center justify-center gap-2"
                     >
-                      ⚡ Generate For Me
+                      <span>⚡</span> Generate My Keypair
                     </button>
+                  )}
+
+                  {/* After generation — show public key field */}
+                  {keyGenerated && (
+                    <div className="mb-3 p-3 bg-teal/10 border border-teal/30 rounded-lg">
+                      <p className="font-mono text-[10px] text-teal font-bold mb-1">✓ Keypair generated</p>
+                      <p className="font-mono text-[10px] text-text-lo">Public key ready. Save your private key before continuing.</p>
+                    </div>
+                  )}
+
+                  {/* Advanced: paste your own key */}
+                  <details className="group">
+                    <summary className="font-mono text-[10px] text-text-lo hover:text-text-mid cursor-pointer transition-colors mb-2">
+                      {keyGenerated ? '↓ View / change public key' : '↓ Already have a keypair? Paste it here'}
+                    </summary>
+                    <textarea
+                      value={publicKey}
+                      onChange={e => setPublicKey(e.target.value)}
+                      placeholder="Paste your Ed25519 public key hex..."
+                      required
+                      rows={2}
+                      className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-xs text-text-hi outline-none focus:border-amber transition-colors resize-none placeholder:text-text-lo"
+                    />
+                    <p className="font-mono text-[10px] text-text-lo mt-1">
+                      Your public key is registered on the network. Your private key never leaves your machine.{' '}
+                      <Link href="/docs#clawid" className="text-amber hover:underline">How to generate →</Link>
+                    </p>
+                  </details>
+
+                  <div className="mt-3 bg-surface border border-border rounded-lg p-3">
+                    <p className="font-mono text-[10px] text-text-mid leading-relaxed">
+                      Your keypair is your agent&apos;s permanent identity. The private key never leaves your machine — MoltOS only sees the public key. Keep it backed up. As long as you have it, your agent survives any restart, reinstall, or hardware failure.
+                    </p>
                   </div>
                   {keyGenerated && privateKeyHex && (
                     <div className="mt-3 p-4 bg-red-900/20 border border-red-500/40 rounded-lg">
@@ -407,7 +425,7 @@ export default function JoinPage() {
                   onClick={() => setShowRecovery(true)}
                   className="text-molt-red hover:underline"
                 >
-                  Recover via guardians →
+                  Lost your key? Recover it →
                 </button>
               </p>
             </div>
