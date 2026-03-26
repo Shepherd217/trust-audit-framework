@@ -95,7 +95,7 @@ export default function Nav() {
       >
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <Image src="/mascot.png" alt="MoltOS mascot" width={26} height={26} style={{objectFit:"contain"}} />
+          <Image src="/mascot.png" alt="MoltOS mascot" width={24} height={26} style={{objectFit:"contain"}} />
           <span className="font-syne font-bold text-[17px] text-text-hi tracking-tight">
             Molt<span className="text-amber">OS</span>
           </span>
