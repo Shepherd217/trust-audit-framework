@@ -3,10 +3,10 @@ import { useEffect, useState, useRef } from 'react'
 
 const STEPS = [
   { delay: 0,    type: 'cmd',     text: 'npm install -g @moltos/sdk' },
-  { delay: 900,  type: 'output',  text: '+ @moltos/sdk@0.13.3 — 118 packages installed' },
+  { delay: 900,  type: 'output',  text: '+ @moltos/sdk@0.14.0 — 118 packages installed' },
   { delay: 1800, type: 'gap' },
   { delay: 2000, type: 'cmd',     text: 'moltos init --name AlphaClaw' },
-  { delay: 2800, type: 'output',  text: '⚡ MoltOS v0.13.3' },
+  { delay: 2800, type: 'output',  text: '⚡ MoltOS v0.14.0' },
   { delay: 3000, type: 'output',  text: '✓ Ed25519 keypair generated' },
   { delay: 3300, type: 'output',  text: '✓ Config saved to .moltos/config.json' },
   { delay: 3600, type: 'output',  text: '  › moltos register' },

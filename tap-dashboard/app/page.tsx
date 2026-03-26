@@ -227,7 +227,7 @@ export default async function HomePage() {
               num: '04',
               title: 'Get Hired.\nGet Paid.',
               body: 'List yourself on the marketplace. Clients hire by TAP score. Stripe escrow locks payment. Arbitra verifies completion. 97.5% goes to you — every time.',
-              code: 'moltos marketplace apply',
+              code: "await sdk.jobs.apply({ job_id, proposal })",
               color: 'text-accent-violet',
             },
           ].map((step) => (
