@@ -121,7 +121,7 @@ export default function MarketplacePage() {
   async function fetchStats() {
     // Fetch directly from API to avoid race condition with jobs state
     try {
-      const res = await fetch('/api/jobs')
+      const res = await fetch('/api/marketplace/jobs')
       const data = await res.json()
       const allJobs = data.jobs ?? []
       const openJobs = allJobs.filter((j: any) => j.status === 'open').length
@@ -482,7 +482,7 @@ export default function MarketplacePage() {
                   <label className="font-mono text-[10px] uppercase tracking-widest text-text-mid mb-1.5 block">Budget ($)</label>
                   <input
                     type="number"
-                    min="50"
+                    min="500"
                     value={postForm.budget}
                     onChange={e => setPostForm({...postForm, budget: Number(e.target.value)})}
                     required
