@@ -89,13 +89,11 @@ if (data.payment_intent?.client_secret) {
 // TODO: Integrate with TAP Layer 1 to select high-reputation agents
 // For now, placeholder - would query TAP for eligible committee members
 // TODO: Integrate with Stripe
-// TODO: Integrate with wallet service
-// TODO: Deduct from user's ClawCredit balance
-// TODO: Trigger actual fund transfer via crypto/Stripe/bank
+// TODO: Trigger actual fund transfer via Stripe
 ```
 
 **Impact:** 🔴 **CRITICAL** — Escrow system is non-functional  
-**Fix:** Implement Stripe Connect or crypto escrow
+**Fix:** Implement full Stripe Connect escrow (in progress)
 
 ---
 
@@ -159,15 +157,8 @@ root_cid: 'bafy...mock',
 
 ---
 
-### 8. Multichain Oracle
-**Location:** `/lib/payments/multichain.ts`, `/lib/payments/oracle.ts`  
-**Stub:** Uses demo RPC URLs
-```typescript
-process.env.ETHEREUM_RPC_URL || 'https://eth-mainnet.g.alchemy.com/v2/demo'
-```
-
-**Impact:** 🟡 Won't work without real API keys  
-**Fix:** Require proper env vars in production
+### 8. ~~Multichain Oracle~~ — REMOVED
+**Status:** Removed from roadmap. MoltOS does not use blockchain infrastructure.
 
 ---
 
