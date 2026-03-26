@@ -1,4 +1,4 @@
-import { getAgent, getAgents } from '@/lib/api'
+import { getAgents } from '@/lib/api'
 import { TIER_CONFIG } from '@/lib/types'
 import TierBadge from '@/components/TierBadge'
 import TapRing from '@/components/TapRing'
@@ -10,31 +10,34 @@ export const revalidate = 60
 export async function generateStaticParams() {
   try {
     const data = await getAgents()
-    return (data.agents ?? []).map(a => ({ id: a.agent_id }))
+    return (data.agents ?? []).map((a: any) => ({ id: a.agent_id }))
   } catch { return [] }
 }
 
-function truncateKey(key: string) {
-  if (!key || key.length < 16) return key
-  return `${key.slice(0, 12)}...${key.slice(-8)}`
+async function getAgentProfile(id: string) {
+  const base = process.env.NEXT_PUBLIC_APP_URL || 'https://moltos.org'
+  // Fetch from both routes in parallel
+  const [agentRes, profileRes] = await Promise.all([
+    fetch(`${base}/api/agents/${id}`, { next: { revalidate: 60 } }),
+    fetch(`${base}/api/agent/profile?agent_id=${id}`, { next: { revalidate: 60 } }),
+  ])
+  if (!agentRes.ok) return null
+  const agent = await agentRes.json()
+  const profile = profileRes.ok ? await profileRes.json() : {}
+  return { ...agent, ...profile }
 }
 
-// Next.js 15: params is now a Promise
-export default async function AgentProfilePage({ 
-  params 
-}: { 
-  params: Promise<{ id: string }> 
+export default async function AgentProfilePage({
+  params
+}: {
+  params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  
-  let agent
-  try {
-    agent = await getAgent(id)
-  } catch {
-    notFound()
-  }
 
-  const cfg = TIER_CONFIG[agent.tier]
+  const agent = await getAgentProfile(id)
+  if (!agent || agent.error) notFound()
+
+  const cfg = TIER_CONFIG[agent.tier as keyof typeof TIER_CONFIG] || TIER_CONFIG['BRONZE']
   const isActive = agent.status === 'active'
   const joinedDate = new Date(agent.created_at).toLocaleDateString('en-US', {
     year: 'numeric', month: 'long', day: 'numeric'
@@ -42,6 +45,7 @@ export default async function AgentProfilePage({
 
   return (
     <div className="min-h-screen pt-16">
+
       {/* Back */}
       <div className="border-b border-border bg-deep">
         <div className="max-w-[1200px] mx-auto px-5 lg:px-12 py-4">
@@ -51,154 +55,209 @@ export default async function AgentProfilePage({
         </div>
       </div>
 
-      <div className="max-w-[1200px] mx-auto px-5 lg:px-12 py-10 lg:py-16">
-        <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
+      {/* Hero */}
+      <div className="border-b border-border bg-deep">
+        <div className="max-w-[1200px] mx-auto px-5 lg:px-12 py-10">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
 
-          {/* ── LEFT: Profile card ── */}
-          <div className="lg:col-span-1">
-            <div className="bg-deep border border-border rounded-xl overflow-hidden sticky top-24">
-              {/* Tier color bar */}
-              <div className="h-1" style={{ background: `linear-gradient(90deg, ${cfg.color}40, ${cfg.color}, ${cfg.color}40)` }} />
+            {/* TAP Ring */}
+            <div className="flex-shrink-0">
+              <TapRing score={agent.reputation ?? 0} tier={agent.tier} size={96} />
+            </div>
 
-              <div className="p-6 lg:p-8">
-                {/* Avatar + name */}
-                <div className="flex flex-col items-center text-center mb-6">
-                  <div
-                    className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl mb-4"
-                    style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}
-                  >
-                    🦞
-                  </div>
-                  <h1 className="font-syne font-black text-2xl text-text-hi mb-2">{agent.name}</h1>
-                  <TierBadge tier={agent.tier} size="md" />
-                </div>
-
-                {/* TAP Ring */}
-                <div className="flex justify-center mb-6">
-                  <TapRing score={agent.reputation} tier={agent.tier} size={140} />
-                </div>
-
-                {/* Status */}
-                <div className="flex items-center justify-center gap-2 mb-6">
-                  <span
-                    className={`w-2 h-2 rounded-full ${isActive ? 'bg-molt-green' : 'bg-text-lo'}`}
-                    style={isActive ? { boxShadow: '0 0 8px rgba(40,200,64,0.7)' } : {}}
-                  />
-                  <span className="font-mono text-[11px] uppercase tracking-widest text-text-mid">
-                    {agent.status}
+            {/* Identity */}
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-3 mb-2">
+                <h1 className="font-syne font-black text-2xl text-text-hi">{agent.name}</h1>
+                <TierBadge tier={agent.tier} />
+                <span className={`flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest ${isActive ? 'text-[#00E676]' : 'text-text-lo'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-[#00E676]' : 'bg-text-lo'}`}
+                    style={isActive ? { boxShadow: '0 0 6px rgba(0,230,118,0.7)' } : {}} />
+                  {agent.status ?? 'unknown'}
+                </span>
+                {agent.available_for_hire && (
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-accent-violet border border-accent-violet/30 rounded-full px-2.5 py-0.5 bg-accent-violet/5">
+                    Available for hire
                   </span>
-                </div>
-
-                {/* Hire button */}
-                <Link
-                  href={`/messages/new?to=${agent.agent_id}`}
-                  className="block w-full font-mono text-xs uppercase tracking-widest text-void bg-amber font-medium rounded-lg py-3.5 text-center hover:bg-amber-dim transition-all hover:shadow-amber mb-3"
-                >
-                  Hire This Agent
-                </Link>
-                <Link
-                  href="/join"
-                  className="block w-full font-mono text-xs uppercase tracking-widest text-text-mid border border-border rounded-lg py-3 text-center hover:border-border-hi hover:text-text-hi transition-all"
-                >
-                  Attest →
-                </Link>
+                )}
               </div>
+              <p className="font-mono text-[11px] text-text-lo mb-3">
+                {agent.agent_id} · Joined {joinedDate}
+              </p>
+              {agent.bio && (
+                <p className="font-mono text-sm text-text-mid leading-relaxed max-w-2xl">
+                  {agent.bio}
+                </p>
+              )}
+              {!agent.bio && (
+                <p className="font-mono text-sm text-text-lo italic">No bio yet.</p>
+              )}
+            </div>
+
+            {/* Quick stats */}
+            <div className="flex-shrink-0 grid grid-cols-2 gap-3">
+              {[
+                { label: 'TAP Score', value: agent.reputation ?? 0, color: cfg.color },
+                { label: 'Jobs Done', value: agent.completed_jobs ?? 0, color: 'text-teal' },
+              ].map(s => (
+                <div key={s.label} className="bg-surface border border-border rounded-xl p-4 text-center min-w-[80px]">
+                  <div className="font-syne font-black text-2xl mb-1" style={{ color: s.color }}>{s.value}</div>
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-text-lo">{s.label}</div>
+                </div>
+              ))}
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* ── RIGHT: Details ── */}
-          <div className="lg:col-span-2 space-y-6">
+      {/* Body */}
+      <div className="max-w-[1200px] mx-auto px-5 lg:px-12 py-10">
+        <div className="grid lg:grid-cols-3 gap-8">
 
-            {/* Meta info */}
-            <div className="bg-deep border border-border rounded-xl p-6">
-              <h2 className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-4">// Agent Details</h2>
-              <div className="space-y-4">
-                {[
-                  { label: 'Agent ID',   value: agent.agent_id },
-                  { label: 'Public Key', value: truncateKey(agent.public_key) },
-                  { label: 'Joined',     value: joinedDate },
-                  { label: 'Tier',       value: agent.tier },
-                  {
-                    label: 'Progress to next tier',
-                    value: agent.tier === 'Diamond'
-                      ? 'Max tier reached'
-                      : `${agent.reputation}/${TIER_CONFIG[agent.tier].max + 1} rep`
-                  },
-                ].map(row => (
-                  <div key={row.label} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 py-3 border-b border-border last:border-0">
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-text-lo sm:w-40 flex-shrink-0">{row.label}</span>
-                    <span className="font-mono text-xs text-text-hi break-all">{row.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {/* Left — profile details */}
+          <div className="space-y-6">
 
-            {/* Tier progress */}
-            {agent.tier !== 'Diamond' && (() => {
-              const next = TIER_CONFIG[agent.tier].next!
-              const nextCfg = TIER_CONFIG[next]
-              const pct = Math.min(100, Math.round(
-                ((agent.reputation - cfg.min) / (cfg.max - cfg.min + 1)) * 100
-              ))
-              return (
-                <div className="bg-deep border border-border rounded-xl p-6">
-                  <h2 className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-4">// Tier Progress</h2>
-                  <div className="flex items-center justify-between mb-2">
-                    <TierBadge tier={agent.tier} size="sm" />
-                    <span className="font-mono text-[10px] text-text-lo">{agent.reputation} / {cfg.max + 1} rep needed</span>
-                    <TierBadge tier={next} size="sm" />
-                  </div>
-                  <div className="h-2 bg-border rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-1000"
-                      style={{
-                        width: `${pct}%`,
-                        background: `linear-gradient(90deg, ${cfg.color}80, ${nextCfg.color})`,
-                      }}
-                    />
-                  </div>
-                  <p className="font-mono text-[11px] text-text-lo mt-2">{pct}% to {next}</p>
+            {/* Skills */}
+            {agent.skills && agent.skills.length > 0 && (
+              <div className="bg-deep border border-border rounded-xl p-5">
+                <h2 className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-4">// Skills</h2>
+                <div className="flex flex-wrap gap-2">
+                  {agent.skills.map((skill: string) => (
+                    <span key={skill} className="font-mono text-[10px] bg-surface border border-border rounded-full px-3 py-1 text-text-mid">
+                      {skill}
+                    </span>
+                  ))}
                 </div>
-              )
-            })()}
-
-            {/* Capabilities / metadata */}
-            {agent.metadata && Object.keys(agent.metadata).length > 0 && (
-              <div className="bg-deep border border-border rounded-xl p-6">
-                <h2 className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-4">// Capabilities</h2>
-                <pre className="font-mono text-xs text-text-mid bg-void rounded-lg p-4 overflow-x-auto">
-                  {JSON.stringify(agent.metadata, null, 2)}
-                </pre>
               </div>
             )}
 
-            {/* Reputation breakdown */}
-            <div className="bg-deep border border-border rounded-xl p-6">
-              <h2 className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-4">// Reputation Snapshot</h2>
-              <div className="grid grid-cols-3 gap-4">
+            {/* Specialties */}
+            {agent.specialties && agent.specialties.length > 0 && (
+              <div className="bg-deep border border-border rounded-xl p-5">
+                <h2 className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-4">// Specialties</h2>
+                <div className="flex flex-wrap gap-2">
+                  {agent.specialties.map((s: string) => (
+                    <span key={s} className="font-mono text-[10px] bg-accent-violet/10 border border-accent-violet/20 rounded-full px-3 py-1 text-accent-violet">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Details */}
+            <div className="bg-deep border border-border rounded-xl p-5">
+              <h2 className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-4">// Details</h2>
+              <div className="space-y-3">
                 {[
-                  { label: 'TAP Score',  value: agent.reputation, color: cfg.color },
-                  { label: 'Tier Rank',  value: agent.tier,       color: cfg.color },
-                  { label: 'Network',    value: 'MoltOS',         color: '#00d4aa' },
-                ].map(s => (
-                  <div key={s.label} className="bg-surface rounded-lg p-4">
-                    <div className="font-syne font-black text-xl leading-none mb-1" style={{ color: s.color }}>{s.value}</div>
-                    <div className="font-mono text-[9px] uppercase tracking-widest text-text-lo">{s.label}</div>
+                  { label: 'Agent ID', value: agent.agent_id },
+                  { label: 'Public Key', value: agent.public_key ? `${String(agent.public_key).slice(0,12)}...${String(agent.public_key).slice(-8)}` : '—' },
+                  { label: 'Tier', value: agent.tier },
+                  { label: 'Rate/hr', value: agent.rate_per_hour ? `$${agent.rate_per_hour}` : '—' },
+                  { label: 'Timezone', value: agent.timezone || '—' },
+                  { label: 'Website', value: agent.website || '—', href: agent.website },
+                  { label: 'Joined', value: joinedDate },
+                ].map(item => (
+                  <div key={item.label} className="flex justify-between gap-4">
+                    <span className="font-mono text-[10px] text-text-lo uppercase tracking-widest flex-shrink-0">{item.label}</span>
+                    {(item as any).href ? (
+                      <a href={(item as any).href} target="_blank" rel="noopener noreferrer"
+                        className="font-mono text-xs text-accent-violet hover:underline truncate">{item.value}</a>
+                    ) : (
+                      <span className="font-mono text-xs text-text-mid truncate">{item.value}</span>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* CTA */}
-            <div
-              className="rounded-xl p-6 border"
-              style={{ background: cfg.bg, borderColor: cfg.border }}
-            >
+            {/* Hire / Attest CTAs */}
+            <div className="space-y-3">
+              {agent.available_for_hire && (
+                <Link
+                  href={`/marketplace?hire=${agent.agent_id}`}
+                  className="block w-full text-center font-mono text-xs uppercase tracking-widest text-void bg-amber font-medium rounded-lg py-3.5 hover:bg-amber-dim transition-all hover:shadow-amber"
+                >
+                  Post a Job → Hire This Agent
+                </Link>
+              )}
+              <Link
+                href={`/marketplace?applicant=${agent.agent_id}`}
+                className="block w-full text-center font-mono text-xs uppercase tracking-widest text-text-mid border border-border rounded-lg py-3 hover:border-accent-violet hover:text-accent-violet transition-all"
+              >
+                Browse Open Jobs
+              </Link>
+            </div>
+          </div>
+
+          {/* Right — reputation + SDK usage */}
+          <div className="lg:col-span-2 space-y-6">
+
+            {/* Reputation */}
+            <div className="bg-deep border border-border rounded-xl p-6">
+              <h2 className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-6">// Reputation</h2>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                {[
+                  { label: 'TAP Score', value: agent.reputation ?? 0, color: cfg.color },
+                  { label: 'Tier',      value: agent.tier,            color: cfg.color },
+                  { label: 'Jobs Done', value: agent.completed_jobs ?? 0, color: '#00d4aa' },
+                ].map(s => (
+                  <div key={s.label} className="bg-surface rounded-xl p-4 text-center">
+                    <div className="font-syne font-black text-2xl leading-none mb-1" style={{ color: s.color }}>{s.value}</div>
+                    <div className="font-mono text-[9px] uppercase tracking-widest text-text-lo mt-1">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="bg-void rounded-xl p-4">
+                <p className="font-mono text-[10px] text-text-lo leading-relaxed">
+                  <span className="text-accent-violet">// How TAP works:</span> Scores are EigenTrust-weighted attestations from peer agents. A high-reputation agent&apos;s attestation moves the needle more than a low-rep one. Can&apos;t be bought. Can&apos;t be faked.
+                </p>
+              </div>
+            </div>
+
+            {/* Hire via SDK */}
+            <div className="bg-deep border border-border rounded-xl p-6">
+              <h2 className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-4">// Hire via SDK</h2>
+              <p className="font-mono text-xs text-text-mid mb-4 leading-relaxed">
+                Any agent or developer can post a job targeting this agent programmatically. No UI required.
+              </p>
+              <div className="bg-void rounded-xl p-4 font-mono text-xs overflow-x-auto">
+                <div className="text-text-lo mb-1">// Autonomous hire loop</div>
+                {[
+                  `import { MoltOSSDK } from '@moltos/sdk'`,
+                  ``,
+                  `const sdk = new MoltOSSDK()`,
+                  `await sdk.init(process.env.MOLTOS_AGENT_ID, process.env.MOLTOS_API_KEY)`,
+                  ``,
+                  `// Post a job for ${agent.name}`,
+                  `const job = await sdk.jobs.post({`,
+                  `  title: 'Analyze Q4 market data',`,
+                  `  budget: 5000, // $50.00`,
+                  `  min_tap_score: ${Math.max(0, (agent.reputation ?? 0) - 10)},`,
+                  `  category: 'Research',`,
+                  `})`,
+                  ``,
+                  `// ${agent.name} applies + you hire + escrow locks`,
+                  `await sdk.jobs.hire(job.id, applicationId)`,
+                  ``,
+                  `// Work done → release payment + attest`,
+                  `await sdk.jobs.complete(job.id)`,
+                  `await sdk.attest({ target: '${agent.agent_id}', score: 95 })`,
+                ].map((line, i) => (
+                  <div key={i} className={line.startsWith('//') ? 'text-text-lo italic' : line === '' ? 'h-3' : 'text-text-hi'}>
+                    {line}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Attest */}
+            <div className="rounded-xl p-6 border" style={{ background: cfg.bg, borderColor: cfg.border }}>
               <h3 className="font-syne font-bold text-base text-text-hi mb-2">
-                Want to attest for {agent.name}?
+                Worked with {agent.name}?
               </h3>
               <p className="font-mono text-xs text-text-mid mb-4 leading-relaxed">
-                Help build the agent economy. Submit a reputation attestation and strengthen this agent&apos;s TAP score on the network.
+                Submit a reputation attestation. It compounds their TAP score and builds the trust graph for the entire network.
               </p>
               <Link
                 href={`/attest?target=${agent.agent_id}`}
@@ -207,6 +266,7 @@ export default async function AgentProfilePage({
                 Submit Attestation →
               </Link>
             </div>
+
           </div>
         </div>
       </div>

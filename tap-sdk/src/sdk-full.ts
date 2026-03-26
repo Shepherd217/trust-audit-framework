@@ -30,8 +30,12 @@ export class MoltOSSDK {
   private apiKey: string | null = null;
   private agentId: string | null = null;
 
+  /** Marketplace namespace — post jobs, apply, hire, complete, search */
+  public jobs: MarketplaceSDK;
+
   constructor(apiUrl: string = MOLTOS_API) {
     this.apiUrl = apiUrl;
+    this.jobs = new MarketplaceSDK(this);
   }
 
   /**
@@ -625,6 +629,219 @@ export class MoltOSSDK {
         snapshot_id: snapshotId,
       }),
     });
+  }
+}
+
+
+// ─── Marketplace Namespace ────────────────────────────────────────────────────
+
+export interface JobPostParams {
+  title: string
+  description: string
+  budget: number         // in cents, min 500 ($5.00)
+  category?: string
+  min_tap_score?: number
+  skills_required?: string
+}
+
+export interface JobSearchParams {
+  category?: string
+  min_tap_score?: number
+  max_budget?: number
+  min_budget?: number
+  status?: string
+  limit?: number
+  offset?: number
+}
+
+export interface ApplyParams {
+  job_id: string
+  proposal: string
+  estimated_hours?: number
+}
+
+/**
+ * Marketplace namespace — agent-to-agent job economy
+ * Access via sdk.jobs.*
+ */
+export class MarketplaceSDK {
+  private sdk: MoltOSSDK
+
+  constructor(sdk: MoltOSSDK) {
+    this.sdk = sdk
+  }
+
+  private req(path: string, options?: any) {
+    // Access private request method via any cast
+    return (this.sdk as any).request(path, options)
+  }
+
+  /**
+   * List open jobs. Filter by category, TAP score, budget.
+   */
+  async list(params: JobSearchParams = {}): Promise<{
+    jobs: any[]
+    total: number
+    avg_budget: number
+  }> {
+    const q = new URLSearchParams()
+    if (params.category && params.category !== 'All') q.set('category', params.category)
+    if (params.min_tap_score) q.set('min_tap', String(params.min_tap_score))
+    if (params.max_budget) q.set('max_budget', String(params.max_budget))
+    if (params.limit) q.set('limit', String(params.limit))
+    return this.req(`/marketplace/jobs?${q.toString()}`)
+  }
+
+  /**
+   * Post a new job as this agent.
+   * Requires keypair for signing.
+   */
+  async post(params: JobPostParams): Promise<{ job: any; success: boolean }> {
+    const agentId = (this.sdk as any).agentId
+    if (!agentId) throw new Error('Not initialized. Call sdk.init() first.')
+
+    const keypair = await (this.sdk as any).getOrCreateKeypair?.()
+    const timestamp = Date.now()
+    const payload = { title: params.title, description: params.description, budget: params.budget, timestamp }
+
+    // Sign the payload
+    let signature = 'sdk-placeholder'
+    let publicKey = ''
+    try {
+      const { signChallenge, exportPublicKey } = await import('./crypto.js')
+      const kp = await (this.sdk as any).loadKeypair?.()
+      if (kp) {
+        const sig = await signChallenge(JSON.stringify(payload), kp.privateKey)
+        signature = sig.signature
+        publicKey = await exportPublicKey(kp.publicKey)
+      }
+    } catch { /* keypair not available, will use api key auth */ }
+
+    return this.req('/marketplace/jobs', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...params,
+        hirer_id: agentId,
+        hirer_public_key: publicKey || agentId,
+        hirer_signature: signature,
+        timestamp,
+      }),
+    })
+  }
+
+  /**
+   * Apply to an open job.
+   */
+  async apply(params: ApplyParams): Promise<{ success: boolean; application: any }> {
+    const agentId = (this.sdk as any).agentId
+    if (!agentId) throw new Error('Not initialized. Call sdk.init() first.')
+
+    return this.req(`/marketplace/jobs/${params.job_id}/apply`, {
+      method: 'POST',
+      body: JSON.stringify({
+        applicant_id: agentId,
+        proposal: params.proposal,
+        estimated_hours: params.estimated_hours,
+      }),
+    })
+  }
+
+  /**
+   * Get details for a specific job.
+   */
+  async get(jobId: string): Promise<any> {
+    return this.req(`/marketplace/jobs/${jobId}`)
+  }
+
+  /**
+   * Hire an applicant for a job you posted.
+   * Returns a Stripe payment intent for escrow.
+   */
+  async hire(jobId: string, applicationId: string): Promise<{
+    success: boolean
+    contract: any
+    payment_intent: { id: string; client_secret: string } | null
+  }> {
+    const agentId = (this.sdk as any).agentId
+    if (!agentId) throw new Error('Not initialized')
+
+    const timestamp = Date.now()
+    const payload = { job_id: jobId, application_id: applicationId, timestamp }
+
+    let signature = 'sdk-placeholder'
+    let publicKey = agentId
+    try {
+      const { signChallenge, exportPublicKey } = await import('./crypto.js')
+      const kp = await (this.sdk as any).loadKeypair?.()
+      if (kp) {
+        const sig = await signChallenge(JSON.stringify(payload), kp.privateKey)
+        signature = sig.signature
+        publicKey = await exportPublicKey(kp.publicKey)
+      }
+    } catch { /* keypair not available */ }
+
+    return this.req(`/marketplace/jobs/${jobId}/hire`, {
+      method: 'POST',
+      body: JSON.stringify({
+        application_id: applicationId,
+        hirer_public_key: publicKey,
+        hirer_signature: signature,
+        timestamp,
+      }),
+    })
+  }
+
+  /**
+   * Mark a job as complete (worker calls this).
+   */
+  async complete(jobId: string, result?: string): Promise<{ success: boolean }> {
+    return this.req(`/marketplace/jobs/${jobId}/complete`, {
+      method: 'POST',
+      body: JSON.stringify({ result }),
+    })
+  }
+
+  /**
+   * File a dispute for a job.
+   */
+  async dispute(jobId: string, reason: string): Promise<{ success: boolean; dispute_id: string }> {
+    return this.req(`/marketplace/jobs/${jobId}/dispute`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    })
+  }
+
+  /**
+   * Get this agent's own marketplace activity.
+   * Posted jobs, applications, and contracts.
+   */
+  async myActivity(type: 'all' | 'posted' | 'applied' | 'contracts' = 'all'): Promise<{
+    agent_id: string
+    posted?: any[]
+    applied?: any[]
+    contracts?: any[]
+    posted_count?: number
+    applied_count?: number
+    contracts_count?: number
+  }> {
+    return this.req(`/marketplace/my?type=${type}`)
+  }
+
+  /**
+   * Search jobs — alias for list() with keyword support
+   */
+  async search(query: string, params: JobSearchParams = {}): Promise<{ jobs: any[]; total: number }> {
+    // Client-side filter until server-side search is added
+    const results = await this.list(params)
+    const q = query.toLowerCase()
+    return {
+      ...results,
+      jobs: results.jobs.filter((j: any) =>
+        j.title?.toLowerCase().includes(q) ||
+        j.description?.toLowerCase().includes(q) ||
+        j.skills_required?.toLowerCase().includes(q)
+      ),
+    }
   }
 }
 

@@ -18,7 +18,7 @@
  */
 
 // Version
-export const VERSION = '0.12.0';
+export const VERSION = '0.14.0';
 
 // Legacy TAP SDK (maintained for compatibility)
 export { TAPClient } from './index-legacy.js';
@@ -34,6 +34,7 @@ export * from './crypto.js';
 
 // Full MoltOS SDK
 export { MoltOSSDK, MoltOS } from './sdk-full.js';
+export type { MarketplaceSDK, JobPostParams, JobSearchParams, ApplyParams } from './sdk-full.js';
 
 // MoltOS Types
 export type { 
