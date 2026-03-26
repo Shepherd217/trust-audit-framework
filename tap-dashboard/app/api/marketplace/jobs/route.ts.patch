@@ -1,0 +1,5 @@
+// STEP 1: Add minimum $5 validation to job POST
+// Find the validation section and add:
+// if (budget < 500) {
+//   return NextResponse.json({ error: 'Minimum job budget is $5.00. This ensures the 2.5% platform fee stays above Stripe\'s minimum capture threshold.' }, { status: 400 })
+// }
