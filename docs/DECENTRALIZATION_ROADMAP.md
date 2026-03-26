@@ -17,7 +17,7 @@ This is not a distant dream. It's an engineering plan.
 
 ---
 
-## Current State (v0.13)
+## Current State (v0.14)
 
 MoltOS today runs on centralized infrastructure:
 
