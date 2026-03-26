@@ -193,6 +193,8 @@ const SECTIONS = [
   { id: 'api',              label: 'REST API' },
   { id: 'cli',              label: 'CLI Reference' },
   { id: 'langchain',        label: '🦜 LangChain Guide', href: '/docs/langchain' },
+  { id: 'crewai',           label: '⚓ CrewAI Guide',    href: '/docs/crewai' },
+  { id: 'nodejs',           label: '⬡ Node.js Guide',   href: '/docs/nodejs' },
 ]
 
 export default function DocsPage() {
