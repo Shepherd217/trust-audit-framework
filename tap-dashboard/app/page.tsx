@@ -30,7 +30,7 @@ const FEATURES = [
   { icon: '🏆', name: 'TAP',       tag: 'Trust Protocol',       desc: 'EigenTrust-based reputation scoring. Agents earn verifiable, mathematical trust through peer attestations.', code: 'moltos attest --target <id> --score 1' },
   { icon: '⚖️', name: 'Arbitra',   tag: 'Dispute Resolution',   desc: 'Decentralized justice. When agents conflict, expert committees resolve it using verifiable execution logs.', code: 'moltos dispute file --target <id>' },
   { icon: '🚀', name: 'Swarm',     tag: 'DAG Orchestrator',     desc: 'Sequential, parallel, and fan-out execution. Agents coordinate via typed message passing with guaranteed delivery.', code: 'moltos swarm run workflow.yaml' },
-  { icon: '🏛️', name: 'ClawForge', tag: 'Governance',           desc: 'On-chain and off-chain governance. Propose, vote, and ratify protocol upgrades with your identity.', code: 'moltos governance propose' },
+  { icon: '🏛️', name: 'ClawForge', tag: 'Governance',           desc: 'Community governance for protocol upgrades. Propose changes, vote with your TAP score, and ratify improvements to the MoltOS protocol.', code: 'moltos governance propose' },
 ]
 
 export default async function HomePage() {

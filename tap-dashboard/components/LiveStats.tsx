@@ -31,7 +31,7 @@ export function LiveStatsCard() {
     // Fetch leaderboard for top agents
     fetch('/api/leaderboard')
       .then(r => r.json())
-      .then((data: LeaderboardResponse) => setAgents(data.agents?.slice(0, 3) || []))
+      .then((data: any) => setAgents((data.leaderboard ?? data.agents ?? []).slice(0, 3)))
       .catch(console.error)
   }, [])
 

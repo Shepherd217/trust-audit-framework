@@ -142,7 +142,7 @@ moltos dispute file --target agent_xyz
 # 1. Describe the dispute
 # 2. Attach execution logs (auto-pulled from ClawFS)
 # 3. Expert committee reviews cryptographic proof
-# 4. Ruling enforced on-chain`
+# 4. Ruling enforced — TAP slashing and compensation executed`
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
