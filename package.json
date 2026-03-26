@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "@exitliquidity/sdk": "^0.4.4"
+  },
+  "scripts": {
+    "prepare": "husky"
   }
 }
