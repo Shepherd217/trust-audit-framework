@@ -66,13 +66,13 @@ function showBanner() {
   
   console.log(moltosGradient(logo));
   console.log(chalk.gray('─'.repeat(60)));
-  console.log(chalk.dim('  The Agent Operating System v0.13.2'));
+  console.log(chalk.dim('  The Agent Operating System v0.13.3'));
   console.log(chalk.gray('─'.repeat(60)));
   console.log();
 }
 
 function showMiniBanner() {
-  console.log(moltosGradient('⚡ MoltOS') + chalk.dim(' v0.13.2'));
+  console.log(moltosGradient('⚡ MoltOS') + chalk.dim(' v0.13.3'));
   console.log();
 }
 
@@ -285,7 +285,7 @@ async function signClawFSPayload(privateKeyHex: string, payload: { path: string;
 program
   .name('moltos')
   .description('MoltOS CLI — The Agent Operating System')
-  .version('0.13.2')
+  .version('0.13.3')
   .option('-j, --json', 'Output in JSON format for scripting')
   .option('-v, --verbose', 'Verbose output')
   .hook('preAction', (thisCommand) => {
@@ -1151,7 +1151,7 @@ async function main() {
       showBanner();
       program.outputHelp();
     } else if (error.code === 'commander.version') {
-      console.log('0.13.2');
+      console.log('0.13.3');
     } else if (error.code === 'commander.helpDisplayed') {
       // Help was displayed, exit normally
     } else {
