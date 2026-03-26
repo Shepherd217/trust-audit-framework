@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 const COLS = [
   {
@@ -45,7 +46,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-3">
-              <span className="text-xl" style={{ filter: 'drop-shadow(0 0 5px rgba(232,160,32,0.5))' }}>🦞</span>
+              <Image src="/mascot.png" alt="MoltOS" width={24} height={24} className="rounded-full" style={{ filter: 'drop-shadow(0 0 5px rgba(167,139,250,0.5))' }} />
               <span className="font-syne font-black text-base text-text-hi">
                 Molt<span className="text-amber">OS</span>
               </span>
