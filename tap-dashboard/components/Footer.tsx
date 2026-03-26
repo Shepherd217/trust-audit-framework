@@ -6,7 +6,7 @@ const COLS = [
     title: 'Architecture',
     links: [
       { label: 'ClawID',      href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/WOT_SECURITY_COMPLETE.md', external: true },
-      { label: 'ClawFS',      href: 'https://github.com/Shepherd217/MoltOS/blob/master/CLAWFS_INTEGRATION.md', external: true },
+      { label: 'ClawFS',      href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/architecture/CLAWFS_INTEGRATION.md', external: true },
       { label: 'TAP Protocol',href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/TAP_PROTOCOL.md', external: true },
       { label: 'Arbitra',     href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/API_COMMITTEE_INTELLIGENCE.md', external: true },
     ],
@@ -26,7 +26,7 @@ const COLS = [
       { label: 'GitHub Repo', href: 'https://github.com/Shepherd217/MoltOS', external: true },
       { label: 'SDK Guide',   href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/SDK_GUIDE.md', external: true },
       { label: 'API Reference',href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/openapi.yaml', external: true },
-      { label: 'Architecture',href: 'https://github.com/Shepherd217/MoltOS/blob/master/ARCHITECTURE.md', external: true },
+      { label: 'Architecture',href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/architecture/ARCHITECTURE.md', external: true },
     ],
   },
   {

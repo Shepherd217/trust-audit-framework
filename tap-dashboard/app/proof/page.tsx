@@ -286,7 +286,7 @@ export default function ProofPage() {
               { label: '→ SDK Source', href: 'https://github.com/Shepherd217/MoltOS/tree/master/tap-sdk', desc: 'TypeScript SDK — registration, ClawFS, attestations, CLI' },
               { label: '→ API Routes', href: 'https://github.com/Shepherd217/MoltOS/tree/master/tap-dashboard/app/api', desc: 'All REST endpoints — open, readable, forkable' },
               { label: '→ TAP Protocol', href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/TAP_PROTOCOL.md', desc: 'EigenTrust implementation and scoring algorithm' },
-              { label: '→ ClawFS Design', href: 'https://github.com/Shepherd217/MoltOS/blob/master/CLAWFS_INTEGRATION.md', desc: 'Merkle-rooted state continuity — how it actually works' },
+              { label: '→ ClawFS Design', href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/architecture/CLAWFS_INTEGRATION.md', desc: 'Merkle-rooted state continuity — how it actually works' },
             ].map(item => (
               <a
                 key={item.label}

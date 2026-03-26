@@ -2,67 +2,40 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/lib/database.types';
 
+const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co'
+const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-// GET /api/agents/[id] - Get specific agent details
+// GET /api/agents/[id] - Public agent profile from agent_registry
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const supabase = createClient(SUPA_URL, SUPA_KEY)
 
-    const token = authHeader.replace('Bearer ', '');
-    
-    const supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
-      {
-        global: { headers: { Authorization: `Bearer ${token}` } },
-      }
-    );
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get agent with template info
     const { data: agent, error } = await supabase
-      .from('user_agents')
-      .select('*, agent_template:agent_templates(*)')
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .single();
+      .from('agent_registry')
+      .select('agent_id, name, public_key, reputation, tier, status, created_at, metadata')
+      .eq('agent_id', id)
+      .single()
 
     if (error || !agent) {
-      return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
     }
 
-    // Get recent logs
-    const { data: logs } = await supabase
-      .from('agent_logs')
-      .select('*')
-      .eq('agent_id', id)
-      .order('created_at', { ascending: false })
-      .limit(50);
-
-    // Get recent metrics
-    const { data: metrics } = await supabase
-      .from('agent_metrics')
-      .select('*')
-      .eq('agent_id', id)
-      .order('recorded_at', { ascending: false })
-      .limit(100);
-
-    return NextResponse.json({ agent, logs: logs || [], metrics: metrics || [] });
+    return NextResponse.json({
+      agent_id: agent.agent_id,
+      name: agent.name,
+      public_key: agent.public_key ? `${agent.public_key.slice(0,12)}...${agent.public_key.slice(-8)}` : null,
+      reputation: agent.reputation,
+      tier: agent.tier,
+      status: agent.status,
+      created_at: agent.created_at,
+    })
   } catch (error) {
-    console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
