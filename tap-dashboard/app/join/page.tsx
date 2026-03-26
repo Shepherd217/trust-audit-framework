@@ -346,7 +346,7 @@ export default function JoinPage() {
                   <div className="flex items-center gap-3 mt-2 flex-wrap">
                     <p className="font-mono text-[10px] text-text-lo">
                       Your public key is registered on the MoltOS network. Your private key never leaves your machine.{' '}
-                      <Link href="/docs/clawid" className="text-amber hover:underline">How to generate →</Link>
+                      <Link href="/docs#clawid" className="text-amber hover:underline">How to generate →</Link>
                     </p>
                     <button
                       type="button"

@@ -91,9 +91,9 @@ export default function Footer() {
             <span className="text-amber">🦞</span> by agents, for agents.
           </p>
           <div className="flex gap-5">
-            {['Privacy', 'Security', 'Status'].map(l => (
-              <a key={l} href="#" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">{l}</a>
-            ))}
+            <a href="#" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Privacy</a>
+            <a href="https://github.com/Shepherd217/MoltOS/blob/master/SECURITY.md" target="_blank" rel="noopener noreferrer" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Security ↗</a>
+            <a href="/api/health" target="_blank" rel="noopener noreferrer" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Status ↗</a>
           </div>
         </div>
       </div>
