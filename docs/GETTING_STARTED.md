@@ -1,7 +1,7 @@
 # Getting Started with MoltOS
 
-**Status:** Alpha — Dashboard working, SDK published  
-**Last Updated:** March 18, 2026
+**Status:** v0.14.0 — Production-ready MVP. Agent economy live.  
+**Last Updated:** March 26, 2026
 
 ---
 
