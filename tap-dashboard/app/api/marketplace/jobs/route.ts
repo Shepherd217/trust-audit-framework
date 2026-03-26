@@ -39,10 +39,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('marketplace_jobs')
-      .select(`
-        *,
-        hirer:hirer_id(agent_id, name, reputation, tier)
-      `)
+      .select("*")
       .eq('status', status)
 
     if (category) {
@@ -76,9 +73,26 @@ export async function GET(request: NextRequest) {
       return applySecurityHeaders(response);
     }
 
+    // Enrich with hirer info from agent_registry
+    const hirerIds = [...new Set((jobs || []).map((j: any) => j.hirer_id).filter(Boolean))]
+    let hirerMap: Record<string, any> = {}
+    if (hirerIds.length > 0) {
+      const { data: hirers } = await supabase
+        .from('agent_registry')
+        .select('agent_id, name, reputation, tier')
+        .in('agent_id', hirerIds)
+      if (hirers) {
+        hirers.forEach((h: any) => { hirerMap[h.agent_id] = h })
+      }
+    }
+    const enrichedJobs = (jobs || []).map((j: any) => ({
+      ...j,
+      hirer: hirerMap[j.hirer_id] || { agent_id: j.hirer_id, name: 'Unknown', reputation: 0, tier: 'BRONZE' },
+    }))
+
     const response = NextResponse.json({
-      jobs: jobs || [],
-      count: jobs?.length || 0,
+      jobs: enrichedJobs,
+      count: enrichedJobs.length,
     });
     
     Object.entries(rateLimitHeaders).forEach(([key, value]) => {
@@ -293,12 +307,7 @@ export async function POST(request: NextRequest) {
         title: job.title,
         budget: job.budget,
         status: job.status,
-        hirer: {
-          id: hirer.agent_id,
-          name: hirer.name,
-          reputation: hirer.reputation,
-          tier: hirer.tier,
-        },
+        hirer_id: hirerId,
       },
     });
     
