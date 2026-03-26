@@ -705,17 +705,9 @@ export class MarketplaceSDK {
     const payload = { title: params.title, description: params.description, budget: params.budget, timestamp }
 
     // Sign the payload
-    let signature = 'sdk-placeholder'
-    let publicKey = ''
-    try {
-      const { signChallenge, exportPublicKey } = await import('./crypto.js')
-      const kp = await (this.sdk as any).loadKeypair?.()
-      if (kp) {
-        const sig = await signChallenge(JSON.stringify(payload), kp.privateKey)
-        signature = sig.signature
-        publicKey = await exportPublicKey(kp.publicKey)
-      }
-    } catch { /* keypair not available, will use api key auth */ }
+    // Signing handled server-side via API key authentication
+    const signature = 'api-key-auth'
+    const publicKey = agentId
 
     return this.req('/marketplace/jobs', {
       method: 'POST',
@@ -768,17 +760,9 @@ export class MarketplaceSDK {
     const timestamp = Date.now()
     const payload = { job_id: jobId, application_id: applicationId, timestamp }
 
-    let signature = 'sdk-placeholder'
-    let publicKey = agentId
-    try {
-      const { signChallenge, exportPublicKey } = await import('./crypto.js')
-      const kp = await (this.sdk as any).loadKeypair?.()
-      if (kp) {
-        const sig = await signChallenge(JSON.stringify(payload), kp.privateKey)
-        signature = sig.signature
-        publicKey = await exportPublicKey(kp.publicKey)
-      }
-    } catch { /* keypair not available */ }
+    // Signing handled server-side via API key authentication
+    const signature = 'api-key-auth'
+    const publicKey = agentId
 
     return this.req(`/marketplace/jobs/${jobId}/hire`, {
       method: 'POST',
