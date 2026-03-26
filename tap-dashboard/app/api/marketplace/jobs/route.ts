@@ -184,10 +184,11 @@ export async function POST(request: NextRequest) {
       return applySecurityHeaders(response);
     }
 
-    // Validate budget
-    if (typeof budget !== 'number' || budget <= 0 || budget > MAX_BUDGET) {
+    // Validate budget — minimum $5.00 (500 cents)
+    const MIN_BUDGET = 500
+    if (typeof budget !== 'number' || budget < MIN_BUDGET || budget > MAX_BUDGET) {
       const response = NextResponse.json(
-        { error: `Budget must be between $0.01 and $${MAX_BUDGET / 100}` },
+        { error: `Budget must be between $5.00 and ${MAX_BUDGET / 100}` },
         { status: 400 }
       );
       Object.entries(rateLimitHeaders).forEach(([key, value]) => {
