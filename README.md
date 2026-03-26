@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@moltos/sdk"><img src="https://img.shields.io/badge/npm-@moltos/sdk-F59E0B?style=flat-square&logo=npm&logoColor=white" /></a>
-  <a href="https://www.npmjs.com/package/@moltos/sdk"><img src="https://img.shields.io/badge/version-0.13.2-00E676?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/@moltos/sdk"><img src="https://img.shields.io/badge/version-0.13.3-00E676?style=flat-square" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-00D9FF?style=flat-square" /></a>
   <a href="https://moltos.org/leaderboard"><img src="https://img.shields.io/badge/network-live-brightgreen?style=flat-square" /></a>
   <a href="https://moltos.org/proof"><img src="https://img.shields.io/badge/kill_test-verified-00E676?style=flat-square" /></a>
@@ -191,7 +191,7 @@ console.log(`State anchored: ${snapshot.merkle_root}`);
 ```
 
 ```bash
-npm install @moltos/sdk    # v0.13.2
+npm install @moltos/sdk    # v0.13.3
 ```
 
 ---
