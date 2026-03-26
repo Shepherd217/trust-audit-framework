@@ -266,16 +266,23 @@ export default async function HomePage() {
                 { name: 'OpenClaw',   status: 'Supported ✓' },
                 { name: 'NemoClaw',  status: 'Supported ✓' },
                 { name: 'RunClaw',   status: 'Supported ✓' },
-                { name: 'LangChain', status: 'Supported ✓' },
+                { name: 'LangChain', status: 'Guide →', href: '/docs/langchain' },
                 { name: 'AutoGPT',   status: 'Supported ✓' },
                 { name: 'CrewAI',    status: 'Supported ✓' },
                 { name: 'Custom',    status: 'Supported ✓' },
                 { name: 'Any SDK',   status: 'If it runs npm ✓' },
-              ].map(item => (
-                <div key={item.name} className="flex items-center justify-between bg-deep border border-border rounded-lg px-3 py-2.5 hover:border-accent-violet/40 transition-colors">
-                  <span className="font-mono text-xs text-text-hi">{item.name}</span>
-                  <span className="font-mono text-[10px] text-accent-violet">{item.status}</span>
-                </div>
+              ].map((item: any) => (
+                item.href ? (
+                  <Link key={item.name} href={item.href} className="flex items-center justify-between bg-deep border border-amber/30 rounded-lg px-3 py-2.5 hover:border-amber transition-colors group">
+                    <span className="font-mono text-xs text-text-hi">{item.name}</span>
+                    <span className="font-mono text-[10px] text-amber group-hover:text-amber">{item.status}</span>
+                  </Link>
+                ) : (
+                  <div key={item.name} className="flex items-center justify-between bg-deep border border-border rounded-lg px-3 py-2.5 hover:border-accent-violet/40 transition-colors">
+                    <span className="font-mono text-xs text-text-hi">{item.name}</span>
+                    <span className="font-mono text-[10px] text-accent-violet">{item.status}</span>
+                  </div>
+                )
               ))}
             </div>
           </div>

@@ -192,6 +192,7 @@ const SECTIONS = [
   { id: 'sdk',              label: 'SDK Reference' },
   { id: 'api',              label: 'REST API' },
   { id: 'cli',              label: 'CLI Reference' },
+  { id: 'langchain',        label: '🦜 LangChain Guide', href: '/docs/langchain' },
 ]
 
 export default function DocsPage() {
@@ -204,14 +205,24 @@ export default function DocsPage() {
           <aside className="hidden lg:block w-52 flex-shrink-0 sticky top-24 h-fit">
             <div className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-3">// Docs</div>
             <nav className="space-y-0.5">
-              {SECTIONS.map(s => (
-                <a
-                  key={s.id}
-                  href={`#${s.id}`}
-                  className="block font-mono text-xs text-text-mid hover:text-text-hi py-1.5 px-2 rounded hover:bg-surface transition-all"
-                >
-                  {s.label}
-                </a>
+              {SECTIONS.map((s: any) => (
+                s.href ? (
+                  <a
+                    key={s.id}
+                    href={s.href}
+                    className="block font-mono text-xs text-accent-violet hover:text-text-hi py-1.5 px-2 rounded hover:bg-surface transition-all"
+                  >
+                    {s.label}
+                  </a>
+                ) : (
+                  <a
+                    key={s.id}
+                    href={`#${s.id}`}
+                    className="block font-mono text-xs text-text-mid hover:text-text-hi py-1.5 px-2 rounded hover:bg-surface transition-all"
+                  >
+                    {s.label}
+                  </a>
+                )
               ))}
             </nav>
             <div className="mt-6 pt-6 border-t border-border space-y-2">
