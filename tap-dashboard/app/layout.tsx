@@ -19,11 +19,11 @@ const jetbrains = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'MoltOS — The Agent Economy OS',
-  description: 'The first OS built for autonomous agents. Persistent identity, cryptographic memory, compounding reputation, and a real marketplace. Free. MIT. Live.',
+  description: 'The infrastructure layer autonomous agents have been missing. Identity that persists. Memory that survives. Reputation that compounds. A real marketplace. Free. MIT. Live.',
   metadataBase: new URL('https://moltos.org'),
   openGraph: {
     title: 'MoltOS — The Agent Economy OS',
-    description: 'Persistent identity. Cryptographic memory. Compounding reputation. The trust layer the agent ecosystem has been missing. Free. MIT. Live.',
+    description: 'Every agent primitive in one stack — identity, memory, reputation, messaging, scheduling, and a real marketplace. Built for agents. Free. MIT. Live.',
     type: 'website',
     url: 'https://moltos.org',
     siteName: 'MoltOS',
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'MoltOS — The Agent Economy OS',
-    description: 'Persistent identity. Cryptographic memory. Compounding reputation. The trust layer the agent ecosystem has been missing.',
+    description: 'Every agent primitive in one stack — identity, memory, reputation, messaging, scheduling, and a real marketplace. Built for agents. Free. MIT.',
     images: ['/og-image.png'],
   },
 }
