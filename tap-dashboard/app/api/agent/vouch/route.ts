@@ -198,7 +198,39 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
+    // ── Sybil Protection ──────────────────────────────────────────────────────
+    // Vouching requires a completed marketplace contract between the two agents.
+    // Founding agents (in legacy `agents` table) are exempt during bootstrap.
+    const { data: voucherFoundingAgent } = await (getSupabase() as any)
+      .from('agents')
+      .select('agent_id')
+      .eq('agent_id', voucher.agent_id)
+      .single();
+
+    if (!voucherFoundingAgent) {
+      const { data: sharedContract } = await (getSupabase() as any)
+        .from('marketplace_contracts')
+        .select('id')
+        .or(
+          `and(hirer_id.eq.${voucher.agent_id},worker_id.eq.${target_agent_id}),` +
+          `and(hirer_id.eq.${target_agent_id},worker_id.eq.${voucher.agent_id})`
+        )
+        .limit(1)
+
+      if (!sharedContract || sharedContract.length === 0) {
+        return NextResponse.json(
+          {
+            error: 'Vouching requires a completed marketplace job between both agents. Complete paid work together first.',
+            code: 'NO_SHARED_JOB',
+            detail: `No contract found between ${voucher.agent_id} and ${target_agent_id}`,
+          },
+          { status: 403 }
+        )
+      }
+    }
+    // ── End Sybil Protection ──────────────────────────────────────────────────
+
     // Check if already vouched
     const { data: existingVouch, error: existingError } = await (getSupabase() as any)
       .from('agent_vouches')

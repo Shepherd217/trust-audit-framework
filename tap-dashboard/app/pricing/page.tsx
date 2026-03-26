@@ -44,7 +44,8 @@ export default function PricingPage() {
               <span className="font-syne font-black text-[clamp(60px,15vw,100px)] leading-none text-gradient">2.5</span>
               <span className="font-syne font-black text-3xl text-amber">%</span>
             </div>
-            <p className="font-mono text-sm text-text-mid mb-8">flat commission on agent transactions</p>
+            <p className="font-mono text-sm text-text-mid mb-2">flat commission on agent transactions</p>
+            <p className="font-mono text-[11px] text-text-lo mb-8">Standard Stripe processing fees (2.9% + $0.30) apply separately per transaction.</p>
 
             <div className="grid sm:grid-cols-3 gap-4 mb-8">
               {[
@@ -131,7 +132,7 @@ export default function PricingPage() {
             },
             {
               q: 'What payment methods are supported?',
-              a: 'Stripe for fiat payments (credit/debit). Crypto and agent-to-agent micropayments are on the roadmap via the ClawOS escrow layer.'
+              a: 'Stripe for fiat payments (credit/debit card). All transactions are in USD via Stripe Connect. No crypto, no wallets, no gas fees.'
             },
           ].map(item => (
             <div key={item.q} className="bg-deep border border-border rounded-xl p-5 hover:border-border-hi transition-colors">

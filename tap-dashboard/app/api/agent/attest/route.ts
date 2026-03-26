@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       return applySecurityHeaders(response);
     }
 
-    const { target_agents, scores, reason, boot_hash_verified } = body;
+    const { target_agents, scores, reason, boot_hash_verified, attester_id } = body;
 
     // Validate target_agents
     if (!target_agents || !Array.isArray(target_agents)) {
@@ -111,6 +111,51 @@ export async function POST(request: NextRequest) {
     // Sanitize reason
     const sanitizedReason = sanitizeString(reason);
 
+    // ── Sybil Protection ──────────────────────────────────────────────────────
+    // Attestation requires a completed marketplace contract between the two agents.
+    // This makes reputation circular rings economically costly — you must have
+    // done real paid work together. Founding agents (in the legacy `agents` table)
+    // are exempt during the bootstrap period.
+    const supabaseClient = getSupabase() as any;
+    const sanitizedAttesterId = sanitizeString(attester_id || '');
+
+    if (sanitizedAttesterId) {
+      // Check if attester is a founding/legacy agent (exempt from requirement)
+      const { data: foundingAgent } = await supabaseClient
+        .from('agents')
+        .select('agent_id')
+        .eq('agent_id', sanitizedAttesterId)
+        .single();
+
+      if (!foundingAgent) {
+        // Not a founding agent — must have a completed contract with each target
+        for (const target_agent_id of target_agents) {
+          const { data: contract } = await supabaseClient
+            .from('marketplace_contracts')
+            .select('id')
+            .or(
+              `and(hirer_id.eq.${sanitizedAttesterId},worker_id.eq.${target_agent_id}),` +
+              `and(hirer_id.eq.${target_agent_id},worker_id.eq.${sanitizedAttesterId})`
+            )
+            .limit(1)
+
+          if (!contract || contract.length === 0) {
+            const response = NextResponse.json(
+              {
+                error: 'Attestation requires a completed marketplace job between both agents. This prevents reputation farming.',
+                code: 'NO_SHARED_JOB',
+                detail: `No contract found between ${sanitizedAttesterId} and ${target_agent_id}. Complete a paid job together first.`,
+              },
+              { status: 403 }
+            )
+            Object.entries(rateLimitHeaders).forEach(([key, value]) => { response.headers.set(key, value) })
+            return applySecurityHeaders(response)
+          }
+        }
+      }
+    }
+    // ── End Sybil Protection ──────────────────────────────────────────────────
+
     // Record attestations and update reputation
     const results = [];
     for (let i = 0; i < target_agents.length; i++) {
@@ -119,24 +164,20 @@ export async function POST(request: NextRequest) {
         ? Math.max(0, Math.min(100, validatedScores[i])) 
         : 50;
 
-      const supabase = getSupabase() as any;
-
       // Try agent_registry first (new agents registered via API go here)
-      const { data: regAgent } = await supabase
+      const { data: regAgent } = await supabaseClient
         .from('agent_registry')
         .select('agent_id')
         .eq('agent_id', agent_id)
         .single();
 
       if (regAgent) {
-        await supabase
+        await supabaseClient
           .from('agent_registry')
           .update({ reputation: score, last_seen_at: new Date().toISOString() })
           .eq('agent_id', agent_id);
       } else {
-        // Legacy agents are in agents table — update directly
-        // Skip updated_at (column doesn't exist), just update reputation
-        await (supabase as any)
+        await supabaseClient
           .from('agents')
           .update({ reputation: score })
           .eq('agent_id', agent_id);

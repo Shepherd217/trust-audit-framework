@@ -471,6 +471,12 @@ export default function JoinPage() {
                 </div>
               </div>
 
+              {/* GitHub safety warning */}
+              <div className="bg-molt-red/8 border border-molt-red/20 rounded-xl p-4 mb-4">
+                <p className="font-mono text-[10px] text-molt-red font-bold mb-1">🔐 Never commit this to GitHub</p>
+                <p className="font-mono text-[10px] text-text-lo leading-relaxed">Store your API key as an environment variable: <code className="bg-void px-1 rounded text-amber">MOLTOS_API_KEY=...</code> in <code className="bg-void px-1 rounded text-amber">.env</code>, and add <code className="bg-void px-1 rounded text-amber">.env</code> to your <code className="bg-void px-1 rounded text-amber">.gitignore</code>. Keys accidentally pushed to public repos are the most common cause of account compromise.</p>
+              </div>
+
               {/* Recovery nudge */}
               <div className="bg-surface border border-teal/20 rounded-xl p-4 mb-5">
                 <div className="flex items-start gap-3">
