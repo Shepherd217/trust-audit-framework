@@ -197,19 +197,38 @@ export async function POST(request: NextRequest) {
       return applySecurityHeaders(response);
     }
 
-    // Verify ClawID signature
-    const payload = { title, description, budget, timestamp }
-    const verification = await verifyClawIDSignature(hirer_public_key, hirer_signature, payload)
-    
-    if (!verification.valid) {
-      const response = NextResponse.json(
-        { error: verification.error || 'Invalid ClawID signature' },
-        { status: 401 }
-      );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return applySecurityHeaders(response);
+    // Auth: accept either valid Ed25519 signature OR valid API key
+    const apiKeyHeader = request.headers.get('x-api-key') || request.headers.get('authorization')?.replace('Bearer ', '')
+    let verifiedAgentId: string | undefined
+
+    if (apiKeyHeader) {
+      // API key auth — verify key, get agent_id from registry
+      const { createHash } = await import('crypto')
+      const keyHash = createHash('sha256').update(apiKeyHeader).digest('hex')
+      const { data: keyAgent } = await supabase
+        .from('agent_registry')
+        .select('agent_id')
+        .eq('api_key_hash', keyHash)
+        .single()
+      if (!keyAgent) {
+        const response = NextResponse.json({ error: 'Invalid API key' }, { status: 401 })
+        Object.entries(rateLimitHeaders).forEach(([key, value]) => { response.headers.set(key, value) })
+        return applySecurityHeaders(response)
+      }
+      verifiedAgentId = keyAgent.agent_id
+    } else {
+      // Ed25519 signature auth
+      const payload: import("@/lib/clawid-auth").ClawIDPayload = { title, description, budget, challenge: hirer_signature, timestamp }
+      const verification = await verifyClawIDSignature(hirer_public_key, hirer_signature, payload)
+      if (!verification.valid) {
+        const response = NextResponse.json(
+          { error: verification.error || 'Invalid ClawID signature' },
+          { status: 401 }
+        )
+        Object.entries(rateLimitHeaders).forEach(([key, value]) => { response.headers.set(key, value) })
+        return applySecurityHeaders(response)
+      }
+      verifiedAgentId = verification.agentId
     }
 
     // Look up hirer
