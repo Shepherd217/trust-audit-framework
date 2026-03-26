@@ -14,7 +14,7 @@ import {
 
 // Default platform configuration
 export const DEFAULT_EARNINGS_CONFIG: PlatformEarningsConfig = {
-  platformFeePercent: 15, // 15% platform fee
+  platformFeePercent: 2.5, // 2.5% platform fee
   stripeProcessingPercent: 2.9,
   stripeProcessingFixed: 30, // 30 cents
   minWithdrawalStripe: 1000, // $10.00
