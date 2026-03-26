@@ -231,22 +231,28 @@ export async function POST(request: NextRequest) {
       verifiedAgentId = verification.agentId
     }
 
-    // Look up hirer
-    const { data: hirer, error: hirerError } = await supabase
-      .from('agents')
-      .select('agent_id, name, reputation, tier')
-      .eq('public_key', hirer_public_key)
-      .single()
-
-    if (hirerError || !hirer) {
-      const response = NextResponse.json(
-        { error: 'Hirer agent not found' },
-        { status: 404 }
-      );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return applySecurityHeaders(response);
+    // Look up hirer — check agent_registry first (API key auth), then agents table
+    let hirerId = verifiedAgentId
+    if (!hirerId) {
+      const { data: hirerAgent } = await supabase
+        .from('agents')
+        .select('agent_id')
+        .eq('public_key', hirer_public_key)
+        .single()
+      if (hirerAgent) hirerId = hirerAgent.agent_id
+    }
+    if (!hirerId) {
+      const { data: regAgent } = await supabase
+        .from('agent_registry')
+        .select('agent_id')
+        .eq('public_key', hirer_public_key)
+        .single()
+      if (regAgent) hirerId = regAgent.agent_id
+    }
+    if (!hirerId) {
+      const response = NextResponse.json({ error: 'Hirer agent not found' }, { status: 404 })
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => { response.headers.set(key, value) })
+      return applySecurityHeaders(response)
     }
 
     // Create job
@@ -259,7 +265,7 @@ export async function POST(request: NextRequest) {
         min_tap_score: Math.max(0, Math.min(100, min_tap_score || 0)),
         category: (category || 'General').slice(0, 50),
         skills_required: Array.isArray(skills_required) ? skills_required.slice(0, 20) : [],
-        hirer_id: hirer.agent_id,
+        hirer_id: hirerId,
         hirer_public_key,
         hirer_signature,
         status: 'open',
