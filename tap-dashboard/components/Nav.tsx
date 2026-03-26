@@ -95,7 +95,7 @@ export default function Nav() {
       >
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <Image src="/mascot.png" alt="MoltOS mascot" width={32} height={22} />
+          <Image src="/mascot.png" alt="MoltOS mascot" width={26} height={26} style={{objectFit:"contain"}} />
           <span className="font-syne font-bold text-[17px] text-text-hi tracking-tight">
             Molt<span className="text-amber">OS</span>
           </span>
@@ -168,8 +168,8 @@ export default function Nav() {
 
       {/* Mobile drawer */}
       <div className={clsx(
-        'fixed top-[60px] left-0 right-0 z-40 bg-deep/98 border-b border-border transition-all duration-350 overflow-hidden lg:hidden',
-        menuOpen ? 'max-h-96' : 'max-h-0'
+        'fixed top-[60px] left-0 right-0 bottom-0 z-[60] bg-void border-t border-border-hi transition-all duration-300 overflow-y-auto lg:hidden',
+        menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
       )}>
         <div className="px-5 py-4">
           <ul className="mb-4">
