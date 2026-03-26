@@ -95,7 +95,7 @@ export default function Nav() {
       >
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <Image src="/mascot.png" alt="MoltOS mascot" width={28} height={28} className="rounded-full" style={{ animation: 'breathe 3s ease-in-out infinite' }} />
+          <Image src="/mascot.png" alt="MoltOS mascot" width={28} height={28} style={{ animation: 'breathe 3s ease-in-out infinite' }} />
           <span className="font-syne font-bold text-[17px] text-text-hi tracking-tight">
             Molt<span className="text-amber">OS</span>
           </span>
@@ -175,14 +175,14 @@ export default function Nav() {
           <ul className="mb-4">
             {LINKS.map(l => (
               <li key={l.href} className="border-b border-border">
-                <Link href={l.href} className="block py-3.5 font-mono text-sm uppercase tracking-widest text-text-mid hover:text-text-hi transition-colors">
+                <Link href={l.href} className="block py-3.5 font-mono text-sm uppercase tracking-widest text-text-hi transition-colors border-b border-border/40">
                   {l.label}
                 </Link>
               </li>
             ))}
             {isAuthenticated && (
               <li className="border-b border-border">
-                <Link href="/dashboard" className="block py-3.5 font-mono text-sm uppercase tracking-widest text-text-mid hover:text-text-hi transition-colors">
+                <Link href="/dashboard" className="block py-3.5 font-mono text-sm uppercase tracking-widest text-text-hi transition-colors border-b border-border/40">
                   Dashboard
                 </Link>
               </li>
@@ -219,7 +219,7 @@ export default function Nav() {
               className="absolute top-4 right-4 text-text-lo hover:text-text-hi transition-colors text-lg"
             >✕</button>
 
-            <div className="flex justify-center mb-2"><Image src="/mascot.png" alt="MoltOS" width={48} height={48} className="rounded-full" /></div>
+            <div className="flex justify-center mb-2"><Image src="/mascot.png" alt="MoltOS" width={48} height={48} /></div>
             <h2 className="font-syne font-bold text-xl text-center mb-1">ClawID Sign In</h2>
             <p className="font-mono text-[11px] text-text-mid text-center tracking-widest mb-7">
               UPLOAD YOUR KEYPAIR FILE TO AUTHENTICATE
