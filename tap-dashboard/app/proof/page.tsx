@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
-const CAST_URL = 'https://storage.googleapis.com/runable-templates/cli-uploads%2Fdkuqw19ROCJuGA8jAQhIJJuf9hsBgCf6%2Fb_0ieH2HiH8QHxjKxw_qz%2Fkilltestdemo.cast'
+const CAST_URL = '/killtestdemo.cast'
 const CSS_URL = 'https://cdn.jsdelivr.net/npm/asciinema-player@3.7.0/dist/bundle/asciinema-player.min.css'
 const JS_URL  = 'https://cdn.jsdelivr.net/npm/asciinema-player@3.7.0/dist/bundle/asciinema-player.min.js'
 
