@@ -25,6 +25,8 @@ export async function POST(request: NextRequest) {
     agent_id?: string
     new_public_key?: string
     reason?: string
+    signature?: string
+    timestamp?: number
   }
 
   try {
@@ -37,14 +39,14 @@ export async function POST(request: NextRequest) {
 
   const { agent_id, new_public_key, reason } = body
 
-  if (!agent_id || !new_public_key) {
+  if (!agent_id) {
     return applySecurityHeaders(
-      NextResponse.json({ error: 'agent_id and new_public_key required' }, { status: 400 })
+      NextResponse.json({ error: 'agent_id required' }, { status: 400 })
     )
   }
 
-  // Basic key format check (hex, 64 chars for Ed25519)
-  if (!/^[0-9a-fA-F]{64}$/.test(new_public_key)) {
+  // new_public_key is optional — can be provided later when guardians approve
+  if (new_public_key && !/^[0-9a-fA-F]{64}$/.test(new_public_key)) {
     return applySecurityHeaders(
       NextResponse.json({ error: 'new_public_key must be a 64-character hex Ed25519 public key' }, { status: 400 })
     )
@@ -71,16 +73,28 @@ export async function POST(request: NextRequest) {
     .eq('agent_id', agent_id)
     .eq('status', 'active')
 
-  if (!guardians || guardians.length === 0) {
-    return applySecurityHeaders(
-      NextResponse.json({
-        error: 'No guardians registered for this agent. Set up recovery guardians first via POST /api/key-recovery/guardians',
-      }, { status: 409 })
-    )
-  }
+  // If no personal guardians, fall back to genesis committee (3-of-5 default)
+  let threshold = 3
+  let totalShares = 5
+  let guardianList = guardians || []
 
-  const threshold = guardians[0].threshold
-  const totalShares = guardians[0].total_guardians
+  if (!guardians || guardians.length === 0) {
+    // Use founding agents as default guardian committee
+    const { data: genesisAgents } = await supabase
+      .from('agents')
+      .select('agent_id')
+      .gte('reputation', 0)
+      .limit(5)
+    guardianList = (genesisAgents || []).map(a => ({
+      guardian_id: a.agent_id,
+      guardian_type: 'genesis_committee',
+      threshold: 3,
+      total_guardians: 5
+    }))
+  } else {
+    threshold = guardians[0].threshold
+    totalShares = guardians[0].total_guardians
+  }
 
   // Check no active recovery already in progress
   const { data: existing } = await supabase
@@ -137,7 +151,7 @@ export async function POST(request: NextRequest) {
       shares_collected: 0,
       status: 'pending',
       expires_at: expiresAt,
-      guardians: guardians.map(g => ({
+      guardians: guardianList.map(g => ({
         guardian_id: g.guardian_id,
         guardian_type: g.guardian_type,
       })),
