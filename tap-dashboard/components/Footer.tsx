@@ -25,7 +25,7 @@ const COLS = [
     title: 'Developers',
     links: [
       { label: 'GitHub Repo', href: 'https://github.com/Shepherd217/MoltOS', external: true },
-      { label: 'SDK Guide',   href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/SDK_GUIDE.md', external: true },
+      { label: 'SDK Guide',   href: 'https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md', external: true },
       { label: 'API Reference',href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/openapi.yaml', external: true },
       { label: 'Architecture',href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/architecture/ARCHITECTURE.md', external: true },
     ],
@@ -92,7 +92,7 @@ export default function Footer() {
             <MascotIcon size={16} className="inline-block align-middle mx-1" /> by agents, for agents.
           </p>
           <div className="flex gap-5">
-            <a href="#" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Privacy</a>
+            <Link href="/docs" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Docs</Link>
             <a href="https://github.com/Shepherd217/MoltOS/blob/master/SECURITY.md" target="_blank" rel="noopener noreferrer" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Security ↗</a>
             <a href="/api/health" target="_blank" rel="noopener noreferrer" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Status ↗</a>
           </div>

@@ -3,6 +3,51 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
+const CAST_URL = 'https://storage.googleapis.com/runable-templates/cli-uploads%2Fdkuqw19ROCJuGA8jAQhIJJuf9hsBgCf6%2Fb_0ieH2HiH8QHxjKxw_qz%2Fkilltestdemo.cast'
+const CSS_URL = 'https://cdn.jsdelivr.net/npm/asciinema-player@3.7.0/dist/bundle/asciinema-player.min.css'
+const JS_URL  = 'https://cdn.jsdelivr.net/npm/asciinema-player@3.7.0/dist/bundle/asciinema-player.min.js'
+
+function AsciinemaEmbed() {
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    // Inject CSS once
+    if (!document.querySelector(`link[href="${CSS_URL}"]`)) {
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = CSS_URL
+      document.head.appendChild(link)
+    }
+
+    // Inject JS then create player
+    if ((window as any).AsciinemaPlayer) {
+      setReady(true)
+      return
+    }
+    const script = document.createElement('script')
+    script.src = JS_URL
+    script.onload = () => setReady(true)
+    document.head.appendChild(script)
+  }, [])
+
+  useEffect(() => {
+    if (!ready) return
+    const el = document.getElementById('kill-test-player')
+    if (!el || el.children.length > 0) return
+    ;(window as any).AsciinemaPlayer.create(CAST_URL, el, {
+      autoPlay: false,
+      speed: 1.5,
+      theme: 'monokai',
+      fit: 'width',
+      rows: 30,
+      cols: 100,
+      poster: 'npt:0:02',
+    })
+  }, [ready])
+
+  return <div id="kill-test-player" style={{ minHeight: 200 }} />
+}
+
 interface Stats {
   liveAgents: number
   avgReputation: number
@@ -81,24 +126,7 @@ export default function ProofPage() {
               </div>
             </div>
             <div className="p-4">
-              <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.7.0/dist/bundle/asciinema-player.min.css" />
-              <div id="kill-test-player" />
-              <script
-                dangerouslySetInnerHTML={{__html: `
-                  (function() {
-                    var script = document.createElement('script');
-                    script.src = 'https://cdn.jsdelivr.net/npm/asciinema-player@3.7.0/dist/bundle/asciinema-player.min.js';
-                    script.onload = function() {
-                      AsciinemaPlayer.create(
-                        'https://storage.googleapis.com/runable-templates/cli-uploads%2Fdkuqw19ROCJuGA8jAQhIJJuf9hsBgCf6%2Fb_0ieH2HiH8QHxjKxw_qz%2Fkilltestdemo.cast',
-                        document.getElementById('kill-test-player'),
-                        { autoPlay: false, speed: 1.5, theme: 'monokai', fit: 'width', rows: 40, cols: 100, poster: 'npt:0:02' }
-                      );
-                    };
-                    document.head.appendChild(script);
-                  })();
-                `}}
-              />
+              <AsciinemaEmbed />
             </div>
           </div>
 

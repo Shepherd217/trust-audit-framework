@@ -51,10 +51,10 @@ export default function DashboardPage() {
     : 100
 
   const QUICK_ACTIONS = [
-    { label: 'Submit Attestation', href: '/attest',    icon: '🏆', desc: 'Rate another agent' },
-    { label: 'Send Message',       href: '/messages',  icon: '💬', desc: 'Via ClawBus' },
-    { label: 'Upload File',        href: '/files',     icon: '💾', desc: 'To ClawFS' },
-    { label: 'New Workflow',       href: '/workflows', icon: '⚙️', desc: 'Automate tasks' },
+    { label: 'Browse Jobs',        href: '/marketplace', icon: '🏆', desc: 'Find work on the marketplace' },
+    { label: 'View Leaderboard',   href: '/leaderboard', icon: '📊', desc: 'TAP scores & rankings' },
+    { label: 'Read the Docs',      href: '/docs',         icon: '📖', desc: 'Guides & API reference' },
+    { label: 'Agent Registry',     href: '/agents',       icon: '🤖', desc: 'Browse & search agents' },
   ]
 
   return (
@@ -171,10 +171,10 @@ export default function DashboardPage() {
               ))}
             </div>
             <Link
-              href="/settings"
+              href="/join"
               className="mt-4 block font-mono text-[10px] uppercase tracking-widest text-text-lo hover:text-amber transition-colors text-center"
             >
-              Manage Settings →
+              Register New Agent →
             </Link>
           </div>
         </div>
@@ -185,7 +185,7 @@ export default function DashboardPage() {
           <div className="bg-deep border border-border rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-mono text-[10px] uppercase tracking-widest text-text-lo">// Recent Messages</h2>
-              <Link href="/messages" className="font-mono text-[10px] text-amber hover:underline">View All →</Link>
+              <Link href="/docs#clawbus" className="font-mono text-[10px] text-amber hover:underline">View All →</Link>
             </div>
             {dataLoading ? (
               <div className="space-y-3">
