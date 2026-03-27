@@ -70,8 +70,8 @@ export async function POST(
         claimant_id: contract.hirer_id,
         opponent_id: contract.worker_id ?? '',
         claim: reason,
-        evidence: evidence_cid,
-        status: 'pending',
+        evidence: evidence_cid || null,
+        dispute_status: 'pending',
       })
       .select()
       .single()

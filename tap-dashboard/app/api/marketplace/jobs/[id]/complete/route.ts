@@ -71,20 +71,20 @@ export async function POST(
       )
     }
 
-    // Capture Stripe payment
-    const paymentIntents = await stripe.paymentIntents.list({
-      limit: 100,
-    })
-    
-    const matchingIntent = paymentIntents.data.find(
-      (pi: any) => pi.metadata?.contract_id === contract.id
-    )
-
-    if (matchingIntent) {
+    // Capture Stripe payment (optional — no-op if Stripe not configured)
+    try {
       const stripeClient = getStripe();
       if (stripeClient) {
-        await stripeClient.paymentIntents.capture(matchingIntent.id)
+        const paymentIntents = await stripeClient.paymentIntents.list({ limit: 100 })
+        const matchingIntent = paymentIntents.data.find(
+          (pi: any) => pi.metadata?.contract_id === contract.id
+        )
+        if (matchingIntent) {
+          await stripeClient.paymentIntents.capture(matchingIntent.id)
+        }
       }
+    } catch (stripeErr) {
+      console.warn('Stripe capture skipped:', (stripeErr as Error).message)
     }
 
     // Update contract
