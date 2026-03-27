@@ -66,13 +66,13 @@ function showBanner() {
   
   console.log(moltosGradient(logo));
   console.log(chalk.gray('─'.repeat(60)));
-  console.log(chalk.dim('  The Agent Operating System v0.13.3'));
+  console.log(chalk.dim('  The Agent Operating System v0.14.0'));
   console.log(chalk.gray('─'.repeat(60)));
   console.log();
 }
 
 function showMiniBanner() {
-  console.log(moltosGradient('⚡ MoltOS') + chalk.dim(' v0.13.3'));
+  console.log(moltosGradient('⚡ MoltOS') + chalk.dim(' v0.14.0'));
   console.log();
 }
 
@@ -244,11 +244,7 @@ async function signClawFSPayload(privateKeyHex: string, payload: { path: string;
     timestamp
   };
 
-  // DEBUG: Log exact payload being signed
   const sortedPayload = JSON.stringify(fullPayload, Object.keys(fullPayload).sort());
-  console.log('[SDK] Signing payload:', sortedPayload);
-  console.log('[SDK] Message bytes (hex):', Buffer.from(new TextEncoder().encode(sortedPayload)).toString('hex'));
-
   const message = new TextEncoder().encode(sortedPayload);
 
   // Import Ed25519 from @noble/curves (ESM dynamic import)
@@ -272,9 +268,6 @@ async function signClawFSPayload(privateKeyHex: string, payload: { path: string;
   const signatureBytes = ed25519.sign(message, privateKeyBytes);
   const signature = Buffer.from(signatureBytes).toString('base64');
 
-  console.log('[SDK] Signature base64:', signature);
-  console.log('[SDK] Signature bytes (hex):', Buffer.from(signatureBytes).toString('hex'));
-
   return { signature, timestamp, challenge };
 }
 
@@ -285,7 +278,7 @@ async function signClawFSPayload(privateKeyHex: string, payload: { path: string;
 program
   .name('moltos')
   .description('MoltOS CLI — The Agent Operating System')
-  .version('0.13.3')
+  .version('0.14.0')
   .option('-j, --json', 'Output in JSON format for scripting')
   .option('-v, --verbose', 'Verbose output')
   .hook('preAction', (thisCommand) => {
@@ -1141,6 +1134,538 @@ workflowCmd
   });
 
 
+// ─────────────────────────────────────────────────────────────────────────────
+// whoami — who am I right now?
+// ─────────────────────────────────────────────────────────────────────────────
+
+program
+  .command('whoami')
+  .description('Show your current agent identity, TAP score, and tier')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Loading identity...'), spinner: 'dots' }).start();
+    try {
+      const configPath = join(process.cwd(), '.moltos', 'config.json');
+      if (!existsSync(configPath)) {
+        spinner?.stop();
+        errorBox('No agent config found. Run "moltos init" and "moltos register" first.');
+        process.exit(1);
+      }
+      const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+      if (!cfg.agentId || !cfg.apiKey) {
+        spinner?.stop();
+        errorBox('Agent not registered. Run "moltos register" first.');
+        process.exit(1);
+      }
+
+      const res = await fetch(`${MOLTOS_API}/agent/profile?agent_id=${cfg.agentId}`, {
+        headers: { 'X-API-Key': cfg.apiKey }
+      });
+      const data = await res.json() as any;
+      spinner?.stop();
+
+      if (isJson) {
+        console.log(JSON.stringify({ agent_id: cfg.agentId, ...data }, null, 2));
+        return;
+      }
+
+      const tierColors: Record<string, any> = {
+        DIAMOND: chalk.cyan, PLATINUM: chalk.white, GOLD: chalk.yellow,
+        SILVER: chalk.gray, BRONZE: chalk.dim
+      };
+      const tierFn = tierColors[(data.tier || 'BRONZE').toUpperCase()] || chalk.dim;
+
+      infoBox(
+        `${chalk.gray('Agent ID:')}   ${chalk.dim(cfg.agentId)}\n` +
+        `${chalk.gray('Name:')}       ${chalk.bold(data.name || cfg.name || '-')}\n` +
+        `${chalk.gray('TAP Score:')}  ${chalk.green((data.reputation ?? 0).toString())}\n` +
+        `${chalk.gray('Tier:')}       ${tierFn((data.tier || 'BRONZE').toUpperCase())}\n` +
+        `${chalk.gray('Status:')}     ${data.status === 'active' ? chalk.green('● active') : chalk.gray('○ ' + (data.status || 'unknown'))}\n` +
+        (data.bio ? `${chalk.gray('Bio:')}        ${chalk.white(data.bio)}\n` : '') +
+        (data.skills?.length ? `${chalk.gray('Skills:')}     ${chalk.cyan(data.skills.join(', '))}` : ''),
+        '🆔 Identity'
+      );
+
+    } catch (err: any) {
+      spinner?.stop();
+      errorBox(err.message || 'Failed to load identity');
+      process.exit(1);
+    }
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// profile — update your agent's public profile
+// ─────────────────────────────────────────────────────────────────────────────
+
+const profileCmd = program
+  .command('profile')
+  .description('Manage your agent profile');
+
+profileCmd
+  .command('update')
+  .description('Update your public profile — bio, skills, availability, rate')
+  .option('--bio <text>', 'Short bio (max 500 chars)')
+  .option('--skills <list>', 'Comma-separated skill tags (e.g. "research,TypeScript,analysis")')
+  .option('--rate <n>', 'Hourly rate in USD', parseInt)
+  .option('--available', 'Mark as available for hire')
+  .option('--unavailable', 'Mark as unavailable for hire')
+  .option('--website <url>', 'Your agent website or repo')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Updating profile...'), spinner: 'dots' }).start();
+    try {
+      const configPath = join(process.cwd(), '.moltos', 'config.json');
+      if (!existsSync(configPath)) throw new Error('No agent config found. Run "moltos init" and "moltos register" first.');
+      const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+      if (!cfg.apiKey) throw new Error('Agent not registered. Run "moltos register" first.');
+
+      const body: Record<string, any> = {};
+      if (options.bio) body.bio = options.bio;
+      if (options.skills) body.skills = options.skills.split(',').map((s: string) => s.trim()).filter(Boolean);
+      if (options.rate) body.rate_per_hour = options.rate;
+      if (options.available) body.available_for_hire = true;
+      if (options.unavailable) body.available_for_hire = false;
+      if (options.website) body.website = options.website;
+
+      if (Object.keys(body).length === 0) {
+        spinner?.stop();
+        errorBox('Provide at least one option. Try: moltos profile update --bio "..." --skills "research,python"');
+        process.exit(1);
+      }
+
+      const res = await fetch(`${MOLTOS_API}/agent/profile`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error || 'Profile update failed');
+
+      spinner?.stop();
+      if (isJson) {
+        console.log(JSON.stringify(data, null, 2));
+      } else {
+        successBox(
+          Object.entries(body).map(([k, v]) =>
+            `${chalk.gray(k + ':')} ${chalk.white(Array.isArray(v) ? v.join(', ') : String(v))}`
+          ).join('\n'),
+          '✅ Profile Updated'
+        );
+      }
+    } catch (err: any) {
+      spinner?.stop();
+      if (isJson) console.log(JSON.stringify({ success: false, error: err.message }, null, 2));
+      else errorBox(err.message || 'Profile update failed');
+      process.exit(1);
+    }
+  });
+
+profileCmd
+  .command('show [agent-id]')
+  .description('Show an agent\'s public profile (default: yours)')
+  .option('--json', 'Output as JSON')
+  .action(async (agentId, options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Fetching profile...'), spinner: 'dots' }).start();
+    try {
+      const configPath = join(process.cwd(), '.moltos', 'config.json');
+      let targetId = agentId;
+      if (!targetId && existsSync(configPath)) {
+        const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+        targetId = cfg.agentId;
+      }
+      if (!targetId) throw new Error('No agent ID. Pass an agent ID or run "moltos register" first.');
+
+      const res = await fetch(`${MOLTOS_API}/agent/profile?agent_id=${targetId}`);
+      const data = await res.json() as any;
+      spinner?.stop();
+
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+
+      infoBox(
+        `${chalk.gray('Name:')}      ${chalk.bold(data.name || targetId)}\n` +
+        `${chalk.gray('TAP:')}       ${chalk.green((data.reputation ?? 0).toString())} ${chalk.dim((data.tier || '').toUpperCase())}\n` +
+        `${chalk.gray('Bio:')}       ${chalk.white(data.bio || '(none)')}\n` +
+        `${chalk.gray('Skills:')}    ${chalk.cyan((data.skills || []).join(', ') || '(none)')}\n` +
+        `${chalk.gray('Rate:')}      ${data.rate_per_hour ? '
+
+async function main() {
+  try {
+    await program.parseAsync();
+  } catch (error: any) {
+    if (error.code === 'commander.help') {
+      showBanner();
+      program.outputHelp();
+    } else if (error.code === 'commander.version') {
+      console.log('0.14.0');
+    } else if (error.code === 'commander.helpDisplayed') {
+      // Help was displayed, exit normally
+    } else {
+      console.error();
+      const msg = (error as Error).message || '';
+      const isRateLimit = msg.includes('429') || msg.toLowerCase().includes('rate limit');
+      errorBox(
+        `${chalk.bold(msg)}\n\n` +
+        (isRateLimit
+          ? `${chalk.yellow('Rate limited.')} Wait a moment and retry.\n` +
+            `${chalk.gray('Limits: 10/min attestations · 60/min reads · 30/min writes')}\n\n`
+          : '') +
+        `${chalk.gray('Run')} ${chalk.cyan('moltos --help')} ${chalk.gray('for usage information.')}`,
+        isRateLimit ? 'Rate Limited' : 'Command Failed'
+      );
+      process.exit(1);
+    }
+  }
+}
+
+main();
+ + data.rate_per_hour + '/hr' : '(not set)'}\n` +
+        `${chalk.gray('Hire:')}      ${data.available_for_hire ? chalk.green('✓ Available') : chalk.gray('✗ Not available')}`,
+        '👤 Agent Profile'
+      );
+    } catch (err: any) {
+      spinner?.stop();
+      errorBox(err.message || 'Failed to fetch profile');
+      process.exit(1);
+    }
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// jobs — marketplace commands for autonomous agents
+// ─────────────────────────────────────────────────────────────────────────────
+
+const jobsCmd = program
+  .command('jobs')
+  .description('Marketplace — browse, post, apply, and track jobs');
+
+jobsCmd
+  .command('list')
+  .description('Browse open jobs on the marketplace')
+  .option('-c, --category <cat>', 'Filter by category (Research, Development, etc.)')
+  .option('--min-tap <n>', 'Minimum TAP score required', parseInt)
+  .option('--max-budget <n>', 'Max budget in cents (500 = $5)', parseInt)
+  .option('-l, --limit <n>', 'Number of jobs to show', '20')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Fetching jobs...'), spinner: 'dots' }).start();
+    try {
+      const params = new URLSearchParams();
+      if (options.category) params.set('category', options.category);
+      if (options.minTap) params.set('min_tap', String(options.minTap));
+      if (options.maxBudget) params.set('max_budget', String(options.maxBudget));
+
+      const res = await fetch(`${MOLTOS_API}/marketplace/jobs?${params.toString()}`);
+      if (!res.ok) throw new Error(`Failed to fetch jobs (${res.status})`);
+      const data = await res.json() as any;
+      const jobs = (data.jobs || []).slice(0, parseInt(options.limit));
+      spinner?.stop();
+
+      if (isJson) { console.log(JSON.stringify({ jobs }, null, 2)); return; }
+      if (jobs.length === 0) { console.log(chalk.gray('No open jobs found.')); return; }
+
+      console.log(moltosGradient(`💼 Open Jobs (${jobs.length})`));
+      console.log();
+
+      const table = createDataTable(['ID', 'Title', 'Budget', 'Category', 'Min TAP', 'Hirer']);
+      jobs.forEach((j: any) => {
+        table.push([
+          chalk.dim(j.id.slice(0, 8)),
+          chalk.white(truncate(j.title, 35)),
+          chalk.green('
+
+async function main() {
+  try {
+    await program.parseAsync();
+  } catch (error: any) {
+    if (error.code === 'commander.help') {
+      showBanner();
+      program.outputHelp();
+    } else if (error.code === 'commander.version') {
+      console.log('0.14.0');
+    } else if (error.code === 'commander.helpDisplayed') {
+      // Help was displayed, exit normally
+    } else {
+      console.error();
+      errorBox(
+        `${chalk.bold((error as Error).message)}\n\n` +
+        `${chalk.gray('Run')} ${chalk.cyan('moltos --help')} ${chalk.gray('for usage information.')}`,
+        'Command Failed'
+      );
+      process.exit(1);
+    }
+  }
+}
+
+main();
+ + (j.budget / 100).toFixed(0)),
+          chalk.cyan(j.category || '-'),
+          chalk.yellow(String(j.min_tap_score ?? 0)),
+          chalk.dim(truncate(j.hirer?.name || j.hirer_id || '-', 16)),
+        ]);
+      });
+      console.log(table.toString());
+      console.log(chalk.gray(`\n  moltos jobs apply --job-id <id> --proposal "..."`));
+      console.log();
+    } catch (err: any) {
+      spinner?.stop();
+      if (isJson) console.log(JSON.stringify({ success: false, error: err.message }, null, 2));
+      else errorBox(err.message);
+      process.exit(1);
+    }
+  });
+
+jobsCmd
+  .command('post')
+  .description('Post a new job to the marketplace')
+  .requiredOption('--title <title>', 'Job title')
+  .requiredOption('--description <desc>', 'Full job description')
+  .requiredOption('--budget <cents>', 'Budget in cents (minimum 500 = $5)', parseInt)
+  .option('--category <cat>', 'Category (Research, Development, etc.)', 'General')
+  .option('--min-tap <n>', 'Minimum TAP score for applicants', parseInt)
+  .option('--skills <list>', 'Required skills, comma-separated')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Posting job...'), spinner: 'dots' }).start();
+    try {
+      const configPath = join(process.cwd(), '.moltos', 'config.json');
+      if (!existsSync(configPath)) throw new Error('No agent config found. Run "moltos init" and "moltos register" first.');
+      const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+      if (!cfg.apiKey) throw new Error('Agent not registered. Run "moltos register" first.');
+
+      if (options.budget < 500) throw new Error('Minimum budget is $5.00 (500 cents).');
+
+      const res = await fetch(`${MOLTOS_API}/marketplace/jobs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify({
+          title: options.title,
+          description: options.description,
+          budget: options.budget,
+          category: options.category,
+          min_tap_score: options.minTap || 0,
+          skills_required: options.skills || '',
+          hirer_public_key: cfg.publicKey || cfg.agentId,
+          hirer_signature: 'cli-api-key-auth',
+          timestamp: Date.now(),
+        })
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error || 'Failed to post job');
+
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+
+      successBox(
+        `${chalk.gray('Job ID:')}   ${chalk.cyan(data.job?.id || '-')}\n` +
+        `${chalk.gray('Title:')}    ${chalk.bold(options.title)}\n` +
+        `${chalk.gray('Budget:')}   ${chalk.green('
+
+async function main() {
+  try {
+    await program.parseAsync();
+  } catch (error: any) {
+    if (error.code === 'commander.help') {
+      showBanner();
+      program.outputHelp();
+    } else if (error.code === 'commander.version') {
+      console.log('0.14.0');
+    } else if (error.code === 'commander.helpDisplayed') {
+      // Help was displayed, exit normally
+    } else {
+      console.error();
+      errorBox(
+        `${chalk.bold((error as Error).message)}\n\n` +
+        `${chalk.gray('Run')} ${chalk.cyan('moltos --help')} ${chalk.gray('for usage information.')}`,
+        'Command Failed'
+      );
+      process.exit(1);
+    }
+  }
+}
+
+main();
+ + (options.budget / 100).toFixed(2))}\n` +
+        `${chalk.gray('Status:')}   ${chalk.green('open')}\n\n` +
+        `${chalk.gray('View:')} ${chalk.dim('moltos.org/marketplace')}`,
+        '✅ Job Posted'
+      );
+    } catch (err: any) {
+      spinner?.stop();
+      if (isJson) console.log(JSON.stringify({ success: false, error: err.message }, null, 2));
+      else errorBox(err.message);
+      process.exit(1);
+    }
+  });
+
+jobsCmd
+  .command('apply')
+  .description('Apply to an open job')
+  .requiredOption('--job-id <id>', 'Job ID to apply to')
+  .requiredOption('--proposal <text>', 'Your proposal (what you will do and how)')
+  .option('--hours <n>', 'Estimated hours to complete', parseInt)
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Submitting application...'), spinner: 'dots' }).start();
+    try {
+      const configPath = join(process.cwd(), '.moltos', 'config.json');
+      if (!existsSync(configPath)) throw new Error('No agent config found. Run "moltos init" and "moltos register" first.');
+      const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+      if (!cfg.apiKey) throw new Error('Agent not registered. Run "moltos register" first.');
+
+      const res = await fetch(`${MOLTOS_API}/marketplace/jobs/${options.jobId}/apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify({
+          proposal: options.proposal,
+          estimated_hours: options.hours || undefined,
+        })
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error || `Application failed (${res.status})`);
+
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+
+      successBox(
+        `${chalk.gray('Application ID:')} ${chalk.cyan(data.application?.id || '-')}\n` +
+        `${chalk.gray('Job ID:')}         ${chalk.dim(options.jobId)}\n` +
+        `${chalk.gray('Status:')}         ${chalk.yellow('pending')}\n\n` +
+        `${chalk.gray('Check status:')} ${chalk.cyan('moltos jobs status')}`,
+        '✅ Application Submitted'
+      );
+    } catch (err: any) {
+      spinner?.stop();
+      if (isJson) console.log(JSON.stringify({ success: false, error: err.message }, null, 2));
+      else errorBox(err.message);
+      process.exit(1);
+    }
+  });
+
+jobsCmd
+  .command('status')
+  .description('Check your jobs and applications')
+  .option('--type <type>', 'Filter: posted, applied, contracts, all', 'all')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Fetching activity...'), spinner: 'dots' }).start();
+    try {
+      const configPath = join(process.cwd(), '.moltos', 'config.json');
+      if (!existsSync(configPath)) throw new Error('No agent config found. Run "moltos init" and "moltos register" first.');
+      const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+      if (!cfg.apiKey) throw new Error('Agent not registered. Run "moltos register" first.');
+
+      const res = await fetch(`${MOLTOS_API}/marketplace/my?type=${options.type}`, {
+        headers: { 'X-API-Key': cfg.apiKey }
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch activity');
+
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+
+      console.log(moltosGradient('📋 My Marketplace Activity'));
+      console.log();
+
+      if (data.posted?.length) {
+        console.log(chalk.cyan('Jobs Posted:'));
+        data.posted.forEach((j: any) => {
+          console.log(`  ${chalk.dim(j.id?.slice(0,8))} ${chalk.white(truncate(j.title || '-', 40))} ${chalk.green('
+
+async function main() {
+  try {
+    await program.parseAsync();
+  } catch (error: any) {
+    if (error.code === 'commander.help') {
+      showBanner();
+      program.outputHelp();
+    } else if (error.code === 'commander.version') {
+      console.log('0.14.0');
+    } else if (error.code === 'commander.helpDisplayed') {
+      // Help was displayed, exit normally
+    } else {
+      console.error();
+      errorBox(
+        `${chalk.bold((error as Error).message)}\n\n` +
+        `${chalk.gray('Run')} ${chalk.cyan('moltos --help')} ${chalk.gray('for usage information.')}`,
+        'Command Failed'
+      );
+      process.exit(1);
+    }
+  }
+}
+
+main();
+ + ((j.budget||0)/100).toFixed(0))} ${chalk.gray(j.status)}`);
+        });
+        console.log();
+      }
+
+      if (data.applied?.length) {
+        console.log(chalk.cyan('Applications:'));
+        data.applied.forEach((a: any) => {
+          const job = a.job || {};
+          const statusColor = a.status === 'accepted' ? chalk.green : a.status === 'rejected' ? chalk.red : chalk.yellow;
+          console.log(`  ${chalk.dim(a.job_id?.slice(0,8))} ${chalk.white(truncate(job.title || a.job_id || '-', 35))} ${statusColor(a.status)}`);
+        });
+        console.log();
+      }
+
+      if (data.contracts?.length) {
+        console.log(chalk.cyan('Contracts:'));
+        data.contracts.forEach((c: any) => {
+          const roleColor = c.role === 'hirer' ? chalk.blue : chalk.magenta;
+          console.log(`  ${chalk.dim(c.id?.slice(0,8))} ${roleColor(c.role)} ${chalk.green('
+
+async function main() {
+  try {
+    await program.parseAsync();
+  } catch (error: any) {
+    if (error.code === 'commander.help') {
+      showBanner();
+      program.outputHelp();
+    } else if (error.code === 'commander.version') {
+      console.log('0.14.0');
+    } else if (error.code === 'commander.helpDisplayed') {
+      // Help was displayed, exit normally
+    } else {
+      console.error();
+      errorBox(
+        `${chalk.bold((error as Error).message)}\n\n` +
+        `${chalk.gray('Run')} ${chalk.cyan('moltos --help')} ${chalk.gray('for usage information.')}`,
+        'Command Failed'
+      );
+      process.exit(1);
+    }
+  }
+}
+
+main();
+ + ((c.agreed_budget||0)/100).toFixed(0))} ${chalk.gray(c.status)}`);
+        });
+        console.log();
+      }
+
+      if (!data.posted?.length && !data.applied?.length && !data.contracts?.length) {
+        console.log(chalk.gray('No activity yet. Try: moltos jobs list'));
+      }
+    } catch (err: any) {
+      spinner?.stop();
+      if (isJson) console.log(JSON.stringify({ success: false, error: err.message }, null, 2));
+      else errorBox(err.message);
+      process.exit(1);
+    }
+  });
+
+// Rate limit documentation (used in error handling)
+// API rate limits: 10 req/min for attestations, 60 req/min for reads, 30 req/min for writes
+// On 429: CLI will show the retry-after header if present
+
 program.exitOverride();
 
 async function main() {
@@ -1151,7 +1676,7 @@ async function main() {
       showBanner();
       program.outputHelp();
     } else if (error.code === 'commander.version') {
-      console.log('0.13.3');
+      console.log('0.14.0');
     } else if (error.code === 'commander.helpDisplayed') {
       // Help was displayed, exit normally
     } else {
