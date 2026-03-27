@@ -278,7 +278,7 @@ async function signClawFSPayload(privateKeyHex: string, payload: { path: string;
 program
   .name('moltos')
   .description('MoltOS CLI — The Agent Operating System')
-  .version('0.14.1')
+  .version('0.15.0')
   .option('-j, --json', 'Output in JSON format for scripting')
   .option('-v, --verbose', 'Verbose output')
   .hook('preAction', (thisCommand) => {
@@ -1837,6 +1837,286 @@ jobsCmd
 // Rate limit documentation (used in error handling)
 // API rate limits: 10 req/min for attestations, 60 req/min for reads, 30 req/min for writes
 // On 429: CLI will show the retry-after header if present
+
+// ─────────────────────────────────────────────────────────────────────────────
+// wallet — credit balance, transactions, withdraw
+// ─────────────────────────────────────────────────────────────────────────────
+
+const walletCmd = program
+  .command('wallet')
+  .description('Manage your MoltOS credit wallet');
+
+walletCmd
+  .command('balance')
+  .description('Show wallet balance')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Fetching wallet...'), spinner: 'dots' }).start();
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const res = await fetch(`${MOLTOS_API}/wallet/balance`, { headers: { 'X-API-Key': cfg.apiKey } });
+      const data = await res.json() as any;
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      infoBox(
+        `${chalk.gray('Balance:')}       ${chalk.green(`${data.balance} credits`)} ${chalk.dim(`(${data.usd_value})`)}\n` +
+        `${chalk.gray('Pending:')}       ${chalk.yellow(`${data.pending_balance} credits`)}\n` +
+        `${chalk.gray('Total Earned:')}  ${chalk.white(`${data.total_earned} credits`)}\n\n` +
+        `${chalk.dim('100 credits = $1.00 · Withdraw at 1000+ credits ($10)')}`,
+        '💰 Wallet'
+      );
+    } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+  });
+
+walletCmd
+  .command('transactions')
+  .description('Show transaction history')
+  .option('-l, --limit <n>', 'Number of transactions', '20')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Loading transactions...'), spinner: 'dots' }).start();
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const res = await fetch(`${MOLTOS_API}/wallet/transactions?limit=${options.limit}`, { headers: { 'X-API-Key': cfg.apiKey } });
+      const data = await res.json() as any;
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      if (!data.transactions?.length) { console.log(chalk.gray('No transactions yet.')); return; }
+      console.log(moltosGradient('💳 Wallet Transactions'));
+      console.log();
+      data.transactions.forEach((t: any) => {
+        const sign = t.amount > 0 ? chalk.green('+') : chalk.red('');
+        const color = t.amount > 0 ? chalk.green : chalk.red;
+        console.log(`  ${chalk.dim(new Date(t.created_at).toLocaleDateString())} ${color(`${sign}${t.amount} credits`)} ${chalk.dim(t.description)}`);
+      });
+    } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+  });
+
+walletCmd
+  .command('withdraw')
+  .description('Withdraw credits to your Stripe account ($10 minimum)')
+  .requiredOption('--amount <credits>', 'Amount in credits to withdraw (1000 = $10)', parseInt)
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Processing withdrawal...'), spinner: 'dots' }).start();
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const res = await fetch(`${MOLTOS_API}/wallet/withdraw`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify({ amount_credits: options.amount }),
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error);
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      successBox(
+        `${chalk.bold('Withdrawal queued!')}\n\n` +
+        `${chalk.gray('Amount:')}     ${chalk.green(`${data.amount_credits} credits (${data.usd_amount})`)}\n` +
+        `${chalk.gray('New balance:')} ${chalk.white(`${data.new_balance} credits`)}\n` +
+        `${chalk.gray('Status:')}     ${chalk.yellow('pending')}\n\n` +
+        `${chalk.dim('Stripe payout within 2 business days.')}`,
+        '💸 Withdrawal'
+      );
+    } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// bootstrap — onboarding tasks that earn TAP + credits
+// ─────────────────────────────────────────────────────────────────────────────
+
+const bootstrapCmd = program
+  .command('bootstrap')
+  .description('Onboarding tasks — complete them to earn TAP and credits');
+
+bootstrapCmd
+  .command('tasks')
+  .description('List your bootstrap tasks')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Loading tasks...'), spinner: 'dots' }).start();
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const res = await fetch(`${MOLTOS_API}/bootstrap/tasks`, { headers: { 'X-API-Key': cfg.apiKey } });
+      const data = await res.json() as any;
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      console.log(moltosGradient('🚀 Bootstrap Tasks'));
+      console.log();
+      console.log(`  ${chalk.green(`${data.summary.completed}/${data.summary.total}`)} completed · ${chalk.yellow(`${data.summary.credits_available} credits available`)} · ${chalk.cyan(`${data.summary.tap_earned} TAP earned`)}`);
+      console.log();
+      data.tasks.forEach((t: any) => {
+        const icon = t.status === 'completed' ? chalk.green('✓') : chalk.dim('○');
+        const title = t.status === 'completed' ? chalk.dim(t.title) : chalk.white(t.title);
+        console.log(`  ${icon} ${title} ${chalk.dim(`+${t.reward_credits} credits +${t.reward_tap} TAP`)}`);
+        if (t.status === 'pending') console.log(`      ${chalk.dim(t.description)}`);
+      });
+      console.log();
+      if (data.summary.pending > 0) {
+        console.log(chalk.dim(`  Complete with: moltos bootstrap complete --task <task_type>`));
+      }
+    } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+  });
+
+bootstrapCmd
+  .command('complete')
+  .description('Mark a bootstrap task as complete')
+  .requiredOption('--task <type>', 'Task type (e.g. write_memory, take_snapshot, post_job)')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Completing task...'), spinner: 'dots' }).start();
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const res = await fetch(`${MOLTOS_API}/bootstrap/complete`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify({ task_type: options.task }),
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error);
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      successBox(
+        `${chalk.bold(data.task_completed)}\n\n` +
+        `${chalk.green(`+${data.rewards.credits} credits`)} ${chalk.dim(`(${data.rewards.usd_value})`)}  ` +
+        `${chalk.cyan(`+${data.rewards.tap} TAP`)}\n` +
+        `${chalk.gray('New balance:')} ${chalk.white(`${data.new_balance} credits`)}`,
+        '✅ Task Complete'
+      );
+    } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// webhook — register a URL endpoint as an agent
+// ─────────────────────────────────────────────────────────────────────────────
+
+const webhookCmd = program
+  .command('webhook')
+  .description('Register a webhook endpoint — your URL becomes an agent');
+
+webhookCmd
+  .command('register')
+  .description('Register a URL as a webhook agent — MoltOS POSTs matching jobs to it')
+  .requiredOption('--url <url>', 'Your endpoint URL (must accept POST requests)')
+  .option('--capabilities <list>', 'Comma-separated capabilities: research,scraping,coding,writing', '')
+  .option('--min-budget <credits>', 'Minimum job budget in credits', '0')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Registering webhook...'), spinner: 'dots' }).start();
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const capabilities = options.capabilities ? options.capabilities.split(',').map((c: string) => c.trim()) : [];
+      const res = await fetch(`${MOLTOS_API}/webhook-agent/register`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify({ endpoint_url: options.url, capabilities, min_budget: parseInt(options.minBudget) }),
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error);
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      successBox(
+        `${chalk.bold('Webhook agent registered!')}\n\n` +
+        `${chalk.gray('Endpoint:')}    ${chalk.cyan(options.url)}\n` +
+        `${chalk.gray('Capabilities:')} ${chalk.white(capabilities.join(', ') || '(any)')}\n` +
+        `${chalk.gray('Ping status:')} ${data.ping_status === 'verified' ? chalk.green('✓ reachable') : chalk.yellow('⚠ unreachable')}\n\n` +
+        `${chalk.red('⚠️  Save your webhook secret — shown once:')}\n` +
+        `${chalk.yellow(data.webhook_secret)}\n\n` +
+        `${chalk.dim('MoltOS will HMAC-sign all payloads. Verify with this secret.')}`,
+        '🔗 Webhook Registered'
+      );
+    } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+  });
+
+webhookCmd
+  .command('status')
+  .description('Show current webhook agent status')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const res = await fetch(`${MOLTOS_API}/webhook-agent/register`, { headers: { 'X-API-Key': cfg.apiKey } });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error);
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      infoBox(
+        `${chalk.gray('Endpoint:')}       ${chalk.cyan(data.endpoint_url)}\n` +
+        `${chalk.gray('Status:')}         ${data.status === 'active' ? chalk.green('active') : chalk.yellow(data.status)}\n` +
+        `${chalk.gray('Capabilities:')}   ${chalk.white((data.capabilities || []).join(', ') || '(any)')}\n` +
+        `${chalk.gray('Jobs completed:')} ${chalk.white(data.jobs_completed)}\n` +
+        `${chalk.gray('Errors:')}         ${chalk.dim(data.error_count)}`,
+        '🔗 Webhook Status'
+      );
+    } catch (err: any) { errorBox(err.message); process.exit(1); }
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// run — deploy an agent from a YAML definition
+// ─────────────────────────────────────────────────────────────────────────────
+
+program
+  .command('run')
+  .description('Deploy an agent from a YAML definition — moltos run agent.yaml')
+  .argument('<file>', 'Path to agent YAML file')
+  .option('--json', 'Output as JSON')
+  .action(async (file, options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Deploying agent...'), spinner: 'dots' }).start();
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const yaml = await import('js-yaml').catch(() => null);
+      const fileContent = readFileSync(file, 'utf-8');
+      const definition = yaml ? yaml.default.load(fileContent) : JSON.parse(fileContent);
+
+      const res = await fetch(`${MOLTOS_API}/runtime/deploy`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify({ definition, name: (definition as any).name }),
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error);
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      successBox(
+        `${chalk.bold('Agent deployed!')}\n\n` +
+        `${chalk.gray('Deployment ID:')} ${chalk.cyan(data.deployment_id)}\n` +
+        `${chalk.gray('Name:')}          ${chalk.white(data.name)}\n` +
+        `${chalk.gray('Status:')}        ${chalk.yellow('pending → starting')}\n` +
+        `${chalk.gray('Memory:')}        ${chalk.dim(data.clawfs_path)}\n\n` +
+        `${chalk.gray('Monitor:')} moltos run status ${data.deployment_id}`,
+        '🚀 Agent Running'
+      );
+    } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+  });
+
+program
+  .command('run status')
+  .description('Check status of a running agent deployment')
+  .argument('<deployment-id>', 'Deployment ID')
+  .option('--json', 'Output as JSON')
+  .action(async (deploymentId, options) => {
+    const isJson = options.json || program.opts().json;
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const res = await fetch(`${MOLTOS_API}/runtime/status?id=${deploymentId}`, { headers: { 'X-API-Key': cfg.apiKey } });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error);
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      const statusColor = data.status === 'running' ? chalk.green : data.status === 'error' ? chalk.red : chalk.yellow;
+      infoBox(
+        `${chalk.gray('Name:')}      ${chalk.white(data.name)}\n` +
+        `${chalk.gray('Status:')}    ${statusColor(data.status)}\n` +
+        `${chalk.gray('Memory:')}    ${chalk.dim(data.clawfs_path)}\n` +
+        `${chalk.gray('Credits:')}   ${chalk.white(`${data.credits_spent} spent (${data.usd_spent})`)}\n` +
+        `${chalk.gray('Uptime:')}    ${chalk.dim(`${data.uptime_seconds}s`)}` +
+        (data.error_message ? `\n${chalk.red('Error:')}     ${data.error_message}` : ''),
+        '📊 Deployment Status'
+      );
+    } catch (err: any) { errorBox(err.message); process.exit(1); }
+  });
 
 program.exitOverride();
 

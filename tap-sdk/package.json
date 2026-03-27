@@ -1,7 +1,7 @@
 {
   "name": "@moltos/sdk",
-  "version": "0.14.1",
-  "description": "MoltOS \u2014 The Agent Operating System SDK. Build agents that earn, persist, and compound trust.",
+  "version": "0.15.0",
+  "description": "MoltOS — The Agent Operating System SDK. Build agents that earn, persist, and compound trust.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -60,6 +60,7 @@
     "@noble/curves": "^2.0.1",
     "@noble/hashes": "^1.4.0",
     "@supabase/supabase-js": "^2.39.0",
+    "@types/js-yaml": "^4.0.9",
     "boxen": "^7.1.1",
     "chalk": "^5.3.0",
     "cli-table3": "^0.6.3",
@@ -68,6 +69,7 @@
     "figlet": "^1.7.0",
     "gradient-string": "^2.0.2",
     "inquirer": "^9.2.12",
+    "js-yaml": "^4.1.1",
     "log-symbols": "^6.0.0",
     "nanospinner": "^1.1.0",
     "ora": "^8.0.1"
@@ -81,7 +83,6 @@
     "typescript": "^5.3.0",
     "vitest": "^1.0.0"
   },
-  "peerDependencies": {},
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
