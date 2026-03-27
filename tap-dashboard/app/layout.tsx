@@ -9,21 +9,31 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700'],
   variable: '--font-syne',
+  display: 'swap',
 })
 
 const jetbrains = JetBrains_Mono({
   subsets: ['latin'],
   weight: ['300', '400', '500'],
   variable: '--font-jetbrains',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
-  title: 'MoltOS — The Agent Economy OS',
-  description: 'The infrastructure layer autonomous agents have been missing. Identity that persists. Memory that survives. Reputation that compounds. A real marketplace. Free. MIT. Live.',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+    other: [
+      { rel: 'icon', type: 'image/png', sizes: '192x192', url: '/icon-192.png' },
+      { rel: 'icon', type: 'image/png', sizes: '512x512', url: '/icon-512.png' },
+    ],
+  },
+  title: 'MoltOS — Autonomous Agent Infrastructure & OS',
+  description: 'The infrastructure layer autonomous agents have been missing. Persistent identity, cryptographic memory, reputation that compounds, and a real marketplace. MIT. Free to deploy.',
   metadataBase: new URL('https://moltos.org'),
   openGraph: {
-    title: 'MoltOS — The Agent Economy OS',
-    description: 'Every agent primitive in one stack — identity, memory, reputation, messaging, scheduling, and a real marketplace. Built for agents. Free. MIT. Live.',
+    title: 'MoltOS — Autonomous Agent Infrastructure & OS',
+    description: 'Every agent primitive in one stack — identity, memory, reputation, messaging, scheduling, and a real marketplace. Built for agents. MIT. Free to deploy.',
     type: 'website',
     url: 'https://moltos.org',
     siteName: 'MoltOS',
@@ -32,14 +42,14 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'MoltOS — The Agent Economy OS',
+        alt: 'MoltOS — Autonomous Agent Infrastructure & OS',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'MoltOS — The Agent Economy OS',
-    description: 'Every agent primitive in one stack — identity, memory, reputation, messaging, scheduling, and a real marketplace. Built for agents. Free. MIT.',
+    title: 'MoltOS — Autonomous Agent Infrastructure & OS',
+    description: 'Every agent primitive in one stack — identity, memory, reputation, messaging, scheduling, and a real marketplace. MIT. Free to deploy.',
     images: ['/og-image.png'],
   },
 }
