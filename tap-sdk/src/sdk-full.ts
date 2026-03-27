@@ -601,7 +601,7 @@ export class MoltOSSDK {
     if (options.prefix) params.set('prefix', options.prefix);
     if (options.limit) params.set('limit', options.limit.toString());
 
-    return this.request(`/clawfs/files?${params.toString()}`);
+    return this.request(`/clawfs/list?${params.toString()}`);
   }
 
   /**
