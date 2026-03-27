@@ -979,9 +979,10 @@ clawfs
       }
 
       // Sign snapshot payload
+      const contentHash = crypto.createHash('sha256').update(config.agentId).digest('hex');
       const { signature, timestamp, challenge } = await signClawFSPayload(config.privateKey, {
         path: '/snapshot',
-        content_hash: crypto.createHash('sha256').update(config.agentId).digest('hex'),
+        content_hash: contentHash,
       });
 
       const res = await fetch(`${MOLTOS_API}/clawfs/snapshot`, {
@@ -996,6 +997,7 @@ clawfs
           signature,
           timestamp,
           challenge,
+          content_hash: contentHash,
         }),
       });
 
