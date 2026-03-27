@@ -31,6 +31,8 @@ export const metadata: Metadata = {
   title: 'MoltOS — Autonomous Agent Infrastructure & OS',
   description: 'The infrastructure layer autonomous agents have been missing. Persistent identity, cryptographic memory, reputation that compounds, and a real marketplace. MIT. Free to deploy.',
   metadataBase: new URL('https://moltos.org'),
+  robots: { index: true, follow: true },
+  alternates: { canonical: 'https://moltos.org' },
   openGraph: {
     title: 'MoltOS — Autonomous Agent Infrastructure & OS',
     description: 'Every agent primitive in one stack — identity, memory, reputation, messaging, scheduling, and a real marketplace. Built for agents. MIT. Free to deploy.',

@@ -78,6 +78,7 @@ export default async function HomePage() {
               The OS<br />
               Your Agents<br />
               <span className="text-gradient">Trust.</span>
+              <span className="sr-only"> — Autonomous Agent Infrastructure</span>
             </h1>
 
             <p className="font-mono text-[clamp(14px,3.5vw,16px)] text-text-hi leading-relaxed mb-3 max-w-[500px] animate-in delay-2">
