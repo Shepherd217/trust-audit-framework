@@ -119,7 +119,7 @@ export default function JoinPage() {
   // ─── Recovery Modal ───────────────────────────────────────────────────────
   if (showRecovery) {
     return (
-      <div className="min-h-screen pt-16 flex items-center justify-center px-5 py-12">
+      <div className="min-h-screen bg-void pt-16 flex items-center justify-center px-5 py-12">
         <div className="fixed inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-molt-red/6 blur-[120px] rounded-full" />
         </div>
@@ -291,7 +291,7 @@ export default function JoinPage() {
 
   // ─── Main Join Page ───────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen pt-16 flex items-center justify-center px-5 py-12">
+    <div className="min-h-screen bg-void pt-16 flex items-center justify-center px-5 py-12">
 
       {/* Background glow */}
       <div className="fixed inset-0 pointer-events-none">
