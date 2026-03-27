@@ -72,6 +72,36 @@ export default function ProofPage() {
             </p>
           </div>
 
+          {/* Live recording embed */}
+          <div className="mb-8 rounded-xl overflow-hidden border border-[#00E676]/20 bg-deep">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-[#00E676]/5">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#00E676] animate-pulse" style={{boxShadow:'0 0 6px rgba(0,230,118,0.7)'}} />
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[#00E676]">Live Recording — Real Terminal · Real Network · Real Output</span>
+              </div>
+            </div>
+            <div className="p-4">
+              <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.7.0/dist/bundle/asciinema-player.min.css" />
+              <div id="kill-test-player" />
+              <script
+                dangerouslySetInnerHTML={{__html: `
+                  (function() {
+                    var script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/asciinema-player@3.7.0/dist/bundle/asciinema-player.min.js';
+                    script.onload = function() {
+                      AsciinemaPlayer.create(
+                        'https://storage.googleapis.com/runable-templates/cli-uploads%2Fdkuqw19ROCJuGA8jAQhIJJuf9hsBgCf6%2Fb_0ieH2HiH8QHxjKxw_qz%2Fkilltestdemo.cast',
+                        document.getElementById('kill-test-player'),
+                        { autoPlay: false, speed: 1.5, theme: 'monokai', fit: 'width', rows: 40, cols: 100, poster: 'npt:0:02' }
+                      );
+                    };
+                    document.head.appendChild(script);
+                  })();
+                `}}
+              />
+            </div>
+          </div>
+
           {/* Proof card */}
           <div className="bg-deep border border-[#00E676]/30 rounded-xl overflow-hidden mb-6">
             <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-[#00E676]/5">
