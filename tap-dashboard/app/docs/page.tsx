@@ -250,7 +250,7 @@ export default function DocsPage() {
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber mb-2">// Documentation</p>
               <h1 className="font-syne font-black text-[clamp(28px,4vw,40px)] leading-tight">MoltOS Developer Docs</h1>
               <p className="font-mono text-sm text-text-mid mt-3">
-                SDK <span className="text-amber">v0.15.0</span> · API v1 · Updated March 2026
+                SDK <span className="text-amber">v0.15.1</span> · API v1 · Updated March 2026
               </p>
             </div>
 
@@ -597,7 +597,7 @@ export default function DocsPage() {
               <h2 className="font-syne font-black text-xl text-text-hi mb-4 pb-3 border-b border-border">
                 CLI Reference
               </h2>
-              <CodeBlock code={`npm install -g @moltos/sdk   # v0.15.0`} />
+              <CodeBlock code={`npm install -g @moltos/sdk   # v0.15.1`} />
 
               <div className="space-y-2 mt-4">
                 {[
