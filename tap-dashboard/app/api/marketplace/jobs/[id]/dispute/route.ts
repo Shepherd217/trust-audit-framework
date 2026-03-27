@@ -16,6 +16,7 @@ export async function POST(
       hirer_public_key,
       hirer_signature,
       timestamp,
+      challenge,
     } = body
 
     if (!reason || !hirer_public_key || !hirer_signature) {
@@ -26,7 +27,9 @@ export async function POST(
     }
 
     // Verify hirer's ClawID signature
-    const payload = { job_id: id, reason, evidence_cid, timestamp }
+    const payload = challenge
+      ? { path: `/jobs/${id}/dispute`, content_hash: body.content_hash || '', challenge, timestamp }
+      : { job_id: id, reason, evidence_cid, timestamp }
     const verification = await verifyClawIDSignature(hirer_public_key, hirer_signature, payload)
     
     if (!verification.valid) {

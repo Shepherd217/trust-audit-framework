@@ -1121,9 +1121,10 @@ workflowCmd
       const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
       if (!cfg.apiKey) throw new Error('Agent not registered. Run "moltos register" first.');
 
-      const res = await fetch(`${MOLTOS_API}/workflows/${options.id}/run`, {
+      const res = await fetch(`${MOLTOS_API}/claw/scheduler/execute`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey }
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify({ workflowId: options.id })
       });
       const data = await res.json() as any;
       if (!res.ok) throw new Error(data.error || `Failed (${res.status})`);
@@ -1147,7 +1148,7 @@ workflowCmd
       if (!existsSync(configPath)) throw new Error('No agent config found.');
       const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
 
-      const res = await fetch(`${MOLTOS_API}/workflows/executions/${options.id}`, {
+      const res = await fetch(`${MOLTOS_API}/claw/scheduler/executions/${options.id}`, {
         headers: { 'X-API-Key': cfg.apiKey || '' }
       });
       const data = await res.json() as any;
@@ -1547,6 +1548,102 @@ jobsCmd
       if (!data.posted?.length && !data.applied?.length && !data.contracts?.length) {
         console.log(chalk.gray('No activity yet. Try: moltos jobs list'));
       }
+    } catch (err: any) {
+      spinner?.stop();
+      if (isJson) console.log(JSON.stringify({ success: false, error: err.message }, null, 2));
+      else errorBox(err.message);
+      process.exit(1);
+    }
+  });
+
+jobsCmd
+  .command('dispute')
+  .description('File a dispute on a job')
+  .requiredOption('--job-id <id>', 'Job ID to dispute')
+  .requiredOption('--reason <reason>', 'Reason for the dispute')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Filing dispute...'), spinner: 'dots' }).start();
+    try {
+      const configPath = join(process.cwd(), '.moltos', 'config.json');
+      if (!existsSync(configPath)) throw new Error('No agent config found. Run "moltos init" and "moltos register" first.');
+      const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+      if (!cfg.apiKey) throw new Error('Agent not registered. Run "moltos register" first.');
+
+      const timestamp = Date.now();
+      const contentHash = crypto.createHash('sha256').update(options.reason).digest('hex');
+      const { signature, challenge } = await signClawFSPayload(cfg.privateKey, {
+        path: `/jobs/${options.jobId}/dispute`,
+        content_hash: contentHash,
+      });
+
+      const res = await fetch(`${MOLTOS_API}/marketplace/jobs/${options.jobId}/dispute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify({
+          reason: options.reason,
+          hirer_public_key: cfg.publicKey,
+          hirer_signature: signature,
+          timestamp,
+          challenge,
+          content_hash: contentHash,
+        }),
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error || `Failed (${res.status})`);
+
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+
+      successBox(
+        `${chalk.bold('Dispute filed')}\n\n` +
+        `${chalk.gray('Dispute ID:')} ${chalk.cyan(data.dispute_id || data.id || '-')}\n` +
+        `${chalk.gray('Job ID:')}     ${chalk.white(options.jobId)}\n` +
+        `${chalk.gray('Status:')}     ${chalk.yellow('pending')}\n\n` +
+        `${chalk.gray('Arbitra committee will review within 15 minutes.')}`,
+        '⚖️  Dispute Filed'
+      );
+    } catch (err: any) {
+      spinner?.stop();
+      if (isJson) console.log(JSON.stringify({ success: false, error: err.message }, null, 2));
+      else errorBox(err.message);
+      process.exit(1);
+    }
+  });
+
+jobsCmd
+  .command('complete')
+  .description('Mark a job as complete (worker)')
+  .requiredOption('--job-id <id>', 'Job ID to mark complete')
+  .option('--result <text>', 'Result or deliverable summary')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Marking job complete...'), spinner: 'dots' }).start();
+    try {
+      const configPath = join(process.cwd(), '.moltos', 'config.json');
+      if (!existsSync(configPath)) throw new Error('No agent config found.');
+      const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+      if (!cfg.apiKey) throw new Error('Agent not registered.');
+
+      const res = await fetch(`${MOLTOS_API}/marketplace/jobs/${options.jobId}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify({ result: options.result || 'Completed' }),
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error || `Failed (${res.status})`);
+
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+
+      successBox(
+        `${chalk.bold('Job marked complete')}\n\n` +
+        `${chalk.gray('Job ID:')} ${chalk.cyan(options.jobId)}\n` +
+        `${chalk.gray('Status:')} ${chalk.green('complete')}`,
+        '✅ Job Complete'
+      );
     } catch (err: any) {
       spinner?.stop();
       if (isJson) console.log(JSON.stringify({ success: false, error: err.message }, null, 2));
