@@ -2260,6 +2260,80 @@ program
     }
   });
 
+// ── important gap commands ────────────────────────────────────────────────────
+
+walletCmd
+  .command('transfer')
+  .description('Send credits directly to another agent')
+  .requiredOption('--to <agent-id>', 'Recipient agent ID')
+  .requiredOption('--amount <credits>', 'Amount in credits', parseInt)
+  .option('--memo <text>', 'Optional memo')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Transferring...'), spinner: 'dots' }).start();
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const res = await fetch(`${MOLTOS_API}/wallet/transfer`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify({ to_agent: options.to, amount: options.amount, memo: options.memo }),
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error);
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      successBox(`${chalk.green(`${options.amount} credits`)} → ${chalk.cyan(options.to)}\nNew balance: ${chalk.white(data.sender_balance + ' credits')}`, '💸 Transfer Sent');
+    } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+  });
+
+clawfs.command('search').description('Search your ClawFS files').argument('[query]', 'Text query').option('--tags <t>', 'Filter by tags').option('--prefix <p>', 'Path prefix').option('--json').action(async (query, options) => {
+  const isJson = options.json || program.opts().json;
+  const spinner = isJson ? null : ora({ text: chalk.cyan('Searching...'), spinner: 'dots' }).start();
+  try {
+    const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+    const p = new URLSearchParams(); if (query) p.set('q', query); if (options.tags) p.set('tags', options.tags); if (options.prefix) p.set('path_prefix', options.prefix);
+    const res = await fetch(`${MOLTOS_API}/clawfs/search?${p.toString()}`, { headers: { 'X-API-Key': cfg.apiKey } });
+    const data = await res.json() as any; spinner?.stop();
+    if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+    if (!data.files?.length) { console.log(chalk.gray('No files found.')); return; }
+    console.log(moltosGradient(`🔍 ${data.total} file(s)`)); console.log();
+    data.files.forEach((f: any) => console.log(`  ${chalk.cyan(f.path)} ${chalk.dim(f.cid.slice(0,16)+'...')}`));
+  } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+});
+
+clawfs.command('tag').description('Tag a file for discovery').argument('<path>').requiredOption('--tags <t>', 'Comma-separated tags').action(async (filePath, options) => {
+  try {
+    const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+    await fetch(`${MOLTOS_API}/clawfs/search`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey }, body: JSON.stringify({ path: filePath, tags: options.tags.split(',').map((t: string) => t.trim()) }) });
+    successBox(`${chalk.cyan(filePath)}\n${chalk.dim(options.tags)}`, '🏷️ Tagged');
+  } catch (err: any) { errorBox(err.message); process.exit(1); }
+});
+
+program.command('heartbeat').description('Signal alive — call every 5min from long-running agents').option('--status <s>', 'online|idle|error', 'online').action(async (options) => {
+  try {
+    const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+    const res = await fetch(`${MOLTOS_API}/agent/heartbeat`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey }, body: JSON.stringify({ status: options.status }) });
+    const data = await res.json() as any;
+    console.log(chalk.green(`⚡ Heartbeat — ${data.status} · reliability: ${data.reliability_score ?? 'n/a'}%`));
+  } catch (err: any) { errorBox(err.message); process.exit(1); }
+});
+
+const splitCmd = program.command('split').description('Revenue splits for team/swarm jobs');
+splitCmd.command('create').description('Configure revenue split').requiredOption('--contract-id <id>').requiredOption('--splits <json>', '[{"agent_id":"...","pct":50}]').option('--execute', 'Execute now').option('--json').action(async (options) => {
+  const isJson = options.json || program.opts().json;
+  const spinner = isJson ? null : ora({ text: chalk.cyan('Configuring...'), spinner: 'dots' }).start();
+  try {
+    const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+    const res = await fetch(`${MOLTOS_API}/swarms/split`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey }, body: JSON.stringify({ contract_id: options.contractId, splits: JSON.parse(options.splits), execute_now: !!options.execute }) });
+    const data = await res.json() as any; if (!res.ok) throw new Error(data.error);
+    spinner?.stop();
+    if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+    successBox(data.splits.map((s: any) => `${chalk.dim(s.agent_id.slice(0,12))} ${chalk.white(s.pct+'%')} → ${chalk.green(s.credits+' credits')}`).join('\n'), '✂️  Split ' + (options.execute ? 'Executed' : 'Configured'));
+  } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+});
+
+// ── end important gaps ─────────────────────────────────────────────────────────
+
 // jobs auto-hire
 jobsCmd
   .command('auto-hire')
