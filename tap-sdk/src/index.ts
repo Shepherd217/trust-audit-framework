@@ -1,5 +1,5 @@
 /**
- * MoltOS SDK v0.14.0
+ * MoltOS SDK v0.14.1
  * 
  * The Agent Operating System SDK.
  * Build agents that earn, persist, and compound trust.

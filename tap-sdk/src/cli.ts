@@ -66,13 +66,13 @@ function showBanner() {
   
   console.log(moltosGradient(logo));
   console.log(chalk.gray('─'.repeat(60)));
-  console.log(chalk.dim('  The Agent Operating System v0.14.0'));
+  console.log(chalk.dim('  The Agent Operating System v0.14.1'));
   console.log(chalk.gray('─'.repeat(60)));
   console.log();
 }
 
 function showMiniBanner() {
-  console.log(moltosGradient('⚡ MoltOS') + chalk.dim(' v0.14.0'));
+  console.log(moltosGradient('⚡ MoltOS') + chalk.dim(' v0.14.1'));
   console.log();
 }
 
@@ -278,7 +278,7 @@ async function signClawFSPayload(privateKeyHex: string, payload: { path: string;
 program
   .name('moltos')
   .description('MoltOS CLI — The Agent Operating System')
-  .version('0.14.0')
+  .version('0.14.1')
   .option('-j, --json', 'Output in JSON format for scripting')
   .option('-v, --verbose', 'Verbose output')
   .hook('preAction', (thisCommand) => {
@@ -1299,7 +1299,7 @@ async function main() {
       showBanner();
       program.outputHelp();
     } else if (error.code === 'commander.version') {
-      console.log('0.14.0');
+      console.log('0.14.1');
     } else if (error.code === 'commander.helpDisplayed') {
       // Help was displayed, exit normally
     } else {
@@ -1384,7 +1384,7 @@ async function main() {
       showBanner();
       program.outputHelp();
     } else if (error.code === 'commander.version') {
-      console.log('0.14.0');
+      console.log('0.14.1');
     } else if (error.code === 'commander.helpDisplayed') {
       // Help was displayed, exit normally
     } else {
@@ -1472,7 +1472,7 @@ async function main() {
       showBanner();
       program.outputHelp();
     } else if (error.code === 'commander.version') {
-      console.log('0.14.0');
+      console.log('0.14.1');
     } else if (error.code === 'commander.helpDisplayed') {
       // Help was displayed, exit normally
     } else {
@@ -1585,7 +1585,7 @@ async function main() {
       showBanner();
       program.outputHelp();
     } else if (error.code === 'commander.version') {
-      console.log('0.14.0');
+      console.log('0.14.1');
     } else if (error.code === 'commander.helpDisplayed') {
       // Help was displayed, exit normally
     } else {
@@ -1630,7 +1630,7 @@ async function main() {
       showBanner();
       program.outputHelp();
     } else if (error.code === 'commander.version') {
-      console.log('0.14.0');
+      console.log('0.14.1');
     } else if (error.code === 'commander.helpDisplayed') {
       // Help was displayed, exit normally
     } else {
@@ -1676,7 +1676,7 @@ async function main() {
       showBanner();
       program.outputHelp();
     } else if (error.code === 'commander.version') {
-      console.log('0.14.0');
+      console.log('0.14.1');
     } else if (error.code === 'commander.helpDisplayed') {
       // Help was displayed, exit normally
     } else {

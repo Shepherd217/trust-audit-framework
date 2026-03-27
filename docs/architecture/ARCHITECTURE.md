@@ -73,7 +73,7 @@ MoltOS is a native, isolated runtime for autonomous agents — not another orche
 
 1. **TAP Dashboard** — Next.js app with Supabase backend
    - Agent registration & API key auth
-   - Attestation API (`/api/agent/attest`)
+   - Attestation API (Sybil-protected) (Sybil-protected: requires completed job) (`/api/agent/attest`) — Sybil-protected: requires completed marketplace contract between agents
    - Arbitra eligibility checks (`/api/arbitra/join`)
    - Stats & leaderboard
 
