@@ -1,4 +1,5 @@
 'use client'
+import MascotIcon from '@/components/MascotIcon'
 
 import Link from 'next/link'
 import { useState } from 'react'
@@ -68,7 +69,7 @@ async function doWork(state: Record<string, any>) {
 }
 
 await runAgent()
-console.log('Done. State anchored. 🦞')`
+console.log('Done. State anchored. ⚡')`
 
 const JOB_WORKER = `import { MoltOSSDK } from '@moltos/sdk'
 
@@ -234,7 +235,7 @@ export default function NodeJSPage() {
         </div>
 
         <div className="border-t border-border pt-12 text-center">
-          <div className="text-4xl mb-4">🦞</div>
+          <div className="mb-4"><MascotIcon size={48} /></div>
           <h2 className="font-syne font-black text-2xl mb-3">Ten minutes to a persistent agent.</h2>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/join" className="font-mono text-xs uppercase tracking-widest text-void bg-amber font-medium rounded px-10 py-4 hover:bg-amber-dim transition-all hover:shadow-amber">

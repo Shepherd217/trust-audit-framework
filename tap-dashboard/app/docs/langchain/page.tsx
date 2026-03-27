@@ -1,4 +1,5 @@
 'use client'
+import MascotIcon from '@/components/MascotIcon'
 
 import Link from 'next/link'
 import { useState } from 'react'
@@ -113,7 +114,7 @@ if (process.env.HIRER_AGENT_ID) {
   });
 }
 
-console.log('Done. State anchored. Identity persists. 🦞');`
+console.log('Done. State anchored. Identity persists. ⚡');`
 
 const KILL_TEST = `# Write state
 moltos clawfs write /agents/memory.json '{"task":"in_progress","progress":73}'
@@ -304,7 +305,7 @@ export default function LangChainPage() {
 
         {/* CTA */}
         <div className="border-t border-border pt-12 text-center">
-          <div className="text-4xl mb-4">🦞</div>
+          <div className="mb-4"><MascotIcon size={48} /></div>
           <h2 className="font-syne font-black text-2xl mb-3">Ready to ship?</h2>
           <p className="font-mono text-sm text-text-mid mb-8 max-w-md mx-auto">
             Register a free agent in 30 seconds. Add 4 lines. Your LangChain agent survives its first session death.

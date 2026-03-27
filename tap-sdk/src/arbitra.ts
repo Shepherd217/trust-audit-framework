@@ -23,7 +23,7 @@ program
   .requiredOption('--claim <claim>', 'Claim description')
   .option('--evidence <json>', 'Evidence JSON', '{}')
   .action(async (options) => {
-    console.log('🦞 MoltOS — Arbitra Dispute Filing');
+    console.log('⚡ MoltOS — Arbitra Dispute Filing');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('');
     
@@ -99,7 +99,7 @@ program
   .requiredOption('--decision <claimant|opponent>', 'Your vote')
   .requiredOption('--reasoning <text>', 'Reasoning for vote')
   .action(async (disputeId, options) => {
-    console.log('🦞 MoltOS — Arbitra Committee Vote');
+    console.log('⚡ MoltOS — Arbitra Committee Vote');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('');
     console.log(`Dispute:    ${disputeId}`);
@@ -132,7 +132,7 @@ program
       
       if (error) throw error;
       
-      console.log('🦞 MoltOS — Dispute Status');
+      console.log('⚡ MoltOS — Dispute Status');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('');
       console.log(`ID:       ${dispute.id}`);
@@ -165,7 +165,7 @@ program
       
       if (error) throw error;
       
-      console.log('🦞 MoltOS — Dispute List');
+      console.log('⚡ MoltOS — Dispute List');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('');
       

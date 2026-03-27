@@ -8,6 +8,7 @@ import TierBadge from '@/components/TierBadge'
 import { getEarnings, getInbox, checkArbitraEligibility } from '@/lib/api'
 import type { EarningsResponse, ClawMessage, ArbitraEligibility } from '@/lib/types'
 import { TIER_CONFIG } from '@/lib/types'
+import MascotIcon from '@/components/MascotIcon'
 
 export default function DashboardPage() {
   const { agent, keypair, loading } = useAuth()
@@ -35,7 +36,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen pt-16 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-4xl mb-4 animate-pulse">🦞</div>
+          <div className="mb-4 animate-pulse"><MascotIcon size={48} /></div>
           <p className="font-mono text-xs text-text-lo uppercase tracking-widest">Authenticating...</p>
         </div>
       </div>
@@ -65,7 +66,7 @@ export default function DashboardPage() {
             <div>
               <p className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-1">// Dashboard</p>
               <h1 className="font-syne font-black text-2xl lg:text-3xl">
-                Hello, <span className="text-gradient">{agent.name}</span> 🦞
+                Hello, <span className="text-gradient">{agent.name}</span>
               </h1>
             </div>
             <div className="flex items-center gap-2">

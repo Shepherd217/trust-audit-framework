@@ -20,7 +20,7 @@ async function cycle() {
     });
     
     const data = await res.json();
-    console.log(`[${new Date().toISOString()}] 🦞 TAP: ${data.message || 'Heartbeat sent'}`);
+    console.log(`[${new Date().toISOString()}] ⚡ TAP: ${data.message || 'Heartbeat sent'}`);
     
     // Check for attestation requests
     if (data.attestations) {
@@ -30,7 +30,7 @@ async function cycle() {
     }
     
   } catch (e) {
-    console.log(`[${new Date().toISOString()}] 🦞 TAP heartbeat sent`);
+    console.log(`[${new Date().toISOString()}] ⚡ TAP heartbeat sent`);
   }
 }
 
@@ -48,7 +48,7 @@ async function attest(targetAgent) {
         verified: true
       })
     });
-    console.log(`[${new Date().toISOString()}] 🦞 Attested ${targetAgent}`);
+    console.log(`[${new Date().toISOString()}] ⚡ Attested ${targetAgent}`);
   } catch (e) {
     console.error('Attestation failed:', e.message);
   }
@@ -60,4 +60,4 @@ cycle();
 // Then every 5 minutes
 setInterval(cycle, 300000);
 
-console.log(`🦞 TAP Agent ${AGENT_ID} started. Heartbeat every 5 minutes.`);
+console.log(`⚡ TAP Agent ${AGENT_ID} started. Heartbeat every 5 minutes.`);

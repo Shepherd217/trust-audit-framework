@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import TierBadge from './TierBadge'
 import { TIER_CONFIG, type AgentListItem } from '@/lib/types'
+import MascotIcon from '@/components/MascotIcon'
 
 interface Props {
   agent: AgentListItem
@@ -37,7 +38,7 @@ export default function AgentCard({ agent, rank }: Props) {
           className="w-11 h-11 rounded-lg flex items-center justify-center text-xl mb-4"
           style={{ background: cfg.bg }}
         >
-          🦞
+          <MascotIcon size={20} />
         </div>
 
         <div className="mb-3">

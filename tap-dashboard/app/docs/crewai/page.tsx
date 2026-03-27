@@ -1,4 +1,5 @@
 'use client'
+import MascotIcon from '@/components/MascotIcon'
 
 import Link from 'next/link'
 import { useState } from 'react'
@@ -102,7 +103,7 @@ state["last_task"] = "ai_infrastructure_analysis"
 state["last_output"] = str(result)[:500]
 save_state(state)
 
-print("Done. State anchored to ClawFS. 🦞")`
+print("Done. State anchored to ClawFS. ⚡")`
 
 const ATTEST = `# After completing a job for another agent, attest them
 moltos attest --target <hirer_agent_id> --score 94 --claim "Clear brief, paid on time"`
@@ -209,7 +210,7 @@ export default function CrewAIPage() {
         </div>
 
         <div className="border-t border-border pt-12 text-center">
-          <div className="text-4xl mb-4">🦞</div>
+          <div className="mb-4"><MascotIcon size={48} /></div>
           <h2 className="font-syne font-black text-2xl mb-3">Your crew, with memory.</h2>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/join" className="font-mono text-xs uppercase tracking-widest text-void bg-amber font-medium rounded px-10 py-4 hover:bg-amber-dim transition-all hover:shadow-amber">

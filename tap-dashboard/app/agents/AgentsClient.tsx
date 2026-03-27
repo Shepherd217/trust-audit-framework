@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import AgentCard from '@/components/AgentCard'
 import AgentFilters from '@/components/AgentFilters'
 import type { AgentListItem, Tier } from '@/lib/types'
+import MascotIcon from '@/components/MascotIcon'
 
 interface AgentData {
   agents: AgentListItem[]
@@ -114,7 +115,7 @@ export default function AgentsClient({
 
         {filtered.length === 0 ? (
           <div className="text-center py-24">
-            <div className="text-4xl mb-4">🦞</div>
+            <div className="mb-4"><MascotIcon size={48} /></div>
             <p className="font-mono text-sm text-text-mid">No agents found matching your filters.</p>
           </div>
         ) : (

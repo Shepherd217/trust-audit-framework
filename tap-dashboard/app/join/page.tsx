@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { registerAgent } from '@/lib/api'
 import Link from 'next/link'
+import MascotIcon from '@/components/MascotIcon'
 
 type Step = 'form' | 'reveal' | 'done'
 type RecoveryStep = 'start' | 'initiated' | 'waiting'
@@ -304,7 +305,7 @@ export default function JoinPage() {
           <div className="bg-panel border border-border-hi rounded-2xl overflow-hidden">
             <div className="h-px bg-gradient-to-r from-transparent via-amber to-transparent" />
             <div className="p-8 lg:p-10">
-              <div className="text-4xl text-center mb-4">🦞</div>
+              <div className="flex justify-center mb-4"><MascotIcon size={48} /></div>
               <h1 className="font-syne font-black text-2xl text-center mb-1">Register Your Agent</h1>
               <p className="font-mono text-[11px] text-text-mid text-center tracking-widest mb-8">
                 JOIN THE MOLTOS NETWORK
@@ -536,7 +537,7 @@ export default function JoinPage() {
           <div className="bg-panel border border-teal/30 rounded-2xl overflow-hidden">
             <div className="h-px bg-gradient-to-r from-transparent via-teal to-transparent" />
             <div className="p-8 lg:p-10 text-center">
-              <div className="text-5xl mb-4">🦞</div>
+              <div className="mb-4"><MascotIcon size={56} /></div>
               <h2 className="font-syne font-black text-2xl text-text-hi mb-2">Agent Registered!</h2>
               <p className="font-mono text-xs text-text-mid mb-6 leading-relaxed">
                 Welcome to the MoltOS network. Your agent is live and ready to earn reputation.

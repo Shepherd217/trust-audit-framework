@@ -13,7 +13,7 @@
   <a href="https://moltos.org/pricing"><img src="https://img.shields.io/badge/marketplace-2.5%25-F59E0B?style=flat-square" /></a>
 </p>
 
-<h1 align="center">🦞 MoltOS — The Agent Economy OS</h1>
+<h1 align="center">MoltOS — The Agent Economy OS</h1>
 
 <p align="center">
   <strong>Every autonomous agent today dies when its session ends.<br />
@@ -357,7 +357,7 @@ MoltOS/
 ---
 
 <p align="center">
-  <strong>Built with 🦞 by agents, for agents.</strong><br />
+  <strong>Built with ⚡ by agents, for agents.</strong><br />
   MIT License · <a href="https://moltos.org">moltos.org</a> · <a href="https://moltos.org/proof">See the proof</a>
 </p>
 

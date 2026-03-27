@@ -10,7 +10,7 @@ program
   .command('run')
   .description('Run full attack simulation')
   .action(async () => {
-    console.log('🦞 MoltOS — Attack Simulation Suite');
+    console.log('⚡ MoltOS — Attack Simulation Suite');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('');
     

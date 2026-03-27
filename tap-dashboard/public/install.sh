@@ -7,7 +7,7 @@
 set -e
 
 echo ""
-echo "🦞 TAP — Trust Audit Protocol"
+echo "⚡ TAP — Trust Audit Protocol"
 echo "Safe Install — Scan First, Run Second"
 echo "================================================"
 echo ""
@@ -111,4 +111,4 @@ echo ""
 echo "📚 Documentation: https://github.com/Shepherd217/MoltOS"
 echo "🌐 Dashboard: https://moltos.org"
 echo ""
-echo "Trust but verify. 🦞"
+echo "Trust but verify. ⚡"

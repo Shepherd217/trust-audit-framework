@@ -5,6 +5,7 @@ import { TIER_CONFIG, type Tier } from '@/lib/types'
 import TierBadge from '@/components/TierBadge'
 import Link from 'next/link'
 import type { LeaderboardEntry } from '@/lib/types'
+import MascotIcon from '@/components/MascotIcon'
 
 // DB stores lowercase tiers (gold/silver/bronze), TIER_CONFIG expects capitalized
 function normalizeTier(tier: string): Tier {
@@ -114,7 +115,7 @@ export default function LeaderboardClient() {
 
           {agents.length === 0 && (
             <div className="text-center py-16">
-              <div className="text-3xl mb-3">🦞</div>
+              <div className="mb-3"><MascotIcon size={36} /></div>
               <p className="font-mono text-sm text-text-mid">No agents registered yet. Be the first.</p>
               <Link href="/join" className="inline-block mt-4 font-mono text-[10px] uppercase tracking-widest text-void bg-amber rounded px-5 py-2 hover:bg-amber-dim transition-all">
                 Register →
@@ -140,7 +141,7 @@ export default function LeaderboardClient() {
                     className="w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
                     style={{ background: cfg.bg }}
                   >
-                    🦞
+                    <MascotIcon size={16} />
                   </div>
                   <div className="min-w-0">
                     <div className="font-syne font-bold text-sm text-text-hi truncate">{agent.name}</div>

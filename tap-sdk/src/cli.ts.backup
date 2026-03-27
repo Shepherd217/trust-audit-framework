@@ -81,7 +81,7 @@ program
       
       const data = JSON.parse(fs.readFileSync('./genesis-keypair.json', 'utf-8'));
       
-      console.log('🦞 MoltOS — The Agent Economy OS');
+      console.log('⚡ MoltOS — The Agent Economy OS');
       console.log('');
       console.log('🔄 Registering on network...');
       console.log('');
@@ -122,7 +122,7 @@ program
     projectName = projectName || 'my-moltos-agent';
     const dryRun = options.dryRun || false;
     
-    console.log('🦞 MoltOS — The Agent Economy OS');
+    console.log('⚡ MoltOS — The Agent Economy OS');
     console.log('');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🔍 PREFLIGHT SAFETY SCAN');
@@ -180,7 +180,7 @@ program
   log: { level: 'info', pretty: true }
 };`);
     
-    fs.writeFileSync(path.join(srcDir, 'agent.js'), `console.log('🦞 MoltOS agent: ${projectName}');`);
+    fs.writeFileSync(path.join(srcDir, 'agent.js'), `console.log('⚡ MoltOS agent: ${projectName}');`);
     fs.writeFileSync(path.join(projectDir, 'README.md'), `# ${projectName}\n\nMoltOS agent project.`);
     fs.writeFileSync(path.join(projectDir, '.gitignore'), `node_modules/\n.clawfs/\n.clawid/\n*.log`);
     
@@ -216,7 +216,7 @@ program
       
       const data = JSON.parse(fs.readFileSync('./genesis-keypair.json', 'utf-8'));
       
-      console.log('🦞 MoltOS — Agent Status');
+      console.log('⚡ MoltOS — Agent Status');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('');
       console.log(`Agent ID:     ${data.id}`);
@@ -255,7 +255,7 @@ program
       const data = JSON.parse(fs.readFileSync('./genesis-keypair.json', 'utf-8'));
       const attestationId = crypto.randomUUID();
       
-      console.log('🦞 MoltOS — Submit Attestation');
+      console.log('⚡ MoltOS — Submit Attestation');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('');
       console.log(`Agent ID:       ${data.id}`);
@@ -297,7 +297,7 @@ program
       const data = JSON.parse(fs.readFileSync('./genesis-keypair.json', 'utf-8'));
       const disputeId = crypto.randomUUID();
       
-      console.log('🦞 MoltOS — File Dispute');
+      console.log('⚡ MoltOS — File Dispute');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('');
       console.log(`Claimant:    ${data.id} (${data.name})`);
@@ -341,7 +341,7 @@ program
       const data = JSON.parse(fs.readFileSync('./genesis-keypair.json', 'utf-8'));
       const swarmId = crypto.randomUUID().slice(0, 8);
       
-      console.log('🦞 MoltOS — Launch Swarm');
+      console.log('⚡ MoltOS — Launch Swarm');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('');
       console.log(`Swarm ID:    ${swarmId}`);
@@ -393,7 +393,7 @@ program
           }
           const content = fs.readFileSync(options.file, 'utf-8');
           const cid = crypto.createHash('sha256').update(content).digest('hex');
-          console.log('🦞 MoltOS — ClawFS Store');
+          console.log('⚡ MoltOS — ClawFS Store');
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.log('');
           console.log(`File: ${options.file}`);
@@ -413,7 +413,7 @@ program
             console.error('❌ Error: --id required');
             process.exit(1);
           }
-          console.log('🦞 MoltOS — ClawFS Retrieve');
+          console.log('⚡ MoltOS — ClawFS Retrieve');
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.log('');
           console.log(`File ID: ${options.id}`);
@@ -429,7 +429,7 @@ program
         }
         
         case 'list': {
-          console.log('🦞 MoltOS — ClawFS Files');
+          console.log('⚡ MoltOS — ClawFS Files');
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.log('');
           console.log('ID                                    Name              Size    Tier');
@@ -448,7 +448,7 @@ program
             console.error('❌ Error: --id and --agent required');
             process.exit(1);
           }
-          console.log('🦞 MoltOS — ClawFS Share');
+          console.log('⚡ MoltOS — ClawFS Share');
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.log('');
           console.log(`File:    ${options.id}`);
@@ -467,7 +467,7 @@ program
             console.error('❌ Error: --query required');
             process.exit(1);
           }
-          console.log('🦞 MoltOS — ClawFS Semantic Search');
+          console.log('⚡ MoltOS — ClawFS Semantic Search');
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.log('');
           console.log(`Query: "${options.query}"`);
@@ -487,7 +487,7 @@ program
             console.error('❌ Error: --id required');
             process.exit(1);
           }
-          console.log('🦞 MoltOS — ClawFS Delete');
+          console.log('⚡ MoltOS — ClawFS Delete');
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.log('');
           console.log(`File: ${options.id}`);
@@ -530,7 +530,7 @@ program
             process.exit(1);
           }
           const definition = JSON.parse(fs.readFileSync(options.file, 'utf-8'));
-          console.log('🦞 MoltOS — Create Workflow');
+          console.log('⚡ MoltOS — Create Workflow');
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.log('');
           console.log(`Name: ${definition.name}`);
@@ -545,7 +545,7 @@ program
         }
         
         case 'list': {
-          console.log('🦞 MoltOS — Workflows');
+          console.log('⚡ MoltOS — Workflows');
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.log('');
           console.log('ID                                    Name                    Status');
@@ -563,7 +563,7 @@ program
             console.error('❌ Error: --id required for execute');
             process.exit(1);
           }
-          console.log('🦞 MoltOS — Execute Workflow');
+          console.log('⚡ MoltOS — Execute Workflow');
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.log('');
           console.log(`Workflow:  ${options.id}`);
@@ -583,7 +583,7 @@ program
             console.error('❌ Error: --id required for status');
             process.exit(1);
           }
-          console.log('🦞 MoltOS — Execution Status');
+          console.log('⚡ MoltOS — Execution Status');
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.log('');
           console.log(`Execution: ${options.id}`);
@@ -604,7 +604,7 @@ program
             console.error('❌ Error: --id required for cancel');
             process.exit(1);
           }
-          console.log('🦞 MoltOS — Cancel Execution');
+          console.log('⚡ MoltOS — Cancel Execution');
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.log('');
           console.log(`Execution: ${options.id}`);

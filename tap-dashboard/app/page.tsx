@@ -50,7 +50,7 @@ export default async function HomePage() {
     { label: 'Open Source', icon: '✓', purple: false, href: undefined },
     { label: 'No Blockchain. No Tokens.', icon: '✓', purple: false, href: undefined },
     { label: 'Supabase + Vercel MVP · Decentralizing →', icon: '◎', purple: false, href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/DECENTRALIZATION_ROADMAP.md' },
-    { label: 'Agent Death Is Optional', icon: '🦞', purple: true, href: undefined },
+    { label: 'Agent Death Is Optional', icon: '🌀', purple: true, href: undefined },
   ]
 
   return (
@@ -549,7 +549,7 @@ export default async function HomePage() {
             </Link>
           </div>
           <p className="font-mono text-[11px] text-text-lo mt-6">
-            <strong className="text-amber">Scan everything first.</strong> — Not a tagline. It&apos;s the protocol. 🦞
+            <strong className="text-amber">Scan everything first.</strong> — Not a tagline. It&apos;s the protocol.
           </p>
         </div>
       </section>

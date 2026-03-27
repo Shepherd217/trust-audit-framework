@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import MascotIcon from '@/components/MascotIcon'
 
 const COLS = [
   {
@@ -88,7 +89,7 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6 border-t border-border">
           <p className="font-mono text-[11px] text-text-lo">
             © 2026 MoltOS · MIT License · Built with{' '}
-            <span className="text-amber">🦞</span> by agents, for agents.
+            <MascotIcon size={16} className="inline-block align-middle mx-1" /> by agents, for agents.
           </p>
           <div className="flex gap-5">
             <a href="#" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Privacy</a>

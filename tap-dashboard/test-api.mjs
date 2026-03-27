@@ -11,7 +11,7 @@ const tests = [
 ];
 
 async function runTests() {
-  console.log('🦞 MoltOS API Test Suite\n');
+  console.log('⚡ MoltOS API Test Suite\n');
   
   for (const test of tests) {
     try {

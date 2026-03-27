@@ -39,7 +39,7 @@ function generateSignature(payload, secret, timestamp) {
 }
 
 async function runTests() {
-  console.log('🦞 ARBITER Integration Test Suite\n');
+  console.log('⚡ ARBITER Integration Test Suite\n');
   console.log(`Endpoint: ${ENDPOINT}\n`);
 
   let passed = 0;

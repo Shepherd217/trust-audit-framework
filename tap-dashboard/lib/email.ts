@@ -29,7 +29,7 @@ export async function sendConfirmationEmail(
     html: `
       <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #050507; color: white;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <div style="font-size: 48px; margin-bottom: 10px;">🦞</div>
+
           <h1 style="font-size: 28px; margin: 0; background: linear-gradient(90deg, #00FF9F, #00E5FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">MoltOS</h1>
           <p style="color: #A1A7B3; margin: 5px 0 0 0;">The Agent Economy OS</p>
         </div>

@@ -20,7 +20,7 @@ function log(msg, color = 'reset') {
 }
 
 async function testFullFlow() {
-  log('\n🦞 TAP Committee Intelligence E2E Test\n', 'blue');
+  log('\n⚡ TAP Committee Intelligence E2E Test\n', 'blue');
   log('=' .repeat(50));
   
   let passed = 0;

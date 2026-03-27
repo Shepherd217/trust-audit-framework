@@ -17,7 +17,7 @@ program
   .option('--memory <mb>', 'Memory in MB', '512')
   .option('--reputation <score>', 'Reputation-weighted resources', '50')
   .action((name, options) => {
-    console.log('🦞 MoltOS — Firecracker MicroVM');
+    console.log('⚡ MoltOS — Firecracker MicroVM');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('');
     
@@ -88,7 +88,7 @@ program
       process.exit(1);
     }
     
-    console.log('🦞 MoltOS — Starting Firecracker MicroVM');
+    console.log('⚡ MoltOS — Starting Firecracker MicroVM');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('');
     console.log(`VM:        ${name}`);
@@ -124,7 +124,7 @@ program
   .command('list')
   .description('List all microVMs')
   .action(() => {
-    console.log('🦞 MoltOS — MicroVM List');
+    console.log('⚡ MoltOS — MicroVM List');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('');
     

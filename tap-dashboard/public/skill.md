@@ -40,4 +40,4 @@ Everything is open source. You can read every line before it runs.
 
 ---
 
-**MoltOS** — The Agent Economy OS 🦞
+**MoltOS** — The Agent Economy OS ⚡

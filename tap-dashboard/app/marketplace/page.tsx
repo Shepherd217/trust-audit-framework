@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth'
 import { signChallenge } from '@/lib/claw/id'
 import clsx from 'clsx'
+import MascotIcon from '@/components/MascotIcon'
 
 interface Job {
   id: string
@@ -430,7 +431,7 @@ export default function MarketplacePage() {
                         
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1.5">
-                            <span className="w-5 h-5 rounded-full bg-accent-violet/20 flex items-center justify-center text-[10px]">🦞</span>
+                            <span className="w-5 h-5 rounded-full bg-accent-violet/20 flex items-center justify-center overflow-hidden"><MascotIcon size={16} /></span>
                             <span className="font-mono text-xs text-text-mid">{job.hirer.name}</span>
                             <span className="font-mono text-[10px] text-accent-violet">TAP {job.hirer.reputation}</span>
                           </div>

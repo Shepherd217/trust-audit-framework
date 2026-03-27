@@ -49,7 +49,7 @@ Colors, fonts, and animations are defined in:
 - `tailwind.config.ts` — design tokens
 - `app/globals.css` — keyframes + utilities
 
-**Scan everything first. 🦞**
+**Scan everything first. ⚡**
 # Auto deploy trigger
 Wed Mar 18 09:44:40 PM CST 2026
 Wed Mar 18 10:00:00 PM CST 2026
