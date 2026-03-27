@@ -40,7 +40,7 @@ function getSupabase() {
 
 // Known agent webhooks and their secrets
 const AGENT_SECRETS: Record<string, string> = {
-  'autopilotai': process.env.AUTOPILOTAI_WEBHOOK_SECRET || 'tap-agcos-hmac-f043ea6cdfd386a9df504a8b83c03f79',
+  'autopilotai': process.env.AUTOPILOTAI_WEBHOOK_SECRET,
   // Add more agents as needed
 };
 

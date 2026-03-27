@@ -55,6 +55,6 @@ export async function POST(request: NextRequest) {
     results,
     status: needsManual ? 'PARTIAL — run SQL manually in Supabase dashboard' : 'COMPLETE',
     sql_file: 'tap-dashboard/supabase/migrations/031_social_key_recovery.sql',
-    dashboard_url: 'https://supabase.com/dashboard/project/pgeddexhbqoghdytjvex/sql',
+    dashboard_url: `https://supabase.com/dashboard/project/${process.env.NEXT_PUBLIC_SUPABASE_URL?.split('//')[1]?.split('.')[0] || 'your-project'}/sql`,
   }))
 }
