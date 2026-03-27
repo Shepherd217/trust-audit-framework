@@ -278,7 +278,7 @@ async function signClawFSPayload(privateKeyHex: string, payload: { path: string;
 program
   .name('moltos')
   .description('MoltOS CLI — The Agent Operating System')
-  .version('0.15.0')
+  .version('0.15.1')
   .option('-j, --json', 'Output in JSON format for scripting')
   .option('-v, --verbose', 'Verbose output')
   .hook('preAction', (thisCommand) => {
@@ -2114,6 +2114,222 @@ program
         `${chalk.gray('Uptime:')}    ${chalk.dim(`${data.uptime_seconds}s`)}` +
         (data.error_message ? `\n${chalk.red('Error:')}     ${data.error_message}` : ''),
         '📊 Deployment Status'
+      );
+    } catch (err: any) { errorBox(err.message); process.exit(1); }
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// v3 — auto-hire, recurring, storefront, payment streaming
+// ─────────────────────────────────────────────────────────────────────────────
+
+// jobs auto-hire
+jobsCmd
+  .command('auto-hire')
+  .description('Auto-hire the highest-TAP webhook agent for a job')
+  .requiredOption('--job-id <id>', 'Job ID to auto-hire for')
+  .option('--min-tap <n>', 'Minimum TAP score required', '0')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Finding best agent...'), spinner: 'dots' }).start();
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const res = await fetch(`${MOLTOS_API}/marketplace/jobs/${options.jobId}/auto-hire`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify({ min_tap: parseInt(options.minTap) }),
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error);
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      if (!data.hired) {
+        infoBox(`Auto-hire enabled but no agents available yet.\n${chalk.dim(data.reason)}`, '⏳ Auto-Hire Queued');
+      } else {
+        successBox(
+          `${chalk.bold('Agent hired!')}\n\n` +
+          `${chalk.gray('Agent:')}    ${chalk.cyan(data.hired_agent)}\n` +
+          `${chalk.gray('TAP:')}      ${chalk.green(data.tap_score)}\n` +
+          `${chalk.gray('Contract:')} ${chalk.white(data.contract_id)}`,
+          '🤖 Auto-Hired'
+        );
+      }
+    } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+  });
+
+// jobs recurring
+jobsCmd
+  .command('recurring')
+  .description('Create a recurring job that auto-reposts on a schedule')
+  .requiredOption('--title <title>', 'Job title')
+  .requiredOption('--description <desc>', 'Job description')
+  .requiredOption('--budget <credits>', 'Budget in credits', parseInt)
+  .requiredOption('--recurrence <interval>', 'Schedule: hourly | daily | weekly | monthly')
+  .option('--category <cat>', 'Job category', 'General')
+  .option('--no-auto-hire', 'Disable auto-hire (manual hiring only)')
+  .option('--min-tap <n>', 'Min TAP for auto-hire', '0')
+  .option('--bond <credits>', 'Credits agent must stake as bond', '0')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Creating recurring job...'), spinner: 'dots' }).start();
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const res = await fetch(`${MOLTOS_API}/marketplace/recurring`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify({
+          title: options.title, description: options.description, budget: options.budget,
+          category: options.category, recurrence: options.recurrence,
+          auto_hire: options.autoHire !== false,
+          auto_hire_min_tap: parseInt(options.minTap),
+          bond_required: parseInt(options.bond),
+        }),
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error);
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      successBox(
+        `${chalk.bold('Recurring job created!')}\n\n` +
+        `${chalk.gray('Job ID:')}     ${chalk.cyan(data.job_id)}\n` +
+        `${chalk.gray('Schedule:')}   ${chalk.white(data.recurrence)}\n` +
+        `${chalk.gray('Next run:')}   ${chalk.dim(new Date(data.next_run_at).toLocaleString())}\n` +
+        `${chalk.gray('Auto-hire:')}  ${data.auto_hire ? chalk.green('✓') : chalk.dim('✗')}`,
+        '🔁 Recurring Job'
+      );
+    } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+  });
+
+// storefront
+const storefrontCmd = program
+  .command('storefront')
+  .description('Manage your public agent storefront');
+
+storefrontCmd
+  .command('show [handle-or-id]')
+  .description('View a public agent storefront')
+  .option('--json', 'Output as JSON')
+  .action(async (handleOrId, options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Loading storefront...'), spinner: 'dots' }).start();
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const target = handleOrId || cfg.agentId;
+      const param = target.startsWith('agent_') ? `agent_id=${target}` : `handle=${target}`;
+      const res = await fetch(`${MOLTOS_API}/agent/storefront?${param}`);
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error);
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      infoBox(
+        `${chalk.bold(data.name)} ${chalk.dim(`@${data.handle}`)}\n\n` +
+        `${chalk.gray('TAP:')}         ${chalk.green(`${data.reputation}`)} ${chalk.dim(data.tier)}\n` +
+        `${chalk.gray('Bio:')}         ${chalk.white(data.bio || '(none)')}\n` +
+        `${chalk.gray('Skills:')}      ${chalk.cyan((data.skills || []).join(', ') || '(none)')}\n` +
+        `${chalk.gray('Rate:')}        ${data.rate_usd ? chalk.white(`${data.rate_usd}/hr`) : chalk.dim('(not set)')}\n` +
+        `${chalk.gray('Jobs done:')}   ${chalk.white(data.completed_jobs)}\n` +
+        `${chalk.gray('For hire:')}    ${data.available_for_hire ? chalk.green('✓ Yes') : chalk.red('✗ No')}\n` +
+        `${chalk.gray('Profile:')}     ${chalk.dim(data.profile_url)}`,
+        '👤 Agent Storefront'
+      );
+    } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+  });
+
+storefrontCmd
+  .command('update')
+  .description('Update your public storefront')
+  .option('--bio <bio>', 'Agent bio')
+  .option('--skills <list>', 'Comma-separated skills')
+  .option('--capabilities <list>', 'Comma-separated job capabilities')
+  .option('--rate <credits>', 'Hourly rate in credits (100 = $1/hr)', parseInt)
+  .option('--handle <handle>', 'Public URL handle (e.g. my-agent)')
+  .option('--available', 'Mark as available for hire')
+  .option('--unavailable', 'Mark as unavailable for hire')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Updating storefront...'), spinner: 'dots' }).start();
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const body: Record<string, any> = {};
+      if (options.bio) body.bio = options.bio;
+      if (options.skills) body.skills = options.skills.split(',').map((s: string) => s.trim());
+      if (options.capabilities) body.capabilities = options.capabilities.split(',').map((s: string) => s.trim());
+      if (options.rate !== undefined) body.rate_per_hour = options.rate;
+      if (options.handle) body.handle = options.handle;
+      if (options.available) body.available_for_hire = true;
+      if (options.unavailable) body.available_for_hire = false;
+      const res = await fetch(`${MOLTOS_API}/agent/storefront`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error);
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      successBox(`Storefront updated.\n\n${chalk.dim(data.profile_url)}`, '✓ Storefront');
+    } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+  });
+
+// payment stream
+const streamCmd = program
+  .command('stream')
+  .description('Payment streaming — release credits on a schedule for long jobs');
+
+streamCmd
+  .command('create')
+  .description('Set up a payment stream for an active contract')
+  .requiredOption('--contract-id <id>', 'Contract ID')
+  .requiredOption('--interval <hours>', 'Release interval in hours (e.g. 24)', parseInt)
+  .option('--installments <n>', 'Number of installments', parseInt)
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Creating payment stream...'), spinner: 'dots' }).start();
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const res = await fetch(`${MOLTOS_API}/payment/stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify({ contract_id: options.contractId, interval_hours: options.interval, installments: options.installments }),
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error);
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      successBox(
+        `${chalk.bold('Payment stream active!')}\n\n` +
+        `${chalk.gray('Stream ID:')}      ${chalk.cyan(data.stream_id)}\n` +
+        `${chalk.gray('Per interval:')}   ${chalk.green(`${data.credits_per_interval} credits (${data.usd_per_interval})`)}\n` +
+        `${chalk.gray('Every:')}          ${chalk.white(`${data.interval_hours} hours`)}\n` +
+        `${chalk.gray('Installments:')}   ${chalk.white(data.installments)}\n` +
+        `${chalk.gray('First release:')}  ${chalk.dim(new Date(data.first_release).toLocaleString())}`,
+        '💸 Payment Stream'
+      );
+    } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+  });
+
+streamCmd
+  .command('status')
+  .description('Check payment stream status for a contract')
+  .requiredOption('--contract-id <id>', 'Contract ID')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const res = await fetch(`${MOLTOS_API}/payment/stream?contract_id=${options.contractId}`, { headers: { 'X-API-Key': cfg.apiKey } });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error);
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      infoBox(
+        `${chalk.gray('Status:')}     ${data.status === 'active' ? chalk.green('active') : chalk.yellow(data.status)}\n` +
+        `${chalk.gray('Released:')}   ${chalk.green(`${data.credits_released} credits (${data.usd_released})`)} ${chalk.dim(`(${data.pct_released}%)`)}\n` +
+        `${chalk.gray('Remaining:')}  ${chalk.white(`${data.credits_remaining} credits (${data.usd_remaining})`)}\n` +
+        `${chalk.gray('Next:')}       ${data.next_release_at ? chalk.dim(new Date(data.next_release_at).toLocaleString()) : chalk.dim('complete')}`,
+        '💸 Stream Status'
       );
     } catch (err: any) { errorBox(err.message); process.exit(1); }
   });

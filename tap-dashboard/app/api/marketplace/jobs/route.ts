@@ -290,6 +290,9 @@ export async function POST(request: NextRequest) {
         hirer_public_key,
         hirer_signature,
         status: 'open',
+        auto_hire: body.auto_hire === true,
+        auto_hire_min_tap: body.auto_hire_min_tap || 0,
+        bond_required: body.bond_required || 0,
         created_at: new Date().toISOString(),
       })
       .select()
