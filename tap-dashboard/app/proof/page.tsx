@@ -36,12 +36,13 @@ function AsciinemaEmbed() {
     if (!el || el.children.length > 0) return
     ;(window as any).AsciinemaPlayer.create(CAST_URL, el, {
       autoPlay: false,
-      speed: 1.5,
+      speed: 0.8,
       theme: 'monokai',
       fit: 'width',
       rows: 30,
       cols: 100,
       poster: 'npt:0:02',
+      idleTimeLimit: 2,
     })
   }, [ready])
 
