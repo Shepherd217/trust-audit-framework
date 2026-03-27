@@ -972,10 +972,38 @@ clawfs
     
     try {
       const sdk = await initSDK();
-      const result = await sdk.clawfsSnapshot();
-      
+      const config = (sdk as any)._config;
+
+      if (!config || !config.privateKey) {
+        throw new Error('Agent private key not found. Re-run "moltos init".');
+      }
+
+      // Sign snapshot payload
+      const { signature, timestamp, challenge } = await signClawFSPayload(config.privateKey, {
+        path: '/snapshot',
+        content_hash: crypto.createHash('sha256').update(config.agentId).digest('hex'),
+      });
+
+      const res = await fetch(`${MOLTOS_API}/clawfs/snapshot`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': config.apiKey,
+        },
+        body: JSON.stringify({
+          agent_id: config.agentId,
+          public_key: config.publicKey,
+          signature,
+          timestamp,
+          challenge,
+        }),
+      });
+
+      const result = await res.json() as any;
+      if (!res.ok) throw new Error(result.error || `Snapshot failed (${res.status})`);
+
       spinner.stop();
-      
+
       if (options.json) {
         console.log(JSON.stringify(result, null, 2));
       } else {
@@ -1289,41 +1317,8 @@ profileCmd
         `${chalk.gray('TAP:')}       ${chalk.green((data.reputation ?? 0).toString())} ${chalk.dim((data.tier || '').toUpperCase())}\n` +
         `${chalk.gray('Bio:')}       ${chalk.white(data.bio || '(none)')}\n` +
         `${chalk.gray('Skills:')}    ${chalk.cyan((data.skills || []).join(', ') || '(none)')}\n` +
-        `${chalk.gray('Rate:')}      ${data.rate_per_hour ? '
-
-async function main() {
-  try {
-    await program.parseAsync();
-  } catch (error: any) {
-    if (error.code === 'commander.help') {
-      showBanner();
-      program.outputHelp();
-    } else if (error.code === 'commander.version') {
-      console.log('0.14.1');
-    } else if (error.code === 'commander.helpDisplayed') {
-      // Help was displayed, exit normally
-    } else {
-      console.error();
-      const msg = (error as Error).message || '';
-      const isRateLimit = msg.includes('429') || msg.toLowerCase().includes('rate limit');
-      errorBox(
-        `${chalk.bold(msg)}\n\n` +
-        (isRateLimit
-          ? `${chalk.yellow('Rate limited.')} Wait a moment and retry.\n` +
-            `${chalk.gray('Limits: 10/min attestations · 60/min reads · 30/min writes')}\n\n`
-          : '') +
-        `${chalk.gray('Run')} ${chalk.cyan('moltos --help')} ${chalk.gray('for usage information.')}`,
-        isRateLimit ? 'Rate Limited' : 'Command Failed'
-      );
-      process.exit(1);
-    }
-  }
-}
-
-main();
- + data.rate_per_hour + '/hr' : '(not set)'}\n` +
-        `${chalk.gray('Hire:')}      ${data.available_for_hire ? chalk.green('✓ Available') : chalk.gray('✗ Not available')}`,
-        '👤 Agent Profile'
+        `${chalk.gray('Rate:')}      ${data.rate_per_hour ? `${data.rate_per_hour}/hr` : '(none)'}\n` +
+        `${chalk.gray('Available:')} ${data.availability ? chalk.green('Yes') : chalk.red('No')}`
       );
     } catch (err: any) {
       spinner?.stop();
@@ -1374,33 +1369,7 @@ jobsCmd
         table.push([
           chalk.dim(j.id.slice(0, 8)),
           chalk.white(truncate(j.title, 35)),
-          chalk.green('
-
-async function main() {
-  try {
-    await program.parseAsync();
-  } catch (error: any) {
-    if (error.code === 'commander.help') {
-      showBanner();
-      program.outputHelp();
-    } else if (error.code === 'commander.version') {
-      console.log('0.14.1');
-    } else if (error.code === 'commander.helpDisplayed') {
-      // Help was displayed, exit normally
-    } else {
-      console.error();
-      errorBox(
-        `${chalk.bold((error as Error).message)}\n\n` +
-        `${chalk.gray('Run')} ${chalk.cyan('moltos --help')} ${chalk.gray('for usage information.')}`,
-        'Command Failed'
-      );
-      process.exit(1);
-    }
-  }
-}
-
-main();
- + (j.budget / 100).toFixed(0)),
+          chalk.green(`$${(j.budget / 100).toFixed(0)}`),
           chalk.cyan(j.category || '-'),
           chalk.yellow(String(j.min_tap_score ?? 0)),
           chalk.dim(truncate(j.hirer?.name || j.hirer_id || '-', 16)),
@@ -1462,33 +1431,7 @@ jobsCmd
       successBox(
         `${chalk.gray('Job ID:')}   ${chalk.cyan(data.job?.id || '-')}\n` +
         `${chalk.gray('Title:')}    ${chalk.bold(options.title)}\n` +
-        `${chalk.gray('Budget:')}   ${chalk.green('
-
-async function main() {
-  try {
-    await program.parseAsync();
-  } catch (error: any) {
-    if (error.code === 'commander.help') {
-      showBanner();
-      program.outputHelp();
-    } else if (error.code === 'commander.version') {
-      console.log('0.14.1');
-    } else if (error.code === 'commander.helpDisplayed') {
-      // Help was displayed, exit normally
-    } else {
-      console.error();
-      errorBox(
-        `${chalk.bold((error as Error).message)}\n\n` +
-        `${chalk.gray('Run')} ${chalk.cyan('moltos --help')} ${chalk.gray('for usage information.')}`,
-        'Command Failed'
-      );
-      process.exit(1);
-    }
-  }
-}
-
-main();
- + (options.budget / 100).toFixed(2))}\n` +
+        `${chalk.gray('Budget:')}   ${chalk.green(`$${(options.budget / 100).toFixed(2)}`)}\n` +
         `${chalk.gray('Status:')}   ${chalk.green('open')}\n\n` +
         `${chalk.gray('View:')} ${chalk.dim('moltos.org/marketplace')}`,
         '✅ Job Posted'
@@ -1575,33 +1518,7 @@ jobsCmd
       if (data.posted?.length) {
         console.log(chalk.cyan('Jobs Posted:'));
         data.posted.forEach((j: any) => {
-          console.log(`  ${chalk.dim(j.id?.slice(0,8))} ${chalk.white(truncate(j.title || '-', 40))} ${chalk.green('
-
-async function main() {
-  try {
-    await program.parseAsync();
-  } catch (error: any) {
-    if (error.code === 'commander.help') {
-      showBanner();
-      program.outputHelp();
-    } else if (error.code === 'commander.version') {
-      console.log('0.14.1');
-    } else if (error.code === 'commander.helpDisplayed') {
-      // Help was displayed, exit normally
-    } else {
-      console.error();
-      errorBox(
-        `${chalk.bold((error as Error).message)}\n\n` +
-        `${chalk.gray('Run')} ${chalk.cyan('moltos --help')} ${chalk.gray('for usage information.')}`,
-        'Command Failed'
-      );
-      process.exit(1);
-    }
-  }
-}
-
-main();
- + ((j.budget||0)/100).toFixed(0))} ${chalk.gray(j.status)}`);
+          console.log(`  ${chalk.dim(j.id?.slice(0,8))} ${chalk.white(truncate(j.title || '-', 40))} ${chalk.green(`$${((j.budget||0)/100).toFixed(0)}`)} ${chalk.gray(j.status)}`);
         });
         console.log();
       }
@@ -1620,33 +1537,7 @@ main();
         console.log(chalk.cyan('Contracts:'));
         data.contracts.forEach((c: any) => {
           const roleColor = c.role === 'hirer' ? chalk.blue : chalk.magenta;
-          console.log(`  ${chalk.dim(c.id?.slice(0,8))} ${roleColor(c.role)} ${chalk.green('
-
-async function main() {
-  try {
-    await program.parseAsync();
-  } catch (error: any) {
-    if (error.code === 'commander.help') {
-      showBanner();
-      program.outputHelp();
-    } else if (error.code === 'commander.version') {
-      console.log('0.14.1');
-    } else if (error.code === 'commander.helpDisplayed') {
-      // Help was displayed, exit normally
-    } else {
-      console.error();
-      errorBox(
-        `${chalk.bold((error as Error).message)}\n\n` +
-        `${chalk.gray('Run')} ${chalk.cyan('moltos --help')} ${chalk.gray('for usage information.')}`,
-        'Command Failed'
-      );
-      process.exit(1);
-    }
-  }
-}
-
-main();
- + ((c.agreed_budget||0)/100).toFixed(0))} ${chalk.gray(c.status)}`);
+          console.log(`  ${chalk.dim(c.id?.slice(0,8))} ${roleColor(c.role)} ${chalk.green(`$${((c.agreed_budget||0)/100).toFixed(0)}`)} ${chalk.gray(c.status)}`);
         });
         console.log();
       }

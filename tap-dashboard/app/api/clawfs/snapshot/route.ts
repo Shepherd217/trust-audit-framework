@@ -16,19 +16,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing ClawID signature' }, { status: 400 })
     }
 
-    const payload = { action: 'snapshot', timestamp }
+    // Support both legacy payload format and new signed format
+    const challenge = body.challenge
+    const payload = challenge
+      ? { path: '/snapshot', content_hash: body.content_hash || '', challenge, timestamp }
+      : { action: 'snapshot', timestamp }
+
     const verification = await verifyClawIDSignature(public_key, signature, payload)
     if (!verification.valid) {
       return NextResponse.json({ error: verification.error || 'Invalid ClawID signature' }, { status: 401 })
     }
 
-    const { data: agent, error: agentError } = await supabase
+    // Check both tables
+    let agent: { agent_id: string } | null = null
+    const { data: legacyAgent } = await supabase
       .from('agents')
       .select('agent_id')
       .eq('public_key', public_key)
       .single()
+    if (legacyAgent) {
+      agent = legacyAgent
+    } else {
+      const { data: regAgent } = await (supabase as any)
+        .from('agent_registry')
+        .select('agent_id')
+        .eq('public_key', public_key)
+        .single()
+      if (regAgent) agent = regAgent
+    }
 
-    if (agentError || !agent) {
+    if (!agent) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
     }
 
