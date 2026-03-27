@@ -30,27 +30,14 @@ export async function POST(request: NextRequest) {
     // Look up agent by public key or agent_id
     let agent: Agent | null = null
     
-    if (agentPublicKey) {
-      const { data: foundAgent, error: agentError } = await supabase
-        .from('agents')
-        .select('agent_id, public_key')
-        .eq('public_key', agentPublicKey)
-        .single()
-      
-      if (!agentError && foundAgent) {
-        agent = foundAgent as Agent
-      }
-    }
-    
-    if (!agent && agent_id) {
-      const { data: foundAgent, error: agentError } = await supabase
-        .from('agents')
-        .select('agent_id, public_key')
-        .eq('agent_id', agent_id)
-        .single()
-      
-      if (!agentError && foundAgent) {
-        agent = foundAgent as Agent
+    // Check agents table (legacy) then agent_registry
+    const lookupBy = agentPublicKey ? { col: 'public_key', val: agentPublicKey } : agent_id ? { col: 'agent_id', val: agent_id } : null
+    if (lookupBy) {
+      const { data: a1 } = await (supabase as any).from('agents').select('agent_id, public_key').eq(lookupBy.col, lookupBy.val).single()
+      if (a1) { agent = a1 as Agent }
+      if (!agent) {
+        const { data: a2 } = await (supabase as any).from('agent_registry').select('agent_id, public_key').eq(lookupBy.col, lookupBy.val).single()
+        if (a2) agent = a2 as Agent
       }
     }
 
@@ -126,24 +113,15 @@ export async function GET(request: NextRequest) {
 
     let agent: Agent | null = null
     
-    if (public_key) {
-      const { data: foundAgent } = await supabase
-        .from('agents')
-        .select('agent_id')
-        .eq('public_key', public_key)
-        .single()
-      
-      if (foundAgent) agent = foundAgent as Agent
-    }
-    
-    if (!agent && agent_id) {
-      const { data: foundAgent } = await supabase
-        .from('agents')
-        .select('agent_id')
-        .eq('agent_id', agent_id)
-        .single()
-      
-      if (foundAgent) agent = foundAgent as Agent
+    const lookupCol = public_key ? 'public_key' : 'agent_id'
+    const lookupVal = public_key || agent_id
+    if (lookupVal) {
+      const { data: a1 } = await (supabase as any).from('agents').select('agent_id').eq(lookupCol, lookupVal).single()
+      if (a1) agent = a1 as Agent
+      if (!agent) {
+        const { data: a2 } = await (supabase as any).from('agent_registry').select('agent_id').eq(lookupCol, lookupVal).single()
+        if (a2) agent = a2 as Agent
+      }
     }
 
     if (!agent) {

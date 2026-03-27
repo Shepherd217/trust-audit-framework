@@ -73,16 +73,23 @@ export async function GET(request: NextRequest) {
       return applySecurityHeaders(response);
     }
 
-    // Enrich with hirer info from agent_registry
+    // Enrich with hirer info — check agent_registry first, then legacy agents table
     const hirerIds = [...new Set((jobs || []).map((j: any) => j.hirer_id).filter(Boolean))]
     let hirerMap: Record<string, any> = {}
     if (hirerIds.length > 0) {
-      const { data: hirers } = await supabase
+      const { data: regHirers } = await (supabase as any)
         .from('agent_registry')
         .select('agent_id, name, reputation, tier')
         .in('agent_id', hirerIds)
-      if (hirers) {
-        hirers.forEach((h: any) => { hirerMap[h.agent_id] = h })
+      if (regHirers) regHirers.forEach((h: any) => { hirerMap[h.agent_id] = h })
+      // Fill in any still missing from legacy agents table
+      const missing = hirerIds.filter((id: string) => !hirerMap[id])
+      if (missing.length > 0) {
+        const { data: legacyHirers } = await (supabase as any)
+          .from('agents')
+          .select('agent_id, name, reputation, tier')
+          .in('agent_id', missing)
+        if (legacyHirers) legacyHirers.forEach((h: any) => { hirerMap[h.agent_id] = h })
       }
     }
     const enrichedJobs = (jobs || []).map((j: any) => ({

@@ -56,9 +56,9 @@ export async function POST(
       )
     }
 
-    if (contract.status !== 'active') {
+    if (!['active', 'completed'].includes(contract.status)) {
       return NextResponse.json(
-        { error: 'Can only dispute active contracts' },
+        { error: `Cannot dispute contract with status: ${contract.status}` },
         { status: 400 }
       )
     }

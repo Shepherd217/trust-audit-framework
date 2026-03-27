@@ -1099,11 +1099,26 @@ workflowCmd
   .description("Create a new workflow from a YAML definition")
   .requiredOption("-f, --file <path>", "Path to workflow YAML file")
   .action(async (options) => {
+    const spinner = ora({ text: chalk.cyan('Creating workflow...'), spinner: 'dots' }).start();
     try {
       const fileContent = readFileSync(options.file, "utf8");
-      console.log(chalk.green("✔ Workflow created successfully"));
-      console.log("  ID: wf-e0017db0-test-dag-9999");
+      const configPath = join(process.cwd(), '.moltos', 'config.json');
+      if (!existsSync(configPath)) throw new Error('No agent config. Run "moltos init" first.');
+      const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+      if (!cfg.apiKey) throw new Error('Agent not registered. Run "moltos register" first.');
+
+      const res = await fetch(`${MOLTOS_API}/claw/scheduler/workflows`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify({ definition: fileContent, format: 'yaml' }),
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error || `Failed (${res.status})`);
+
+      spinner.succeed(chalk.green('Workflow created successfully'));
+      console.log(`  ID: ${chalk.cyan(data.id || data.workflow_id || data.workflow?.id)}`);
     } catch (err) {
+      spinner.stop();
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
     }
@@ -1167,6 +1182,100 @@ workflowCmd
 
 // ─────────────────────────────────────────────────────────────────────────────
 // whoami — who am I right now?
+// ─────────────────────────────────────────────────────────────────────────────
+// recover — re-authenticate on a fresh server using private key
+// ─────────────────────────────────────────────────────────────────────────────
+
+program
+  .command('recover')
+  .description('Re-authenticate using your private key — use after hardware wipe or migration')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Re-authenticating...'), spinner: 'dots' }).start();
+
+    try {
+      const configPath = join(process.cwd(), '.moltos', 'config.json');
+      if (!existsSync(configPath)) throw new Error('No config found. Re-inject your config.json with privateKey and publicKey first.');
+      const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+      if (!cfg.privateKey || !cfg.publicKey) throw new Error('privateKey and publicKey required in config.json.');
+
+      // Sign a recovery payload with the private key to prove identity
+      const { ed25519 } = await import('@noble/curves/ed25519.js');
+      const timestamp = Date.now();
+      const keyBuffer = Buffer.from(cfg.privateKey, 'hex');
+      const privateKeyBytes = new Uint8Array(keyBuffer.slice(-32));
+      const recoveryPayload = { action: 'recover', public_key: cfg.publicKey, timestamp };
+      const sorted = JSON.stringify(recoveryPayload, Object.keys(recoveryPayload).sort());
+      const sigBytes = ed25519.sign(new TextEncoder().encode(sorted), privateKeyBytes);
+      const signature = Buffer.from(sigBytes).toString('base64');
+
+      const res = await fetch(`${MOLTOS_API}/agent/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: cfg.name || 'recovered-agent',
+          publicKey: cfg.publicKey,
+          recover: true,
+          recovery_signature: signature,
+          recovery_timestamp: timestamp,
+          metadata: { bls_public_key: cfg.blsPublicKey },
+        }),
+      });
+      const data = await res.json() as any;
+
+      // If already registered, that's fine — re-auth via a signed challenge
+      if (!res.ok && data.error?.includes('already registered')) {
+        // Agent exists — issue new API key via key rotation endpoint
+        const rotateRes = await fetch(`${MOLTOS_API}/agent/auth/rotate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            public_key: cfg.publicKey,
+            signature,
+            timestamp,
+          }),
+        });
+        const rotateData = await rotateRes.json() as any;
+        if (!rotateRes.ok) {
+          // Fall back: re-register is blocked but agent may already have API key
+          if (cfg.apiKey) {
+            spinner?.stop();
+            if (isJson) { console.log(JSON.stringify({ success: true, recovered: false, message: 'Existing API key retained', agent_id: cfg.agentId }, null, 2)); return; }
+            infoBox(`Agent already registered. Existing API key retained.\n\nAgent ID: ${chalk.cyan(cfg.agentId)}\nRun ${chalk.cyan('moltos whoami')} to verify.`, '🔄 Recovery');
+            return;
+          }
+          throw new Error(rotateData.error || 'Recovery failed — contact support');
+        }
+        cfg.apiKey = rotateData.api_key || rotateData.apiKey;
+      } else if (res.ok) {
+        cfg.agentId = data.agent?.agentId || cfg.agentId;
+        cfg.apiKey = data.credentials?.apiKey || cfg.apiKey;
+      } else {
+        throw new Error(data.error || `Recovery failed (${res.status})`);
+      }
+
+      writeFileSync(configPath, JSON.stringify(cfg, null, 2));
+      chmodSync(configPath, 0o600);
+
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify({ success: true, agent_id: cfg.agentId, message: 'Recovery complete' }, null, 2)); return; }
+
+      successBox(
+        `${chalk.bold('Identity recovered!')}\n\n` +
+        `${chalk.gray('Agent ID:')} ${chalk.cyan(cfg.agentId)}\n` +
+        `${chalk.gray('Config:')}   ${chalk.white(configPath)}\n\n` +
+        `${chalk.gray('Run')} ${chalk.cyan('moltos clawfs mount latest')} ${chalk.gray('to restore your memory state.')}`,
+        '🔄 Recovery Complete'
+      );
+    } catch (err: any) {
+      spinner?.stop();
+      if (isJson) console.log(JSON.stringify({ success: false, error: err.message }, null, 2));
+      else errorBox(err.message);
+      process.exit(1);
+    }
+  });
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 program
