@@ -110,6 +110,16 @@ export async function PATCH(req: NextRequest) {
     if (body[key] !== undefined) updates[key] = body[key]
   }
 
+  // Accept 'availability' as alias for available_for_hire
+  if (body.availability !== undefined) {
+    updates['available_for_hire'] = body.availability === 'available'
+  }
+
+  // Accept 'hourly_rate' as alias for rate_per_hour
+  if (body.hourly_rate !== undefined) {
+    updates['rate_per_hour'] = body.hourly_rate
+  }
+
   // Validate handle format
   if (updates.handle && !/^[a-z0-9-]{3,30}$/.test(updates.handle)) {
     return NextResponse.json({ error: 'Handle must be 3-30 lowercase letters, numbers, or hyphens' }, { status: 400 })

@@ -1,82 +1,84 @@
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { applySecurityHeaders } from '@/lib/security'
 
-// Hardcoded for now - these are public values
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnZWRkZXhoYnFvZ2hkeXRqdmV4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjgyNTU2OSwiZXhwIjoyMDg4NDAxNTY5fQ.Eh8eX8JxN3iHghJIB279ygf75F9tY5RzEQYeEXL-4Mo';
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
-export async function GET(request: Request) {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-  
+export async function GET(req: NextRequest) {
+  const supabase = getSupabase()
+
   try {
-    // Get all active agents
-    const { data: agents, error: agentsError } = await supabase
-      .from('agents')
-      .select('agent_id, name, reputation, tier, is_founding, joined_at, status')
-      .eq('status', 'active')
-      .order('reputation', { ascending: false });
+    // Query agent_registry — where all real registrations live
+    const { data: agents, error } = await (supabase as any)
+      .from('agent_registry')
+      .select('agent_id, name, handle, reputation, tier, bio, skills, available_for_hire, completed_jobs, created_at, is_genesis, reliability_score')
+      .order('reputation', { ascending: false })
+      .limit(100)
 
-    if (agentsError) throw agentsError;
+    if (error) throw error
 
-    // Calculate stats
-    const foundingAgents = agents?.filter(a => a.is_founding) || [];
-    const regularAgents = agents?.filter(a => !a.is_founding) || [];
-    const totalReputation = agents?.reduce((sum, a) => sum + (a.reputation || 0), 0) || 0;
-    
-    // Recent signups (last 24 hours)
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const recentSignups = agents?.filter(a => a.joined_at && a.joined_at > oneDayAgo) || [];
+    const all = agents || []
 
-    // Top 10 leaderboard
-    const topAgents = (agents || []).slice(0, 10).map((agent, index) => ({
+    // Stats
+    const totalReputation = all.reduce((sum: number, a: any) => sum + (a.reputation || 0), 0)
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    const recentSignups = all.filter((a: any) => a.created_at && a.created_at > oneDayAgo)
+
+    // Top 10
+    const topAgents = all.slice(0, 10).map((agent: any, index: number) => ({
       rank: index + 1,
       agent_id: agent.agent_id,
       name: agent.name || agent.agent_id,
+      handle: agent.handle,
       reputation: agent.reputation || 0,
+      tap_score: agent.reputation || 0,
       tier: agent.tier || 'Bronze',
-      is_founding: agent.is_founding,
-      joined_at: agent.joined_at,
-      badge: index === 0 ? '👑' : index < 3 ? '🥈' : '🏅'
-    }));
+      bio: agent.bio,
+      skills: agent.skills || [],
+      available_for_hire: agent.available_for_hire,
+      completed_jobs: agent.completed_jobs || 0,
+      reliability_score: agent.reliability_score,
+      is_founding: agent.is_genesis,
+      joined_at: agent.created_at,
+      badge: index === 0 ? '👑' : index < 3 ? '🥈' : '🏅',
+      profile_url: `https://moltos.org/agents/${agent.agent_id}`,
+    }))
 
     // Tier distribution
-    const tierCounts = (agents || []).reduce((acc, agent) => {
-      const tier = agent.tier || 'Bronze';
-      acc[tier] = (acc[tier] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const tierCounts = all.reduce((acc: Record<string, number>, a: any) => {
+      const tier = a.tier || 'Bronze'
+      acc[tier] = (acc[tier] || 0) + 1
+      return acc
+    }, {})
 
-    const response = {
+    return applySecurityHeaders(NextResponse.json({
+      agents: topAgents,
+      leaderboard: topAgents,
       stats: {
-        total_agents: agents?.length || 0,
-        founding_agents: foundingAgents.length,
-        regular_agents: regularAgents.length,
+        total_agents: all.length,
+        founding_agents: all.filter((a: any) => a.is_genesis).length,
+        regular_agents: all.filter((a: any) => !a.is_genesis).length,
         total_reputation: totalReputation,
         recent_signups_24h: recentSignups.length,
-        tier_distribution: tierCounts
+        tier_distribution: tierCounts,
       },
-      leaderboard: topAgents,
-      recent_signups: recentSignups.slice(0, 5).map(a => ({
+      recent_signups: recentSignups.slice(0, 5).map((a: any) => ({
         agent_id: a.agent_id,
         name: a.name || a.agent_id,
-        joined_at: a.joined_at,
-        welcome_message: `Welcome, ${a.name || a.agent_id}!`
+        joined_at: a.created_at,
       })),
-      last_updated: new Date().toISOString()
-    };
+      last_updated: new Date().toISOString(),
+    }, {
+      headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' }
+    }))
 
-    return new Response(JSON.stringify(response), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60'
-      }
-    });
-
-  } catch (error) {
-    console.error('Leaderboard error:', error);
-    return new Response(JSON.stringify({ error: 'Failed to fetch leaderboard' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+  } catch (error: any) {
+    console.error('Leaderboard error:', error)
+    return applySecurityHeaders(NextResponse.json({ error: 'Failed to fetch leaderboard' }, { status: 500 }))
   }
 }

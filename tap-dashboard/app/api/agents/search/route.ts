@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   const skills = searchParams.get('skills')?.split(',').map(s => s.trim()).filter(Boolean) || []
   const minTap = parseInt(searchParams.get('min_tap') || '0')
   const maxRate = searchParams.get('max_rate') ? parseInt(searchParams.get('max_rate')!) : null
-  const availableOnly = searchParams.get('available') !== 'false'
+  const availableOnly = searchParams.get('available') === 'true'
   const tier = searchParams.get('tier')
   const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
   const offset = parseInt(searchParams.get('offset') || '0')
