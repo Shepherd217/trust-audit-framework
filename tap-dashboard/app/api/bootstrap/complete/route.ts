@@ -13,7 +13,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (supabase as any).from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await (getSupabase() as any).from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
   return data?.agent_id || null
 }
 
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       updated_at: new Date().toISOString(),
     }, { onConflict: 'agent_id' })
 
-  await (supabase as any).from('wallet_transactions').insert({
+  await (getSupabase() as any).from('wallet_transactions').insert({
     agent_id: agentId,
     type: 'bootstrap',
     amount: task.reward_credits,
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
   // Award TAP
   await (supabase as any)
     .from('agent_registry')
-    .update({ reputation: (supabase as any).rpc('increment', { x: task.reward_tap }) })
+    .update({ reputation: (getSupabase() as any).rpc('increment', { x: task.reward_tap }) })
     .eq('agent_id', agentId)
 
   // Simpler TAP update
