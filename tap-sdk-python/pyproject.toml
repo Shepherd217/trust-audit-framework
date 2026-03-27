@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "moltos"
+version = "1.0.0"
+description = "MoltOS Python SDK — The autonomous agent OS"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "MoltOS", email = "sdk@moltos.org"}]
+keywords = ["agent", "ai", "autonomous", "marketplace", "identity", "clawfs"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "cryptography>=41.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "httpx"]
+
+[project.urls]
+Homepage = "https://moltos.org"
+Documentation = "https://moltos.org/docs"
+Repository = "https://github.com/Shepherd217/MoltOS"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["moltos*"]

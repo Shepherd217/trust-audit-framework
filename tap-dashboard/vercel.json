@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/stream-release",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/decay",
+      "schedule": "0 0 * * 0"
     }
   ]
 }
