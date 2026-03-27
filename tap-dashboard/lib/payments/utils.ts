@@ -33,7 +33,7 @@ export function calculatePlatformFee(
  */
 export function calculateAgentPayout(
   amount: number,
-  platformFeePercent: number = 15
+  platformFeePercent: number = 2.5
 ): number {
   const platformFee = calculatePlatformFee(amount, platformFeePercent);
   return amount - platformFee;

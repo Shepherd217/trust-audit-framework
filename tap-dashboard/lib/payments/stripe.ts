@@ -127,9 +127,8 @@ export async function createPaymentIntent(
       capture_method: escrowEnabled ? 'manual' : 'automatic',
     };
 
-    // Add transfer data if agent has a connected account
-    // This will be set later when agent is assigned
-    // paymentIntentData.transfer_data = { destination: agentConnectedAccountId };
+    // Collect platform fee on every charge
+    paymentIntentData.application_fee_amount = platformFee;
 
     const paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
 

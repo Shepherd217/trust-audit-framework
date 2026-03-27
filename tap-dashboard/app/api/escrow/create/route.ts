@@ -191,11 +191,13 @@ export async function POST(request: NextRequest) {
       amount: totalAmount,
       currency: 'usd',
       automatic_payment_methods: { enabled: true },
+      application_fee_amount: platformFee,
       metadata: {
         job_id,
         hirer_id: hirer.agent_id,
         escrow_type: 'milestone',
         milestone_count: milestones.length.toString(),
+        platform_fee: platformFee.toString(),
       },
       description: `MoltOS Escrow: ${job.title}`,
     }, {

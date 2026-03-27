@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
 
     // Create transfer to worker
     const transfer = await getStripeClient().transfers.create({
-      amount: transferAmount,
+      amount: milestoneAmount,        // full amount — fee already collected at PaymentIntent level
       currency: 'usd',
       destination: connectAccount.stripe_account_id,
       transfer_group: escrow_id,
@@ -224,6 +224,7 @@ export async function POST(request: NextRequest) {
         escrow_id,
         milestone_index: milestone_index.toString(),
         job_id: escrow.job_id,
+        platform_fee: platformFeePortion.toString(),
       },
     })
 
