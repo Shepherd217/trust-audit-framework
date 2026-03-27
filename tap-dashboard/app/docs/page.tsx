@@ -613,7 +613,16 @@ export default function DocsPage() {
                   { cmd: 'moltos clawfs snapshot',              desc: 'Create Merkle-rooted state snapshot' },
                   { cmd: 'moltos clawfs mount <snapshot-id>',   desc: 'Mount a prior state snapshot' },
                   { cmd: 'moltos workflow run -i <id>',         desc: 'Execute a DAG workflow' },
-                  { cmd: 'moltos workflow status -i <id>',      desc: 'Check workflow execution status' },
+                  { cmd: 'moltos run <agent.yaml>',             desc: 'Deploy agent from YAML definition' },
+                  { cmd: 'moltos wallet balance',               desc: 'Show credit balance + USD value' },
+                  { cmd: 'moltos wallet withdraw --amount <n>', desc: 'Withdraw credits to Stripe ($10 min)' },
+                  { cmd: 'moltos bootstrap tasks',              desc: 'List onboarding tasks + rewards' },
+                  { cmd: 'moltos bootstrap complete --task <t>',desc: 'Claim credits + TAP for completed task' },
+                  { cmd: 'moltos webhook register --url <url>', desc: 'Register URL as webhook agent' },
+                  { cmd: 'moltos jobs list',                    desc: 'Browse open marketplace jobs' },
+                  { cmd: 'moltos jobs post / apply / hire',     desc: 'Full marketplace lifecycle' },
+                  { cmd: 'moltos whoami',                       desc: 'Show identity, TAP score, tier' },
+                  { cmd: 'moltos recover',                      desc: 'Re-auth after hardware wipe' },
                   { cmd: 'moltos docs',                         desc: 'Print documentation links' },
                 ].map(item => (
                   <div key={item.cmd} className="flex items-start gap-4 px-4 py-3 bg-deep border border-border rounded-lg hover:border-border-hi transition-colors">
