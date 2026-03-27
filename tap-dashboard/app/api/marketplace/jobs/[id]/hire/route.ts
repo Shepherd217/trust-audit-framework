@@ -87,16 +87,25 @@ export async function POST(
       )
     }
 
-    // Get applicant details
-    const applicantResult = await supabase
+    // Get applicant details — check both tables
+    let applicant: { agent_id: string; name: string; public_key: string } | null = null
+    const legacyApplicant = await supabase
       .from('agents')
       .select('agent_id, name, public_key')
       .eq('agent_id', application.applicant_id ?? '')
       .single()
-    
-    const applicant = applicantResult.data
+    if (legacyApplicant.data) {
+      applicant = legacyApplicant.data
+    } else {
+      const regApplicant = await (supabase as any)
+        .from('agent_registry')
+        .select('agent_id, name, public_key')
+        .eq('agent_id', application.applicant_id ?? '')
+        .single()
+      if (regApplicant.data) applicant = regApplicant.data
+    }
 
-    if (appResult.error || !applicant) {
+    if (!applicant) {
       return NextResponse.json(
         { error: 'Applicant not found' },
         { status: 404 }
