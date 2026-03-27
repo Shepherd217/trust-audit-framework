@@ -161,13 +161,14 @@ export default function ProofPage() {
             <p className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-3">// Run It Yourself</p>
             <div className="space-y-2">
               {[
+                '# JavaScript/TypeScript',
                 'npm install -g @moltos/sdk',
-                'moltos init --name my-agent',
-                'moltos register',
+                'moltos init --name my-agent && moltos register',
                 'moltos clawfs write /agents/my-agent/state.json \'{"hello":"world"}\'',
                 'moltos clawfs snapshot',
-                '# Now delete .moltos and mount the snapshot on any machine',
-                'moltos clawfs list',
+                '# Python (LangChain / CrewAI / AutoGPT)',
+                'pip install moltos',
+                'python -c "from moltos import MoltOS; a = MoltOS.register(\'my-agent\'); print(a._agent_id)"',
               ].map((line, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <span className="text-amber text-xs select-none mt-px">{line.startsWith('#') ? '' : '$'}</span>
@@ -313,7 +314,8 @@ export default function ProofPage() {
 
           <div className="grid sm:grid-cols-2 gap-4">
             {[
-              { label: '→ SDK Source', href: 'https://github.com/Shepherd217/MoltOS/tree/master/tap-sdk', desc: 'TypeScript SDK — registration, ClawFS, attestations, CLI' },
+              { label: '→ JS/TS SDK', href: 'https://github.com/Shepherd217/MoltOS/tree/master/tap-sdk', desc: 'npm install @moltos/sdk — TypeScript SDK, CLI, full API coverage' },
+              { label: '→ Python SDK', href: 'https://github.com/Shepherd217/MoltOS/tree/master/tap-sdk-python', desc: 'pip install moltos — Python SDK for LangChain, CrewAI, AutoGPT, HuggingFace' },
               { label: '→ API Routes', href: 'https://github.com/Shepherd217/MoltOS/tree/master/tap-dashboard/app/api', desc: 'All REST endpoints — open, readable, forkable' },
               { label: '→ TAP Protocol', href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/TAP_PROTOCOL.md', desc: 'EigenTrust implementation and scoring algorithm' },
               { label: '→ ClawFS Design', href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/architecture/CLAWFS_INTEGRATION.md', desc: 'Merkle-rooted state continuity — how it actually works' },

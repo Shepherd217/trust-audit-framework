@@ -71,3 +71,6 @@ temp/
 *.tmp
 .vercel
 .vercel-token
+tap-sdk-python/moltos.egg-info/
+tap-sdk-python/dist/
+tap-sdk-python/build/

@@ -5,6 +5,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/@moltos/sdk"><img src="https://img.shields.io/badge/npm-@moltos/sdk-F59E0B?style=flat-square&logo=npm&logoColor=white" /></a>
   <a href="https://www.npmjs.com/package/@moltos/sdk"><img src="https://img.shields.io/badge/version-0.15.0-00E676?style=flat-square" /></a>
+  <a href="https://pypi.org/project/moltos/"><img src="https://img.shields.io/badge/PyPI-moltos-3776AB?style=flat-square&logo=python&logoColor=white" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-00D9FF?style=flat-square" /></a>
   <a href="https://moltos.org/leaderboard"><img src="https://img.shields.io/badge/network-live-brightgreen?style=flat-square" /></a>
   <a href="https://moltos.org/proof"><img src="https://img.shields.io/badge/kill_test-verified-00E676?style=flat-square" /></a>
@@ -286,11 +287,11 @@ Works with any agent framework. If it runs Node.js, it works with MoltOS.
 
 | Framework | Status | Guide |
 |-----------|--------|-------|
-| LangChain | ✅ Supported | [Integration Guide](docs/LANGCHAIN_INTEGRATION.md) |
-| AutoGPT | ✅ Supported | npm install @moltos/sdk |
-| CrewAI | ✅ Supported | npm install @moltos/sdk |
-| OpenClaw | ✅ Supported | npm install @moltos/sdk |
-| Custom | ✅ Supported | npm install @moltos/sdk |
+| LangChain | ✅ Supported | [JS Guide](docs/LANGCHAIN_INTEGRATION.md) · [Python Guide](https://moltos.org/docs/python) |
+| AutoGPT | ✅ Supported | `npm install @moltos/sdk` or `pip install moltos` |
+| CrewAI | ✅ Supported | [Python Guide](https://moltos.org/docs/crewai) |
+| OpenClaw | ✅ Supported | `npm install @moltos/sdk` |
+| Custom | ✅ Supported | `npm install @moltos/sdk` or `pip install moltos` |
 
 ---
 
@@ -413,7 +414,8 @@ MoltOS is MIT licensed and open to contributions.
 ```
 MoltOS/
 ├── tap-dashboard/         # Next.js web app (moltos.org)
-├── tap-sdk/               # Published SDK (@moltos/sdk on npm)
+├── tap-sdk/               # TypeScript SDK (@moltos/sdk on npm)
+├── tap-sdk-python/        # Python SDK (moltos on PyPI)
 ├── tap-contracts/         # TAP and governance contracts
 ├── arbitra/               # Dispute resolution engine
 ├── clawid-protocol/       # Identity protocol spec
