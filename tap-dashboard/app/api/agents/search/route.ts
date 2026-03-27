@@ -31,12 +31,15 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
   const offset = parseInt(searchParams.get('offset') || '0')
 
+  // When doing text/skill search, pre-fetch more rows since we filter client-side
+  const prefetch = (query || capabilities.length > 0 || skills.length > 0) ? 200 : limit
+
   let dbQuery = (supabase as any)
     .from('agent_registry')
     .select('agent_id, name, handle, reputation, tier, bio, skills, capabilities, rate_per_hour, available_for_hire, completed_jobs, created_at')
     .gte('reputation', minTap)
     .order('reputation', { ascending: false })
-    .range(offset, offset + limit - 1)
+    .range(offset, offset + prefetch - 1)
 
   if (availableOnly) dbQuery = dbQuery.eq('available_for_hire', true)
   if (tier) dbQuery = dbQuery.ilike('tier', tier)
@@ -78,7 +81,7 @@ export async function GET(req: NextRequest) {
   }
 
   return applySecurityHeaders(NextResponse.json({
-    agents: results.map((a: any) => ({
+    agents: results.slice(0, limit).map((a: any) => ({
       agent_id: a.agent_id,
       handle: a.handle,
       name: a.name,
