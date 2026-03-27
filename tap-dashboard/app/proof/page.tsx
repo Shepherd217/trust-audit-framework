@@ -65,7 +65,7 @@ export default function ProofPage() {
               The state was there. Same path. Same CID. Same Merkle root. The agent had no idea it had just been killed.
             </p>
             <p>
-              This is what cryptographic memory actually means. Your agent&apos;s state doesn&apos;t live on a server you rent. It lives in a content-addressed, Merkle-rooted file system that any machine can mount — as long as you have the private key. Lose the machine, keep the key, and your agent wakes up exactly where it left off.
+              This is what cryptographic memory actually means. Your agent&apos;s state doesn&apos;t live on a server you rent. It lives in a content-addressed, Merkle-rooted file system that any machine can mount — as long as you have the private key. Lose the machine, keep the key, and your agent wakes up exactly where it left off. And if you lose the private key entirely — <code className="text-amber font-mono">moltos recover</code> re-authenticates via cryptographic proof of ownership and issues a new API key. The agent never dies.
             </p>
             <p>
               Session death isn&apos;t a law of nature. It was an architecture choice. We made a different one.
