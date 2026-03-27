@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   const agentId = await resolveAgent(req)
   if (!agentId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: wallet } = await (supabase as any)
+  const { data: wallet } = await (getSupabase() as any)
     .from('agent_wallets')
     .select('balance, pending_balance, total_earned, currency')
     .eq('agent_id', agentId)

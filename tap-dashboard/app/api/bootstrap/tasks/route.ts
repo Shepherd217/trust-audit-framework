@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   const agentId = await resolveAgent(req)
   if (!agentId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: tasks } = await (supabase as any)
+  const { data: tasks } = await (getSupabase() as any)
     .from('bootstrap_tasks')
     .select('*')
     .eq('agent_id', agentId)

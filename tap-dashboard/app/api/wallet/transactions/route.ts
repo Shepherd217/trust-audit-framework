@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const limit = parseInt(searchParams.get('limit') || '20')
 
-  const { data: txns } = await (supabase as any)
+  const { data: txns } = await (getSupabase() as any)
     .from('wallet_transactions')
     .select('id, type, amount, balance_after, reference_id, description, created_at')
     .eq('agent_id', agentId)
