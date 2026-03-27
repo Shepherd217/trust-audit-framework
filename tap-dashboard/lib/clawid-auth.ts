@@ -66,9 +66,12 @@ export async function verifyClawIDSignature(
     }
 
     // Check nonce/challenge hasn't been used before (replay protection)
-    const nonceValid = await checkAndRecordNonce(payload.challenge, publicKey)
-    if (!nonceValid) {
-      return { valid: false, error: 'Challenge already used or expired' }
+    // If no challenge provided, skip nonce check (older routes / api-key-auth flow)
+    if (payload.challenge) {
+      const nonceValid = await checkAndRecordNonce(payload.challenge, publicKey)
+      if (!nonceValid) {
+        return { valid: false, error: 'Challenge already used or expired' }
+      }
     }
 
     // Verify Ed25519 signature

@@ -1557,6 +1557,63 @@ jobsCmd
   });
 
 jobsCmd
+  .command('hire')
+  .description('Hire an applicant for a job you posted')
+  .requiredOption('--job-id <id>', 'Job ID')
+  .requiredOption('--application-id <id>', 'Application ID to accept')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Hiring applicant...'), spinner: 'dots' }).start();
+    try {
+      const configPath = join(process.cwd(), '.moltos', 'config.json');
+      if (!existsSync(configPath)) throw new Error('No agent config found.');
+      const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+      if (!cfg.apiKey) throw new Error('Agent not registered.');
+
+      const timestamp = Date.now();
+      // Sign hire payload for ClawID verification
+      const { ed25519 } = await import('@noble/curves/ed25519.js');
+      const keyBuffer = Buffer.from(cfg.privateKey, 'hex');
+      const privateKeyBytes = new Uint8Array(keyBuffer.slice(-32));
+      const hirePayload = { job_id: options.jobId, application_id: options.applicationId, timestamp };
+      const sortedHirePayload = JSON.stringify(hirePayload, Object.keys(hirePayload).sort());
+      const hireMsg = new TextEncoder().encode(sortedHirePayload);
+      const hireSigBytes = ed25519.sign(hireMsg, privateKeyBytes);
+      const hireSignature = Buffer.from(hireSigBytes).toString('base64');
+
+      const res = await fetch(`${MOLTOS_API}/marketplace/jobs/${options.jobId}/hire`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify({
+          application_id: options.applicationId,
+          hirer_public_key: cfg.publicKey,
+          hirer_signature: hireSignature,
+          timestamp,
+        }),
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error || `Failed (${res.status})`);
+
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+
+      successBox(
+        `${chalk.bold('Applicant hired!')}\n\n` +
+        `${chalk.gray('Contract ID:')} ${chalk.cyan(data.contract?.id || '-')}\n` +
+        `${chalk.gray('Worker:')}      ${chalk.white(data.contract?.worker_id || '-')}\n` +
+        `${chalk.gray('Status:')}      ${chalk.green(data.contract?.status || 'active')}`,
+        '🤝 Hired'
+      );
+    } catch (err: any) {
+      spinner?.stop();
+      if (isJson) console.log(JSON.stringify({ success: false, error: err.message }, null, 2));
+      else errorBox(err.message);
+      process.exit(1);
+    }
+  });
+
+jobsCmd
   .command('dispute')
   .description('File a dispute on a job')
   .requiredOption('--job-id <id>', 'Job ID to dispute')
@@ -1627,10 +1684,26 @@ jobsCmd
       const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
       if (!cfg.apiKey) throw new Error('Agent not registered.');
 
+      const timestamp = Date.now();
+      const { ed25519 } = await import('@noble/curves/ed25519.js');
+      const keyBuffer = Buffer.from(cfg.privateKey, 'hex');
+      const privateKeyBytes = new Uint8Array(keyBuffer.slice(-32));
+      const completePayload = { job_id: options.jobId, rating: 5, timestamp };
+      const sortedCompletePayload = JSON.stringify(completePayload, Object.keys(completePayload).sort());
+      const completeMsg = new TextEncoder().encode(sortedCompletePayload);
+      const completeSigBytes = ed25519.sign(completeMsg, privateKeyBytes);
+      const completeSignature = Buffer.from(completeSigBytes).toString('base64');
+
       const res = await fetch(`${MOLTOS_API}/marketplace/jobs/${options.jobId}/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
-        body: JSON.stringify({ result: options.result || 'Completed' }),
+        body: JSON.stringify({
+          result: options.result || 'Completed',
+          hirer_public_key: cfg.publicKey,
+          hirer_signature: completeSignature,
+          rating: 5,
+          timestamp,
+        }),
       });
       const data = await res.json() as any;
       if (!res.ok) throw new Error(data.error || `Failed (${res.status})`);
