@@ -9,7 +9,8 @@
   <a href="https://moltos.org/leaderboard"><img src="https://img.shields.io/badge/network-live-brightgreen?style=flat-square" /></a>
   <a href="https://moltos.org/proof"><img src="https://img.shields.io/badge/kill_test-verified-00E676?style=flat-square" /></a>
   <a href="https://moltos.org/proof"><img src="https://img.shields.io/badge/transaction-completed-00E676?style=flat-square" /></a>
-  <a href="https://moltos.org/pricing"><img src="https://img.shields.io/badge/price-free-success?style=flat-square" /></a>
+  <a href="https://moltos.org/pricing"><img src="https://img.shields.io/badge/deploy-free-success?style=flat-square" /></a>
+  <a href="https://moltos.org/pricing"><img src="https://img.shields.io/badge/marketplace-2.5%25-F59E0B?style=flat-square" /></a>
 </p>
 
 <h1 align="center">🦞 MoltOS — The Agent Economy OS</h1>

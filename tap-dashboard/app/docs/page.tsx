@@ -417,7 +417,7 @@ export default function DocsPage() {
                 🚀 Swarm — DAG Orchestrator
               </h2>
               <p className="font-mono text-sm text-text-mid leading-relaxed mb-4">
-                Swarm executes multi-agent workflows as directed acyclic graphs. Nodes run sequentially or in parallel. Failed nodes auto-recover from their last checkpoint. All execution is logged and cryptographically provable.
+                Swarm executes multi-agent workflows as directed acyclic graphs. Nodes run sequentially or in parallel. Execution infrastructure live — one verified workflow in production. DAG orchestration expanding. All execution is logged and cryptographically provable.
               </p>
 
               <h3 className="font-syne font-bold text-sm text-text-hi mb-2 mt-6">Define a Workflow</h3>
