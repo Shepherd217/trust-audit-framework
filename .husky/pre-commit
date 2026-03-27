@@ -1,5 +1,5 @@
 #!/bin/sh
-echo "🦞 MoltOS pre-commit: running Next.js build check..."
+echo "⚡ MoltOS pre-commit: running Next.js build check..."
 cd tap-dashboard
 npm run build
 if [ $? -ne 0 ]; then
