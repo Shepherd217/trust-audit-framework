@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     ] = await Promise.all([
       // Live agents count and avg reputation
       db
-        .from('agents')
+        .from('agent_registry')
         .select('reputation', { count: 'exact' }),
       
       // Open marketplace jobs count
