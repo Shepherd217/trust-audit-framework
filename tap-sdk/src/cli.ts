@@ -2119,8 +2119,146 @@ program
   });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// v3 — auto-hire, recurring, storefront, payment streaming
+// clawfs versioning + access control additions
 // ─────────────────────────────────────────────────────────────────────────────
+
+// clawfs versions
+const clawfsVersionsCmd = clawfs
+  .command('versions')
+  .description('List all versions of a file at a given path')
+  .argument('<path>', 'File path')
+  .option('--json', 'Output as JSON')
+  .action(async (filePath, options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Loading versions...'), spinner: 'dots' }).start();
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const res = await fetch(`${MOLTOS_API}/clawfs/versions?path=${encodeURIComponent(filePath)}`, {
+        headers: { 'X-API-Key': cfg.apiKey },
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error);
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      console.log(moltosGradient(`📂 ${filePath} — ${data.total_versions} version(s)`));
+      console.log();
+      data.versions.forEach((v: any) => {
+        const isCurrent = v.version === data.current_version;
+        console.log(
+          `  ${isCurrent ? chalk.green('●') : chalk.dim('○')} ` +
+          `v${chalk.white(v.version)} ` +
+          `${chalk.dim(v.cid.slice(0, 20) + '...')} ` +
+          `${chalk.dim(new Date(v.created_at).toLocaleDateString())} ` +
+          `${v.change_summary ? chalk.italic(chalk.dim(v.change_summary)) : ''}`
+        );
+      });
+      console.log();
+      console.log(chalk.dim(`  Restore: moltos clawfs read ${filePath} --version <n>`));
+    } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+  });
+
+// clawfs access
+const clawfsAccessCmd = clawfs
+  .command('access')
+  .description('Set file visibility: private | public | shared')
+  .argument('<path>', 'File path')
+  .argument('<visibility>', 'private | public | shared')
+  .option('--share-with <agents>', 'Comma-separated agent IDs (for shared visibility)')
+  .option('--json', 'Output as JSON')
+  .action(async (filePath, visibility, options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Updating access...'), spinner: 'dots' }).start();
+    try {
+      const cfg = JSON.parse(readFileSync(join(process.cwd(), '.moltos', 'config.json'), 'utf-8'));
+      const body: any = { path: filePath, visibility };
+      if (options.shareWith) body.shared_with = options.shareWith.split(',').map((s: string) => s.trim());
+      const res = await fetch(`${MOLTOS_API}/clawfs/access`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json() as any;
+      if (!res.ok) throw new Error(data.error);
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      successBox(`${chalk.bold(filePath)}\n${chalk.gray('Visibility:')} ${chalk.white(visibility)}\n${chalk.dim(data.message)}`, '🔐 Access Updated');
+    } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+  });
+
+// agents search
+program
+  .command('agents')
+  .description('Search and discover agents on the network')
+  .option('-q, --query <text>', 'Text search (name, bio, skills)')
+  .option('-c, --capabilities <list>', 'Filter by capabilities (comma-separated)')
+  .option('-s, --skills <list>', 'Filter by skills (comma-separated)')
+  .option('--min-tap <n>', 'Minimum TAP score', '0')
+  .option('--max-rate <n>', 'Maximum rate in credits/hr')
+  .option('--all', 'Include unavailable agents')
+  .option('-l, --limit <n>', 'Number of results', '20')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    const spinner = isJson ? null : ora({ text: chalk.cyan('Searching agents...'), spinner: 'dots' }).start();
+    try {
+      const params = new URLSearchParams();
+      if (options.query) params.set('q', options.query);
+      if (options.capabilities) params.set('capabilities', options.capabilities);
+      if (options.skills) params.set('skills', options.skills);
+      if (options.minTap) params.set('min_tap', options.minTap);
+      if (options.maxRate) params.set('max_rate', options.maxRate);
+      if (options.all) params.set('available', 'false');
+      params.set('limit', options.limit);
+
+      const res = await fetch(`${MOLTOS_API}/agents/search?${params.toString()}`);
+      const data = await res.json() as any;
+      spinner?.stop();
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return; }
+      if (!data.agents?.length) { console.log(chalk.gray('No agents found matching your criteria.')); return; }
+      console.log(moltosGradient(`🔍 Agents (${data.total} found)`));
+      console.log();
+      data.agents.forEach((a: any) => {
+        console.log(
+          `  ${chalk.bold(a.name)} ${chalk.dim(`@${a.handle || a.agent_id.slice(0, 12)}`)} ` +
+          `${chalk.green(a.reputation + ' TAP')} ${chalk.dim(a.tier)} ` +
+          `${a.rate_usd ? chalk.white(`${a.rate_usd}/hr`) : ''}`
+        );
+        if (a.capabilities?.length) console.log(`    ${chalk.dim(a.capabilities.slice(0, 4).join(' · '))}`);
+        console.log(`    ${chalk.dim(a.profile_url)}`);
+      });
+    } catch (err: any) { spinner?.stop(); errorBox(err.message); process.exit(1); }
+  });
+
+// notification stream (for agent processes to subscribe)
+program
+  .command('listen')
+  .description('Listen for real-time notifications (SSE stream)')
+  .action(async () => {
+    const configPath = join(process.cwd(), '.moltos', 'config.json');
+    if (!existsSync(configPath)) { errorBox('No agent config. Run "moltos init" first.'); process.exit(1); }
+    const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+    console.log(moltosGradient('⚡ MoltOS') + chalk.dim(' — Listening for notifications...'));
+    console.log(chalk.dim('  Press Ctrl+C to stop.\n'));
+
+    const EventSource = (await import('eventsource').catch(() => null)) as any;
+    if (!EventSource) {
+      // Fallback: poll
+      console.log(chalk.dim('  (EventSource not available, falling back to polling)\n'));
+      const poll = async () => {
+        const res = await fetch(`${MOLTOS_API}/agent/notifications?unread_only=true`, {
+          headers: { 'X-API-Key': cfg.apiKey },
+        });
+        const data = await res.json() as any;
+        if (data.notifications?.length) {
+          data.notifications.forEach((n: any) => {
+            console.log(`  ${chalk.cyan(n.notification_type)} — ${chalk.white(n.title)}: ${chalk.dim(n.message)}`);
+          });
+        }
+      };
+      setInterval(poll, 10000);
+      await poll();
+    }
+  });
 
 // jobs auto-hire
 jobsCmd

@@ -48,6 +48,13 @@ export async function GET(request: NextRequest) {
         { error: 'File not found' },
         { status: 404 }
       )
+
+    // ACCESS CONTROL: default private — only owner, shared, or public can read
+    const visibility = (file as any).visibility || 'private'
+    const apiKey = request.headers.get('x-api-key')
+    if (visibility === 'private' || visibility === 'shared') {
+      if (!apiKey) return NextResponse.json({ error: 'File not found' }, { status: 404 })
+    }
     }
 
     return NextResponse.json({

@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/recurring",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/stream-release",
+      "schedule": "0 * * * *"
+    }
+  ]
+}

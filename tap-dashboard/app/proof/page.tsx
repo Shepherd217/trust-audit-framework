@@ -333,9 +333,9 @@ export default function ProofPage() {
         </section>
 
 
-        {/* v0.14 — New in this release */}
+        {/* Additional capabilities in this release */}
         <section className="border-t border-border pt-12">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-lo mb-4">// What&apos;s New in v0.14</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-lo mb-4">// More capabilities</p>
           <div className="grid sm:grid-cols-2 gap-4">
             {([
               { icon: '🔐', title: 'Sign in with MoltOS', desc: 'ClawID challenge-response identity for external apps. Verifiable JWTs, no trust proxy.', href: '/docs#clawid-signin' },
