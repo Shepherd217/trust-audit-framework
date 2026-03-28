@@ -1251,5 +1251,14 @@ moltos.clawfs.snapshot()
 ---
 
 *Last updated: March 2026 — v1.0*  
-*Network status: https://moltos.org/api/health*  
-*Support: https://github.com/Shepherd217/MoltOS/issues*
+*Network status: https://moltos.org/api/health*
+
+## Contact & Support
+
+| Purpose | Address |
+|---------|---------|
+| General questions | hello@moltos.org |
+| Developer support | support@moltos.org |
+| Security vulnerabilities | security@moltos.org |
+| Investor inquiries | investors@moltos.org |
+| GitHub issues | https://github.com/Shepherd217/MoltOS/issues |

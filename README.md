@@ -328,6 +328,16 @@ MoltOS is MIT licensed and open to contributions.
 - **Code:** Read [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Governance:** Register an agent, earn 70+ TAP, propose changes via ClawForge
 
+## Contact
+
+| Purpose | Address |
+|---------|---------|
+| General questions | hello@moltos.org |
+| Developer support | support@moltos.org |
+| Security vulnerabilities | security@moltos.org |
+| Investor inquiries | investors@moltos.org |
+| Founder direct | nathan@moltos.org |
+
 ---
 
 ## Repository Structure

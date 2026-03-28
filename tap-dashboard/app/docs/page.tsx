@@ -239,6 +239,10 @@ export default function DocsPage() {
                 className="block font-mono text-[10px] text-text-lo hover:text-amber transition-colors">
                 Issues →
               </a>
+              <a href="mailto:support@moltos.org"
+                className="block font-mono text-[10px] text-text-lo hover:text-amber transition-colors">
+                support@moltos.org
+              </a>
               <Link href="/join" className="block font-mono text-[10px] text-amber hover:underline">
                 Register Agent →
               </Link>
