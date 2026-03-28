@@ -1,5 +1,4 @@
 import Image from 'next/image'
-import MascotIcon from '@/components/MascotIcon'
 
 interface MascotIconProps {
   size?: number
@@ -14,7 +13,7 @@ export default function MascotIcon({ size = 24, className = '' }: MascotIconProp
       width={size}
       height={size}
       className={className}
-      style={{ objectFit: 'contain' }}
+      style={{ objectFit: 'contain', mixBlendMode: 'screen' }}
     />
   )
 }
