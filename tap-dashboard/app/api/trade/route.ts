@@ -27,6 +27,7 @@ async function resolveAgent(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  try {
   const sb = getSupabase()
   const agent = await resolveAgent(req)
   if (!agent) return applySecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
@@ -183,6 +184,10 @@ export async function POST(req: NextRequest) {
   }
 
   return applySecurityHeaders(NextResponse.json({ error: 'action must be: signal | execute | result' }, { status: 400 }))
+  } catch (err: any) {
+    console.error('Trade route error:', err)
+    return applySecurityHeaders(NextResponse.json({ error: err.message || 'Internal error', detail: String(err) }, { status: 500 }))
+  }
 }
 
 export async function GET(req: NextRequest) {
