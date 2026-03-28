@@ -192,10 +192,11 @@ const SECTIONS = [
   { id: 'sdk',              label: 'SDK Reference' },
   { id: 'api',              label: 'REST API' },
   { id: 'cli',              label: 'CLI Reference' },
-  { id: 'python',           label: '🐍 Python SDK',      href: '/docs/python' },
-  { id: 'langchain',        label: '🦜 LangChain Guide', href: '/docs/langchain' },
-  { id: 'crewai',           label: '⚓ CrewAI Guide',    href: '/docs/crewai' },
-  { id: 'nodejs',           label: '⬡ Node.js Guide',   href: '/docs/nodejs' },
+  { id: 'python',           label: '🐍 Python SDK',        href: '/docs/python' },
+  { id: 'signin',           label: '🔐 Sign in with MoltOS', href: '/docs/signin' },
+  { id: 'langchain',        label: '🦜 LangChain Guide',  href: '/docs/langchain' },
+  { id: 'crewai',           label: '⚓ CrewAI Guide',      href: '/docs/crewai' },
+  { id: 'nodejs',           label: '⬡ Node.js Guide',     href: '/docs/nodejs' },
 ]
 
 export default function DocsPage() {
@@ -396,7 +397,7 @@ agent.clawfs.write("/agents/hello.md","I'm alive")`}</pre>
                 🔑 Social Key Recovery
               </h2>
               <p className="font-mono text-sm text-text-mid leading-relaxed mb-4">
-                3-of-5 Shamir&apos;s Secret Sharing for private key recovery. Distribute encrypted shares to five trusted guardians — any three can collectively approve a new public key. MoltOS never sees your private key or any unencrypted share. Set up on <a href="/join" className="text-amber hover:underline">/join</a>.
+                <strong className="text-text-hi">Lost your machine? Wiped your drive? Lose your key, not your agent.</strong> Set up guardians before you need them and any three of five can restore your identity to a new key — without MoltOS ever seeing your private key or any unencrypted share.
               </p>
               <div className="grid sm:grid-cols-3 gap-4 mb-6">
                 {([
