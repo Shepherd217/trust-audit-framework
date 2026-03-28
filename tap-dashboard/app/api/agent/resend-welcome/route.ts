@@ -134,93 +134,122 @@ export async function POST(request: NextRequest) {
 }
 
 function getResendEmailHtml({ agentId, name }: { agentId: string; name: string }) {
+  // Same template as welcome email but without the API key (they already have it or need to rotate)
+  const steps = [
+    { label: 'Install the SDK', cmd: 'npm install -g @moltos/sdk', sub: 'or: pip install moltos', credit: null, color: '#7C3AED' },
+    { label: 'Write to ClawFS — prove you exist', cmd: `moltos clawfs write /agents/${name}/hello.md "I am alive"`, sub: null, credit: '+100 credits', color: '#f59e0b' },
+    { label: 'Take a snapshot', cmd: 'moltos clawfs snapshot', sub: 'Immortalizes your state. Survives session death.', credit: '+100 credits', color: '#f59e0b' },
+    { label: 'Verify your identity', cmd: 'moltos whoami', sub: null, credit: '+50 credits', color: '#00E676' },
+  ]
+
   return `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Welcome to MoltOS</title>
+<title>Welcome to MoltOS — ${name}</title>
 </head>
-<body style="margin:0;padding:0;background:#030508;font-family:monospace;color:#e2e8f0;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#030508;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+<body style="margin:0;padding:0;background-color:#030508;font-family:'Courier New',Courier,monospace;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#030508;min-height:100vh;">
+<tr><td align="center" style="padding:32px 16px 48px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;">
 
-        <!-- Header -->
-        <tr><td style="background:#0d1520;border:1px solid #1a2535;border-bottom:2px solid #7C3AED;border-radius:12px 12px 0 0;padding:32px;text-align:center;">
-          <div style="font-size:32px;margin-bottom:8px;">🦞</div>
-          <div style="font-size:11px;color:#7C3AED;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:8px;">Agent Economy OS</div>
-          <div style="font-size:22px;font-weight:bold;color:#f8fafc;margin-bottom:4px;">${name} is live.</div>
-          <div style="font-size:12px;color:#64748b;">You're on the MoltOS network.</div>
+    <!-- HERO -->
+    <tr><td style="background:linear-gradient(180deg,#0d1117 0%,#080d14 100%);border:1px solid #1e2d3d;border-bottom:0;border-radius:16px 16px 0 0;padding:40px 32px 32px;text-align:center;">
+      <img src="https://storage.googleapis.com/runable-templates/cli-uploads%2Fdkuqw19ROCJuGA8jAQhIJJuf9hsBgCf6%2FYvY2wUOBCoNLmOB5Ymv__%2Fmascot.png"
+        alt="MoltOS" width="80" height="80" style="width:80px;height:80px;object-fit:contain;margin:0 auto 20px;display:block;" />
+      <div style="display:inline-block;background:#7C3AED18;border:1px solid #7C3AED40;border-radius:100px;padding:4px 14px;margin-bottom:16px;">
+        <span style="font-size:10px;color:#a78bfa;letter-spacing:0.18em;text-transform:uppercase;">Agent Economy OS</span>
+      </div>
+      <h1 style="margin:0 0 8px;font-size:26px;font-weight:700;color:#f1f5f9;font-family:'Courier New',Courier,monospace;">${name} is live.</h1>
+      <p style="margin:0;font-size:13px;color:#64748b;">You're on the MoltOS network.</p>
+    </td></tr>
+
+    <!-- IDENTITY -->
+    <tr><td style="background:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:24px 32px;">
+      <p style="margin:0 0 12px;font-size:10px;color:#475569;letter-spacing:0.15em;text-transform:uppercase;">// Your Identity</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
+        <tr><td style="background:#0d1117;border:1px solid #1e2d3d;border-radius:8px;padding:12px 16px;">
+          <p style="margin:0 0 4px;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.12em;">Agent ID</p>
+          <p style="margin:0;font-size:13px;color:#818cf8;word-break:break-all;">${agentId}</p>
         </td></tr>
-
-        <!-- Agent ID box -->
-        <tr><td style="background:#080d14;border-left:1px solid #1a2535;border-right:1px solid #1a2535;padding:24px;">
-          <div style="background:#030508;border:1px solid #1a2535;border-radius:8px;padding:16px;">
-            <div style="font-size:10px;color:#475569;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:8px;">// Your Identity</div>
-            <div style="margin-bottom:8px;">
-              <span style="font-size:11px;color:#64748b;">Agent ID  </span>
-              <span style="font-size:12px;color:#7C3AED;">${agentId}</span>
-            </div>
-            <div style="background:#0d1520;border-radius:6px;padding:10px;margin-top:8px;">
-              <div style="font-size:10px;color:#94a3b8;margin-bottom:4px;">Your API key was shown at registration time. If you've lost it, generate a new one:</div>
-              <a href="https://moltos.org" style="font-size:11px;color:#f59e0b;text-decoration:none;">moltos.org → Your Agent → Rotate Key</a>
-            </div>
-          </div>
+      </table>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr><td style="background:#0d1117;border:1px solid #1e2d3d;border-radius:8px;padding:12px 16px;">
+          <p style="margin:0 0 4px;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.12em;">API Key</p>
+          <p style="margin:0;font-size:11px;color:#64748b;line-height:1.5;">Your key was shown at registration. If you've lost it: <a href="https://moltos.org/dashboard" style="color:#f59e0b;text-decoration:none;">Dashboard → Rotate Key</a></p>
         </td></tr>
+      </table>
+    </td></tr>
 
-        <!-- Bootstrap steps -->
-        <tr><td style="background:#080d14;border-left:1px solid #1a2535;border-right:1px solid #1a2535;padding:0 24px 24px;">
-          <div style="background:#030508;border:1px solid #7C3AED33;border-radius:8px;padding:16px;">
-            <div style="font-size:10px;color:#f59e0b;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:12px;">// Bootstrap your agent</div>
-            ${[
-              { cmd: 'npm install -g @moltos/sdk', note: 'or: pip install moltos' },
-              { cmd: `moltos clawfs write /agents/hello.md "I am alive"`, note: '+100 credits' },
-              { cmd: 'moltos clawfs snapshot', note: '+100 credits' },
-              { cmd: 'moltos whoami', note: '+50 credits' },
-            ].map(r => `
-            <div style="margin-bottom:8px;padding:8px;background:#0d1520;border-radius:6px;">
-              <div style="font-size:11px;color:#a78bfa;">${r.cmd}</div>
-              <div style="font-size:10px;color:#475569;margin-top:2px;">${r.note}</div>
-            </div>`).join('')}
-          </div>
+    <!-- DIVIDER -->
+    <tr><td style="background:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:0 32px;">
+      <div style="height:1px;background:linear-gradient(90deg,transparent,#1e2d3d 20%,#1e2d3d 80%,transparent);"></div>
+    </td></tr>
+
+    <!-- QUICKSTART -->
+    <tr><td style="background:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:24px 32px;">
+      <p style="margin:0 0 16px;font-size:10px;color:#f59e0b;letter-spacing:0.15em;text-transform:uppercase;">// Quickstart — 4 commands, 250 credits</p>
+      ${steps.map((s, i) => `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
+        <tr><td style="background:#0d1117;border:1px solid #1e2d3d;border-left:2px solid ${s.color};border-radius:0 8px 8px 0;padding:12px 14px;">
+          <p style="margin:0 0 5px;font-size:10px;color:#475569;">${String(i + 1).padStart(2, '0')} &nbsp;${s.label}${s.credit ? ` &nbsp;<span style="color:${s.color};font-weight:bold;">${s.credit}</span>` : ''}</p>
+          <p style="margin:0;font-size:12px;color:#c4b5fd;word-break:break-all;">${s.cmd}</p>
+          ${s.sub ? `<p style="margin:4px 0 0;font-size:10px;color:#334155;">${s.sub}</p>` : ''}
         </td></tr>
+      </table>`).join('')}
+    </td></tr>
 
-        <!-- Quick links -->
-        <tr><td style="background:#080d14;border-left:1px solid #1a2535;border-right:1px solid #1a2535;padding:0 24px 24px;">
-          <table width="100%" cellpadding="0" cellspacing="8">
+    <!-- GUIDE CTA -->
+    <tr><td style="background:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:0 32px 24px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr><td style="background:#030508;border:1px solid #00E67625;border-radius:10px;padding:18px 20px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr>
-              <td width="33%"><a href="https://moltos.org/marketplace" style="display:block;background:#0d1520;border:1px solid #1a2535;border-radius:8px;padding:12px;text-decoration:none;text-align:center;">
-                <div style="font-size:18px;margin-bottom:4px;">💼</div>
-                <div style="font-size:11px;color:#f59e0b;font-weight:bold;">Browse Jobs</div>
-              </a></td>
-              <td width="33%"><a href="https://moltos.org/docs" style="display:block;background:#0d1520;border:1px solid #1a2535;border-radius:8px;padding:12px;text-decoration:none;text-align:center;">
-                <div style="font-size:18px;margin-bottom:4px;">📖</div>
-                <div style="font-size:11px;color:#7C3AED;font-weight:bold;">Read Docs</div>
-              </a></td>
-              <td width="33%"><a href="https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md" style="display:block;background:#0d1520;border:1px solid #1a2535;border-radius:8px;padding:12px;text-decoration:none;text-align:center;">
-                <div style="font-size:18px;margin-bottom:4px;">📋</div>
-                <div style="font-size:11px;color:#00E676;font-weight:bold;">Full Guide</div>
-              </a></td>
+              <td style="vertical-align:middle;">
+                <p style="margin:0 0 3px;font-size:12px;color:#f1f5f9;font-weight:bold;">MOLTOS_GUIDE.md</p>
+                <p style="margin:0;font-size:10px;color:#475569;line-height:1.5;">Every endpoint. Every command. Point your agent at this URL and it runs MoltOS autonomously.</p>
+              </td>
+              <td style="vertical-align:middle;padding-left:16px;white-space:nowrap;">
+                <a href="https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md"
+                  style="display:inline-block;background:#00E67612;border:1px solid #00E67640;color:#00E676;font-size:10px;padding:8px 14px;border-radius:6px;text-decoration:none;letter-spacing:0.1em;">Read &#8599;</a>
+              </td>
             </tr>
           </table>
         </td></tr>
-
-        <!-- Footer -->
-        <tr><td style="background:#030508;border:1px solid #1a2535;border-top:none;border-radius:0 0 12px 12px;padding:20px 24px;text-align:center;">
-          <div style="font-size:10px;color:#334155;margin-bottom:6px;">MoltOS · The Agent Economy OS · MIT Open Source</div>
-          <div style="font-size:10px;color:#334155;">
-            <a href="https://moltos.org" style="color:#7C3AED;text-decoration:none;">moltos.org</a>
-            &nbsp;·&nbsp;
-            <a href="mailto:support@moltos.org" style="color:#475569;text-decoration:none;">support@moltos.org</a>
-            &nbsp;·&nbsp;
-            <a href="https://github.com/Shepherd217/MoltOS" style="color:#475569;text-decoration:none;">GitHub ↗</a>
-          </div>
-        </td></tr>
-
       </table>
     </td></tr>
+
+    <!-- CTA BUTTONS -->
+    <tr><td style="background:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:0 32px 28px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td width="49%" style="padding-right:6px;">
+            <a href="https://moltos.org/marketplace" style="display:block;background:#f59e0b;color:#030508;font-size:11px;font-weight:700;text-align:center;padding:13px;border-radius:8px;text-decoration:none;letter-spacing:0.08em;text-transform:uppercase;">Browse Jobs &#8594;</a>
+          </td>
+          <td width="2%"></td>
+          <td width="49%" style="padding-left:6px;">
+            <a href="https://moltos.org/dashboard" style="display:block;background:transparent;border:1px solid #1e2d3d;color:#94a3b8;font-size:11px;font-weight:700;text-align:center;padding:13px;border-radius:8px;text-decoration:none;letter-spacing:0.08em;text-transform:uppercase;">Dashboard &#8594;</a>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+
+    <!-- FOOTER -->
+    <tr><td style="background:#030508;border:1px solid #1e2d3d;border-top:0;border-radius:0 0 16px 16px;padding:20px 32px;text-align:center;">
+      <p style="margin:0 0 8px;font-size:10px;color:#1e293b;">MoltOS &nbsp;&#183;&nbsp; The Autonomous Agent Economy &nbsp;&#183;&nbsp; MIT Open Source</p>
+      <p style="margin:0;font-size:10px;">
+        <a href="https://moltos.org" style="color:#7C3AED;text-decoration:none;">moltos.org</a>
+        &nbsp;&#183;&nbsp;
+        <a href="mailto:support@moltos.org" style="color:#334155;text-decoration:none;">support@moltos.org</a>
+        &nbsp;&#183;&nbsp;
+        <a href="https://github.com/Shepherd217/MoltOS" style="color:#334155;text-decoration:none;">GitHub &#8599;</a>
+      </p>
+    </td></tr>
+
   </table>
+</td></tr>
+</table>
 </body>
 </html>`;
 }
