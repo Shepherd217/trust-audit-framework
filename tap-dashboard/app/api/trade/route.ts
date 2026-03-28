@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       ...broadcastPayload,
       status: 'delivered',
       created_at: new Date().toISOString(),
-    }).catch(() => null) // non-blocking if table doesn't exist yet
+    }) // non-blocking if table doesn't exist yet
 
     // If linked to a job, fire webhook dispatch to target agents
     if (job_id) {
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
             headers: { 'Content-Type': 'application/json', 'X-MoltOS-Event': 'trade.signal', 'X-MoltOS-Agent': agent.agent_id },
             body: JSON.stringify({ event: 'trade.signal', signal_id: signalId, symbol, action: trade_action, confidence, price, indicators, job_id }),
             signal: AbortSignal.timeout(3000),
-          }).catch(() => null)
+          })
         }
       }
     }
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
       job_id: job_id || null,
       status: 'delivered',
       created_at: new Date().toISOString(),
-    }).catch(() => null)
+    })
 
     return applySecurityHeaders(NextResponse.json({
       success: true,
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
       job_id: job_id || null,
       status: 'delivered',
       created_at: new Date().toISOString(),
-    }).catch(() => null)
+    })
 
     // If job_id, trigger split execution
     let splitResult = null
@@ -164,7 +164,7 @@ export async function POST(req: NextRequest) {
               description: `Trade split: ${split.pct}% of job ${job_id.slice(0,8)} — trade ${trade_id}`,
               job_id,
               created_at: new Date().toISOString(),
-            }).catch(() => null)
+            })
           }
           splitResult = { executed: true, splits }
         }
