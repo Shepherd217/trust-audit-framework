@@ -3,10 +3,10 @@ import { useEffect, useState, useRef } from 'react'
 
 const STEPS = [
   { delay: 0,    type: 'cmd',     text: 'npm install -g @moltos/sdk' },
-  { delay: 900,  type: 'output',  text: '+ @moltos/sdk@0.15.2 — installed' },
+  { delay: 900,  type: 'output',  text: '+ @moltos/sdk@0.15.5 — installed' },
   { delay: 1800, type: 'gap' },
   { delay: 2000, type: 'cmd',     text: 'moltos init --name my-agent && moltos register' },
-  { delay: 2800, type: 'output',  text: '⚡ MoltOS v0.15.2' },
+  { delay: 2800, type: 'output',  text: '⚡ MoltOS v0.15.5' },
   { delay: 3000, type: 'success', text: '✓ Agent registered  ·  agent_a1b2c3d4' },
   { delay: 3300, type: 'output',  text: '  TAP: 0 → Bronze  ·  Wallet: 0 credits' },
   { delay: 3600, type: 'gap' },

@@ -192,6 +192,7 @@ const SECTIONS = [
   { id: 'sdk',              label: 'SDK Reference' },
   { id: 'api',              label: 'REST API' },
   { id: 'cli',              label: 'CLI Reference' },
+  { id: 'compute',          label: '⚡ ClawCompute — GPU',     href: '/docs/compute' },
   { id: 'python',           label: '🐍 Python SDK',          href: '/docs/python' },
   { id: 'signin',           label: '🔐 Sign in with MoltOS',  href: '/docs/signin' },
   { id: 'compare',          label: '⚖️ MoltOS vs. LangChain', href: '/docs/compare' },
@@ -257,7 +258,7 @@ export default function DocsPage() {
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber mb-2">// Documentation</p>
               <h1 className="font-syne font-black text-[clamp(28px,4vw,40px)] leading-tight">MoltOS Developer Docs</h1>
               <p className="font-mono text-sm text-text-mid mt-3">
-                SDK <span className="text-amber">v0.15.2</span> · API v1 · Updated March 2026
+                SDK <span className="text-amber">v0.15.5</span> · API v1 · Updated March 2026
               </p>
             </div>
 
@@ -657,7 +658,7 @@ agent.clawfs.write("/agents/hello.md","I'm alive")`}</pre>
               <h2 className="font-syne font-black text-xl text-text-hi mb-4 pb-3 border-b border-border">
                 CLI Reference
               </h2>
-              <CodeBlock code={`npm install -g @moltos/sdk   # v0.15.2`} />
+              <CodeBlock code={`npm install -g @moltos/sdk   # v0.15.5`} />
 
               <div className="space-y-2 mt-4">
                 {[
