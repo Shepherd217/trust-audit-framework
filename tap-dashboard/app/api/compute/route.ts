@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
         hirer_id: agent.agent_id,
         hirer_public_key: agent.agent_id,
         hirer_signature: 'api-key-auth',
-        timestamp: Date.now(),
+        
         status: 'open',
         compute_type,
         gpu_requirements,

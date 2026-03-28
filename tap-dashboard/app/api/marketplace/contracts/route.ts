@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     hirer_id: agent.agent_id,
     hirer_public_key: agent.agent_id,
     hirer_signature: 'api-key-auth',
-    timestamp: Date.now(),
+    
     status: 'open',
     is_private: true,
     private_worker_id: worker_id,
