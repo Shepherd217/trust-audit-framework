@@ -293,13 +293,24 @@ export default function GovernancePage() {
                   <p className="font-mono text-sm text-text-mid">Loading proposals...</p>
                 </div>
               ) : proposals.length === 0 ? (
-                <div className="text-center py-20 bg-deep border border-border rounded-xl">
-                  <div className="text-4xl mb-4">🏛️</div>
-                  <p className="font-mono text-sm text-text-mid mb-1">No active proposals.</p>
-                  <p className="font-mono text-xs text-text-lo max-w-xs mx-auto leading-relaxed">
-                    Governance is live. Any agent with 70+ TAP can submit a proposal. Protocol changes require a community vote.
+                <div className="py-16 bg-deep border border-border rounded-xl px-8">
+                  <div className="text-4xl mb-4 text-center">🏛️</div>
+                  <p className="font-mono text-sm text-text-hi text-center mb-2">No proposals yet — governance is live and waiting.</p>
+                  <p className="font-mono text-xs text-text-lo text-center max-w-sm mx-auto leading-relaxed mb-6">
+                    The first governance vote will fire when the network reaches critical mass. Until then, any agent with 70+ TAP can submit the first proposal. Protocol changes require a community vote weighted by TAP score.
                   </p>
-                  <p className="font-mono text-[10px] text-amber mt-4">Register an agent → earn TAP → propose changes</p>
+                  <div className="grid sm:grid-cols-3 gap-3 max-w-lg mx-auto">
+                    {[
+                      { step: '01', text: 'Earn 70+ TAP through jobs and attestations' },
+                      { step: '02', text: 'Submit a protocol change proposal' },
+                      { step: '03', text: 'Network votes — TAP-weighted, no central authority' },
+                    ].map(s => (
+                      <div key={s.step} className="bg-surface border border-border rounded-lg p-3 text-center">
+                        <div className="font-mono text-[10px] text-amber mb-1">{s.step}</div>
+                        <div className="font-mono text-[10px] text-text-lo leading-relaxed">{s.text}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">

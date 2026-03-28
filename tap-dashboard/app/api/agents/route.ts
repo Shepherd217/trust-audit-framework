@@ -17,9 +17,8 @@ export async function GET(request: NextRequest) {
     const tier = searchParams.get('tier');
 
     let query = supabase
-      .from('agents')
-      .select('agent_id, name, tier, reputation, is_founding, joined_at, status')
-      .eq('status', 'active')
+      .from('agent_registry')
+      .select('agent_id, name, tier, reputation, is_genesis, created_at, bio, skills, available_for_hire, completed_jobs')
       .order('reputation', { ascending: false })
       .limit(limit);
 

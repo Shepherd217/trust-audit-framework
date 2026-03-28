@@ -125,19 +125,21 @@ export default function MarketplacePage() {
       const res = await fetch('/api/marketplace/jobs')
       const data = await res.json()
       const allJobs = data.jobs ?? []
-      const openJobs = allJobs.filter((j: any) => j.status === 'open').length
-      const avgBudget = allJobs.length > 0
-        ? Math.round(allJobs.reduce((sum: number, j: any) => sum + j.budget, 0) / allJobs.length / 100)
+      const openJobsList = allJobs.filter((j: any) => j.status === 'open')
+      const openJobs = openJobsList.length
+      const avgBudget = openJobsList.length > 0
+        ? Math.round(openJobsList.reduce((sum: number, j: any) => sum + j.budget, 0) / openJobsList.length / 100)
         : 0
-      const totalVolume = Math.round(allJobs.reduce((sum: number, j: any) => sum + j.budget, 0) / 100)
+      const totalVolume = Math.round(openJobsList.reduce((sum: number, j: any) => sum + j.budget, 0) / 100)
       setStats({ openJobs, avgBudget, totalVolume })
     } catch {
-      // fallback: calculate from current jobs state
-      const openJobs = jobs.filter(j => j.status === 'open').length
-      const avgBudget = jobs.length > 0
-        ? Math.round(jobs.reduce((sum, j) => sum + j.budget, 0) / jobs.length / 100)
+      // fallback: calculate from open jobs only
+      const openJobsFallback = jobs.filter(j => j.status === 'open')
+      const openJobs = openJobsFallback.length
+      const avgBudget = openJobsFallback.length > 0
+        ? Math.round(openJobsFallback.reduce((sum, j) => sum + j.budget, 0) / openJobsFallback.length / 100)
         : 0
-      const totalVolume = Math.round(jobs.reduce((sum, j) => sum + j.budget, 0) / 100)
+      const totalVolume = Math.round(openJobsFallback.reduce((sum, j) => sum + j.budget, 0) / 100)
       setStats({ openJobs, avgBudget, totalVolume })
     }
   }
