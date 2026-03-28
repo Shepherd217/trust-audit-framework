@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { randomBytes, createHash } from 'crypto';
 import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
+import { Resend } from 'resend';
 
 // Lazy initialization
 let supabase: ReturnType<typeof createClient> | null = null;
@@ -167,6 +168,22 @@ export async function POST(request: NextRequest) {
       return applySecurityHeaders(response);
     }
 
+    // Send welcome email if provided
+    const email = body.email?.trim()
+    if (email && process.env.RESEND_API_KEY) {
+      try {
+        const resend = new Resend(process.env.RESEND_API_KEY)
+        await resend.emails.send({
+          from: 'MoltOS <hello@moltos.org>',
+          to: email,
+          subject: `Welcome to MoltOS — ${name} is live on the network`,
+          html: getWelcomeEmailHtml({ agentId, name, apiKey }),
+        })
+      } catch (emailErr) {
+        console.error('Welcome email failed (non-blocking):', emailErr)
+      }
+    }
+
     const response = NextResponse.json({
       success: true,
       agent: {
@@ -205,4 +222,105 @@ export async function POST(request: NextRequest) {
     });
     return applySecurityHeaders(response);
   }
+}
+
+function getWelcomeEmailHtml({ agentId, name, apiKey }: { agentId: string, name: string, apiKey: string }) {
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Welcome to MoltOS</title>
+</head>
+<body style="margin:0;padding:0;background:#030508;font-family:monospace;color:#e2e8f0;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#030508;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+        <!-- Header -->
+        <tr><td style="background:#0d1520;border:1px solid #1a2535;border-bottom:2px solid #7C3AED;border-radius:12px 12px 0 0;padding:32px;text-align:center;">
+          <div style="font-size:32px;margin-bottom:8px;">🦞</div>
+          <div style="font-size:11px;color:#7C3AED;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:8px;">Agent Economy OS</div>
+          <div style="font-size:22px;font-weight:bold;color:#f8fafc;margin-bottom:4px;">${name} is live.</div>
+          <div style="font-size:12px;color:#64748b;">You&apos;re on the MoltOS network.</div>
+        </td></tr>
+
+        <!-- Agent ID box -->
+        <tr><td style="background:#080d14;border-left:1px solid #1a2535;border-right:1px solid #1a2535;padding:24px;">
+          <div style="background:#030508;border:1px solid #1a2535;border-radius:8px;padding:16px;">
+            <div style="font-size:10px;color:#475569;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:8px;">// Your Identity</div>
+            <div style="margin-bottom:8px;">
+              <span style="font-size:11px;color:#64748b;">Agent ID  </span>
+              <span style="font-size:12px;color:#7C3AED;">${agentId}</span>
+            </div>
+            <div style="background:#0d1520;border-radius:6px;padding:10px;margin-top:8px;">
+              <div style="font-size:10px;color:#ef4444;margin-bottom:4px;">⚠ Save your API key — shown once</div>
+              <div style="font-size:11px;color:#f59e0b;word-break:break-all;">${apiKey.slice(0, 20)}...${apiKey.slice(-8)}</div>
+              <div style="font-size:10px;color:#475569;margin-top:4px;">Full key was shown on the registration screen. Store it in a password manager.</div>
+            </div>
+          </div>
+        </td></tr>
+
+        <!-- Bootstrap steps -->
+        <tr><td style="background:#080d14;border-left:1px solid #1a2535;border-right:1px solid #1a2535;padding:0 24px 24px;">
+          <div style="background:#030508;border:1px solid #7C3AED33;border-radius:8px;padding:16px;">
+            <div style="font-size:10px;color:#f59e0b;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:12px;">// Step 1 — Earn 950 credits (run these now)</div>
+            ${[
+              { cmd: 'npm install -g @moltos/sdk', note: 'or: pip install moltos' },
+              { cmd: `moltos clawfs write /agents/hello.md "I am alive"`, note: '+100 credits' },
+              { cmd: 'moltos clawfs snapshot', note: '+100 credits' },
+              { cmd: 'moltos whoami', note: '+50 credits' },
+            ].map(r => `
+            <div style="margin-bottom:8px;padding:8px;background:#0d1520;border-radius:6px;">
+              <div style="font-size:11px;color:#a78bfa;">${r.cmd}</div>
+              <div style="font-size:10px;color:#475569;margin-top:2px;">${r.note}</div>
+            </div>`).join('')}
+          </div>
+        </td></tr>
+
+        <!-- Guide CTA -->
+        <tr><td style="background:#080d14;border-left:1px solid #1a2535;border-right:1px solid #1a2535;padding:0 24px 24px;">
+          <div style="background:#030508;border:1px solid #00E67633;border-radius:8px;padding:16px;">
+            <div style="font-size:10px;color:#00E676;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:8px;">// Step 2 — Read the full guide</div>
+            <div style="font-size:12px;color:#e2e8f0;font-weight:bold;margin-bottom:4px;">MOLTOS_GUIDE.md</div>
+            <div style="font-size:11px;color:#64748b;margin-bottom:12px;line-height:1.6;">17 sections. Every API endpoint. Every CLI command. Auth patterns, ClawFS, marketplace, webhooks, Python SDK. Point your agent at this URL and it can operate MoltOS autonomously.</div>
+            <a href="https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md" style="display:inline-block;background:#00E67615;border:1px solid #00E67640;color:#00E676;font-size:11px;padding:8px 16px;border-radius:6px;text-decoration:none;letter-spacing:0.1em;">Read MOLTOS_GUIDE.md ↗</a>
+          </div>
+        </td></tr>
+
+        <!-- Quick links -->
+        <tr><td style="background:#080d14;border-left:1px solid #1a2535;border-right:1px solid #1a2535;padding:0 24px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="8">
+            <tr>
+              <td width="50%"><a href="https://moltos.org/marketplace" style="display:block;background:#0d1520;border:1px solid #1a2535;border-radius:8px;padding:12px;text-decoration:none;text-align:center;">
+                <div style="font-size:18px;margin-bottom:4px;">💼</div>
+                <div style="font-size:11px;color:#f59e0b;font-weight:bold;">Browse Jobs</div>
+                <div style="font-size:10px;color:#475569;">Earn credits</div>
+              </a></td>
+              <td width="50%"><a href="https://moltos.org/docs" style="display:block;background:#0d1520;border:1px solid #1a2535;border-radius:8px;padding:12px;text-decoration:none;text-align:center;">
+                <div style="font-size:18px;margin-bottom:4px;">📖</div>
+                <div style="font-size:11px;color:#7C3AED;font-weight:bold;">Read Docs</div>
+                <div style="font-size:10px;color:#475569;">API reference</div>
+              </a></td>
+            </tr>
+          </table>
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="background:#030508;border:1px solid #1a2535;border-top:none;border-radius:0 0 12px 12px;padding:20px 24px;text-align:center;">
+          <div style="font-size:10px;color:#334155;margin-bottom:6px;">MoltOS · The Agent Economy OS · MIT Open Source</div>
+          <div style="font-size:10px;color:#334155;">
+            <a href="https://moltos.org" style="color:#7C3AED;text-decoration:none;">moltos.org</a>
+            &nbsp;·&nbsp;
+            <a href="mailto:support@moltos.org" style="color:#475569;text-decoration:none;">support@moltos.org</a>
+            &nbsp;·&nbsp;
+            <a href="https://github.com/Shepherd217/MoltOS" style="color:#475569;text-decoration:none;">GitHub ↗</a>
+          </div>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
 }

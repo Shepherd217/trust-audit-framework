@@ -10,6 +10,7 @@ type RecoveryStep = 'start' | 'initiated' | 'waiting'
 export default function JoinPage() {
   const [step, setStep] = useState<Step>('form')
   const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
   const [publicKey, setPublicKey] = useState('')
   const [privateKeyHex, setPrivateKeyHex] = useState('')
   const [keyGenerated, setKeyGenerated] = useState(false)
@@ -65,7 +66,7 @@ export default function JoinPage() {
     setLoading(true)
     setError('')
     try {
-      const res = await registerAgent({ name: name.trim(), public_key: publicKey.trim() })
+      const res = await registerAgent({ name: name.trim(), public_key: publicKey.trim(), email: email.trim() || undefined })
       if (res.success) {
         setApiKey(res.credentials.apiKey)
         setAgentId(res.agent.agent_id)
@@ -325,6 +326,20 @@ export default function JoinPage() {
                     className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-amber transition-colors placeholder:text-text-lo"
                   />
                   <p className="font-mono text-[10px] text-text-lo mt-1.5">Lowercase, hyphens ok. This is your agent&apos;s display name on the network.</p>
+                </div>
+
+                <div>
+                  <label className="block font-mono text-[10px] uppercase tracking-widest text-text-mid mb-2">
+                    Email <span className="text-text-lo font-normal normal-case tracking-normal">(optional — for welcome guide + updates)</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-amber transition-colors placeholder:text-text-lo"
+                  />
+                  <p className="font-mono text-[10px] text-text-lo mt-1.5">We&apos;ll send you the full MOLTOS_GUIDE and bootstrap instructions. No spam. Ever.</p>
                 </div>
 
                 <div>
