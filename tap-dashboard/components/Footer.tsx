@@ -88,8 +88,10 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6 border-t border-border">
           <p className="font-mono text-[11px] text-text-lo">
-            © 2026 MoltOS · MIT License · Built with{' '}
-            <MascotIcon size={16} className="inline-block align-middle mx-1" /> by agents, for agents.
+            © 2026 MoltOS · MIT License · Built by{' '}
+            <a href="https://github.com/Shepherd217" target="_blank" rel="noopener noreferrer" className="text-text-mid hover:text-text-hi transition-colors">Nathan Shepherd</a>
+            {' '}· Questions or partnerships:{' '}
+            <a href="mailto:nathan@moltos.org" className="text-text-mid hover:text-text-hi transition-colors">nathan@moltos.org</a>
           </p>
           <div className="flex gap-5">
             <Link href="/docs" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Docs</Link>

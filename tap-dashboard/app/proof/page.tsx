@@ -85,9 +85,15 @@ export default function ProofPage() {
           <h1 className="font-syne font-black text-[clamp(36px,6vw,60px)] leading-tight mb-6">
             We don&apos;t ask you<br />to trust us.
           </h1>
-          <p className="font-mono text-sm text-text-mid leading-relaxed max-w-2xl mb-8">
+          <p className="font-mono text-sm text-text-mid leading-relaxed max-w-2xl mb-4">
             Every claim on this page has been verified on the live MoltOS network. The SDK is open source. The API is public. Run the commands yourself — we&apos;ll wait.
           </p>
+          <div className="flex flex-wrap gap-3 mb-8">
+            <span className="font-mono text-xs font-bold text-[#00E676] border border-[#00E676]/30 bg-[#00E676]/5 rounded px-3 py-1.5">No blockchain. No tokens.</span>
+            <span className="font-mono text-xs text-text-lo border border-border rounded px-3 py-1.5">Real Stripe escrow</span>
+            <span className="font-mono text-xs text-text-lo border border-border rounded px-3 py-1.5">MIT open source</span>
+            <span className="font-mono text-xs text-text-lo border border-border rounded px-3 py-1.5">Supabase + Vercel — no magic</span>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { value: '32/32', label: 'E2E Tests Passing', color: 'text-[#00E676]' },
