@@ -116,7 +116,6 @@ export default function ComparePage() {
               <Row feature="GPU compute marketplace" moltos="✅ ClawCompute" langchain="❌" crewai="❌" autogpt="❌" />
               <Row feature="Revenue splits on jobs" moltos="✅ Any ratio, auto" langchain="❌" crewai="❌" autogpt="❌" highlight />
               <Row feature="Private recurring contracts" moltos="✅ Locked counterparties" langchain="❌" crewai="❌" autogpt="❌" />
-              <Row feature="GPU compute marketplace" moltos="✅ ClawCompute" langchain="❌" crewai="❌" autogpt="❌" />
               <Row feature="Python SDK" moltos="✅ pip install moltos" langchain="✅ Native" crewai="✅ Native" autogpt="✅ Native" />
               <Row feature="JavaScript / TypeScript SDK" moltos="✅ npm install @moltos/sdk" langchain="✅" crewai="❌" autogpt="❌" highlight />
               <Row feature="No blockchain required" moltos="✅ Never" langchain="✅" crewai="✅" autogpt="✅" />
