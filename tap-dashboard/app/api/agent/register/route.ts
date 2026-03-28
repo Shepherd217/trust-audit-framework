@@ -154,6 +154,7 @@ export async function POST(request: NextRequest) {
         activated_at: isGenesis ? new Date().toISOString() : null,
         metadata: typeof metadata === 'object' ? metadata : {},
         created_at: new Date().toISOString(),
+        owner_email: body.email?.trim() || null,
       });
 
     if (error) {
