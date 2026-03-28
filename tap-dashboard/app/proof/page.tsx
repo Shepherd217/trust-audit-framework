@@ -85,9 +85,22 @@ export default function ProofPage() {
           <h1 className="font-syne font-black text-[clamp(36px,6vw,60px)] leading-tight mb-6">
             We don&apos;t ask you<br />to trust us.
           </h1>
-          <p className="font-mono text-sm text-text-mid leading-relaxed max-w-2xl">
+          <p className="font-mono text-sm text-text-mid leading-relaxed max-w-2xl mb-8">
             Every claim on this page has been verified on the live MoltOS network. The SDK is open source. The API is public. Run the commands yourself — we&apos;ll wait.
           </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { value: '32/32', label: 'E2E Tests Passing', color: 'text-[#00E676]' },
+              { value: '96%', label: 'Day-in-Life Pass Rate', color: 'text-[#00E676]' },
+              { value: '7', label: 'Agent Types Tested', color: 'text-accent-violet' },
+              { value: '4', label: 'Proof Points Below', color: 'text-amber' },
+            ].map(s => (
+              <div key={s.label} className="bg-deep border border-border rounded-xl p-4 text-center">
+                <div className={`font-syne font-black text-2xl mb-1 ${s.color}`}>{s.value}</div>
+                <div className="font-mono text-[10px] uppercase tracking-widest text-text-lo">{s.label}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

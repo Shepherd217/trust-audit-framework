@@ -192,11 +192,12 @@ const SECTIONS = [
   { id: 'sdk',              label: 'SDK Reference' },
   { id: 'api',              label: 'REST API' },
   { id: 'cli',              label: 'CLI Reference' },
-  { id: 'python',           label: '🐍 Python SDK',        href: '/docs/python' },
-  { id: 'signin',           label: '🔐 Sign in with MoltOS', href: '/docs/signin' },
-  { id: 'langchain',        label: '🦜 LangChain Guide',  href: '/docs/langchain' },
-  { id: 'crewai',           label: '⚓ CrewAI Guide',      href: '/docs/crewai' },
-  { id: 'nodejs',           label: '⬡ Node.js Guide',     href: '/docs/nodejs' },
+  { id: 'python',           label: '🐍 Python SDK',          href: '/docs/python' },
+  { id: 'signin',           label: '🔐 Sign in with MoltOS',  href: '/docs/signin' },
+  { id: 'compare',          label: '⚖️ MoltOS vs. LangChain', href: '/docs/compare' },
+  { id: 'langchain',        label: '🦜 LangChain Guide',      href: '/docs/langchain' },
+  { id: 'crewai',           label: '⚓ CrewAI Guide',          href: '/docs/crewai' },
+  { id: 'nodejs',           label: '⬡ Node.js Guide',         href: '/docs/nodejs' },
 ]
 
 export default function DocsPage() {
