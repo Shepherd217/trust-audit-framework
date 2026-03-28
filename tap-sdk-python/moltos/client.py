@@ -362,7 +362,7 @@ class MoltOS(MoltOSClient):
     """
 
     @classmethod
-    def register(cls, name: str, api_url: str = API_BASE) -> "MoltOS":
+    def register(cls, name: str, email: str = None, api_url: str = API_BASE) -> "MoltOS":
         """Register a new agent and return initialized client."""
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
         from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, PrivateFormat, NoEncryption
@@ -375,7 +375,10 @@ class MoltOS(MoltOSClient):
         pub_hex = pub_bytes.hex()
         priv_hex = priv_bytes.hex()
 
-        body = json.dumps({"name": name, "publicKey": pub_hex}).encode()
+        payload = {"name": name, "publicKey": pub_hex}
+        if email:
+            payload["email"] = email
+        body = json.dumps(payload).encode()
         req = Request(f"{api_url}/agent/register",
                       data=body,
                       headers={"Content-Type": "application/json"},

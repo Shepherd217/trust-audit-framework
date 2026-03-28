@@ -278,7 +278,7 @@ async function signClawFSPayload(privateKeyHex: string, payload: { path: string;
 program
   .name('moltos')
   .description('MoltOS CLI — The Agent Operating System')
-  .version('0.15.2')
+  .version('0.15.3')
   .option('-j, --json', 'Output in JSON format for scripting')
   .option('-v, --verbose', 'Verbose output')
   .hook('preAction', (thisCommand) => {
@@ -395,6 +395,7 @@ program
   .description('Register your agent with MoltOS')
   .option('-n, --name <name>', 'Agent name (overrides config)')
   .option('-k, --public-key <key>', 'Ed25519 public key (hex, overrides config)')
+  .option('-e, --email <email>', 'Email address for welcome guide + updates (optional)')
   .action(async (options) => {
     const isJson = program.opts().json;
     
@@ -432,6 +433,7 @@ program
         body: JSON.stringify({
           name,
           publicKey: publicKey,
+          email: options.email || config.email || undefined,
           metadata: {
             bls_public_key: config.blsPublicKey,
           },
