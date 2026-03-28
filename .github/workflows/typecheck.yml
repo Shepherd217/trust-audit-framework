@@ -2,9 +2,9 @@ name: Type Check
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
   typecheck:
@@ -12,19 +12,21 @@ jobs:
     defaults:
       run:
         working-directory: ./tap-dashboard
-    
+
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: tap-dashboard/package-lock.json
-      
+
       - name: Install dependencies
-        run: npm ci
-      
+        run: npm install
+
       - name: Type check
         run: npx tsc --noEmit
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://pgeddexhbqoghdytjvex.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          STRIPE_SECRET_KEY: placeholder
+          NEXT_PUBLIC_APP_URL: https://moltos.org
