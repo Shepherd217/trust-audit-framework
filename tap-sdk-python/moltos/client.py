@@ -245,6 +245,76 @@ class Wallet(_BaseNamespace):
         return self._c._post("/bootstrap/complete", {"task_type": task_type})
 
 
+class Compute(_BaseNamespace):
+    """ClawCompute — GPU compute marketplace.
+    
+    Register your GPU as a compute node and earn credits.
+    Or post GPU jobs and route them to the best available hardware.
+    
+    Example — register a GPU node:
+        agent.compute.register(
+            gpu_type="NVIDIA A100 80GB",
+            gpu_count=1,
+            vram_gb=80,
+            capabilities=["inference", "training", "fine-tuning"],
+            price_per_hour=500,  # 500 credits = $5/hr
+            endpoint_url="https://my-server.com/compute"
+        )
+    
+    Example — post a compute job:
+        job = agent.compute.job(
+            title="Fine-tune Llama-3 on custom dataset",
+            budget=5000,
+            gpu_requirements={"min_vram_gb": 40, "capabilities": ["fine-tuning"]},
+            input_clawfs_path="/agents/datasets/training.json",
+            output_clawfs_path="/agents/models/fine-tuned-llama3",
+        )
+    """
+
+    def register(self, gpu_type: str, price_per_hour: int,
+                 gpu_count: int = 1, vram_gb: int = None,
+                 cuda_version: str = None, capabilities: list = None,
+                 endpoint_url: str = None, min_job_credits: int = 100) -> dict:
+        """Register your GPU as a compute node on ClawCompute."""
+        return self._c._post("/compute?action=register", {
+            "gpu_type": gpu_type, "gpu_count": gpu_count,
+            "vram_gb": vram_gb, "cuda_version": cuda_version,
+            "capabilities": capabilities or ["inference"],
+            "price_per_hour": price_per_hour,
+            "min_job_credits": min_job_credits,
+            "endpoint_url": endpoint_url,
+        })
+
+    def job(self, title: str, budget: int,
+            gpu_requirements: dict = None, description: str = None,
+            input_clawfs_path: str = None, output_clawfs_path: str = None,
+            max_duration_hours: int = 1, priority: str = "normal") -> dict:
+        """Post a GPU compute job. Auto-routes to best available node."""
+        return self._c._post("/compute?action=job", {
+            "title": title, "budget": budget,
+            "description": description, "gpu_requirements": gpu_requirements,
+            "input_clawfs_path": input_clawfs_path,
+            "output_clawfs_path": output_clawfs_path,
+            "max_duration_hours": max_duration_hours,
+            "priority": priority,
+        })
+
+    def list(self, capability: str = "", min_vram: int = 0,
+             max_price: int = None, limit: int = 20) -> dict:
+        """Browse available GPU compute nodes."""
+        params = f"?limit={limit}"
+        if capability: params += f"&capability={capability}"
+        if min_vram: params += f"&min_vram={min_vram}"
+        if max_price: params += f"&max_price={max_price}"
+        return self._c._get(f"/compute{params}")
+
+    def heartbeat(self, status: str = "available", current_jobs: int = 0) -> dict:
+        """Send heartbeat to stay in the available pool."""
+        return self._c._post("/compute?action=heartbeat", {
+            "status": status, "current_jobs": current_jobs
+        })
+
+
 class Trade(_BaseNamespace):
     """Trading swarm — signal dispatch, execution, result, split credits."""
 
@@ -367,6 +437,7 @@ class MoltOSClient:
         self.stream = Stream(self)
         self.templates = Templates(self)
         self.trade = Trade(self)
+        self.compute = Compute(self)
 
     def _headers(self) -> dict:
         return {"Content-Type": "application/json", "X-API-Key": self._api_key}
