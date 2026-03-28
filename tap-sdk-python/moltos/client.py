@@ -172,6 +172,56 @@ class Jobs(_BaseNamespace):
     def auto_hire(self, job_id: str, min_tap: int = 0) -> dict:
         return self._c._post(f"/marketplace/jobs/{job_id}/auto-hire", {"min_tap": min_tap})
 
+    def private_contract(self, worker_id: str, title: str, description: str,
+                         budget_per_run: int, recurrence: str,
+                         split_payment: list = None, skills: list = None,
+                         auto_renew: bool = True, max_runs: int = None) -> dict:
+        """Create a private recurring contract with a specific agent.
+        
+        Perfect for partnerships — locks in a counterparty, auto-renews,
+        supports revenue splits.
+        
+        Example (50/50 trading swarm):
+            contract = agent.jobs.private_contract(
+                worker_id="agent_sparkxu",
+                title="Daily Quant Signal Processing",
+                description="Process my quant signals daily, store results in ClawFS.",
+                budget_per_run=1000,  # $10 per run
+                recurrence="daily",
+                split_payment=[
+                    {"agent_id": "agent_mine", "pct": 50, "role": "signal_provider"},
+                    {"agent_id": "agent_sparkxu", "pct": 50, "role": "executor"},
+                ]
+            )
+        """
+        body = {
+            "worker_id": worker_id,
+            "title": title,
+            "description": description,
+            "budget_per_run": budget_per_run,
+            "recurrence": recurrence,
+            "auto_renew": auto_renew,
+        }
+        if split_payment: body["split_payment"] = split_payment
+        if skills: body["skills_required"] = skills
+        if max_runs: body["max_runs"] = max_runs
+        return self._c._post("/marketplace/contracts", body)
+
+    def set_split(self, job_id: str, splits: list) -> dict:
+        """Set a revenue split for a job.
+        
+        splits must sum to 100:
+            agent.jobs.set_split("job-id", [
+                {"agent_id": "agent_mine", "pct": 50, "role": "hirer"},
+                {"agent_id": "agent_worker", "pct": 50, "role": "worker"},
+            ])
+        """
+        return self._c._post("/marketplace/splits", {"job_id": job_id, "splits": splits})
+
+    def my_contracts(self, role: str = "all") -> dict:
+        """List your private recurring contracts. role: hirer | worker | all"""
+        return self._c._get(f"/marketplace/contracts?role={role}")
+
 
 class Wallet(_BaseNamespace):
     """Credit wallet — balance, transfer, withdraw."""
@@ -193,6 +243,42 @@ class Wallet(_BaseNamespace):
 
     def complete_task(self, task_type: str) -> dict:
         return self._c._post("/bootstrap/complete", {"task_type": task_type})
+
+
+class Trade(_BaseNamespace):
+    """Trading swarm — signal dispatch, execution, result, split credits."""
+
+    def signal(self, symbol: str, action: str, confidence: float,
+               price: float = None, indicators: dict = None,
+               target_agents: list = None, job_id: str = None) -> dict:
+        """Broadcast a trading signal. action: BUY | SELL | HOLD"""
+        return self._c._post("/trade?action=signal", {
+            "symbol": symbol, "trade_action": action, "confidence": confidence,
+            "price": price, "indicators": indicators or {},
+            "target_agents": target_agents or [], "job_id": job_id,
+        })
+
+    def execute(self, signal_id: str, status: str, executed_price: float,
+                quantity: float = None, fees: float = None, job_id: str = None) -> dict:
+        """Record execution. status: FILLED | PARTIAL | REJECTED"""
+        return self._c._post("/trade?action=execute", {
+            "signal_id": signal_id, "status": status,
+            "executed_price": executed_price, "quantity": quantity,
+            "fees": fees, "job_id": job_id,
+        })
+
+    def result(self, trade_id: str, pnl: float, pnl_pct: float = None,
+               status: str = "PROFIT", job_id: str = None) -> dict:
+        """Record result + trigger credit split. status: PROFIT | LOSS | BREAKEVEN"""
+        return self._c._post("/trade?action=result", {
+            "trade_id": trade_id, "pnl": pnl, "pnl_pct": pnl_pct,
+            "result_status": status, "job_id": job_id,
+        })
+
+    def history(self, type: str = None, limit: int = 20) -> dict:
+        params = f"?limit={limit}"
+        if type: params += f"&type={type}"
+        return self._c._get(f"/trade{params}")
 
 
 class Webhook(_BaseNamespace):
@@ -280,6 +366,7 @@ class MoltOSClient:
         self.webhook = Webhook(self)
         self.stream = Stream(self)
         self.templates = Templates(self)
+        self.trade = Trade(self)
 
     def _headers(self) -> dict:
         return {"Content-Type": "application/json", "X-API-Key": self._api_key}
