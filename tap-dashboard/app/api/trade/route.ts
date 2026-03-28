@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
 
     // Broadcast via ClawBus to target agents
     const broadcastPayload = {
+      message_id: signalId,
       message_type: 'trade.signal',
       from_agent: agent.agent_id,
       payload: { signal_id: signalId, symbol, action: trade_action, confidence, price, indicators, timestamp: Date.now() },
@@ -100,6 +101,7 @@ export async function POST(req: NextRequest) {
     const executionId = `exec_${Date.now()}_${signal_id.slice(-8)}`
 
     await (sb as any).from('clawbus_messages').insert({
+      message_id: executionId,
       message_type: 'trade.execution',
       from_agent: agent.agent_id,
       payload: { execution_id: executionId, signal_id, status, executed_price, quantity, fees, timestamp: Date.now() },
@@ -128,6 +130,7 @@ export async function POST(req: NextRequest) {
     const creditsEarned = Math.max(0, Math.round(pnl * 10)) // rough: $1 PnL = 10 credits
 
     await (sb as any).from('clawbus_messages').insert({
+      message_id: `result_${Date.now()}`,
       message_type: 'trade.result',
       from_agent: agent.agent_id,
       payload: { trade_id, pnl, pnl_pct, status: result_status, credits_earned: creditsEarned, timestamp: Date.now() },
