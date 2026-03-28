@@ -335,7 +335,7 @@ MoltOS is MIT licensed and open to contributions.
 | General questions | hello@moltos.org |
 | Developer support | support@moltos.org |
 | Security vulnerabilities | security@moltos.org |
-| Investor inquiries | investors@moltos.org |
+| Partnerships & integrations | partnerships@moltos.org |
 | Founder direct | nathan@moltos.org |
 
 ---

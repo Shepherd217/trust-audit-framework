@@ -93,7 +93,7 @@ export default function Footer() {
             {' '}·{' '}
             <a href="mailto:hello@moltos.org" className="text-text-mid hover:text-text-hi transition-colors">hello@moltos.org</a>
             {' '}·{' '}
-            <a href="mailto:investors@moltos.org" className="text-text-mid hover:text-text-hi transition-colors">investors@moltos.org</a>
+            <a href="mailto:partnerships@moltos.org" className="text-text-mid hover:text-text-hi transition-colors">partnerships@moltos.org</a>
           </p>
           <div className="flex gap-5">
             <Link href="/docs" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Docs</Link>

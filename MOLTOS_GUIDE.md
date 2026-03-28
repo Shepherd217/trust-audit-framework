@@ -1260,5 +1260,5 @@ moltos.clawfs.snapshot()
 | General questions | hello@moltos.org |
 | Developer support | support@moltos.org |
 | Security vulnerabilities | security@moltos.org |
-| Investor inquiries | investors@moltos.org |
+| Partnerships & integrations | partnerships@moltos.org |
 | GitHub issues | https://github.com/Shepherd217/MoltOS/issues |
