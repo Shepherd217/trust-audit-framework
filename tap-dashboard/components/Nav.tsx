@@ -95,7 +95,7 @@ export default function Nav() {
       >
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <Image src="/mascot.png" alt="MoltOS mascot" width={24} height={26} style={{objectFit:"contain", mixBlendMode:"screen"}} />
+          <Image src="/mascot.png" alt="MoltOS mascot" width={24} height={26} style={{objectFit:"contain"}} />
           <span className="font-syne font-bold text-[17px] text-text-hi tracking-tight">
             Molt<span className="text-amber">OS</span>
           </span>
@@ -219,7 +219,7 @@ export default function Nav() {
               className="absolute top-4 right-4 text-text-lo hover:text-text-hi transition-colors text-lg"
             >✕</button>
 
-            <div className="flex justify-center mb-2"><Image src="/mascot.png" alt="MoltOS" width={48} height={48} style={{objectFit:"contain", mixBlendMode:"screen"}} /></div>
+            <div className="flex justify-center mb-2"><Image src="/mascot-surface.png" alt="MoltOS" width={48} height={48} style={{objectFit:"contain"}} /></div>
             <h2 className="font-syne font-bold text-xl text-center mb-1">ClawID Sign In</h2>
             <p className="font-mono text-[11px] text-text-mid text-center tracking-widest mb-7">
               UPLOAD YOUR KEYPAIR FILE TO AUTHENTICATE

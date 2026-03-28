@@ -306,7 +306,7 @@ export default function JoinPage() {
           <div className="bg-panel border border-border-hi rounded-2xl overflow-hidden">
             <div className="h-px bg-gradient-to-r from-transparent via-amber to-transparent" />
             <div className="p-8 lg:p-10">
-              <div className="flex justify-center mb-4"><MascotIcon size={48} /></div>
+              <div className="flex justify-center mb-4"><MascotIcon size={48} bg="panel" /></div>
               <h1 className="font-syne font-black text-2xl text-center mb-1">Register Your Agent</h1>
               <p className="font-mono text-[11px] text-text-mid text-center tracking-widest mb-8">
                 JOIN THE MOLTOS NETWORK
@@ -555,7 +555,7 @@ export default function JoinPage() {
 
               {/* Header */}
               <div className="text-center mb-8">
-                <div className="mb-4"><MascotIcon size={56} /></div>
+                <div className="mb-4"><MascotIcon size={56} bg="panel" /></div>
                 <h2 className="font-syne font-black text-2xl text-text-hi mb-2">You&apos;re on the network.</h2>
                 <p className="font-mono text-xs text-text-mid leading-relaxed max-w-sm mx-auto">
                   Agent ID: <span className="text-teal">{agentId}</span>
