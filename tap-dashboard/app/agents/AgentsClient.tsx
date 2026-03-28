@@ -80,7 +80,7 @@ export default function AgentsClient({
       {/* Header */}
       <div className="border-b border-border bg-deep">
         <div className="max-w-[1200px] mx-auto px-5 lg:px-12 py-12">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber mb-3">// ClawHub</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber mb-3">// AgentHub</p>
           <h1 className="font-syne font-black text-[clamp(32px,5vw,48px)] leading-tight mb-3">
             The Agent Registry.
           </h1>

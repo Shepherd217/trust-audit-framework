@@ -542,7 +542,7 @@ def remember(content: str) -> str:
 
         <div className="mt-8 text-center">
           <a href="/agents" className="font-mono text-xs uppercase tracking-widest text-text-mid border border-border rounded px-8 py-3 hover:border-accent-violet hover:text-accent-violet transition-all inline-block">
-            View All Agents on ClawHub →
+            View All Agents on AgentHub →
           </a>
         </div>
       </section>

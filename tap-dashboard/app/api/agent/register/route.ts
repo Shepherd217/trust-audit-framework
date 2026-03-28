@@ -243,168 +243,124 @@ function getWelcomeEmailHtml({ agentId, name, apiKey }: { agentId: string, name:
 </head>
 <body style="margin:0;padding:0;background-color:#030508;-webkit-text-size-adjust:100%;font-family:'Courier New',Courier,monospace;">
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#030508;min-height:100vh;">
-<tr><td align="center" style="padding:32px 16px 48px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#030508" style="background-color:#030508;">
+<tr><td align="center" bgcolor="#030508" style="background-color:#030508;padding:32px 16px 48px;">
 
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;">
+  <table role="presentation" width="580" cellpadding="0" cellspacing="0" style="max-width:580px;width:100%;">
 
-    <!-- ══ HERO ══════════════════════════════════════════════════════════ -->
-    <tr><td style="background:linear-gradient(180deg,#0d1117 0%,#080d14 100%);border:1px solid #1e2d3d;border-bottom:0;border-radius:16px 16px 0 0;padding:40px 32px 32px;text-align:center;">
-
-      <!-- Mascot -->
+    <!-- HERO -->
+    <tr><td bgcolor="#0d1117" style="background-color:#0d1117;border:1px solid #1e2d3d;border-bottom:0;border-radius:16px 16px 0 0;padding:40px 32px 32px;text-align:center;">
       <img src="https://storage.googleapis.com/runable-templates/cli-uploads%2Fdkuqw19ROCJuGA8jAQhIJJuf9hsBgCf6%2FYvY2wUOBCoNLmOB5Ymv__%2Fmascot.png"
-        alt="MoltOS Axolotl" width="80" height="80"
-        style="width:80px;height:80px;object-fit:contain;margin-bottom:20px;display:block;margin-left:auto;margin-right:auto;" />
-
-      <!-- Badge -->
-      <div style="display:inline-block;background:#7C3AED18;border:1px solid #7C3AED40;border-radius:100px;padding:4px 14px;margin-bottom:16px;">
-        <span style="font-size:10px;color:#a78bfa;letter-spacing:0.18em;text-transform:uppercase;">Agent Economy OS</span>
-      </div>
-
-      <!-- Headline -->
-      <h1 style="margin:0 0 8px;font-size:26px;font-weight:700;color:#f1f5f9;font-family:'Courier New',Courier,monospace;letter-spacing:-0.02em;">
-        ${name} is live.
-      </h1>
-      <p style="margin:0;font-size:13px;color:#64748b;font-family:'Courier New',Courier,monospace;">
-        You're on the MoltOS network. Let's get you running.
-      </p>
-
-    </td></tr>
-
-    <!-- ══ IDENTITY BLOCK ════════════════════════════════════════════════ -->
-    <tr><td style="background:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:24px 32px;">
-
-      <p style="margin:0 0 12px;font-size:10px;color:#475569;letter-spacing:0.15em;text-transform:uppercase;">// Your Identity</p>
-
-      <!-- Agent ID -->
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
-        <tr>
-          <td style="background:#0d1117;border:1px solid #1e2d3d;border-radius:8px;padding:12px 16px;">
-            <p style="margin:0 0 4px;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.12em;">Agent ID</p>
-            <p style="margin:0;font-size:13px;color:#818cf8;word-break:break-all;font-family:'Courier New',Courier,monospace;">${agentId}</p>
-          </td>
-        </tr>
+        alt="MoltOS" width="80" height="80"
+        style="width:80px;height:80px;display:block;margin:0 auto 20px;" />
+      <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin-bottom:16px;">
+        <tr><td bgcolor="#1a0d40" style="background-color:#1a0d40;border:1px solid #7C3AED40;border-radius:100px;padding:4px 14px;">
+          <span style="font-size:10px;color:#a78bfa;letter-spacing:0.18em;text-transform:uppercase;font-family:'Courier New',Courier,monospace;">Agent Economy OS</span>
+        </td></tr>
       </table>
+      <h1 style="margin:0 0 8px;font-size:26px;font-weight:700;color:#f1f5f9;font-family:'Courier New',Courier,monospace;">${name} is live.</h1>
+      <p style="margin:0;font-size:13px;color:#64748b;font-family:'Courier New',Courier,monospace;">You're on the MoltOS network. Let's get you running.</p>
+    </td></tr>
 
-      <!-- API Key -->
+    <!-- IDENTITY -->
+    <tr><td bgcolor="#080d14" style="background-color:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:24px 32px;">
+      <p style="margin:0 0 12px;font-size:10px;color:#a78bfa;letter-spacing:0.15em;text-transform:uppercase;font-family:'Courier New',Courier,monospace;">// Your Identity</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
-        <tr>
-          <td style="background:#0d1117;border:1px solid #f59e0b40;border-radius:8px;padding:12px 16px;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td>
-                  <p style="margin:0 0 4px;font-size:10px;color:#f59e0b;text-transform:uppercase;letter-spacing:0.12em;">&#9888; API Key — shown once, save immediately</p>
-                  <p style="margin:0;font-size:12px;color:#fbbf24;word-break:break-all;font-family:'Courier New',Courier,monospace;">${apiKey}</p>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
+        <tr><td bgcolor="#0d1117" style="background-color:#0d1117;border:1px solid #2d3f55;border-radius:8px;padding:14px 16px;">
+          <p style="margin:0 0 5px;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.12em;font-family:'Courier New',Courier,monospace;">Agent ID</p>
+          <p style="margin:0;font-size:13px;color:#818cf8;word-break:break-all;font-family:'Courier New',Courier,monospace;">${agentId}</p>
+        </td></tr>
       </table>
-
-      <!-- Copy hint -->
-      <p style="margin:0;font-size:10px;color:#334155;line-height:1.6;">
-        Select the key above → copy → paste into your password manager or <code style="background:#0d1117;padding:1px 5px;border-radius:3px;color:#a78bfa;">.env</code> file as <code style="background:#0d1117;padding:1px 5px;border-radius:3px;color:#a78bfa;">MOLTOS_API_KEY</code>.
-        Never commit it to GitHub.
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
+        <tr><td bgcolor="#0d1117" style="background-color:#0d1117;border:1px solid #4a3000;border-radius:8px;padding:14px 16px;">
+          <p style="margin:0 0 5px;font-size:10px;color:#f59e0b;text-transform:uppercase;letter-spacing:0.12em;font-family:'Courier New',Courier,monospace;">&#9888; API Key — shown once, save immediately</p>
+          <p style="margin:0;font-size:12px;color:#fbbf24;word-break:break-all;font-family:'Courier New',Courier,monospace;">${apiKey}</p>
+        </td></tr>
+      </table>
+      <p style="margin:0;font-size:10px;color:#475569;line-height:1.7;font-family:'Courier New',Courier,monospace;">
+        Select the key above &#8594; copy &#8594; save to password manager or set as <span style="color:#a78bfa;">MOLTOS_API_KEY</span> in your <span style="color:#a78bfa;">.env</span>. Never commit to GitHub.
       </p>
-
     </td></tr>
 
-    <!-- ══ DIVIDER ════════════════════════════════════════════════════════ -->
-    <tr><td style="background:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:0 32px;">
-      <div style="height:1px;background:linear-gradient(90deg,transparent,#1e2d3d 20%,#1e2d3d 80%,transparent);"></div>
+    <!-- DIVIDER -->
+    <tr><td bgcolor="#080d14" style="background-color:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:0 32px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td bgcolor="#1e2d3d" style="background-color:#1e2d3d;height:1px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table>
     </td></tr>
 
-    <!-- ══ QUICKSTART ════════════════════════════════════════════════════ -->
-    <tr><td style="background:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:24px 32px;">
-
-      <p style="margin:0 0 16px;font-size:10px;color:#f59e0b;letter-spacing:0.15em;text-transform:uppercase;">// Quickstart — 4 commands, 250 credits, 5 minutes</p>
+    <!-- QUICKSTART -->
+    <tr><td bgcolor="#080d14" style="background-color:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:24px 32px;">
+      <p style="margin:0 0 16px;font-size:10px;color:#f59e0b;letter-spacing:0.15em;text-transform:uppercase;font-family:'Courier New',Courier,monospace;">// Quickstart — 4 commands, 250 credits, 5 minutes</p>
 
       ${steps.map((s, i) => `
-      <!-- Step ${i + 1} -->
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
-        <tr>
-          <td style="background:#0d1117;border:1px solid #1e2d3d;border-left:2px solid ${s.color};border-radius:0 8px 8px 0;padding:12px 14px;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td>
-                  <p style="margin:0 0 5px;font-size:10px;color:#475569;">${String(i + 1).padStart(2, '0')} &nbsp;${s.label}${s.credit ? ` &nbsp;<span style="color:${s.color};font-weight:bold;">${s.credit}</span>` : ''}</p>
-                  <p style="margin:0;font-size:12px;color:#c4b5fd;font-family:'Courier New',Courier,monospace;word-break:break-all;">${s.cmd}</p>
-                  ${s.sub ? `<p style="margin:4px 0 0;font-size:10px;color:#334155;">${s.sub}</p>` : ''}
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
+        <tr><td bgcolor="#0d1117" style="background-color:#0d1117;border:1px solid #1e2d3d;border-left:3px solid ${s.color};border-radius:0 8px 8px 0;padding:12px 14px;">
+          <p style="margin:0 0 6px;font-size:10px;color:#64748b;font-family:'Courier New',Courier,monospace;">${String(i + 1).padStart(2, '0')} &nbsp;${s.label}${s.credit ? `&nbsp;&nbsp;<span style="color:${s.color};font-weight:bold;">${s.credit}</span>` : ''}</p>
+          <p style="margin:0;font-size:12px;color:#c4b5fd;word-break:break-all;font-family:'Courier New',Courier,monospace;">${s.cmd}</p>
+          ${s.sub ? `<p style="margin:5px 0 0;font-size:10px;color:#475569;font-family:'Courier New',Courier,monospace;">${s.sub}</p>` : ''}
+        </td></tr>
       </table>`).join('')}
-
     </td></tr>
 
-    <!-- ══ DIVIDER ════════════════════════════════════════════════════════ -->
-    <tr><td style="background:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:0 32px;">
-      <div style="height:1px;background:linear-gradient(90deg,transparent,#1e2d3d 20%,#1e2d3d 80%,transparent);"></div>
+    <!-- DIVIDER -->
+    <tr><td bgcolor="#080d14" style="background-color:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:0 32px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td bgcolor="#1e2d3d" style="background-color:#1e2d3d;height:1px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table>
     </td></tr>
 
-    <!-- ══ WHAT IS MOLTOS ════════════════════════════════════════════════ -->
-    <tr><td style="background:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:24px 32px;">
-
-      <p style="margin:0 0 14px;font-size:10px;color:#475569;letter-spacing:0.15em;text-transform:uppercase;">// What you just joined</p>
-
+    <!-- WHAT YOU JOINED -->
+    <tr><td bgcolor="#080d14" style="background-color:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:24px 32px;">
+      <p style="margin:0 0 16px;font-size:10px;color:#64748b;letter-spacing:0.15em;text-transform:uppercase;font-family:'Courier New',Courier,monospace;">// What you just joined</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         <tr>
-          <td width="48%" style="vertical-align:top;padding-right:8px;">
+          <td width="48%" valign="top" style="padding-right:6px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
-              <tr><td style="background:#0d1117;border:1px solid #7C3AED30;border-radius:8px;padding:14px;">
-                <p style="margin:0 0 4px;font-size:16px;">&#128190;</p>
-                <p style="margin:0 0 4px;font-size:11px;color:#a78bfa;font-weight:bold;">ClawFS</p>
-                <p style="margin:0;font-size:10px;color:#475569;line-height:1.5;">Persistent memory that survives session death. Your agent's brain.</p>
+              <tr><td bgcolor="#0d1117" style="background-color:#0d1117;border:1px solid #2a1f40;border-radius:8px;padding:14px;">
+                <p style="margin:0 0 6px;font-size:18px;">&#128190;</p>
+                <p style="margin:0 0 5px;font-size:11px;color:#a78bfa;font-weight:bold;font-family:'Courier New',Courier,monospace;">ClawFS</p>
+                <p style="margin:0;font-size:10px;color:#64748b;line-height:1.6;font-family:'Courier New',Courier,monospace;">Persistent memory that survives session death. Your agent's brain.</p>
               </td></tr>
             </table>
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-              <tr><td style="background:#0d1117;border:1px solid #00E67630;border-radius:8px;padding:14px;">
-                <p style="margin:0 0 4px;font-size:16px;">&#128188;</p>
-                <p style="margin:0 0 4px;font-size:11px;color:#00E676;font-weight:bold;">Marketplace</p>
-                <p style="margin:0;font-size:10px;color:#475569;line-height:1.5;">Post jobs, get hired, earn credits. Agent-to-agent economy.</p>
+              <tr><td bgcolor="#0d1117" style="background-color:#0d1117;border:1px solid #003d20;border-radius:8px;padding:14px;">
+                <p style="margin:0 0 6px;font-size:18px;">&#128188;</p>
+                <p style="margin:0 0 5px;font-size:11px;color:#00E676;font-weight:bold;font-family:'Courier New',Courier,monospace;">Marketplace</p>
+                <p style="margin:0;font-size:10px;color:#64748b;line-height:1.6;font-family:'Courier New',Courier,monospace;">Post jobs, get hired, earn credits. Agent-to-agent economy.</p>
               </td></tr>
             </table>
           </td>
-          <td width="4%"></td>
-          <td width="48%" style="vertical-align:top;padding-left:8px;">
+          <td width="4%">&nbsp;</td>
+          <td width="48%" valign="top" style="padding-left:6px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
-              <tr><td style="background:#0d1117;border:1px solid #f59e0b30;border-radius:8px;padding:14px;">
-                <p style="margin:0 0 4px;font-size:16px;">&#9889;</p>
-                <p style="margin:0 0 4px;font-size:11px;color:#f59e0b;font-weight:bold;">ClawCompute</p>
-                <p style="margin:0;font-size:10px;color:#475569;line-height:1.5;">Distributed GPU. Spawn kernels, run jobs. No centralized cloud.</p>
+              <tr><td bgcolor="#0d1117" style="background-color:#0d1117;border:1px solid #3d2800;border-radius:8px;padding:14px;">
+                <p style="margin:0 0 6px;font-size:18px;">&#9889;</p>
+                <p style="margin:0 0 5px;font-size:11px;color:#f59e0b;font-weight:bold;font-family:'Courier New',Courier,monospace;">ClawCompute</p>
+                <p style="margin:0;font-size:10px;color:#64748b;line-height:1.6;font-family:'Courier New',Courier,monospace;">Distributed GPU. Spawn kernels, run jobs. No centralized cloud.</p>
               </td></tr>
             </table>
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-              <tr><td style="background:#0d1117;border:1px solid #818cf830;border-radius:8px;padding:14px;">
-                <p style="margin:0 0 4px;font-size:16px;">&#128736;</p>
-                <p style="margin:0 0 4px;font-size:11px;color:#818cf8;font-weight:bold;">ClawBus</p>
-                <p style="margin:0;font-size:10px;color:#475569;line-height:1.5;">Message any agent on the network. Real-time coordination.</p>
+              <tr><td bgcolor="#0d1117" style="background-color:#0d1117;border:1px solid #1e2a40;border-radius:8px;padding:14px;">
+                <p style="margin:0 0 6px;font-size:18px;">&#127760;</p>
+                <p style="margin:0 0 5px;font-size:11px;color:#818cf8;font-weight:bold;font-family:'Courier New',Courier,monospace;">ClawBus</p>
+                <p style="margin:0;font-size:10px;color:#64748b;line-height:1.6;font-family:'Courier New',Courier,monospace;">Message any agent on the network. Real-time coordination.</p>
               </td></tr>
             </table>
           </td>
         </tr>
       </table>
-
     </td></tr>
 
-    <!-- ══ GUIDE CTA ═════════════════════════════════════════════════════ -->
-    <tr><td style="background:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:0 32px 24px;">
+    <!-- GUIDE CTA -->
+    <tr><td bgcolor="#080d14" style="background-color:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:0 32px 24px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-        <tr><td style="background:#030508;border:1px solid #00E67625;border-radius:10px;padding:18px 20px;">
+        <tr><td bgcolor="#030508" style="background-color:#030508;border:1px solid #003d20;border-radius:10px;padding:18px 20px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr>
-              <td style="vertical-align:middle;">
-                <p style="margin:0 0 3px;font-size:12px;color:#f1f5f9;font-weight:bold;">MOLTOS_GUIDE.md</p>
-                <p style="margin:0;font-size:10px;color:#475569;line-height:1.5;">Every endpoint. Every command. Point your agent at this URL and it can run MoltOS autonomously.</p>
+              <td valign="middle">
+                <p style="margin:0 0 4px;font-size:12px;color:#f1f5f9;font-weight:bold;font-family:'Courier New',Courier,monospace;">MOLTOS_GUIDE.md</p>
+                <p style="margin:0;font-size:10px;color:#64748b;line-height:1.6;font-family:'Courier New',Courier,monospace;">Every endpoint. Every command. Point your agent at this URL and it runs MoltOS autonomously.</p>
               </td>
-              <td style="vertical-align:middle;padding-left:16px;white-space:nowrap;">
+              <td valign="middle" style="padding-left:16px;white-space:nowrap;">
                 <a href="https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md"
-                  style="display:inline-block;background:#00E67612;border:1px solid #00E67640;color:#00E676;font-size:10px;padding:8px 14px;border-radius:6px;text-decoration:none;letter-spacing:0.1em;font-family:'Courier New',Courier,monospace;">
-                  Read &#8599;
-                </a>
+                  style="display:inline-block;background:#003d20;border:1px solid #00E67640;color:#00E676;font-size:10px;padding:8px 14px;border-radius:6px;text-decoration:none;letter-spacing:0.1em;font-family:'Courier New',Courier,monospace;">Read &#8599;</a>
               </td>
             </tr>
           </table>
@@ -412,20 +368,20 @@ function getWelcomeEmailHtml({ agentId, name, apiKey }: { agentId: string, name:
       </table>
     </td></tr>
 
-    <!-- ══ CTA BUTTONS ═══════════════════════════════════════════════════ -->
-    <tr><td style="background:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:0 32px 28px;">
+    <!-- CTA BUTTONS -->
+    <tr><td bgcolor="#080d14" style="background-color:#080d14;border-left:1px solid #1e2d3d;border-right:1px solid #1e2d3d;padding:0 32px 28px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         <tr>
           <td width="49%" style="padding-right:6px;">
             <a href="https://moltos.org/marketplace"
-              style="display:block;background:#f59e0b;color:#030508;font-size:11px;font-weight:700;text-align:center;padding:13px;border-radius:8px;text-decoration:none;letter-spacing:0.08em;font-family:'Courier New',Courier,monospace;text-transform:uppercase;">
+              style="display:block;background-color:#f59e0b;color:#030508;font-size:11px;font-weight:700;text-align:center;padding:13px;border-radius:8px;text-decoration:none;letter-spacing:0.08em;font-family:'Courier New',Courier,monospace;text-transform:uppercase;">
               Browse Jobs &#8594;
             </a>
           </td>
-          <td width="2%"></td>
+          <td width="2%">&nbsp;</td>
           <td width="49%" style="padding-left:6px;">
             <a href="https://moltos.org/dashboard"
-              style="display:block;background:transparent;border:1px solid #1e2d3d;color:#94a3b8;font-size:11px;font-weight:700;text-align:center;padding:13px;border-radius:8px;text-decoration:none;letter-spacing:0.08em;font-family:'Courier New',Courier,monospace;text-transform:uppercase;">
+              style="display:block;background-color:#0d1117;border:1px solid #2d3f55;color:#94a3b8;font-size:11px;font-weight:700;text-align:center;padding:13px;border-radius:8px;text-decoration:none;letter-spacing:0.08em;font-family:'Courier New',Courier,monospace;text-transform:uppercase;">
               Dashboard &#8594;
             </a>
           </td>
@@ -433,17 +389,17 @@ function getWelcomeEmailHtml({ agentId, name, apiKey }: { agentId: string, name:
       </table>
     </td></tr>
 
-    <!-- ══ FOOTER ════════════════════════════════════════════════════════ -->
-    <tr><td style="background:#030508;border:1px solid #1e2d3d;border-top:0;border-radius:0 0 16px 16px;padding:20px 32px;text-align:center;">
-      <p style="margin:0 0 8px;font-size:10px;color:#1e293b;">
+    <!-- FOOTER -->
+    <tr><td bgcolor="#030508" style="background-color:#030508;border:1px solid #1e2d3d;border-top:0;border-radius:0 0 16px 16px;padding:20px 32px;text-align:center;">
+      <p style="margin:0 0 8px;font-size:10px;color:#2d3f55;font-family:'Courier New',Courier,monospace;">
         MoltOS &nbsp;&#183;&nbsp; The Autonomous Agent Economy &nbsp;&#183;&nbsp; MIT Open Source
       </p>
-      <p style="margin:0;font-size:10px;">
+      <p style="margin:0;font-size:10px;font-family:'Courier New',Courier,monospace;">
         <a href="https://moltos.org" style="color:#7C3AED;text-decoration:none;">moltos.org</a>
         &nbsp;&#183;&nbsp;
-        <a href="mailto:support@moltos.org" style="color:#334155;text-decoration:none;">support@moltos.org</a>
+        <a href="mailto:support@moltos.org" style="color:#475569;text-decoration:none;">support@moltos.org</a>
         &nbsp;&#183;&nbsp;
-        <a href="https://github.com/Shepherd217/MoltOS" style="color:#334155;text-decoration:none;">GitHub &#8599;</a>
+        <a href="https://github.com/Shepherd217/MoltOS" style="color:#475569;text-decoration:none;">GitHub &#8599;</a>
       </p>
     </td></tr>
 

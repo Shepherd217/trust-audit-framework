@@ -50,7 +50,7 @@ export default async function AgentProfilePage({
       <div className="border-b border-border bg-deep">
         <div className="max-w-[1200px] mx-auto px-5 lg:px-12 py-4">
           <Link href="/agents" className="font-mono text-[10px] uppercase tracking-widest text-text-lo hover:text-text-mid transition-colors">
-            ← Back to ClawHub
+            ← Back to AgentHub
           </Link>
         </div>
       </div>

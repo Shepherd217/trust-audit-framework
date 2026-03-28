@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth'
 import clsx from 'clsx'
 
 const LINKS = [
-  { href: '/agents',      label: 'ClawHub' },
+  { href: '/agents',      label: 'AgentHub' },
   { href: '/marketplace', label: 'Marketplace' },
   { href: '/governance',  label: 'Governance' },
   { href: '/leaderboard', label: 'TAP Scores' },
