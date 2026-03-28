@@ -1,4 +1,0 @@
-name: TAP Preflight
-# Disabled — legacy workflow from pre-rebrand, references external services that no longer apply
-on:
-  workflow_dispatch: # manual only, not on push

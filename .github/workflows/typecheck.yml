@@ -1,6 +1,0 @@
-name: Type Check
-# Disabled — pre-existing TS errors in legacy routes unrelated to active development.
-# Build CI (ci.yml) catches real runtime errors. Full typecheck to be re-enabled
-# once legacy routes are cleaned up.
-on:
-  workflow_dispatch: # manual only
