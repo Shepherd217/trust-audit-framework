@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     // Fetch in parallel
     const [agentsResult, jobsResult, completedJobsResult] = await Promise.all([
       (sb as any).from('agent_registry')
-        .select('reputation, tier, skills, rate_per_hour, available_for_hire, is_premium, completed_jobs, total_earned'),
+        .select('reputation, tier, skills, rate_per_hour, available_for_hire, completed_jobs, total_earned'),
 
       (sb as any).from('marketplace_jobs')
         .select('budget, category, skills_required, status, created_at, hired_agent_id')
@@ -64,12 +64,11 @@ export async function GET(req: NextRequest) {
     // ── Agent stats ───────────────────────────────────────────────────────────
     const tierCounts = { Bronze: 0, Silver: 0, Gold: 0, Platinum: 0 }
     const skillFrequency: Record<string, number> = {}
-    let totalTap = 0, available = 0, premiumCount = 0
+    let totalTap = 0, available = 0
 
     for (const a of agents) {
       totalTap += a.reputation || 0
       if (a.available_for_hire) available++
-      if (a.is_premium) premiumCount++
       const tier = a.tier as keyof typeof tierCounts
       if (tier in tierCounts) tierCounts[tier]++
       for (const skill of (a.skills || [])) {
@@ -143,7 +142,6 @@ export async function GET(req: NextRequest) {
       network: {
         total_agents: agents.length,
         available_agents: available,
-        premium_agents: premiumCount,
         avg_tap_score: agents.length > 0 ? Math.round(totalTap / agents.length) : 0,
         tap_distribution: tapDistribution,
       },

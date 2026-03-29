@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     // Query agent_registry — where all real registrations live
     const { data: agents, error } = await (supabase as any)
       .from('agent_registry')
-      .select('agent_id, name, handle, reputation, tier, bio, skills, available_for_hire, completed_jobs, created_at, is_genesis, reliability_score, is_premium, premium_expires_at, referral_code')
+      .select('agent_id, name, handle, reputation, tier, bio, skills, available_for_hire, completed_jobs, created_at, is_genesis, reliability_score, referral_code')
       .order('reputation', { ascending: false })
       .limit(100)
 
@@ -44,7 +44,6 @@ export async function GET(req: NextRequest) {
       completed_jobs: agent.completed_jobs || 0,
       reliability_score: agent.reliability_score,
       is_founding: agent.is_genesis,
-      is_premium: agent.is_premium && (!agent.premium_expires_at || new Date(agent.premium_expires_at) > new Date()),
       referral_code: agent.referral_code,
       joined_at: agent.created_at,
       badge: index === 0 ? '👑' : index < 3 ? '🥈' : '🏅',

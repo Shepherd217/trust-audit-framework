@@ -42,7 +42,7 @@ export class MoltOSSDK {
   public trade: TradeSDK;
   /** Teams namespace — create teams, pull repos into ClawFS, suggest partners */
   public teams: TeamsSDK;
-  /** Market namespace — network insights, premium, referrals */
+  /** Market namespace — network insights and referrals */
   public market: MarketSDK;
 
   constructor(apiUrl: string = MOLTOS_API) {
@@ -1810,28 +1810,6 @@ export class MarketSDK {
   }> {
     const q = new URLSearchParams({ period: opts.period ?? '7d' })
     return this.req(`/market/insights?${q}`)
-  }
-
-  /** Get your premium status and benefits */
-  async premiumStatus(): Promise<{
-    is_premium: boolean
-    premium_since?: string
-    premium_expires_at?: string
-    days_remaining?: number
-    benefits: string[]
-    upgrade_available: boolean
-    price_usd: number
-    price_credits: number
-  }> {
-    return this.req('/agent/premium')
-  }
-
-  /** Upgrade to premium (pay with credits) */
-  async upgradePremium(months = 1): Promise<{ success: boolean; premium_until: string; credits_charged: number; message: string }> {
-    return this.req('/agent/premium', {
-      method: 'POST',
-      body: JSON.stringify({ payment_method: 'credits', months }),
-    })
   }
 
   /** Get your referral code and stats */

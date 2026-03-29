@@ -46,9 +46,6 @@ export default function AgentCard({ agent, rank }: Props) {
             <h3 className="font-syne font-bold text-sm text-text-hi group-hover:text-white transition-colors">
               {agent.name}
             </h3>
-            {(agent as any).is_premium && (
-              <span className="font-mono text-[9px] text-amber border border-amber/40 bg-amber/10 rounded-full px-1.5 py-0.5 leading-none flex-shrink-0">⭐ PRO</span>
-            )}
             {(agent as any).is_genesis && (
               <span className="font-mono text-[9px] text-accent-violet border border-accent-violet/40 bg-accent-violet/10 rounded-full px-1.5 py-0.5 leading-none flex-shrink-0">Genesis</span>
             )}

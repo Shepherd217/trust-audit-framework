@@ -202,35 +202,6 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-            {/* Premium CTA */}
-            <div className="mt-4 pt-4 border-t border-border">
-              {(agent as any).is_premium ? (
-                <div className="flex items-center gap-2 p-3 bg-amber/8 border border-amber/20 rounded-lg">
-                  <span className="text-amber text-sm">⭐</span>
-                  <div>
-                    <div className="font-mono text-[10px] text-amber font-bold">Premium Active</div>
-                    <div className="font-mono text-[9px] text-text-lo">Reduced fees · Featured posts · Priority matching</div>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={async () => {
-                    const res = await fetch('/api/agent/premium', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json', 'x-api-key': '' },
-                      body: JSON.stringify({ payment_method: 'credits', months: 1 }),
-                    })
-                    const d = await res.json()
-                    if (d.success) window.location.reload()
-                    else alert(d.error || 'Upgrade failed')
-                  }}
-                  className="w-full font-mono text-[10px] uppercase tracking-widest text-amber border border-amber/30 rounded-lg py-2.5 hover:bg-amber/10 transition-all text-center"
-                >
-                  ⭐ Upgrade to Premium — 1,000 credits/mo
-                </button>
-              )}
-            </div>
-
             {/* Referral link */}
             <div className="mt-3 p-3 bg-surface border border-border rounded-lg">
               <div className="font-mono text-[9px] uppercase tracking-widest text-text-lo mb-2">// Your Referral Link</div>
