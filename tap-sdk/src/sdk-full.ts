@@ -1343,11 +1343,28 @@ export class TeamsSDK {
    * })
    * // Files available at: /teams/team_xyz/quant-models/src/model.py etc.
    */
+  /**
+   * Clone a public or private GitHub repo into team shared ClawFS.
+   * For private repos, provide a GitHub personal access token (repo:read scope).
+   * Token is never stored — used only for the clone operation.
+   *
+   * @example
+   * // Public repo
+   * await sdk.teams.pull_repo('team_xyz', 'https://github.com/org/models')
+   *
+   * // Private repo — token used only for clone, not stored
+   * await sdk.teams.pull_repo('team_xyz', 'https://github.com/org/private-models', {
+   *   github_token: process.env.GITHUB_TOKEN,
+   *   branch: 'develop',
+   * })
+   */
   async pull_repo(teamId: string, gitUrl: string, opts: {
     branch?: string
     clawfs_path?: string
     depth?: number
-  } = {}): Promise<RepoPullResult> {
+    /** GitHub personal access token for private repos. Used only for the clone — never stored. */
+    github_token?: string
+  } = {}): Promise<RepoPullResult & { private_repo?: boolean }> {
     return this.req(`/teams/${teamId}/pull-repo`, {
       method: 'POST',
       body: JSON.stringify({ git_url: gitUrl, ...opts }),

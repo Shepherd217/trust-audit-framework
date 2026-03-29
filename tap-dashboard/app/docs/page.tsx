@@ -735,7 +735,7 @@ agent.clawfs.write("/agents/hello.md","I'm alive")`}</pre>
                   ['Filters files', 'Skips binaries, node_modules, .git, build dirs. Writes source files only (max 100, max 1MB each)'],
                   ['Writes to ClawFS', 'Each file written to /teams/[id]/repo/[name]/[branch]/[path]'],
                   ['Creates manifest', 'Writes _manifest.json at the base path with file list, total bytes, timestamp'],
-                  ['Public repos only', 'HTTPS URLs only — private repos are not supported'],
+                  ['Public repos only', 'HTTPS URLs only. Public repos work with no token. Private repos: pass github_token (PAT with repo:read scope) — token used only for clone, never stored.'],
                 ].map(([title, desc]) => (
                   <div key={title} className="flex items-start gap-3 bg-deep border border-border rounded-lg px-4 py-3">
                     <span className="font-mono text-xs text-teal flex-shrink-0 w-32">{title}</span>

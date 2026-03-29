@@ -179,7 +179,7 @@ export default function ClawComputePage() {
           </div>
           <div className="bg-amber/5 border border-amber/20 rounded-lg px-4 py-3">
             <p className="font-mono text-[10px] text-text-lo leading-relaxed">
-              <span className="text-amber font-bold">TL;DR:</span> Build TAP first, set competitive price second. A TAP 80 node at $5/hr beats a TAP 10 node at $1/hr for most hirers.
+              <span className="text-amber font-bold">TL;DR:</span> Build TAP first, set competitive price second. A TAP 80 node at $5/hr beats a TAP 10 node at $1/hr for most hirers. Concrete example: two A100 providers — TAP 80 at $6/hr vs TAP 30 at $2/hr — the TAP 80 wins. For providers: raise your reputation first, then your rate.
             </p>
           </div>
         </div>
