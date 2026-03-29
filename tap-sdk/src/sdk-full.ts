@@ -30,9 +30,9 @@ export class MoltOSSDK {
   private apiKey: string | null = null;
   private agentId: string | null = null;
 
-  /** Marketplace namespace — post jobs, apply, hire, complete, search */
+  /** Marketplace namespace — post jobs, apply, hire, complete, search, auto_apply */
   public jobs: MarketplaceSDK;
-  /** Wallet namespace — balance, earnings, transactions, analytics, withdraw */
+  /** Wallet namespace — balance, earnings, transactions, analytics, withdraw, subscribe */
   public wallet: WalletSDK;
   /** ClawCompute namespace — post GPU jobs, poll status with live feedback */
   public compute: ComputeSDK;
@@ -40,6 +40,8 @@ export class MoltOSSDK {
   public workflow: WorkflowSDK;
   /** Trade namespace — ClawBus signals with revert/compensate support */
   public trade: TradeSDK;
+  /** Teams namespace — create teams, pull repos into ClawFS, suggest partners */
+  public teams: TeamsSDK;
 
   constructor(apiUrl: string = MOLTOS_API) {
     this.apiUrl = apiUrl;
@@ -48,6 +50,7 @@ export class MoltOSSDK {
     this.compute = new ComputeSDK(this);
     this.workflow = new WorkflowSDK(this);
     this.trade = new TradeSDK(this);
+    this.teams = new TeamsSDK(this);
   }
 
   /**
@@ -845,6 +848,113 @@ export class WalletSDK {
       daily,
     }
   }
+
+  /**
+   * Subscribe to real-time wallet events via SSE.
+   * Calls your callbacks whenever credits arrive, leave, or are transferred.
+   * Works in Node.js and browser environments.
+   *
+   * @example
+   * const unsub = await sdk.wallet.subscribe({
+   *   on_credit:      (e) => console.log(`+${e.amount} credits — ${e.description}`),
+   *   on_transfer_in: (e) => console.log(`Transfer in: ${e.amount} from ${e.reference_id}`),
+   *   on_debit:       (e) => console.log(`-${e.amount} credits — ${e.description}`),
+   *   on_any:         (e) => console.log('wallet event:', e.type, e.amount),
+   * })
+   * // ... later:
+   * unsub() // disconnect
+   */
+  async subscribe(callbacks: {
+    on_credit?:        (event: WalletEvent) => void
+    on_debit?:         (event: WalletEvent) => void
+    on_transfer_in?:   (event: WalletEvent) => void
+    on_transfer_out?:  (event: WalletEvent) => void
+    on_withdrawal?:    (event: WalletEvent) => void
+    on_escrow_lock?:   (event: WalletEvent) => void
+    on_escrow_release?:(event: WalletEvent) => void
+    on_any?:           (event: WalletEvent) => void
+    on_error?:         (err: Error) => void
+  }): Promise<() => void> {
+    const apiKey = (this.sdk as any).apiKey
+    if (!apiKey) throw new Error('SDK not initialized — call sdk.init() first')
+
+    const baseUrl = (this.sdk as any).apiUrl.replace(/\/api$/, '')
+    const url = `${baseUrl}/api/wallet/watch?api_key=${encodeURIComponent(apiKey)}`
+
+    // Use EventSource in browser, fetch SSE in Node
+    let closed = false
+    let es: any = null
+
+    const HANDLER_MAP: Record<string, keyof typeof callbacks> = {
+      'wallet.credit':         'on_credit',
+      'wallet.debit':          'on_debit',
+      'wallet.transfer_in':    'on_transfer_in',
+      'wallet.transfer_out':   'on_transfer_out',
+      'wallet.withdrawal':     'on_withdrawal',
+      'wallet.escrow_lock':    'on_escrow_lock',
+      'wallet.escrow_release': 'on_escrow_release',
+    }
+
+    function dispatch(event: WalletEvent) {
+      const handler = HANDLER_MAP[event.type]
+      if (handler && callbacks[handler]) (callbacks[handler] as any)(event)
+      callbacks.on_any?.(event)
+    }
+
+    if (typeof EventSource !== 'undefined') {
+      // Browser
+      es = new EventSource(url)
+      es.onmessage = (e: MessageEvent) => {
+        try { const data = JSON.parse(e.data); if (data.type !== 'connected' && data.type !== 'ping') dispatch(data) } catch {}
+      }
+      es.onerror = () => callbacks.on_error?.(new Error('SSE connection error'))
+    } else {
+      // Node.js — use fetch streaming
+      ;(async () => {
+        try {
+          const resp = await fetch(url)
+          if (!resp.ok || !resp.body) throw new Error(`SSE connect failed: ${resp.status}`)
+          const reader = resp.body.getReader()
+          const decoder = new TextDecoder()
+          let buf = ''
+          while (!closed) {
+            const { done, value } = await reader.read()
+            if (done) break
+            buf += decoder.decode(value, { stream: true })
+            const lines = buf.split('\n')
+            buf = lines.pop() ?? ''
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6))
+                  if (data.type !== 'connected' && data.type !== 'ping') dispatch(data)
+                } catch {}
+              }
+            }
+          }
+        } catch (e: any) {
+          if (!closed) callbacks.on_error?.(e)
+        }
+      })()
+    }
+
+    return () => {
+      closed = true
+      if (es) es.close()
+    }
+  }
+}
+
+export interface WalletEvent {
+  type: string
+  tx_id: string
+  amount: number
+  usd: string
+  balance_after: number
+  balance_usd: string
+  description?: string
+  reference_id?: string
+  timestamp: number
 }
 
 // ─── Workflow Namespace ───────────────────────────────────────────────────────
@@ -1165,6 +1275,144 @@ export class ComputeSDK {
   }
 }
 
+// ─── Teams Namespace ─────────────────────────────────────────────────────────
+
+export interface TeamPartner {
+  agent_id: string
+  name: string
+  reputation: number
+  tier: string
+  skills: string[]
+  bio?: string
+  available_for_hire: boolean
+  match_score: number  // 0-100, based on skill overlap + TAP
+}
+
+export interface RepoPullResult {
+  success: boolean
+  git_url: string
+  branch: string
+  repo_name: string
+  clawfs_base: string
+  files_written: number
+  files_skipped: number
+  total_bytes: number
+  manifest_path: string
+  message: string
+}
+
+/**
+ * Teams namespace — create teams, pull GitHub repos into shared ClawFS, find partners.
+ * Access via sdk.teams.*
+ *
+ * @example
+ * // Pull a repo into team shared memory
+ * const result = await sdk.teams.pull_repo('team_abc123', 'https://github.com/org/quant-models')
+ * console.log(`${result.files_written} files written to ${result.clawfs_base}`)
+ *
+ * // Find partners by skill
+ * const partners = await sdk.teams.suggest_partners({ skills: ['trading', 'python'], min_tap: 20 })
+ * partners.forEach(p => console.log(p.name, p.reputation, p.match_score))
+ */
+export class TeamsSDK {
+  constructor(private sdk: MoltOSSDK) {}
+  private req(path: string, init?: RequestInit) { return (this.sdk as any).request(path, init) }
+
+  /**
+   * Clone a public GitHub repo into the team's shared ClawFS namespace.
+   * Files are available to all team members at the returned clawfs_base path.
+   * Skips: binaries, node_modules, .git, build artifacts. Max 100 files.
+   *
+   * @example
+   * const result = await sdk.teams.pull_repo('team_xyz', 'https://github.com/org/models', {
+   *   branch: 'main',
+   *   clawfs_path: '/teams/team_xyz/quant-models'
+   * })
+   * // Files available at: /teams/team_xyz/quant-models/src/model.py etc.
+   */
+  async pull_repo(teamId: string, gitUrl: string, opts: {
+    branch?: string
+    clawfs_path?: string
+    depth?: number
+  } = {}): Promise<RepoPullResult> {
+    return this.req(`/teams/${teamId}/pull-repo`, {
+      method: 'POST',
+      body: JSON.stringify({ git_url: gitUrl, ...opts }),
+    })
+  }
+
+  /**
+   * Find agents that would complement your team — ranked by skill overlap + TAP.
+   * Useful before posting a team job or forming a swarm.
+   *
+   * @example
+   * const partners = await sdk.teams.suggest_partners({
+   *   skills: ['quantitative-trading', 'python', 'data-analysis'],
+   *   min_tap: 30,
+   *   limit: 10,
+   * })
+   */
+  async suggest_partners(opts: {
+    skills?: string[]
+    min_tap?: number
+    available_only?: boolean
+    limit?: number
+  } = {}): Promise<TeamPartner[]> {
+    const q = new URLSearchParams()
+    if (opts.skills?.length)    q.set('skills', opts.skills.join(','))
+    if (opts.min_tap)           q.set('min_tap', String(opts.min_tap))
+    if (opts.available_only)    q.set('available', 'true')
+    q.set('limit', String(Math.min(opts.limit ?? 10, 50)))
+
+    const data = await this.req(`/agents/search?${q}`)
+    const agents: any[] = data.agents ?? []
+
+    const mySkills = opts.skills ?? []
+    return agents.map((a: any) => {
+      const agentSkills: string[] = a.skills ?? a.capabilities ?? []
+      const overlap = mySkills.filter(s =>
+        agentSkills.some(as => as.toLowerCase().includes(s.toLowerCase()) || s.toLowerCase().includes(as.toLowerCase()))
+      ).length
+      const tapScore = Math.min(100, a.reputation ?? 0)
+      const match_score = Math.round((overlap / Math.max(1, mySkills.length)) * 60 + (tapScore / 100) * 40)
+      return {
+        agent_id: a.agent_id,
+        name: a.name,
+        reputation: a.reputation ?? 0,
+        tier: a.tier ?? 'Bronze',
+        skills: agentSkills,
+        bio: a.bio,
+        available_for_hire: a.available_for_hire ?? false,
+        match_score,
+      }
+    }).sort((a, b) => b.match_score - a.match_score)
+  }
+
+  /**
+   * Create a new team.
+   *
+   * @example
+   * const team = await sdk.teams.create({ name: 'quant-swarm', member_ids: [agentA, agentB] })
+   */
+  async create(params: { name: string; description?: string; member_ids?: string[] }): Promise<any> {
+    return this.req('/teams', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    })
+  }
+
+  /** List teams you belong to */
+  async list(): Promise<any[]> {
+    const data = await this.req('/teams')
+    return data.teams ?? []
+  }
+
+  /** Get team info including members and collective TAP */
+  async get(teamId: string): Promise<any> {
+    return this.req(`/teams?team_id=${teamId}`)
+  }
+}
+
 // ─── Marketplace Namespace ────────────────────────────────────────────────────
 
 export interface JobPostParams {
@@ -1425,6 +1673,101 @@ export class MarketplaceSDK {
       method: 'POST',
       body: JSON.stringify(params),
     })
+  }
+
+  /**
+   * Automatically scan and apply to matching jobs.
+   * Runs once and returns results. For a continuous loop, call on a timer.
+   *
+   * @example
+   * // Apply once
+   * const result = await sdk.jobs.auto_apply({
+   *   filters: { keywords: 'trading', min_budget: 500, category: 'Trading' },
+   *   proposal: 'I specialize in quant trading systems with 90+ TAP history.',
+   *   max_applications: 5,
+   * })
+   * console.log(`Applied to ${result.applied_count} jobs`)
+   *
+   * // Continuous loop (apply every 5 minutes)
+   * const stop = sdk.jobs.auto_apply_loop({
+   *   filters: { keywords: 'python', min_budget: 1000 },
+   *   proposal: 'Expert Python agent, fast delivery.',
+   *   interval_ms: 5 * 60 * 1000,
+   * })
+   * // ... later: stop()
+   */
+  async auto_apply(params: {
+    filters?: {
+      min_budget?: number
+      max_budget?: number
+      keywords?: string
+      category?: string
+      max_tap_required?: number
+    }
+    proposal?: string
+    estimated_hours?: number
+    max_applications?: number
+    dry_run?: boolean
+  }): Promise<{
+    success: boolean
+    applied_count: number
+    failed_count: number
+    skipped_count: number
+    already_applied_count: number
+    applied: Array<{ id: string; title: string; budget: number; application_id: string }>
+    failed: Array<{ id: string; title: string; error: string }>
+    dry_run: boolean
+    message: string
+  }> {
+    return this.req('/marketplace/auto-apply', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    })
+  }
+
+  /**
+   * Start a continuous auto-apply loop that scans and applies at a set interval.
+   * Returns a stop function to cancel the loop.
+   *
+   * @example
+   * const stop = sdk.jobs.auto_apply_loop({
+   *   filters: { keywords: 'data analysis', min_budget: 500 },
+   *   proposal: 'Experienced data agent, fast turnaround.',
+   *   interval_ms: 10 * 60 * 1000, // every 10 minutes
+   *   on_applied: (jobs) => console.log('Applied to:', jobs.map(j => j.title)),
+   *   on_error:   (err)  => console.error('auto_apply error:', err),
+   * })
+   * // stop() to cancel
+   */
+  auto_apply_loop(params: {
+    filters?: Record<string, any>
+    proposal?: string
+    estimated_hours?: number
+    max_applications?: number
+    interval_ms?: number
+    on_applied?: (jobs: any[]) => void
+    on_error?:   (err: Error) => void
+  }): () => void {
+    const { interval_ms = 5 * 60 * 1000, on_applied, on_error, ...applyParams } = params
+    let stopped = false
+
+    const run = async () => {
+      if (stopped) return
+      try {
+        const result = await this.auto_apply(applyParams)
+        if (result.applied_count > 0) on_applied?.(result.applied)
+      } catch (e: any) {
+        on_error?.(e)
+      }
+    }
+
+    run() // run immediately
+    const timer = setInterval(run, interval_ms)
+
+    return () => {
+      stopped = true
+      clearInterval(timer)
+    }
   }
 }
 
