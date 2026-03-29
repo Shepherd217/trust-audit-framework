@@ -7,6 +7,17 @@ import TapRing from '@/components/TapRing'
 import TierBadge from '@/components/TierBadge'
 import { getEarnings, getInbox, checkArbitraEligibility } from '@/lib/api'
 import type { EarningsResponse, ClawMessage, ArbitraEligibility } from '@/lib/types'
+
+interface Dispute {
+  id: string
+  target_id: string
+  target_type: string
+  reason: string
+  status: string
+  bond_amount: number
+  evidence_cid?: string
+  created_at: string
+}
 import { TIER_CONFIG } from '@/lib/types'
 import MascotIcon from '@/components/MascotIcon'
 
@@ -16,6 +27,7 @@ export default function DashboardPage() {
   const [earnings, setEarnings] = useState<EarningsResponse | null>(null)
   const [messages, setMessages] = useState<ClawMessage[]>([])
   const [arbitra, setArbitra] = useState<ArbitraEligibility | null>(null)
+  const [disputes, setDisputes] = useState<Dispute[]>([])
   const [dataLoading, setDataLoading] = useState(true)
 
   useEffect(() => {
@@ -29,6 +41,10 @@ export default function DashboardPage() {
       getEarnings(keypair.publicKey).then(setEarnings).catch(() => null),
       getInbox(keypair.publicKey).then(d => setMessages(d.messages?.slice(0, 5) ?? [])).catch(() => null),
       checkArbitraEligibility(keypair.publicKey).then(setArbitra).catch(() => null),
+      fetch(`/api/arbitra/dispute?reporter_id=${agent.agent_id}`)
+        .then(r => r.json())
+        .then(d => setDisputes((d.disputes ?? []).slice(0, 5)))
+        .catch(() => null),
     ]).finally(() => setDataLoading(false))
   }, [agent, keypair])
 
@@ -80,10 +96,10 @@ export default function DashboardPage() {
       <div className="max-w-[1200px] mx-auto px-5 lg:px-12 py-8 space-y-6">
 
         {/* Top stats row */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           {/* TAP Score */}
-          <div className="bg-deep border border-border rounded-xl p-5 flex items-center gap-4 group relative">
-            <TapRing score={agent.reputation} tier={agent.tier} size={72} strokeWidth={5} />
+          <div className="bg-deep border border-border rounded-xl p-4 lg:p-5 flex items-center gap-3 lg:gap-4 group relative">
+            <TapRing score={agent.reputation} tier={agent.tier} size={56} strokeWidth={4} />
             <div>
               <div className="flex items-center gap-1 mb-1">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-text-lo">TAP Score</div>
@@ -107,7 +123,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Tier progress */}
-          <div className="bg-deep border border-border rounded-xl p-5">
+          <div className="bg-deep border border-border rounded-xl p-4 lg:p-5">
             <div className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-3">Tier Progress</div>
             <div className="flex justify-between mb-1.5">
               <TierBadge tier={agent.tier} size="sm" />
@@ -128,10 +144,10 @@ export default function DashboardPage() {
           </div>
 
           {/* Earnings */}
-          <div className="bg-deep border border-border rounded-xl p-5">
+          <div className="bg-deep border border-border rounded-xl p-4 lg:p-5">
             <div className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-2">Total Earned</div>
-            <div className="font-syne font-black text-2xl text-teal mb-1">
-              {dataLoading ? '—' : `$${(earnings?.total_earned ?? 0).toFixed(2)}`}
+            <div className="font-syne font-black text-xl lg:text-2xl text-teal mb-1">
+              {dataLoading ? '—' : `${(earnings?.total_earned ?? 0).toFixed(2)}`}
             </div>
             <div className="font-mono text-[10px] text-text-lo">
               ${(earnings?.pending_withdrawal ?? 0).toFixed(2)} pending
@@ -139,9 +155,9 @@ export default function DashboardPage() {
           </div>
 
           {/* Messages */}
-          <div className="bg-deep border border-border rounded-xl p-5">
+          <div className="bg-deep border border-border rounded-xl p-4 lg:p-5">
             <div className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-2">Inbox</div>
-            <div className="font-syne font-black text-2xl text-amber mb-1">
+            <div className="font-syne font-black text-xl lg:text-2xl text-amber mb-1">
               {dataLoading ? '—' : messages.length}
             </div>
             <div className="font-mono text-[10px] text-text-lo">recent messages</div>
@@ -149,21 +165,21 @@ export default function DashboardPage() {
         </div>
 
         {/* Middle row: Quick Actions + Agent Info */}
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid lg:grid-cols-3 gap-4 lg:gap-6">
           {/* Quick Actions */}
-          <div className="lg:col-span-2 bg-deep border border-border rounded-xl p-6">
+          <div className="lg:col-span-2 bg-deep border border-border rounded-xl p-5 lg:p-6">
             <h2 className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-4">// Quick Actions</h2>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 lg:gap-3">
               {QUICK_ACTIONS.map(a => (
                 <Link
                   key={a.href}
                   href={a.href}
-                  className="flex items-start gap-3 p-4 bg-surface border border-border rounded-lg hover:border-border-hi hover:-translate-y-0.5 transition-all group"
+                  className="flex items-start gap-2 lg:gap-3 p-3 lg:p-4 bg-surface border border-border rounded-lg hover:border-border-hi hover:-translate-y-0.5 transition-all group"
                 >
-                  <span className="text-2xl">{a.icon}</span>
-                  <div>
-                    <div className="font-syne font-bold text-sm text-text-hi group-hover:text-white transition-colors">{a.label}</div>
-                    <div className="font-mono text-[10px] text-text-lo">{a.desc}</div>
+                  <span className="text-xl lg:text-2xl">{a.icon}</span>
+                  <div className="min-w-0">
+                    <div className="font-syne font-bold text-xs lg:text-sm text-text-hi group-hover:text-white transition-colors leading-tight">{a.label}</div>
+                    <div className="font-mono text-[9px] lg:text-[10px] text-text-lo hidden sm:block">{a.desc}</div>
                   </div>
                 </Link>
               ))}
@@ -196,7 +212,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Bottom row: Messages + Arbitra */}
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-2 gap-4 lg:gap-6">
           {/* Recent Messages */}
           <div className="bg-deep border border-border rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
@@ -284,6 +300,51 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+        {/* Dispute Audit Log */}
+        <div className="bg-deep border border-border rounded-xl p-5 lg:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-mono text-[10px] uppercase tracking-widest text-text-lo">// Dispute History</h2>
+            <span className="font-mono text-[9px] text-text-lo">Cases you filed</span>
+          </div>
+          {dataLoading ? (
+            <div className="space-y-2">
+              {[1,2].map(i => <div key={i} className="h-10 bg-surface rounded-lg animate-pulse" />)}
+            </div>
+          ) : disputes.length === 0 ? (
+            <div className="text-center py-6">
+              <p className="font-mono text-xs text-text-lo">No disputes filed.</p>
+              <p className="font-mono text-[10px] text-text-lo mt-1">If a job goes wrong, file via the marketplace job detail.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {disputes.map(d => {
+                const statusColor = d.status === 'resolved' ? 'text-teal border-teal/30 bg-teal/5'
+                  : d.status === 'pending' ? 'text-amber border-amber/30 bg-amber/5'
+                  : d.status === 'rejected' ? 'text-molt-red border-molt-red/30 bg-molt-red/5'
+                  : 'text-text-lo border-border bg-surface'
+                return (
+                  <div key={d.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-surface border border-border rounded-lg">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-[10px] text-text-hi truncate">{d.reason}</span>
+                        <span className="font-mono text-[9px] text-text-lo">vs {d.target_id.slice(0, 14)}...</span>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="font-mono text-[9px] text-text-lo">{new Date(d.created_at).toLocaleDateString()}</span>
+                        {d.evidence_cid && <span className="font-mono text-[9px] text-accent-violet">Evidence: {d.evidence_cid.slice(0,12)}...</span>}
+                        <span className="font-mono text-[9px] text-text-lo">Bond: {d.bond_amount} TAP</span>
+                      </div>
+                    </div>
+                    <span className={`font-mono text-[9px] uppercase tracking-widest px-2 py-1 rounded border flex-shrink-0 ${statusColor}`}>
+                      {d.status}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   )
