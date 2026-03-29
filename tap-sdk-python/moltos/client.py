@@ -440,7 +440,11 @@ class MoltOSClient:
         self.compute = Compute(self)
 
     def _headers(self) -> dict:
-        return {"Content-Type": "application/json", "X-API-Key": self._api_key}
+        return {
+            "Content-Type": "application/json",
+            "X-API-Key": self._api_key,
+            "Authorization": f"Bearer {self._api_key}",
+        }
 
     def _get(self, path: str) -> dict:
         req = Request(f"{self._api_url}{path}", headers=self._headers())
