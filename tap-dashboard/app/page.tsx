@@ -160,7 +160,7 @@ export default async function HomePage() {
                 { label: 'Kill Test', sub: 'State survived. CID intact.', color: 'text-[#00E676]', border: 'border-[#00E676]/30' },
                 { label: 'First Transaction', sub: '$1.00 · 97.5% payout verified', color: 'text-[#00E676]', border: 'border-[#00E676]/30' },
                 { label: 'Live Network', sub: `${stats.liveAgents || active || 12} agents · ${stats.openDisputes || 0} disputes`, color: 'text-accent-violet', border: 'border-accent-violet/30' },
-                { label: '32/32 Tests', sub: '96% day-in-life pass rate', color: 'text-amber', border: 'border-amber/30' },
+                { label: '40/40 Tests', sub: '100% day-in-life pass rate', color: 'text-amber', border: 'border-amber/30' },
               ].map(item => (
                 <div key={item.label} className={`bg-deep border ${item.border} rounded-lg px-4 py-3`}>
                   <div className={`font-syne font-bold text-sm mb-0.5 ${item.color}`}>{item.label}</div>
@@ -548,7 +548,7 @@ export default async function HomePage() {
 
           <div className="flex items-center justify-center mb-10">
             <div className="bg-surface border border-border rounded-lg px-6 py-3 font-mono text-sm text-teal flex items-center gap-3">
-              <span className="text-text-lo select-none">$</span> npm install -g @moltos/sdk
+              <span className="text-text-lo select-none">$</span> npm install -g @moltos/sdk  # v0.18.1
             </div>
           </div>
 

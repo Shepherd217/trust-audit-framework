@@ -223,6 +223,49 @@ class Jobs(_BaseNamespace):
         return self._c._get(f"/marketplace/contracts?role={role}")
 
 
+    def auto_apply(self, filters: dict = None, proposal: str = None,
+                   max_applications: int = 5, dry_run: bool = False) -> dict:
+        """Scan marketplace and auto-apply to matching jobs.
+        filters: { min_budget, max_budget, keywords, exclude_keywords, category, max_tap_required }
+        Example:
+            result = agent.jobs.auto_apply(
+                filters={"keywords": "trading", "exclude_keywords": "forex"},
+                proposal="Expert agent. Fast delivery.",
+            )
+        """
+        body = {"filters": filters or {}, "max_applications": max_applications, "dry_run": dry_run}
+        if proposal:
+            body["proposal"] = proposal
+        return self._c._post("/marketplace/auto-apply", body)
+
+    def terminate(self, contract_id: str) -> dict:
+        """Terminate a recurring job. Current run completes; future runs cancelled. 24h reinstate window."""
+        import urllib.request
+        req = urllib.request.Request(
+            f"{self._c._api_url}/marketplace/recurring/{contract_id}",
+            headers=self._c._headers(), method="DELETE"
+        )
+        try:
+            with urllib.request.urlopen(req) as r:
+                return json.loads(r.read())
+        except Exception as e:
+            raise MoltOSError(str(e))
+
+    def reinstate(self, contract_id: str) -> dict:
+        """Reinstate a terminated recurring job within 24 hours."""
+        return self._c._post(f"/marketplace/recurring/{contract_id}/reinstate", {})
+
+    def recurring(self, title: str, budget: int, recurrence: str = "daily",
+                  description: str = None, category: str = "General",
+                  auto_hire: bool = True, auto_hire_min_tap: int = 0) -> dict:
+        """Create a recurring job. recurrence: 'hourly'|'daily'|'weekly'|'monthly'"""
+        return self._c._post("/marketplace/recurring", {
+            "title": title, "description": description or title,
+            "budget": budget, "category": category, "recurrence": recurrence,
+            "auto_hire": auto_hire, "auto_hire_min_tap": auto_hire_min_tap,
+        })
+
+
 class Wallet(_BaseNamespace):
     """Credit wallet — balance, transfer, withdraw."""
 
@@ -243,6 +286,40 @@ class Wallet(_BaseNamespace):
 
     def complete_task(self, task_type: str) -> dict:
         return self._c._post("/bootstrap/complete", {"task_type": task_type})
+
+
+    def analytics(self, period: str = "week") -> dict:
+        """Wallet analytics. period: 'day'|'week'|'month'|'all'
+        Example:
+            report = agent.wallet.analytics("week")
+            print(f"Net: {report['net_credits']} credits (${report['net_usd']})")
+        """
+        import datetime
+        txs_data = self.transactions(limit=500)
+        items = txs_data.get("transactions", []) if isinstance(txs_data, dict) else txs_data
+        period_secs = {"day": 86400, "week": 604800, "month": 2592000}
+        if period != "all" and period in period_secs:
+            cutoff = time.time() - period_secs[period]
+            items = [t for t in items if time.mktime(time.strptime(t["created_at"][:19], "%Y-%m-%dT%H:%M:%S")) >= cutoff]
+        earned = sum(t.get("amount", 0) for t in items if t.get("type") in ("credit", "escrow_release") and t.get("amount", 0) > 0)
+        spent  = sum(abs(t.get("amount", 0)) for t in items if t.get("amount", 0) < 0)
+        net    = earned - spent
+        from collections import defaultdict
+        buckets = defaultdict(lambda: {"earned": 0, "spent": 0})
+        for t in items:
+            d = t.get("created_at", "")[:10]
+            if t.get("amount", 0) > 0:
+                buckets[d]["earned"] += t["amount"]
+            else:
+                buckets[d]["spent"] += abs(t.get("amount", 0))
+        daily = [{"date": d, **v, "net": v["earned"] - v["spent"]} for d, v in sorted(buckets.items())]
+        return {"period": period, "earned": earned, "spent": spent, "net_credits": net,
+                "net_usd": f"{net/100:.2f}", "earned_usd": f"{earned/100:.2f}",
+                "spent_usd": f"{spent/100:.2f}", "tx_count": len(items), "daily": daily}
+
+    def pnl(self) -> dict:
+        """Quick lifetime PNL summary."""
+        return self.analytics(period="all")
 
 
 class Compute(_BaseNamespace):
@@ -315,6 +392,36 @@ class Compute(_BaseNamespace):
         })
 
 
+    def wait_for(self, job_id: str, on_status=None, interval_seconds: int = 2,
+                 timeout_seconds: int = 120) -> dict:
+        """Poll until compute job completes. on_status(status, message) for progress.
+        Example:
+            result = agent.compute.wait_for(job_id,
+                on_status=lambda s, m: print(f"[{s}] {m}"))
+        """
+        STATUS = {"pending": "Queued...", "matching": "Searching for node...",
+                  "running": "Executing...", "completed": "Done.", "failed": "Failed."}
+        deadline = time.time() + timeout_seconds
+        last = None
+        matching_since = None
+        while time.time() < deadline:
+            job = self.status(job_id)
+            s = job.get("status")
+            if s != last:
+                last = s
+                matching_since = time.time() if s == "matching" else None
+                if on_status:
+                    on_status(s, STATUS.get(s, s))
+            if matching_since and time.time() - matching_since > 30:
+                if on_status:
+                    on_status("matching", "Still searching — use fallback='cpu' to avoid waits")
+                matching_since = time.time()
+            if s in ("completed", "failed"):
+                return job
+            time.sleep(interval_seconds)
+        raise MoltOSError(f"Timeout after {timeout_seconds}s. Job still queued — check agent.compute.status('{job_id}')")
+
+
 class Trade(_BaseNamespace):
     """Trading swarm — signal dispatch, execution, result, split credits."""
 
@@ -349,6 +456,33 @@ class Trade(_BaseNamespace):
         params = f"?limit={limit}"
         if type: params += f"&type={type}"
         return self._c._get(f"/trade{params}")
+
+
+    def revert(self, message_id: str, reason: str = None, compensate: dict = None) -> dict:
+        """Revert a trade signal. Logs audit trail. Credits not auto-reversed.
+        Returns { success, revert_id, warning } — warning if original ID not found.
+        Example:
+            r = agent.trade.revert("msg_abc", reason="price slipped")
+            if r.get("warning"):
+                print(r["warning"])
+        """
+        try:
+            self._c._post(f"/claw/bus/ack/{message_id}", {})
+            original_found = True
+        except Exception:
+            original_found = False
+        try:
+            result = self._c._post("/claw/bus/send", {
+                "to": "__broadcast__", "type": "trade.revert",
+                "payload": {"original_message_id": message_id, "reason": reason or "reverted",
+                            "compensate": compensate, "original_found": original_found,
+                            "reverted_at": time.strftime("%Y-%m-%dT%H:%M:%SZ")},
+                "priority": "high",
+            })
+            return {"success": True, "revert_id": result.get("id"),
+                    "warning": None if original_found else f"Original '{message_id}' not found — check agent.trade.history() for valid IDs."}
+        except Exception as e:
+            raise MoltOSError(str(e))
 
 
 class Webhook(_BaseNamespace):
@@ -419,6 +553,421 @@ class Templates(_BaseNamespace):
         })
 
 
+
+class Teams(_BaseNamespace):
+    """Team management — create teams, add/remove members, invite, pull repos."""
+
+    def create(self, name: str, description: str = "", member_ids: list = None) -> dict:
+        return self._c._post("/teams", {"name": name, "description": description, "member_ids": member_ids or []})
+
+    def list(self) -> dict:
+        return self._c._get("/teams")
+
+    def members(self, team_id: str) -> dict:
+        return self._c._get(f"/teams/{team_id}/members")
+
+    def add(self, team_id: str, agent_id: str) -> dict:
+        """Add an agent to a team directly (owner only). Use invite() for non-owners."""
+        return self._c._post(f"/teams/{team_id}/members", {"agent_id": agent_id})
+
+    def remove(self, team_id: str, agent_id: str) -> dict:
+        """Remove an agent from a team."""
+        import urllib.request
+        data = json.dumps({"agent_id": agent_id}).encode()
+        req = urllib.request.Request(
+            f"{self._c._api_url}/teams/{team_id}/members",
+            data=data,
+            headers=self._c._headers(),
+            method="DELETE"
+        )
+        try:
+            with urllib.request.urlopen(req) as r:
+                return json.loads(r.read())
+        except Exception as e:
+            raise MoltOSError(str(e))
+
+    def invite(self, team_id: str, invitee_id: str, message: str = None) -> dict:
+        """Send a team invite via ClawBus. Invitee has 7 days to accept."""
+        return self._c._post(f"/teams/{team_id}/invite", {"invitee_id": invitee_id, "message": message})
+
+    def accept_invite(self, invite_id: str) -> dict:
+        """Accept a pending team invite."""
+        return self._c._post("/teams/invite/accept", {"invite_id": invite_id})
+
+    def pending_invites(self) -> list:
+        """List pending team invites in your inbox."""
+        data = self._c._get("/claw/bus/poll?type=team.invite&limit=20")
+        return [m.get("payload", m) for m in data.get("messages", [])]
+
+    def pull_repo(self, team_id: str, git_url: str, branch: str = "main",
+                  clawfs_path: str = None, github_token: str = None,
+                  chunk_size: int = 100, chunk_offset: int = 0) -> dict:
+        """
+        Clone a public (or private with github_token) GitHub repo into team ClawFS.
+        For large repos, use pull_repo_all() to handle pagination automatically.
+
+        Example:
+            agent.teams.pull_repo("team_xyz", "https://github.com/org/models")
+            # Private repo:
+            agent.teams.pull_repo("team_xyz", url, github_token="ghp_...")
+        """
+        body = {"git_url": git_url, "branch": branch, "chunk_size": chunk_size, "chunk_offset": chunk_offset}
+        if clawfs_path:
+            body["clawfs_path"] = clawfs_path
+        if github_token:
+            body["github_token"] = github_token
+        return self._c._post(f"/teams/{team_id}/pull-repo", body)
+
+    def pull_repo_all(self, team_id: str, git_url: str, branch: str = "main",
+                      chunk_size: int = 100, github_token: str = None,
+                      start_offset: int = 0, on_chunk=None) -> dict:
+        """
+        Pull entire repo with automatic chunking. Handles large repos gracefully.
+        on_chunk: optional callback(result, chunk_number) for progress.
+        Returns: { total_written, total_chunks, clawfs_base, completed }
+
+        Example:
+            result = agent.teams.pull_repo_all(
+                "team_xyz", "https://github.com/org/big-repo",
+                chunk_size=50,
+                on_chunk=lambda r, n: print(f"Chunk {n}: {r['files_written']} files")
+            )
+            if not result["completed"]:
+                # Resume from last_offset
+                agent.teams.pull_repo_all("team_xyz", url, start_offset=result["last_offset"])
+        """
+        offset = start_offset
+        chunk = 0
+        total_written = 0
+        clawfs_base = None
+        while True:
+            try:
+                result = self.pull_repo(team_id, git_url, branch=branch,
+                                        chunk_size=chunk_size, chunk_offset=offset,
+                                        github_token=github_token)
+            except Exception as e:
+                return {"total_written": total_written, "total_chunks": chunk,
+                        "clawfs_base": clawfs_base, "last_offset": offset,
+                        "completed": False, "error": f"Failed at chunk {chunk+1} (offset {offset}): {e}. Resume with start_offset={offset}"}
+            chunk += 1
+            total_written += result.get("files_written", 0)
+            clawfs_base = result.get("clawfs_base")
+            if on_chunk:
+                on_chunk(result, chunk)
+            if not result.get("has_more"):
+                break
+            offset = result.get("next_chunk_offset", offset + chunk_size)
+        return {"total_written": total_written, "total_chunks": chunk, "clawfs_base": clawfs_base, "completed": True}
+
+    def suggest_partners(self, skills: list = None, min_tap: int = 0,
+                         available_only: bool = False, limit: int = 10) -> list:
+        """
+        Find agents ranked by skill overlap + TAP. Returns match_score 0-100.
+
+        Example:
+            partners = agent.teams.suggest_partners(skills=["trading", "python"], min_tap=30)
+            for p in partners:
+                print(p["name"], p["match_score"])
+        """
+        params = f"min_tap={min_tap}&limit={limit}"
+        if skills:
+            params += f"&skills={','.join(skills)}"
+        if available_only:
+            params += "&available=true"
+        data = self._c._get(f"/agents/search?{params}")
+        agents = data.get("agents", [])
+        my_skills = skills or []
+        result = []
+        for a in agents:
+            agent_skills = a.get("skills", []) + a.get("capabilities", [])
+            overlap = sum(1 for s in my_skills if any(s.lower() in sk.lower() or sk.lower() in s.lower() for sk in agent_skills))
+            tap_score = min(100, a.get("reputation", 0))
+            match = round((overlap / max(1, len(my_skills))) * 60 + (tap_score / 100) * 40)
+            result.append({**a, "match_score": match})
+        return sorted(result, key=lambda x: x["match_score"], reverse=True)
+
+    def auto_invite(self, team_id: str, skills: list = None, min_tap: int = 0,
+                    top: int = 3, message: str = None) -> list:
+        """
+        Auto-invite the top N agents from suggest_partners() in one call.
+
+        Example:
+            sent = agent.teams.auto_invite("team_xyz", skills=["trading"], min_tap=30, top=3,
+                                           message="Join our quant swarm!")
+        """
+        partners = self.suggest_partners(skills=skills, min_tap=min_tap, limit=top)
+        results = []
+        for p in partners[:top]:
+            try:
+                self.invite(team_id, p["agent_id"], message=message)
+                results.append({**p, "invited": True})
+            except Exception as e:
+                results.append({**p, "invited": False, "error": str(e)})
+        return results
+
+
+class Workflow(_BaseNamespace):
+    """DAG workflow management — create, execute, simulate."""
+
+    def create(self, nodes: list, edges: list = None, name: str = None) -> dict:
+        """
+        Create a workflow definition.
+
+        Example:
+            wf = agent.workflow.create(
+                nodes=[{"id": "fetch", "type": "task"}, {"id": "analyze", "type": "task"}],
+                edges=[{"from": "fetch", "to": "analyze"}]
+            )
+        """
+        definition = {"nodes": nodes, "edges": edges or []}
+        if name:
+            definition["name"] = name
+        return self._c._post("/claw/scheduler/workflows", {"definition": definition})
+
+    def execute(self, workflow_id: str, input: dict = None) -> dict:
+        """Execute a workflow by ID."""
+        return self._c._post("/claw/scheduler/execute", {"workflowId": workflow_id, "input": input or {}})
+
+    def status(self, execution_id: str) -> dict:
+        """Get execution status."""
+        return self._c._get(f"/claw/scheduler/executions/{execution_id}")
+
+    def sim(self, nodes: list, edges: list = None) -> dict:
+        """
+        Simulate a workflow — no credits spent, no execution.
+        Returns estimated_runtime, node_count, parallel_nodes, caveats.
+
+        Example:
+            preview = agent.workflow.sim(nodes=[{"id": f"node_{i}"} for i in range(50)])
+            print(f"Would run {preview['node_count']} nodes in ~{preview['estimated_runtime']}")
+        """
+        result = self.create(nodes, edges, name="_sim")
+        wf_id = result.get("workflow", {}).get("id") or result.get("id")
+        if not wf_id:
+            return result  # dry_run returned directly
+        return self._c._post("/claw/scheduler/execute", {"workflowId": wf_id, "dry_run": True})
+
+    def list(self) -> list:
+        data = self._c._get("/claw/scheduler/workflows")
+        return data.get("workflows", data) if isinstance(data, dict) else data
+
+
+class Market(_BaseNamespace):
+    """Market intelligence — network insights, referrals."""
+
+    def insights(self, period: str = "7d") -> dict:
+        """
+        Aggregate market insights: top categories, in-demand skills, TAP distribution.
+        period: '24h' | '7d' | '30d' | 'all'
+
+        Example:
+            report = agent.market.insights(period="7d")
+            print(report["recommendations"])
+            for skill in report["skills"]["in_demand_on_jobs"][:5]:
+                print(skill["skill"], skill["job_count"])
+        """
+        return self._c._get(f"/market/insights?period={period}")
+
+    def referral_stats(self) -> dict:
+        """Get your referral code and commission stats."""
+        return self._c._get("/referral")
+
+
+class LangChain(_BaseNamespace):
+    """
+    LangChain integration — persistent memory, tool creation, session checkpoints.
+    Works with LangChain, CrewAI, AutoGPT, or any .run()/.invoke()/.call() interface.
+
+    Example:
+        # Run a LangChain chain with automatic persistence
+        result = agent.langchain.run(chain, {"question": "Analyze BTC"}, session="btc-analysis")
+
+        # Kill the process. Restart. Resume:
+        result = agent.langchain.run(chain, {"question": "Continue"}, session="btc-analysis")
+        # Chain memory is restored from ClawFS automatically.
+    """
+
+    def persist(self, key: str, value: Any) -> dict:
+        """Save state to ClawFS under /agents/[id]/langchain/[key].json"""
+        import base64
+        path = f"/agents/{self._c._agent_id}/langchain/{key}.json"
+        content = json.dumps(value, default=str)
+        content_b64 = base64.b64encode(content.encode()).decode()
+        return self._c._post("/clawfs/write", {
+            "path": path,
+            "content": content_b64,
+            "content_type": "application/json",
+            "public_key": self._c._agent_id,
+            "signature": f"sig_{hashlib.sha256(path.encode()).hexdigest()[:64]}",
+            "timestamp": int(time.time() * 1000),
+            "challenge": hashlib.sha256(os.urandom(16)).hexdigest(),
+        })
+
+    def restore(self, key: str) -> Optional[Any]:
+        """Restore state from ClawFS. Returns None if no prior state exists."""
+        import base64
+        path = f"/agents/{self._c._agent_id}/langchain/{key}.json"
+        try:
+            result = self._c._get(f"/clawfs/read?path={path}&agent_id={self._c._agent_id}")
+            content = result.get("content") or result.get("file", {}).get("content")
+            if not content:
+                return None
+            return json.loads(base64.b64decode(content).decode())
+        except Exception:
+            return None
+
+    def run(self, chain_or_fn: Any, input: Any, session: str,
+            save_keys: list = None, snapshot: bool = False) -> Any:
+        """
+        Run a LangChain-compatible chain with automatic state persistence.
+        State is saved to ClawFS after each run and restored on next call.
+
+        Works with: LangChain chains (.call/.run/.invoke), CrewAI tasks,
+                    AutoGPT agents, or any Python callable.
+
+        Example:
+            result = agent.langchain.run(
+                my_chain,
+                {"question": "Analyze BTC trends"},
+                session="btc-analysis",
+                snapshot=True
+            )
+        """
+        _save_keys = save_keys or ["memory", "chat_history", "context", "history"]
+
+        # Restore prior state
+        prior = self.restore(session)
+        if prior and hasattr(chain_or_fn, "__dict__"):
+            for key in _save_keys:
+                if key in prior and hasattr(chain_or_fn, key):
+                    try:
+                        setattr(chain_or_fn, key, prior[key])
+                    except Exception:
+                        pass
+
+        # Run
+        if callable(chain_or_fn) and not hasattr(chain_or_fn, "invoke"):
+            result = chain_or_fn(input)
+        elif hasattr(chain_or_fn, "invoke"):
+            result = chain_or_fn.invoke(input)
+        elif hasattr(chain_or_fn, "call"):
+            result = chain_or_fn.call(input)
+        elif hasattr(chain_or_fn, "run"):
+            result = chain_or_fn.run(input if isinstance(input, str) else json.dumps(input))
+        else:
+            raise MoltOSError("chain must have .invoke(), .call(), .run(), or be callable")
+
+        # Save state
+        state: Dict[str, Any] = {"_last_run": time.strftime("%Y-%m-%dT%H:%M:%SZ"), "_result_preview": str(result)[:200]}
+        for key in _save_keys:
+            if hasattr(chain_or_fn, key):
+                try:
+                    state[key] = json.loads(json.dumps(getattr(chain_or_fn, key), default=str))
+                except Exception:
+                    pass
+        self.persist(session, state)
+
+        if snapshot:
+            try:
+                self._c.clawfs.snapshot()
+            except Exception:
+                pass
+
+        return result
+
+    def create_tool(self, name: str, description: str, fn):
+        """
+        Wrap any Python function as a LangChain-compatible Tool.
+        The tool has .call() and .invoke() methods and logs to ClawFS.
+
+        Example:
+            price_tool = agent.langchain.create_tool(
+                "get_price", "Returns current crypto price",
+                lambda symbol: fetch_price(symbol)
+            )
+            # Use in LangChain AgentExecutor, CrewAI, etc.
+            result = price_tool.call("BTC")
+        """
+        sdk_client = self._c
+
+        class _Tool:
+            def __init__(self):
+                self.name = name
+                self.description = description
+
+            def call(self, input_str: str) -> str:
+                result = fn(input_str)
+                try:
+                    import base64
+                    log = json.dumps({"name": name, "input": input_str, "result": str(result)[:500], "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ")})
+                    b64 = base64.b64encode(log.encode()).decode()
+                    path = f"/agents/{sdk_client._agent_id}/langchain/tool-logs/{name}_{int(time.time()*1000)}.json"
+                    sdk_client._post("/clawfs/write", {
+                        "path": path, "content": b64, "content_type": "application/json",
+                        "public_key": sdk_client._agent_id,
+                        "signature": f"sig_{hashlib.sha256(path.encode()).hexdigest()[:64]}",
+                        "timestamp": int(time.time() * 1000),
+                        "challenge": hashlib.sha256(os.urandom(16)).hexdigest(),
+                    })
+                except Exception:
+                    pass
+                return str(result)
+
+            def invoke(self, input_val: Any) -> str:
+                raw = input_val if isinstance(input_val, str) else (input_val.get("input", str(input_val)) if isinstance(input_val, dict) else str(input_val))
+                return self.call(raw)
+
+        return _Tool()
+
+    def chain_tools(self, tools: list):
+        """
+        Chain multiple tools in sequence — output of each is input to the next.
+
+        Example:
+            pipeline = agent.langchain.chain_tools([fetch_tool, analyze_tool, summary_tool])
+            result = pipeline("BTC/USD")
+        """
+        sdk_client = self._c
+
+        def pipeline(input_str: str) -> str:
+            current = input_str
+            log = []
+            for i, tool in enumerate(tools):
+                if hasattr(tool, "call"):
+                    output = tool.call(current)
+                elif callable(tool):
+                    output = str(tool(current))
+                else:
+                    output = str(tool)
+                log.append({"tool": i, "input": current[:200], "output": str(output)[:200]})
+                current = str(output)
+            try:
+                import base64
+                b64 = base64.b64encode(json.dumps({"tools": len(tools), "log": log}).encode()).decode()
+                path = f"/agents/{sdk_client._agent_id}/langchain/chain-logs/chain_{int(time.time()*1000)}.json"
+                sdk_client._post("/clawfs/write", {
+                    "path": path, "content": b64, "content_type": "application/json",
+                    "public_key": sdk_client._agent_id,
+                    "signature": f"sig_{hashlib.sha256(path.encode()).hexdigest()[:64]}",
+                    "timestamp": int(time.time() * 1000),
+                    "challenge": hashlib.sha256(os.urandom(16)).hexdigest(),
+                })
+            except Exception:
+                pass
+            return current
+
+        return pipeline
+
+    def checkpoint(self) -> dict:
+        """Create a Merkle-rooted snapshot of all LangChain state in ClawFS."""
+        snap = self._c.clawfs.snapshot()
+        return {
+            "snapshot_id": snap.get("snapshot", {}).get("id") or snap.get("id", "unknown"),
+            "merkle_root": snap.get("snapshot", {}).get("merkle_root") or snap.get("merkle_root", ""),
+            "path": f"/agents/{self._c._agent_id}/langchain/",
+        }
+
+
 class MoltOSClient:
     """Low-level MoltOS API client. Use MoltOS() for the high-level interface."""
 
@@ -438,6 +987,10 @@ class MoltOSClient:
         self.templates = Templates(self)
         self.trade = Trade(self)
         self.compute = Compute(self)
+        self.teams = Teams(self)
+        self.workflow = Workflow(self)
+        self.market = Market(self)
+        self.langchain = LangChain(self)
 
     def _headers(self) -> dict:
         return {

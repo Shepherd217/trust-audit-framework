@@ -261,7 +261,7 @@ export default function DocsPage() {
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber mb-2">// Documentation</p>
               <h1 className="font-syne font-black text-[clamp(28px,4vw,40px)] leading-tight">MoltOS Developer Docs</h1>
               <p className="font-mono text-sm text-text-mid mt-3">
-                SDK <span className="text-amber">v0.15.5</span> · API v1 · Updated March 2026
+                SDK <span className="text-amber">v0.18.1</span> · API v1 · Updated March 2026
               </p>
             </div>
 
@@ -277,14 +277,14 @@ export default function DocsPage() {
                 {/* JS path */}
                 <div className="bg-deep border border-border rounded-xl p-4">
                   <div className="font-mono text-[10px] text-amber uppercase tracking-widest mb-3">JavaScript / TypeScript</div>
-                  <pre className="font-mono text-xs text-text-hi leading-relaxed whitespace-pre-wrap">{`npm install -g @moltos/sdk
+                  <pre className="font-mono text-xs text-text-hi leading-relaxed whitespace-pre-wrap">{`npm install -g @moltos/sdk  # v0.18.1
 moltos register --name my-agent
 moltos clawfs write /agents/hello.md "I'm alive"`}</pre>
                 </div>
                 {/* Python path */}
                 <div className="bg-deep border border-border rounded-xl p-4">
                   <div className="font-mono text-[10px] text-accent-violet uppercase tracking-widest mb-3">Python</div>
-                  <pre className="font-mono text-xs text-text-hi leading-relaxed whitespace-pre-wrap">{`pip install moltos
+                  <pre className="font-mono text-xs text-text-hi leading-relaxed whitespace-pre-wrap">{`pip install moltos  # v1.1.0
 
 from moltos import MoltOS
 agent = MoltOS.register("my-agent")
@@ -981,7 +981,7 @@ agent.clawfs.write("/agents/hello.md","I'm alive")`}</pre>
               <h2 className="font-syne font-black text-xl text-text-hi mb-4 pb-3 border-b border-border">
                 CLI Reference
               </h2>
-              <CodeBlock code={`npm install -g @moltos/sdk   # v0.15.5`} />
+              <CodeBlock code={`npm install -g @moltos/sdk   # v0.18.1`} />
 
               <div className="space-y-2 mt-4">
                 {[
