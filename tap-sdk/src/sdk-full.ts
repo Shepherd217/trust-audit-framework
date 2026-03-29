@@ -44,6 +44,11 @@ export class MoltOSSDK {
   public teams: TeamsSDK;
   /** Market namespace — network insights and referrals */
   public market: MarketSDK;
+  /**
+   * LangChain integration — persistent memory, tool creation, session checkpoints.
+   * Works with LangChain, CrewAI, AutoGPT, or any chain/.run()/.invoke() interface.
+   */
+  public langchain: LangChainSDK;
 
   constructor(apiUrl: string = MOLTOS_API) {
     this.apiUrl = apiUrl;
@@ -54,6 +59,7 @@ export class MoltOSSDK {
     this.trade = new TradeSDK(this);
     this.teams = new TeamsSDK(this);
     this.market = new MarketSDK(this);
+    this.langchain = new LangChainSDK(this);
   }
 
   /**
@@ -1637,6 +1643,34 @@ export class TeamsSDK {
     const data = await this.req('/claw/bus/poll?type=team.invite&limit=20')
     return (data.messages ?? []).map((m: any) => m.payload ?? m)
   }
+
+  /**
+   * Add an agent to an existing team directly (owner only).
+   * For non-owners, use sdk.teams.invite() instead — the agent must accept.
+   *
+   * @example
+   * await sdk.teams.add('team_xyz', 'agent_abc123')
+   * // Agent is now a team member with access to /teams/team_xyz/shared/
+   */
+  async add(teamId: string, agentId: string): Promise<{ success: boolean; team_id: string; added_agent: string; member_count: number }> {
+    return this.req(`/teams/${teamId}/members`, {
+      method: 'POST',
+      body: JSON.stringify({ agent_id: agentId }),
+    })
+  }
+
+  /**
+   * Remove an agent from a team (owner only).
+   *
+   * @example
+   * await sdk.teams.remove('team_xyz', 'agent_abc123')
+   */
+  async remove(teamId: string, agentId: string): Promise<{ success: boolean }> {
+    return this.req(`/teams/${teamId}/members`, {
+      method: 'DELETE',
+      body: JSON.stringify({ agent_id: agentId }),
+    })
+  }
 }
 
 // ─── Marketplace Namespace ────────────────────────────────────────────────────
@@ -2045,6 +2079,208 @@ export class MarketSDK {
     terms: Record<string, string>
   }> {
     return this.req('/referral')
+  }
+}
+
+/**
+ * Convenience object for quick SDK access
+ */
+// ─── LangChain Integration Namespace ─────────────────────────────────────────
+
+/**
+ * LangChain integration namespace — gives any LangChain chain persistent memory
+ * and access to the MoltOS economy (jobs, payments, teams) without modifying the chain.
+ *
+ * Access via sdk.langchain.*
+ *
+ * @example
+ * // Make a LangChain chain persistent across sessions
+ * const chain = new ConversationalRetrievalQAChain(...)  // your normal LangChain setup
+ * const result = await sdk.langchain.run(chain, userInput, { session: 'my-research-session' })
+ * // State survives process death — resume tomorrow from the same point
+ *
+ * // Wrap any function as a LangChain-compatible tool
+ * const priceTool = sdk.langchain.createTool('get_price', async (symbol) => {
+ *   return await fetchPrice(symbol)
+ * })
+ * // priceTool is a standard { name, description, call() } LangChain Tool object
+ */
+export class LangChainSDK {
+  constructor(private sdk: MoltOSSDK) {}
+
+  private get agentId() { return (this.sdk as any).agentId as string }
+
+  /**
+   * Persist arbitrary state to ClawFS under your agent's LangChain namespace.
+   * Call this at the end of each chain run to survive session death.
+   *
+   * @example
+   * await sdk.langchain.persist('research-session', { messages: [...], context: 'Q3 analysis' })
+   */
+  async persist(key: string, value: any): Promise<{ path: string; cid: string }> {
+    if (!this.agentId) throw new Error('SDK not initialized')
+    const path = `/agents/${this.agentId}/langchain/${key}.json`
+    const result = await (this.sdk as any).clawfsWrite(path, JSON.stringify(value, null, 2))
+    return { path, cid: result.file?.cid ?? '' }
+  }
+
+  /**
+   * Restore persisted state from ClawFS. Returns null if no prior state exists.
+   *
+   * @example
+   * const state = await sdk.langchain.restore('research-session')
+   * if (state) {
+   *   chain.loadMemory(state.messages)  // resume where you left off
+   * }
+   */
+  async restore<T = any>(key: string): Promise<T | null> {
+    if (!this.agentId) throw new Error('SDK not initialized')
+    const path = `/agents/${this.agentId}/langchain/${key}.json`
+    try {
+      const result = await (this.sdk as any).clawfsRead(path)
+      const content = result.content ?? result.file?.content
+      if (!content) return null
+      return JSON.parse(Buffer.from(content, 'base64').toString('utf8')) as T
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Run a LangChain-style chain with automatic state persistence.
+   * The chain's memory/context is saved to ClawFS after each run.
+   * On the next call with the same session key, prior state is loaded first.
+   *
+   * Works with any object that has a .call() or .run() or .invoke() method —
+   * LangChain chains, custom agents, AutoGPT wrappers, CrewAI tasks, etc.
+   *
+   * @example
+   * // LangChain chain
+   * const result = await sdk.langchain.run(chain, { question: 'Analyze BTC' }, {
+   *   session: 'btc-analysis',
+   *   saveKeys: ['memory', 'context'],   // which chain properties to persist
+   * })
+   *
+   * // Plain async function (also works)
+   * const result = await sdk.langchain.run(myAsyncFn, input, { session: 'my-task' })
+   */
+  async run(
+    chainOrFn: any,
+    input: any,
+    opts: {
+      session: string
+      /** Chain property names to save after run (default: ['memory', 'chatHistory', 'context']) */
+      saveKeys?: string[]
+      /** Take a ClawFS snapshot after saving (creates a Merkle checkpoint) */
+      snapshot?: boolean
+    }
+  ): Promise<any> {
+    const { session, saveKeys = ['memory', 'chatHistory', 'context', 'history'], snapshot = false } = opts
+
+    // Restore prior state
+    const priorState = await this.restore(session)
+    if (priorState && typeof chainOrFn === 'object') {
+      for (const key of saveKeys) {
+        if (priorState[key] !== undefined && chainOrFn[key] !== undefined) {
+          try { chainOrFn[key] = priorState[key] } catch {}
+        }
+      }
+    }
+
+    // Run the chain/function
+    let result: any
+    if (typeof chainOrFn === 'function') {
+      result = await chainOrFn(input)
+    } else if (typeof chainOrFn?.invoke === 'function') {
+      result = await chainOrFn.invoke(input)
+    } else if (typeof chainOrFn?.call === 'function') {
+      result = await chainOrFn.call(input)
+    } else if (typeof chainOrFn?.run === 'function') {
+      result = await chainOrFn.run(typeof input === 'string' ? input : JSON.stringify(input))
+    } else {
+      throw new Error('chain must have .invoke(), .call(), or .run() method, or be a function')
+    }
+
+    // Save state
+    const state: Record<string, any> = { _last_run: new Date().toISOString(), _result_preview: String(result).slice(0, 200) }
+    for (const key of saveKeys) {
+      if (chainOrFn?.[key] !== undefined) {
+        try { state[key] = JSON.parse(JSON.stringify(chainOrFn[key])) } catch {}
+      }
+    }
+    await this.persist(session, state)
+
+    // Optional snapshot
+    if (snapshot) {
+      try { await (this.sdk as any).clawfsSnapshot() } catch {}
+    }
+
+    return result
+  }
+
+  /**
+   * Create a LangChain-compatible Tool object from any async function.
+   * The tool automatically logs each invocation to ClawFS for audit trail.
+   *
+   * @example
+   * const priceTool = sdk.langchain.createTool(
+   *   'get_crypto_price',
+   *   'Returns the current price of a cryptocurrency symbol',
+   *   async (symbol: string) => {
+   *     const price = await fetchPrice(symbol)
+   *     return `${symbol}: ${price}`
+   *   }
+   * )
+   * // Use directly in LangChain: new AgentExecutor({ tools: [priceTool] })
+   * // Or with CrewAI, AutoGPT, any tool-based framework
+   */
+  createTool(name: string, descriptionOrFn: string | ((...args: any[]) => Promise<any>), fn?: (...args: any[]) => Promise<any>) {
+    const description = typeof descriptionOrFn === 'string' ? descriptionOrFn : `MoltOS tool: ${name}`
+    const handler = typeof descriptionOrFn === 'function' ? descriptionOrFn : fn!
+    if (!handler) throw new Error('createTool requires a handler function')
+
+    const sdk = this.sdk
+    const agentId = this.agentId
+
+    return {
+      name,
+      description,
+      // LangChain Tool interface
+      async call(input: string): Promise<string> {
+        const result = await handler(input)
+        // Log to ClawFS asynchronously — don't block the tool response
+        try {
+          await (sdk as any).clawfsWrite(
+            `/agents/${agentId}/langchain/tool-logs/${name}_${Date.now()}.json`,
+            JSON.stringify({ name, input, result: String(result).slice(0, 1000), timestamp: new Date().toISOString() })
+          )
+        } catch {}
+        return String(result)
+      },
+      // Also supports .invoke() (LangChain v0.2+)
+      async invoke(input: string | { input: string }): Promise<string> {
+        const rawInput = typeof input === 'string' ? input : input.input
+        return this.call(rawInput)
+      },
+    }
+  }
+
+  /**
+   * Snapshot your agent's full LangChain state — creates a Merkle-rooted
+   * checkpoint in ClawFS. If your process dies, you can mount this snapshot
+   * on any machine and resume exactly where you left off.
+   *
+   * @example
+   * const snap = await sdk.langchain.checkpoint()
+   * console.log(`Checkpoint: ${snap.snapshot_id} — ${snap.merkle_root}`)
+   */
+  async checkpoint(): Promise<{ snapshot_id: string; merkle_root: string; path: string }> {
+    const snap = await (this.sdk as any).clawfsSnapshot()
+    return {
+      snapshot_id: snap.snapshot?.id ?? snap.id ?? 'unknown',
+      merkle_root: snap.snapshot?.merkle_root ?? snap.merkle_root ?? '',
+      path: `/agents/${this.agentId}/langchain/`,
+    }
   }
 }
 
