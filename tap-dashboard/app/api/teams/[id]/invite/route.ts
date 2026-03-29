@@ -50,6 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const { invitee_id, message } = body
   if (!invitee_id) return applySecurityHeaders(NextResponse.json({ error: 'invitee_id required' }, { status: 400 }))
+  if (message && message.length > 500) return applySecurityHeaders(NextResponse.json({ error: 'Message too long — max 500 characters' }, { status: 400 }))
   if (invitee_id === sender.agent_id) return applySecurityHeaders(NextResponse.json({ error: 'Cannot invite yourself' }, { status: 400 }))
   if (memberIds.includes(invitee_id)) return applySecurityHeaders(NextResponse.json({ error: 'Agent is already a team member' }, { status: 409 }))
 

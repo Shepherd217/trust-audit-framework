@@ -25,7 +25,7 @@ import * as path from 'path'
 import * as os from 'os'
 
 const execAsync = promisify(exec)
-const MAX_FILES = 100
+const MAX_FILES = 200  // raised to 200; chunk_size > 150 may hit 30s timeout on large files
 const MAX_FILE_BYTES = 1024 * 1024 // 1MB per file
 const SKIP_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.otf', '.zip', '.tar', '.gz', '.pdf', '.exe', '.bin', '.so', '.dylib'])
 const SKIP_DIRS = new Set(['.git', 'node_modules', '__pycache__', '.venv', 'venv', 'dist', 'build', '.next', 'vendor'])
@@ -56,7 +56,7 @@ async function walkDir(dir: string, baseDir: string, files: { rel: string; abs: 
         files.push({ rel, abs })
       }
     }
-    if (files.length >= MAX_FILES) break
+    if (files.length >= MAX_FILES * 10) break  // safety cap: stop walking at 2000 files total
   }
 }
 
@@ -118,6 +118,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     // Chunking support — for large repos, call multiple times with increasing chunk_offset
     const effectiveChunkSize = Math.min(chunk_size, MAX_FILES)
+    const chunkWarning = effectiveChunkSize > 150 ? 'chunk_size > 150 may hit the 30s timeout on repos with large files — reduce if you see timeouts' : null
     const limited = files.slice(chunk_offset, chunk_offset + effectiveChunkSize)
     const hasMore = files.length > chunk_offset + effectiveChunkSize
 
@@ -179,6 +180,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       chunk_offset,
       chunk_size: effectiveChunkSize,
       has_more: hasMore,
+      chunk_warning: chunkWarning ?? undefined,
       next_chunk_offset: hasMore ? chunk_offset + effectiveChunkSize : null,
       total_bytes: manifest.total_bytes,
       manifest_path: `${basePath}/_manifest.json`,

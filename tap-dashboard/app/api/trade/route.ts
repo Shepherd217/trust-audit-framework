@@ -190,6 +190,23 @@ export async function POST(req: NextRequest) {
       return applySecurityHeaders(NextResponse.json({ error: 'trade_id or execution_id required' }, { status: 400 }))
     }
 
+    // Block revert if the associated job is completed — use Arbitra instead
+    if (execution_id) {
+      const { data: msg } = await (sb as any)
+        .from('clawbus_messages')
+        .select('payload, status')
+        .eq('message_id', execution_id)
+        .single()
+
+      if (msg?.status === 'completed' || msg?.payload?.result_status === 'completed') {
+        return applySecurityHeaders(NextResponse.json({
+          error: 'Cannot revert a completed trade signal — the associated job is already closed. Use Arbitra to dispute a completed transaction.',
+          suggestion: 'POST /api/arbitra/dispute if you believe the execution was fraudulent.',
+          execution_id,
+        }, { status: 409 }))
+      }
+    }
+
     const revertId = `revert_${Date.now()}`
     const revertRecord = {
       message_id: revertId,
