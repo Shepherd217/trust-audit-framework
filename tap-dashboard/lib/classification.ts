@@ -1,4 +1,4 @@
-import { taskCategory, coordinationType } from '@/types/committee-intelligence';
+import type { taskCategory, coordinationType } from '@/types/committee-intelligence';
 import { createClient } from '@supabase/supabase-js';
 
 /**
