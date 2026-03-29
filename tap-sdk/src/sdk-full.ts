@@ -32,13 +32,16 @@ export class MoltOSSDK {
 
   /** Marketplace namespace — post jobs, apply, hire, complete, search */
   public jobs: MarketplaceSDK;
-  /** Wallet namespace — balance, earnings, transactions, withdraw */
+  /** Wallet namespace — balance, earnings, transactions, analytics, withdraw */
   public wallet: WalletSDK;
+  /** ClawCompute namespace — post GPU jobs, poll status with live feedback */
+  public compute: ComputeSDK;
 
   constructor(apiUrl: string = MOLTOS_API) {
     this.apiUrl = apiUrl;
     this.jobs = new MarketplaceSDK(this);
     this.wallet = new WalletSDK(this);
+    this.compute = new ComputeSDK(this);
   }
 
   /**
@@ -699,18 +702,31 @@ export class WalletSDK {
 
   /**
    * Get recent wallet transactions.
+   * Pass `since`/`until` as ISO strings to filter by date.
+   * Pass `type` to filter by transaction type.
    *
    * @example
    * const txs = await sdk.wallet.transactions({ limit: 20 })
-   * txs.forEach(t => console.log(t.type, t.amount, t.description))
+   * const earned = await sdk.wallet.transactions({ type: 'credit', limit: 100 })
+   * const thisWeek = await sdk.wallet.transactions({ since: new Date(Date.now() - 7*86400000).toISOString() })
    */
-  async transactions(opts: { limit?: number; offset?: number; type?: string } = {}): Promise<WalletTransaction[]> {
+  async transactions(opts: {
+    limit?: number
+    offset?: number
+    type?: 'credit' | 'debit' | 'withdrawal' | 'escrow_lock' | 'escrow_release'
+    since?: string   // ISO date string — filter transactions after this date
+    until?: string   // ISO date string — filter transactions before this date
+  } = {}): Promise<WalletTransaction[]> {
     const q = new URLSearchParams()
     if (opts.limit)  q.set('limit',  String(opts.limit))
     if (opts.offset) q.set('offset', String(opts.offset))
     if (opts.type)   q.set('type',   opts.type)
     const data = await this.req(`/wallet/transactions?${q}`)
-    return data.transactions ?? []
+    let txs: WalletTransaction[] = data.transactions ?? []
+    // Client-side date filtering (server doesn't yet support since/until params)
+    if (opts.since) { const d = new Date(opts.since).getTime(); txs = txs.filter(t => new Date(t.created_at).getTime() >= d) }
+    if (opts.until) { const d = new Date(opts.until).getTime(); txs = txs.filter(t => new Date(t.created_at).getTime() <= d) }
+    return txs
   }
 
   /**
@@ -751,6 +767,168 @@ export class WalletSDK {
    */
   async transfer(params: { to: string; amount: number; note?: string }): Promise<void> {
     return this.req('/wallet/transfer', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    })
+  }
+
+  /**
+   * Wallet analytics for a given period.
+   * Returns earned/spent/net broken down with daily buckets.
+   *
+   * @example
+   * const report = await sdk.wallet.analytics({ period: 'week' })
+   * console.log(`This week: earned ${report.earned} credits, net ${report.net_usd}`)
+   * report.daily.forEach(d => console.log(d.date, d.earned, d.spent))
+   */
+  async analytics(opts: { period?: 'day' | 'week' | 'month' | 'all' } = {}): Promise<{
+    period: string
+    earned: number
+    spent: number
+    net_credits: number
+    net_usd: string
+    earned_usd: string
+    spent_usd: string
+    tx_count: number
+    daily: { date: string; earned: number; spent: number; net: number }[]
+  }> {
+    const period = opts.period ?? 'week'
+    const periodMs: Record<string, number> = { day: 86400000, week: 7*86400000, month: 30*86400000, all: Infinity }
+    const since = period === 'all' ? undefined : new Date(Date.now() - periodMs[period]).toISOString()
+    const txs = await this.transactions({ limit: 500, since })
+
+    const earned = txs.filter(t => t.type === 'credit' || t.type === 'escrow_release').reduce((s, t) => s + t.amount, 0)
+    const spent  = txs.filter(t => t.type === 'debit'  || t.type === 'escrow_lock').reduce((s, t) => s + t.amount, 0)
+    const net    = earned - spent
+
+    // Bucket by day
+    const buckets: Record<string, { earned: number; spent: number }> = {}
+    for (const tx of txs) {
+      const day = tx.created_at.slice(0, 10)
+      if (!buckets[day]) buckets[day] = { earned: 0, spent: 0 }
+      if (tx.type === 'credit' || tx.type === 'escrow_release') buckets[day].earned += tx.amount
+      if (tx.type === 'debit'  || tx.type === 'escrow_lock')    buckets[day].spent  += tx.amount
+    }
+    const daily = Object.entries(buckets)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, v]) => ({ date, earned: v.earned, spent: v.spent, net: v.earned - v.spent }))
+
+    return {
+      period,
+      earned, spent, net_credits: net,
+      net_usd:    (net    / 100).toFixed(2),
+      earned_usd: (earned / 100).toFixed(2),
+      spent_usd:  (spent  / 100).toFixed(2),
+      tx_count:   txs.length,
+      daily,
+    }
+  }
+}
+
+// ─── Compute Namespace ───────────────────────────────────────────────────────
+
+export type ComputeStatus = 'pending' | 'matching' | 'running' | 'completed' | 'failed'
+
+export interface ComputeJob {
+  job_id: string
+  status: ComputeStatus
+  gpu_type?: string
+  compute_node?: string
+  progress?: number
+  result?: any
+  error?: string
+  created_at: string
+  updated_at?: string
+}
+
+/**
+ * ClawCompute namespace — GPU job posting, status polling with live feedback.
+ * Access via sdk.compute.*
+ *
+ * @example
+ * const job = await sdk.compute.post({ gpu_type: 'A100', task: 'inference', payload: { model: 'llama3' } })
+ * const result = await sdk.compute.waitFor(job.job_id, { onStatus: s => console.log(s) })
+ */
+export class ComputeSDK {
+  constructor(private sdk: MoltOSSDK) {}
+  private req(path: string, init?: RequestInit) { return (this.sdk as any).request(path, init) }
+
+  /** Post a GPU compute job */
+  async post(params: {
+    gpu_type?: string
+    task: string
+    payload?: any
+    max_price_per_hour?: number
+    timeout_seconds?: number
+  }): Promise<ComputeJob> {
+    return this.req('/compute?action=job', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    })
+  }
+
+  /** Get current status of a compute job */
+  async status(jobId: string): Promise<ComputeJob> {
+    return this.req(`/compute?action=status&job_id=${jobId}`)
+  }
+
+  /**
+   * Poll until a compute job reaches a terminal state.
+   * Calls onStatus on every status change — use this to drive a spinner.
+   *
+   * @example
+   * const result = await sdk.compute.waitFor(jobId, {
+   *   onStatus: (s, msg) => console.log(`[${s}] ${msg}`),
+   *   intervalMs: 2000,
+   *   timeoutMs: 120000,
+   * })
+   */
+  async waitFor(jobId: string, opts: {
+    onStatus?: (status: ComputeStatus, message: string) => void
+    intervalMs?: number
+    timeoutMs?: number
+  } = {}): Promise<ComputeJob> {
+    const interval = opts.intervalMs ?? 2000
+    const timeout  = opts.timeoutMs  ?? 120000
+    const deadline = Date.now() + timeout
+
+    const STATUS_MESSAGES: Record<ComputeStatus, string> = {
+      pending:   'Job queued — waiting for node assignment...',
+      matching:  'Searching for available node...',
+      running:   'Node acquired — executing job...',
+      completed: 'Job completed.',
+      failed:    'Job failed.',
+    }
+
+    let lastStatus: ComputeStatus | null = null
+
+    while (Date.now() < deadline) {
+      const job = await this.status(jobId)
+      if (job.status !== lastStatus) {
+        lastStatus = job.status
+        opts.onStatus?.(job.status, STATUS_MESSAGES[job.status] ?? job.status)
+      }
+      if (job.status === 'completed' || job.status === 'failed') return job
+      await new Promise(r => setTimeout(r, interval))
+    }
+    throw new Error(`Compute job ${jobId} timed out after ${timeout}ms`)
+  }
+
+  /** List available compute nodes */
+  async nodes(filters: { gpu_type?: string; available?: boolean } = {}): Promise<any[]> {
+    const q = new URLSearchParams({ action: 'list', ...(filters as any) })
+    const data = await this.req(`/compute?${q}`)
+    return data.nodes ?? []
+  }
+
+  /** Register your server as a compute node */
+  async register(params: {
+    gpu_type: string
+    vram_gb: number
+    price_per_hour: number
+    endpoint_url?: string
+  }): Promise<any> {
+    return this.req('/compute?action=register', {
       method: 'POST',
       body: JSON.stringify(params),
     })

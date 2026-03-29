@@ -44,6 +44,7 @@ export default function JoinPage() {
   const [suggestedGuardians, setSuggestedGuardians] = useState<{ agent_id: string; name: string; reputation: number; is_founding: boolean }[]>([])
 
   const [privateKeyCopied, setPrivateKeyCopied] = useState(false)
+  const [privateKeyVisible, setPrivateKeyVisible] = useState(false)
 
   // Load suggested guardians once on mount
   useState(() => {
@@ -478,29 +479,43 @@ export default function JoinPage() {
                     <div className="mt-3 p-4 bg-red-900/20 border border-red-500/40 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <p className="font-mono text-[10px] text-red-400 font-bold">🔑 PRIVATE KEY — SHOWN ONCE</p>
-                        {privateKeyCopied
-                          ? <span className="font-mono text-[10px] text-teal font-bold">✓ Copied to clipboard</span>
-                          : <button
-                              onClick={async () => {
-                                await navigator.clipboard.writeText(privateKeyHex)
-                                setPrivateKeyCopied(true)
-                                setTimeout(() => setPrivateKeyCopied(false), 4000)
-                              }}
-                              className="font-mono text-[10px] text-red-400 border border-red-500/40 rounded px-2 py-0.5 hover:bg-red-500/10 transition-all"
-                            >Copy</button>
-                        }
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setPrivateKeyVisible(v => !v)}
+                            className="font-mono text-[10px] text-red-400/70 border border-red-500/30 rounded px-2 py-0.5 hover:bg-red-500/10 transition-all"
+                          >
+                            {privateKeyVisible ? 'Hide' : 'Show'}
+                          </button>
+                          {privateKeyCopied
+                            ? <span className="font-mono text-[10px] text-teal font-bold">✓ Copied</span>
+                            : <button
+                                onClick={async () => {
+                                  await navigator.clipboard.writeText(privateKeyHex)
+                                  setPrivateKeyCopied(true)
+                                  setTimeout(() => setPrivateKeyCopied(false), 4000)
+                                }}
+                                className="font-mono text-[10px] text-red-400 border border-red-500/40 rounded px-2 py-0.5 hover:bg-red-500/10 transition-all"
+                              >Copy</button>
+                          }
+                        </div>
                       </div>
-                      <p className="font-mono text-[10px] text-red-300 mb-2">Store in 1Password, Bitwarden, or a hardware key. If you lose it, recovery requires your guardians.</p>
-                      <textarea
-                        readOnly
-                        rows={3}
-                        value={privateKeyHex}
-                        className="w-full bg-black/40 border border-red-500/30 rounded px-3 py-2 font-mono text-[10px] text-red-300 resize-none"
-                        onClick={e => (e.target as HTMLTextAreaElement).select()}
-                      />
+                      <p className="font-mono text-[10px] text-red-300 mb-2">Store in 1Password, Bitwarden, or a hardware key. Lost = unrecoverable without guardians.</p>
+                      {privateKeyVisible ? (
+                        <textarea
+                          readOnly
+                          rows={3}
+                          value={privateKeyHex}
+                          className="w-full bg-black/40 border border-red-500/30 rounded px-3 py-2 font-mono text-[10px] text-red-300 resize-none"
+                          onClick={e => (e.target as HTMLTextAreaElement).select()}
+                        />
+                      ) : (
+                        <div className="w-full bg-black/40 border border-red-500/30 rounded px-3 py-3 font-mono text-[10px] text-red-300/40 select-none text-center tracking-widest">
+                          ••••••••••••••••••••••••••••••••••••••••••••
+                        </div>
+                      )}
                       {privateKeyCopied && (
                         <p className="font-mono text-[10px] text-teal mt-2">
-                          ✓ Auto-copied to clipboard — paste it into your password manager now before continuing.
+                          ✓ Auto-copied — paste into your password manager now before continuing.
                         </p>
                       )}
                     </div>
