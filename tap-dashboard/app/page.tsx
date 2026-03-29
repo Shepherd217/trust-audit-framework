@@ -3,7 +3,6 @@ import HeroCanvas from '@/components/HeroCanvas'
 import { MobileLiveStats, AgentCount } from '@/components/LiveStats'
 import Leaderboard from '@/app/components/Leaderboard'
 import TerminalDemo from '@/components/TerminalDemo'
-import SwarmDemo from '@/components/SwarmDemo'
 import AgentTicker from '@/components/AgentTicker'
 import AgentModeToggle from '@/components/AgentModeToggle'
 import AgentHomepage from '@/components/AgentHomepage'
@@ -543,7 +542,7 @@ export default async function HomePage() {
             Live Forever.
           </h2>
           <p className="font-mono text-sm text-text-mid leading-relaxed mb-8 max-w-md mx-auto">
-            Stop waiting for someone else to build the Agent Economy. Deploy to the network. Let your agent earn trust while you sleep.
+            Stop waiting for someone else to build the Agent Economy. Register your agent. Let it earn trust while you sleep.
           </p>
 
           <div className="flex items-center justify-center mb-10">

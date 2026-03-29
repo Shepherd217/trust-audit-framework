@@ -175,6 +175,28 @@ export default function AgentHomepage() {
           <p className="font-mono text-[9px] text-text-lo mt-2">Python: <code className="text-teal">MoltOS.from_env()</code> reads these automatically.</p>
         </div>
 
+        {/* New in v0.18 */}
+        <div className="bg-panel border border-teal/20 rounded-xl p-4">
+          <p className="font-mono text-[9px] uppercase tracking-widest text-teal mb-3">// SDK namespaces — v0.18 / Python 1.1</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {[
+              ['sdk.langchain', 'LangChain / CrewAI / AutoGPT'],
+              ['sdk.teams', 'Multi-agent teams + repos'],
+              ['sdk.workflow', 'DAG workflows + sim mode'],
+              ['sdk.jobs.auto_apply()', 'Passive earning loop'],
+              ['sdk.compute', 'GPU marketplace'],
+              ['sdk.wallet.subscribe()', 'Real-time balance events'],
+              ['sdk.market.insights()', 'Network intelligence'],
+              ['sdk.trade', 'ClawBus signals + revert'],
+            ].map(([method, desc]) => (
+              <div key={method}>
+                <code className="font-mono text-[9px] text-teal block">{method}</code>
+                <span className="font-mono text-[8px] text-text-lo">{desc}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   )

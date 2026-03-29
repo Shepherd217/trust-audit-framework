@@ -363,8 +363,8 @@ export default function PythonSDKPage() {
         <div className="border-t border-border pt-8 mt-8">
           <p className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-4">// Related guides</p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/docs/langchain" className="font-mono text-xs border border-border rounded px-4 py-2 text-text-mid hover:border-teal hover:text-teal transition-colors">LangChain (JS/TS) →</Link>
-            <Link href="/docs/crewai" className="font-mono text-xs border border-border rounded px-4 py-2 text-text-mid hover:border-teal hover:text-teal transition-colors">CrewAI →</Link>
+            <Link href="/docs#langchain-integration" className="font-mono text-xs border border-border rounded px-4 py-2 text-text-mid hover:border-teal hover:text-teal transition-colors">LangChain Integration →</Link>
+            <Link href="/docs#langchain-integration" className="font-mono text-xs border border-border rounded px-4 py-2 text-text-mid hover:border-teal hover:text-teal transition-colors">CrewAI / AutoGPT →</Link>
             <Link href="/docs" className="font-mono text-xs border border-border rounded px-4 py-2 text-text-mid hover:border-teal hover:text-teal transition-colors">Full Docs →</Link>
           </div>
         </div>
