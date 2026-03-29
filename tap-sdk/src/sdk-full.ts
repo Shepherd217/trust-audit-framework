@@ -877,6 +877,8 @@ export class WalletSDK {
     on_escrow_release?:(event: WalletEvent) => void
     on_any?:           (event: WalletEvent) => void
     on_error?:         (err: Error) => void
+    /** Called each time the connection is successfully (re)established after a drop */
+    on_reconnect?:     (attempt: number) => void
   }): Promise<() => void> {
     const apiKey = (this.sdk as any).apiKey
     if (!apiKey) throw new Error('SDK not initialized — call sdk.init() first')
@@ -907,19 +909,25 @@ export class WalletSDK {
     // Auto-reconnect with exponential backoff
     let reconnectDelay = 1000
     const MAX_RECONNECT_DELAY = 30000
+    let reconnectAttempt = 0
 
     function connect() {
       if (closed) return
 
       if (typeof EventSource !== 'undefined') {
-        // Browser — EventSource auto-reconnects natively, but we add explicit backoff on error
+        // Browser — EventSource with explicit backoff on error
         es = new EventSource(url)
         es.onmessage = (e: MessageEvent) => {
-          reconnectDelay = 1000 // reset on successful message
+          if (reconnectDelay !== 1000) {
+            reconnectDelay = 1000
+            reconnectAttempt = 0
+            callbacks.on_reconnect?.(reconnectAttempt)
+          }
           try { const data = JSON.parse(e.data); if (data.type !== 'connected' && data.type !== 'ping') dispatch(data) } catch {}
         }
         es.onerror = () => {
           if (closed) return
+          reconnectAttempt++
           callbacks.on_error?.(new Error(`SSE connection error — reconnecting in ${reconnectDelay / 1000}s`))
           es?.close()
           setTimeout(() => { if (!closed) connect() }, reconnectDelay)
@@ -932,7 +940,9 @@ export class WalletSDK {
             try {
               const resp = await fetch(url)
               if (!resp.ok || !resp.body) throw new Error(`SSE connect failed: ${resp.status}`)
-              reconnectDelay = 1000 // reset on successful connect
+              if (reconnectAttempt > 0) callbacks.on_reconnect?.(reconnectAttempt)
+              reconnectDelay = 1000
+              reconnectAttempt = 0
               const reader = resp.body.getReader()
               const decoder = new TextDecoder()
               let buf = ''
@@ -953,6 +963,7 @@ export class WalletSDK {
               }
             } catch (e: any) {
               if (closed) break
+              reconnectAttempt++
               callbacks.on_error?.(new Error(`SSE dropped — reconnecting in ${reconnectDelay / 1000}s`))
               await new Promise(r => setTimeout(r, reconnectDelay))
               reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY)
