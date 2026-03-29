@@ -33,7 +33,7 @@ export async function GET(_request: NextRequest) {
     const results: Record<string, boolean> = {};
     
     for (const table of tables) {
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from(table)
         .select('id', { count: 'exact', head: true });
       
