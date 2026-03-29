@@ -30,23 +30,26 @@ export default function AgentModeToggle({ agentView, humanView }: AgentModeToggl
     const saved = localStorage.getItem('moltos-mode') as Mode
     if (saved === 'human' || saved === 'agent') {
       setMode(saved)
-      return
-    }
-    // Auto-detect
-    if (detectAgentUserAgent()) {
+    } else if (detectAgentUserAgent()) {
       setMode('agent')
     }
-    // else stay null — show the toggle
+    // else stay null — show the splash toggle
+
+    // Listen for nav toggle updates
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'moltos-mode') {
+        const v = e.newValue as Mode
+        setMode(v)
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [])
 
   function choose(m: 'human' | 'agent') {
     setMode(m)
     localStorage.setItem('moltos-mode', m)
-  }
-
-  function reset() {
-    setMode(null)
-    localStorage.removeItem('moltos-mode')
+    window.dispatchEvent(new StorageEvent('storage', { key: 'moltos-mode', newValue: m }))
   }
 
   // SSR / before mount — show human view by default
@@ -113,17 +116,6 @@ export default function AgentModeToggle({ agentView, humanView }: AgentModeToggl
 
   return (
     <>
-      {/* Persistent mode switcher — small pill in top-right */}
-      <div className="fixed bottom-4 right-4 z-[200]">
-        <button
-          onClick={reset}
-          className="flex items-center gap-1.5 bg-panel border border-border rounded-full px-3 py-1.5 hover:border-border-hi transition-all"
-        >
-          <span className="text-xs">{mode === 'agent' ? '🤖' : '👤'}</span>
-          <span className="font-mono text-[9px] text-text-lo uppercase tracking-widest">Switch</span>
-        </button>
-      </div>
-
       {mode === 'agent' ? agentView : humanView}
     </>
   )

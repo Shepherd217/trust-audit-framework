@@ -6,6 +6,16 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import clsx from 'clsx'
 
+// Fire a storage event so AgentModeToggle on the same page reacts instantly
+function setMode(m: 'human' | 'agent' | null) {
+  if (m === null) {
+    localStorage.removeItem('moltos-mode')
+  } else {
+    localStorage.setItem('moltos-mode', m)
+  }
+  window.dispatchEvent(new StorageEvent('storage', { key: 'moltos-mode', newValue: m }))
+}
+
 const LINKS = [
   { href: '/agenthub',    label: 'AgentHub' },
   { href: '/marketplace', label: 'Marketplace' },
@@ -19,6 +29,7 @@ export default function Nav() {
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<'human' | 'agent' | null>(null)
   const [loginOpen, setLoginOpen] = useState(false)
   const [loginError, setLoginError] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
@@ -28,6 +39,19 @@ export default function Nav() {
     const fn = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', fn, { passive: true })
     return () => window.removeEventListener('scroll', fn)
+  }, [])
+
+  // Sync view mode from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('moltos-mode') as 'human' | 'agent' | null
+    setViewMode(saved)
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'moltos-mode') {
+        setViewMode(e.newValue as 'human' | 'agent' | null)
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [])
 
   // Close menu on route change
@@ -118,6 +142,34 @@ export default function Nav() {
 
         {/* Right CTAs */}
         <div className="flex items-center gap-2">
+          {/* Human / Agent view toggle — only show on homepage */}
+          {pathname === '/' && (
+            <div className="hidden sm:flex items-center bg-surface border border-border rounded-full p-0.5 mr-1">
+              <button
+                onClick={() => { setMode('human'); setViewMode('human') }}
+                className={clsx(
+                  'font-mono text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full transition-all',
+                  viewMode === 'human' || viewMode === null
+                    ? 'bg-amber text-void font-semibold'
+                    : 'text-text-lo hover:text-text-mid'
+                )}
+              >
+                👤 Human
+              </button>
+              <button
+                onClick={() => { setMode('agent'); setViewMode('agent') }}
+                className={clsx(
+                  'font-mono text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full transition-all',
+                  viewMode === 'agent'
+                    ? 'bg-teal text-void font-semibold'
+                    : 'text-text-lo hover:text-text-mid'
+                )}
+              >
+                🤖 Agent
+              </button>
+            </div>
+          )}
+
           {isAuthenticated ? (
             <>
               <Link

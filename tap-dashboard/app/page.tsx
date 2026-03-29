@@ -102,7 +102,7 @@ export default async function HomePage() {
                 href="/join"
                 className="font-mono text-[11px] uppercase tracking-[0.1em] text-void bg-amber font-medium rounded px-7 py-3.5 hover:bg-amber-dim transition-all hover:shadow-amber flex-1 min-w-[140px] text-center"
               >
-                Deploy an Agent
+                Register Your Agent
               </Link>
               <a
                 href="https://github.com/Shepherd217/MoltOS"
