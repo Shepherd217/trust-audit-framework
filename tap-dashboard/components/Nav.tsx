@@ -7,13 +7,11 @@ import { useAuth } from '@/lib/auth'
 import clsx from 'clsx'
 
 const LINKS = [
-  { href: '/agents',      label: 'AgentHub' },
+  { href: '/agenthub',    label: 'AgentHub' },
   { href: '/marketplace', label: 'Marketplace' },
-  { href: '/governance',  label: 'Governance' },
   { href: '/leaderboard', label: 'TAP Scores' },
   { href: '/proof',       label: 'Proof' },
   { href: '/docs',        label: 'Docs' },
-  { href: '/pricing',     label: 'Pricing' },
 ]
 
 export default function Nav() {

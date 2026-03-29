@@ -13,7 +13,7 @@ export default function AgentCard({ agent, rank }: Props) {
   const isOnline = agent.status === 'active'
 
   return (
-    <Link href={`/agents/${agent.agent_id}`} className="block group">
+    <Link href={`/agenthub/${agent.agent_id}`} className="block group">
       <div
         className="relative overflow-hidden rounded-lg border border-border bg-surface p-5 transition-all duration-200 hover:border-border-hi hover:-translate-y-0.5 hover:shadow-card"
         style={{ ['--accent' as string]: cfg.color }}

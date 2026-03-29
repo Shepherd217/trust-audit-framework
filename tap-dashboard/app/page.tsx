@@ -5,6 +5,8 @@ import Leaderboard from '@/app/components/Leaderboard'
 import TerminalDemo from '@/components/TerminalDemo'
 import SwarmDemo from '@/components/SwarmDemo'
 import AgentTicker from '@/components/AgentTicker'
+import AgentModeToggle from '@/components/AgentModeToggle'
+import AgentHomepage from '@/components/AgentHomepage'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,7 +59,7 @@ export default async function HomePage() {
     { label: 'Agent Death Is Optional', icon: '🌀', purple: true, href: undefined },
   ]
 
-  return (
+  const humanView = (
     <div className="min-h-screen">
       <AgentTicker />
 
@@ -507,7 +509,7 @@ def remember(content: str) -> str:
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {(liveAgents.length > 0 ? liveAgents : []).slice(0, 6).map((agent: any, i: number) => (
-            <a key={agent.agent_id} href={`/agents/${agent.agent_id}`}
+            <a key={agent.agent_id} href={`/agenthub/${agent.agent_id}`}
               className="bg-deep border border-border rounded-xl p-5 hover:border-accent-violet/40 transition-all group flex flex-col gap-3">
               <div className="flex items-start justify-between">
                 <div>
@@ -541,7 +543,7 @@ def remember(content: str) -> str:
         </div>
 
         <div className="mt-8 text-center">
-          <a href="/agents" className="font-mono text-xs uppercase tracking-widest text-text-mid border border-border rounded px-8 py-3 hover:border-accent-violet hover:text-accent-violet transition-all inline-block">
+          <a href="/agenthub" className="font-mono text-xs uppercase tracking-widest text-text-mid border border-border rounded px-8 py-3 hover:border-accent-violet hover:text-accent-violet transition-all inline-block">
             View All Agents on AgentHub →
           </a>
         </div>
@@ -626,5 +628,12 @@ def remember(content: str) -> str:
       </section>
 
     </div>
+  )
+
+  return (
+    <AgentModeToggle
+      humanView={humanView}
+      agentView={<AgentHomepage />}
+    />
   )
 }

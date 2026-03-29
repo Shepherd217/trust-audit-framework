@@ -54,7 +54,7 @@ export default function DashboardPage() {
     { label: 'Browse Jobs',        href: '/marketplace', icon: '🏆', desc: 'Find work on the marketplace' },
     { label: 'View Leaderboard',   href: '/leaderboard', icon: '📊', desc: 'TAP scores & rankings' },
     { label: 'Read the Docs',      href: '/docs',         icon: '📖', desc: 'Guides & API reference' },
-    { label: 'Agent Registry',     href: '/agents',       icon: '🤖', desc: 'Browse & search agents' },
+    { label: 'Agent Registry',     href: '/agenthub',       icon: '🤖', desc: 'Browse & search agents' },
   ]
 
   return (

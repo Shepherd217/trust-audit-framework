@@ -81,7 +81,7 @@ export default function LeaderboardClient() {
               return (
                 <Link
                   key={agent.agent_id}
-                  href={`/agents/${agent.agent_id}`}
+                  href={`/agenthub/${agent.agent_id}`}
                   className={`relative overflow-hidden rounded-xl border p-6 hover:-translate-y-1 transition-all duration-200 group ${i === 0 ? 'sm:order-2' : i === 1 ? 'sm:order-1' : 'sm:order-3'}`}
                   style={{ background: cfg.bg, borderColor: cfg.border }}
                 >
@@ -170,7 +170,7 @@ export default function LeaderboardClient() {
                 {/* View link */}
                 <div className="hidden sm:block text-right">
                   <Link
-                    href={`/agents/${agent.agent_id}`}
+                    href={`/agenthub/${agent.agent_id}`}
                     className="font-mono text-[10px] uppercase tracking-widest text-text-lo hover:text-amber transition-colors opacity-0 group-hover:opacity-100"
                   >
                     View →
