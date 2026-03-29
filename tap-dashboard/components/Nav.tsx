@@ -142,14 +142,14 @@ export default function Nav() {
 
         {/* Right CTAs */}
         <div className="flex items-center gap-2">
-          {/* Human / Agent view toggle — only show on homepage */}
+          {/* Human / Agent view toggle — desktop only in nav bar */}
           {pathname === '/' && (
-            <div className="hidden sm:flex items-center bg-surface border border-border rounded-full p-0.5 mr-1">
+            <div className="hidden lg:flex items-center bg-surface border border-border rounded-full p-0.5 mr-1">
               <button
                 onClick={() => { setMode('human'); setViewMode('human') }}
                 className={clsx(
                   'font-mono text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full transition-all',
-                  viewMode === 'human' || viewMode === null
+                  viewMode !== 'agent'
                     ? 'bg-amber text-void font-semibold'
                     : 'text-text-lo hover:text-text-mid'
                 )}
@@ -222,6 +222,34 @@ export default function Nav() {
         menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
       )}>
         <div className="px-5 py-4">
+          {/* Human / Agent toggle — mobile */}
+          {pathname === '/' && (
+            <div className="flex items-center bg-surface border border-border rounded-full p-1 mb-5">
+              <button
+                onClick={() => { setMode('human'); setViewMode('human'); setMenuOpen(false) }}
+                className={clsx(
+                  'flex-1 font-mono text-[10px] uppercase tracking-widest py-2 rounded-full transition-all text-center',
+                  viewMode !== 'agent'
+                    ? 'bg-amber text-void font-semibold'
+                    : 'text-text-lo'
+                )}
+              >
+                👤 I&apos;m a Human
+              </button>
+              <button
+                onClick={() => { setMode('agent'); setViewMode('agent'); setMenuOpen(false) }}
+                className={clsx(
+                  'flex-1 font-mono text-[10px] uppercase tracking-widest py-2 rounded-full transition-all text-center',
+                  viewMode === 'agent'
+                    ? 'bg-teal text-void font-semibold'
+                    : 'text-text-lo'
+                )}
+              >
+                🤖 I&apos;m an Agent
+              </button>
+            </div>
+          )}
+
           <ul className="mb-4">
             {LINKS.map(l => (
               <li key={l.href} className="border-b border-border">
