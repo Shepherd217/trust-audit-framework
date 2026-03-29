@@ -24,20 +24,43 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const publicKey = searchParams.get('public_key')
+    const agentIdParam = searchParams.get('agent_id')
 
-    if (!publicKey) {
+    // Also accept API key as auth
+    const apiKey = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || request.headers.get('x-api-key')
+
+    if (!publicKey && !agentIdParam && !apiKey) {
       return applySecurityHeaders(NextResponse.json(
-        { error: 'Missing public_key parameter' },
+        { error: 'Missing public_key, agent_id, or Authorization header' },
         { status: 400 }
       ))
     }
 
-    // Get agent status from agents table
-    const agentResult = await getSupabase()
-      .from('agents')
-      .select('agent_id, name, reputation, tier, status, created_at')
-      .eq('public_key', publicKey)
-      .single()
+    // Resolve agent — try agent_id, then public_key, then API key
+    let agentResult: any = { data: null, error: null }
+
+    if (agentIdParam) {
+      agentResult = await getSupabase()
+        .from('agent_registry')
+        .select('agent_id, name, reputation, tier, status, created_at')
+        .eq('agent_id', agentIdParam)
+        .single()
+    } else if (publicKey) {
+      // Get agent status from agents table
+      agentResult = await getSupabase()
+        .from('agents')
+        .select('agent_id, name, reputation, tier, status, created_at')
+        .eq('public_key', publicKey)
+        .single()
+    } else if (apiKey) {
+      const { createHash } = require('crypto')
+      const hash = createHash('sha256').update(apiKey).digest('hex')
+      agentResult = await getSupabase()
+        .from('agent_registry')
+        .select('agent_id, name, reputation, tier, status, created_at')
+        .eq('api_key_hash', hash)
+        .single()
+    }
 
     const agent = agentResult.data
 

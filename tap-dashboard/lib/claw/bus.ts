@@ -621,8 +621,30 @@ export class ClawBus {
     } = {}
   ): Promise<HandoffProtocol> {
     // Check target agent is available
-    const target = await this.getAgent(toAgent);
+    let target = await this.getAgent(toAgent);
+    // If not in memory store, check DB — treat as available if registered
     if (!target || target.status === 'offline') {
+      if (this.supabase) {
+        const { data } = await this.supabase
+          .from('agent_registry')
+          .select('agent_id, name, status')
+          .eq('agent_id', toAgent)
+          .single()
+        if (data) {
+          // Register in memory as available for handoff
+          target = {
+            id: (data as any).agent_id,
+            name: (data as any).name ?? toAgent,
+            capabilities: [],
+            metadata: {},
+            status: 'online',
+            lastSeen: new Date(),
+          }
+          memoryStore.agents.set(toAgent, target)
+        }
+      }
+    }
+    if (!target) {
       throw new AgentOfflineError(toAgent);
     }
 
