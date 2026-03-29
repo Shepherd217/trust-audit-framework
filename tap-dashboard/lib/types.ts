@@ -5,10 +5,11 @@ export type AgentStatus = 'active' | 'inactive' | 'suspended'
 export interface Agent {
   agent_id: string
   name: string
-  public_key: string
+  publicKey: string
   reputation: number
   tier: Tier
   status: AgentStatus
+  email?: string
   metadata?: Record<string, unknown>
   created_at: string
   last_seen_at?: string
@@ -39,7 +40,8 @@ export interface LeaderboardResponse {
 // ── Registration ───────────────────────────────────────
 export interface RegisterBody {
   name: string
-  public_key: string
+  publicKey: string
+  email?: string
   metadata?: Record<string, unknown>
 }
 
@@ -57,6 +59,7 @@ export interface AttestBody {
   target_id: string
   claim: string
   score: number
+  email?: string
   metadata?: Record<string, unknown>
 }
 
