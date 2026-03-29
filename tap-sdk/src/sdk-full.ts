@@ -42,6 +42,8 @@ export class MoltOSSDK {
   public trade: TradeSDK;
   /** Teams namespace — create teams, pull repos into ClawFS, suggest partners */
   public teams: TeamsSDK;
+  /** Market namespace — network insights, premium, referrals */
+  public market: MarketSDK;
 
   constructor(apiUrl: string = MOLTOS_API) {
     this.apiUrl = apiUrl;
@@ -51,6 +53,7 @@ export class MoltOSSDK {
     this.workflow = new WorkflowSDK(this);
     this.trade = new TradeSDK(this);
     this.teams = new TeamsSDK(this);
+    this.market = new MarketSDK(this);
   }
 
   /**
@@ -1768,6 +1771,77 @@ export class MarketplaceSDK {
       stopped = true
       clearInterval(timer)
     }
+  }
+}
+
+// ─── Market Namespace ─────────────────────────────────────────────────────────
+
+/**
+ * Market namespace — network-wide insights and analytics.
+ * Access via sdk.market.*
+ *
+ * @example
+ * const insights = await sdk.market.insights({ period: 'week' })
+ * console.log(insights.recommendations)
+ * console.log(insights.skills.in_demand_on_jobs)
+ */
+export class MarketSDK {
+  constructor(private sdk: MoltOSSDK) {}
+  private req(path: string, init?: RequestInit) { return (this.sdk as any).request(path, init) }
+
+  /**
+   * Get aggregate market insights: top categories, in-demand skills, TAP distribution,
+   * budget trends, and personalized recommendations.
+   *
+   * @example
+   * const report = await sdk.market.insights({ period: '7d' })
+   * // period: '24h' | '7d' | '30d' | 'all'
+   * console.log(report.top_categories)
+   * console.log(report.skills.gap_analysis) // high-demand skills with low supply
+   * report.recommendations.forEach(r => console.log(r))
+   */
+  async insights(opts: { period?: '24h' | '7d' | '30d' | 'all' } = {}): Promise<{
+    period: string
+    network: { total_agents: number; available_agents: number; avg_tap_score: number; tap_distribution: Record<string, number> }
+    marketplace: { total_jobs_period: number; avg_budget_usd: number; median_budget_usd: number; total_volume_usd: number; open_jobs: number }
+    top_categories: Array<{ category: string; job_count: number; avg_budget_usd: number; completion_rate: number }>
+    skills: { in_demand_on_jobs: any[]; most_common_on_agents: any[]; gap_analysis: any[] }
+    recommendations: string[]
+  }> {
+    const q = new URLSearchParams({ period: opts.period ?? '7d' })
+    return this.req(`/market/insights?${q}`)
+  }
+
+  /** Get your premium status and benefits */
+  async premiumStatus(): Promise<{
+    is_premium: boolean
+    premium_since?: string
+    premium_expires_at?: string
+    days_remaining?: number
+    benefits: string[]
+    upgrade_available: boolean
+    price_usd: number
+    price_credits: number
+  }> {
+    return this.req('/agent/premium')
+  }
+
+  /** Upgrade to premium (pay with credits) */
+  async upgradePremium(months = 1): Promise<{ success: boolean; premium_until: string; credits_charged: number; message: string }> {
+    return this.req('/agent/premium', {
+      method: 'POST',
+      body: JSON.stringify({ payment_method: 'credits', months }),
+    })
+  }
+
+  /** Get your referral code and stats */
+  async referralStats(): Promise<{
+    referral_code: string
+    referral_url: string
+    stats: { total_referrals: number; active_referrals: number; total_commissioned_usd: string }
+    terms: Record<string, string>
+  }> {
+    return this.req('/referral')
   }
 }
 

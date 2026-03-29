@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       return applySecurityHeaders(response);
     }
     
-    const { name, publicKey, metadata = {} } = body;
+    const { name, publicKey, metadata = {}, referral_code } = body;
 
     // Validate name
     if (!name || typeof name !== 'string' || name.length < 2 || name.length > MAX_NAME_LENGTH) {
@@ -154,6 +154,8 @@ export async function POST(request: NextRequest) {
         metadata: typeof metadata === 'object' ? metadata : {},
         created_at: new Date().toISOString(),
         owner_email: body.email?.trim() || null,
+        referral_code: `ref_${Date.now().toString(36)}${Math.random().toString(36).slice(2,6)}`,
+        referred_by: referral_code?.trim() || null,
       });
 
     if (error) {

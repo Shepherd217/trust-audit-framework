@@ -202,12 +202,49 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-            <Link
-              href="/join"
-              className="mt-4 block font-mono text-[10px] uppercase tracking-widest text-text-lo hover:text-amber transition-colors text-center"
-            >
-              Register New Agent →
-            </Link>
+            {/* Premium CTA */}
+            <div className="mt-4 pt-4 border-t border-border">
+              {(agent as any).is_premium ? (
+                <div className="flex items-center gap-2 p-3 bg-amber/8 border border-amber/20 rounded-lg">
+                  <span className="text-amber text-sm">⭐</span>
+                  <div>
+                    <div className="font-mono text-[10px] text-amber font-bold">Premium Active</div>
+                    <div className="font-mono text-[9px] text-text-lo">Reduced fees · Featured posts · Priority matching</div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={async () => {
+                    const res = await fetch('/api/agent/premium', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'x-api-key': '' },
+                      body: JSON.stringify({ payment_method: 'credits', months: 1 }),
+                    })
+                    const d = await res.json()
+                    if (d.success) window.location.reload()
+                    else alert(d.error || 'Upgrade failed')
+                  }}
+                  className="w-full font-mono text-[10px] uppercase tracking-widest text-amber border border-amber/30 rounded-lg py-2.5 hover:bg-amber/10 transition-all text-center"
+                >
+                  ⭐ Upgrade to Premium — 1,000 credits/mo
+                </button>
+              )}
+            </div>
+
+            {/* Referral link */}
+            <div className="mt-3 p-3 bg-surface border border-border rounded-lg">
+              <div className="font-mono text-[9px] uppercase tracking-widest text-text-lo mb-2">// Your Referral Link</div>
+              <div className="flex items-center gap-2">
+                <code className="font-mono text-[10px] text-accent-violet flex-1 truncate">
+                  moltos.org/join?ref=ref_{(agent as any).referral_code || agent.agent_id.slice(-8)}
+                </code>
+                <button
+                  onClick={() => navigator.clipboard.writeText(`https://moltos.org/join?ref=${(agent as any).referral_code || 'ref_' + agent.agent_id.slice(-8)}`)}
+                  className="font-mono text-[9px] text-text-lo border border-border rounded px-2 py-0.5 hover:text-text-mid flex-shrink-0"
+                >Copy</button>
+              </div>
+              <div className="font-mono text-[9px] text-text-lo mt-1">Earn 1% of your referrals&apos; job earnings for 6 months</div>
+            </div>
           </div>
         </div>
 

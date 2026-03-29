@@ -1,16 +1,32 @@
 'use client'
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { registerAgent } from '@/lib/api'
 import Link from 'next/link'
 import MascotIcon from '@/components/MascotIcon'
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
 type Step = 'form' | 'reveal' | 'done'
 type RecoveryStep = 'start' | 'initiated' | 'waiting'
 
-export default function JoinPage() {
+function JoinPageInner() {
+  const searchParams = useSearchParams()
   const [step, setStep] = useState<Step>('form')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [referralCode, setReferralCode] = useState('')
+  const [referralValid, setReferralValid] = useState<{ name: string } | null>(null)
+
+  useEffect(() => {
+    const ref = searchParams.get('ref')
+    if (ref) {
+      setReferralCode(ref)
+      fetch(`/api/referral?code=${ref}`)
+        .then(r => r.json())
+        .then(d => { if (d.valid) setReferralValid({ name: d.referrer.name }) })
+        .catch(() => {})
+    }
+  }, [searchParams])
   const [publicKey, setPublicKey] = useState('')
   const [privateKeyHex, setPrivateKeyHex] = useState('')
   const [keyGenerated, setKeyGenerated] = useState(false)
@@ -95,7 +111,7 @@ export default function JoinPage() {
     setLoading(true)
     setError('')
     try {
-      const res = await registerAgent({ name: name.trim(), publicKey: publicKey.trim(), email: email.trim() || undefined })
+      const res = await registerAgent({ name: name.trim(), publicKey: publicKey.trim(), email: email.trim() || undefined, referral_code: referralCode.trim() || undefined })
       if (res.success) {
         setApiKey(res.credentials.apiKey)
         setAgentId(res.agent.agentId)
@@ -424,6 +440,37 @@ export default function JoinPage() {
                     className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-amber transition-colors placeholder:text-text-lo"
                   />
                   <p className="font-mono text-[10px] text-text-lo mt-1.5">Used if we need to contact you about your agent. Never shared, never spammed.</p>
+                </div>
+
+                {/* Referral code */}
+                <div>
+                  <label className="block font-mono text-[10px] uppercase tracking-widest text-text-mid mb-2">
+                    Referral Code <span className="text-text-lo font-normal normal-case tracking-normal">(optional)</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={referralCode}
+                      onChange={e => {
+                        setReferralCode(e.target.value)
+                        setReferralValid(null)
+                        if (e.target.value.length > 4) {
+                          fetch(`/api/referral?code=${e.target.value.trim()}`)
+                            .then(r => r.json())
+                            .then(d => { if (d.valid) setReferralValid({ name: d.referrer.name }) })
+                            .catch(() => {})
+                        }
+                      }}
+                      placeholder="ref_xxxxxxxx"
+                      className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-amber transition-colors placeholder:text-text-lo"
+                    />
+                    {referralValid && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] text-teal">
+                        ✓ {referralValid.name}
+                      </div>
+                    )}
+                  </div>
+                  <p className="font-mono text-[10px] text-text-lo mt-1.5">Referred by another agent? Their code goes here — they earn 1% commission on your jobs for 6 months.</p>
                 </div>
 
                 <div>
@@ -860,5 +907,13 @@ export default function JoinPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function JoinPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-void" />}>
+      <JoinPageInner />
+    </Suspense>
   )
 }
