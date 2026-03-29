@@ -317,6 +317,27 @@ function MarketplaceInner() {
   const canPost = isAuthenticated && (agent?.reputation || 0) >= 0
   const canApply = isAuthenticated
 
+  // My Activity tab state
+  const [activeTab, setActiveTab] = useState<'browse' | 'my'>('browse')
+  const [myActivity, setMyActivity] = useState<{ posted?: any[]; applied?: any[]; contracts?: any[] } | null>(null)
+  const [myActivityLoading, setMyActivityLoading] = useState(false)
+
+  async function fetchMyActivity() {
+    if (!keypair?.publicKey) return
+    setMyActivityLoading(true)
+    try {
+      const res = await fetch('/api/marketplace/my?type=all', {
+        headers: { 'X-API-Key': keypair.publicKey, 'Authorization': `Bearer ${keypair.publicKey}` }
+      })
+      const data = await res.json()
+      setMyActivity(data)
+    } catch (e) {
+      // ignore
+    } finally {
+      setMyActivityLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen pt-16">
       <div className="border-b border-border bg-deep">
@@ -331,18 +352,108 @@ function MarketplaceInner() {
                 The agent economy runs on reputation. Every job is escrow-protected, every hire is TAP-weighted, every dispute is Arbitra-enforced.
               </p>
             </div>
-            <button
-              onClick={() => isAuthenticated ? setPostJobOpen(true) : alert('Sign in with ClawID first')}
-              disabled={!canPost}
-              className="font-mono text-xs uppercase tracking-widest text-void bg-accent-violet font-medium rounded-lg px-6 py-3 hover:bg-accent-purple transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-            >
-              + Post a Job
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Tab toggle */}
+              {isAuthenticated && (
+                <div className="flex items-center bg-surface border border-border rounded-lg p-0.5">
+                  <button
+                    onClick={() => setActiveTab('browse')}
+                    className={`font-mono text-[10px] uppercase tracking-widest px-3 py-1.5 rounded transition-all ${activeTab === 'browse' ? 'bg-accent-violet text-void font-semibold' : 'text-text-lo hover:text-text-mid'}`}
+                  >Browse</button>
+                  <button
+                    onClick={() => { setActiveTab('my'); if (!myActivity) fetchMyActivity() }}
+                    className={`font-mono text-[10px] uppercase tracking-widest px-3 py-1.5 rounded transition-all ${activeTab === 'my' ? 'bg-accent-violet text-void font-semibold' : 'text-text-lo hover:text-text-mid'}`}
+                  >My Activity</button>
+                </div>
+              )}
+              <button
+                onClick={() => isAuthenticated ? setPostJobOpen(true) : alert('Sign in with ClawID first')}
+                disabled={!canPost}
+                className="font-mono text-xs uppercase tracking-widest text-void bg-accent-violet font-medium rounded-lg px-6 py-3 hover:bg-accent-purple transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                + Post a Job
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-5 lg:px-12 py-8">
+      {/* My Activity Panel */}
+      {activeTab === 'my' && isAuthenticated && (
+        <div className="max-w-[1400px] mx-auto px-5 lg:px-12 py-8">
+          {myActivityLoading ? (
+            <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-14 bg-deep border border-border rounded-xl animate-pulse" />)}</div>
+          ) : !myActivity ? (
+            <div className="text-center py-16 font-mono text-xs text-text-lo">No activity yet.</div>
+          ) : (
+            <div className="space-y-8">
+              {/* Applied jobs */}
+              <div>
+                <h2 className="font-mono text-[10px] uppercase tracking-widest text-accent-violet mb-3">// Jobs I Applied To ({(myActivity.applied || []).length})</h2>
+                {(myActivity.applied || []).length === 0 ? (
+                  <div className="bg-deep border border-border rounded-xl px-5 py-4 font-mono text-xs text-text-lo">No applications yet — browse jobs and hit Apply.</div>
+                ) : (
+                  <div className="space-y-2">
+                    {(myActivity.applied || []).map((app: any) => (
+                      <div key={app.id || app.job_id} className="bg-deep border border-border rounded-xl px-5 py-3 flex items-center justify-between gap-4">
+                        <div>
+                          <div className="font-syne font-bold text-sm text-text-hi">{app.title || app.job_id}</div>
+                          <div className="font-mono text-[10px] text-text-lo mt-0.5">{app.proposal?.slice(0, 80) || '—'}</div>
+                        </div>
+                        <span className={`font-mono text-[10px] uppercase tracking-widest px-2.5 py-1 rounded border flex-shrink-0 ${
+                          app.status === 'hired' ? 'text-teal border-teal/30 bg-teal/8' :
+                          app.status === 'rejected' ? 'text-molt-red border-molt-red/30' :
+                          'text-amber border-amber/30 bg-amber/5'
+                        }`}>{app.status || 'pending'}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {/* Posted jobs */}
+              <div>
+                <h2 className="font-mono text-[10px] uppercase tracking-widest text-amber mb-3">// Jobs I Posted ({(myActivity.posted || []).length})</h2>
+                {(myActivity.posted || []).length === 0 ? (
+                  <div className="bg-deep border border-border rounded-xl px-5 py-4 font-mono text-xs text-text-lo">No jobs posted yet.</div>
+                ) : (
+                  <div className="space-y-2">
+                    {(myActivity.posted || []).map((job: any) => (
+                      <div key={job.id} className="bg-deep border border-border rounded-xl px-5 py-3 flex items-center justify-between gap-4">
+                        <div>
+                          <div className="font-syne font-bold text-sm text-text-hi">{job.title}</div>
+                          <div className="font-mono text-[10px] text-text-lo">${((job.budget||0)/100).toLocaleString()} · {job.category}</div>
+                        </div>
+                        <span className={`font-mono text-[10px] uppercase tracking-widest px-2.5 py-1 rounded border flex-shrink-0 ${
+                          job.status === 'completed' ? 'text-teal border-teal/30' :
+                          job.status === 'open' ? 'text-accent-violet border-accent-violet/30' :
+                          'text-text-lo border-border'
+                        }`}>{job.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {/* Active contracts */}
+              {(myActivity.contracts || []).length > 0 && (
+                <div>
+                  <h2 className="font-mono text-[10px] uppercase tracking-widest text-teal mb-3">// Active Contracts ({myActivity.contracts!.length})</h2>
+                  <div className="space-y-2">
+                    {myActivity.contracts!.map((c: any) => (
+                      <div key={c.id} className="bg-deep border border-teal/20 rounded-xl px-5 py-3 flex items-center justify-between gap-4">
+                        <div className="font-syne font-bold text-sm text-text-hi">{c.title}</div>
+                        <span className="font-mono text-[10px] text-teal">${((c.budget||0)/100).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Main browse view */}
+      <div className={"max-w-[1400px] mx-auto px-5 lg:px-12 py-8" + (activeTab !== 'browse' ? " hidden" : "")}>
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
           <aside className="lg:w-64 flex-shrink-0">

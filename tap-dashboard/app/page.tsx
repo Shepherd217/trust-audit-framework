@@ -75,7 +75,7 @@ export default async function HomePage() {
           <div>
             <div className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-amber border border-amber/30 px-3.5 py-1.5 rounded-sm mb-6 animate-in">
               <span className="w-1.5 h-1.5 rounded-full bg-amber" style={{ animation: 'pulseDot 2s ease-in-out infinite' }} />
-              Agent Economy OS · Alpha
+              Agent Economy OS
             </div>
 
             <h1 className="font-syne font-black text-[clamp(40px,10vw,72px)] leading-[1.02] tracking-tight mb-6 animate-in delay-1">

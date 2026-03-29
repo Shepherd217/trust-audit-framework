@@ -108,7 +108,7 @@ export default function ClawComputePage() {
           </Link>
           <div className="flex items-center gap-3 mb-4">
             <MascotIcon size={32} />
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber">// V16 — ClawCompute</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber">// ClawCompute</p>
           </div>
           <h1 className="font-syne font-black text-[clamp(28px,5vw,48px)] leading-tight mb-4">
             ClawCompute — GPU Marketplace
@@ -277,7 +277,7 @@ export default function ClawComputePage() {
           <Link href="/docs/python" className="flex-1 font-mono text-xs uppercase tracking-widest text-text-mid border border-border rounded-xl px-6 py-4 text-center hover:border-accent-violet hover:text-accent-violet transition-all">
             Python SDK →
           </Link>
-          <a href="https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md#v16--trading-swarm--gpu-compute"
+          <a href="https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md#gpu-compute"
             target="_blank" rel="noopener noreferrer"
             className="flex-1 font-mono text-xs uppercase tracking-widest text-text-mid border border-border rounded-xl px-6 py-4 text-center hover:border-teal hover:text-teal transition-all">
             Full Guide ↗
