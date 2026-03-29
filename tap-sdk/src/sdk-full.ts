@@ -883,8 +883,9 @@ export class WalletSDK {
     on_escrow_release?:(event: WalletEvent) => void
     on_any?:           (event: WalletEvent) => void
     on_error?:         (err: Error) => void
-    /** Called each time the connection is successfully (re)established after a drop */
     on_reconnect?:     (attempt: number) => void
+    /** Only fire callbacks for these event types. e.g. ['credit', 'transfer_in'] */
+    types?:            Array<'credit' | 'debit' | 'transfer_in' | 'transfer_out' | 'withdrawal' | 'escrow_lock' | 'escrow_release'>
   }): Promise<() => void> {
     const apiKey = (this.sdk as any).apiKey
     if (!apiKey) throw new Error('SDK not initialized — call sdk.init() first')
@@ -907,6 +908,11 @@ export class WalletSDK {
     }
 
     function dispatch(event: WalletEvent) {
+      // Apply type filter if set
+      if (callbacks.types?.length) {
+        const shortType = event.type.replace('wallet.', '') as any
+        if (!callbacks.types.includes(shortType)) return
+      }
       const handler = HANDLER_MAP[event.type]
       if (handler && callbacks[handler]) (callbacks[handler] as any)(event)
       callbacks.on_any?.(event)
@@ -1671,6 +1677,39 @@ export class TeamsSDK {
       body: JSON.stringify({ agent_id: agentId }),
     })
   }
+
+  /**
+   * Auto-invite the top N agents from suggest_partners() in one call.
+   * Finds the best skill/TAP matches and sends them all invites.
+   *
+   * @example
+   * await sdk.teams.auto_invite('team_xyz', {
+   *   skills: ['quantitative-trading', 'python'],
+   *   min_tap: 30,
+   *   top: 3,
+   *   message: 'Join our quant swarm — recurring trading contracts lined up.'
+   * })
+   */
+  async auto_invite(teamId: string, opts: {
+    skills?: string[]
+    min_tap?: number
+    available_only?: boolean
+    top?: number
+    message?: string
+  }): Promise<Array<{ agent_id: string; name: string; match_score: number; invited: boolean; error?: string }>> {
+    const { top = 3, message, ...searchOpts } = opts
+    const partners = await this.suggest_partners({ ...searchOpts, limit: top })
+    const results = []
+    for (const p of partners.slice(0, top)) {
+      try {
+        await this.invite(teamId, p.agent_id, { message })
+        results.push({ agent_id: p.agent_id, name: p.name, match_score: p.match_score, invited: true })
+      } catch (e: any) {
+        results.push({ agent_id: p.agent_id, name: p.name, match_score: p.match_score, invited: false, error: e?.message })
+      }
+    }
+    return results
+  }
 }
 
 // ─── Marketplace Namespace ────────────────────────────────────────────────────
@@ -2280,6 +2319,38 @@ export class LangChainSDK {
       snapshot_id: snap.snapshot?.id ?? snap.id ?? 'unknown',
       merkle_root: snap.snapshot?.merkle_root ?? snap.merkle_root ?? '',
       path: `/agents/${this.agentId}/langchain/`,
+    }
+  }
+
+  /**
+   * Chain multiple LangChain-compatible tools in sequence.
+   * Output of each tool is passed as input to the next.
+   * All intermediate results are logged to ClawFS.
+   *
+   * @example
+   * const pipeline = sdk.langchain.chainTools([fetchTool, analyzeTool, summarizeTool])
+   * const result = await pipeline('BTC/USD')
+   * // fetchTool('BTC/USD') → analyzeTool(fetchResult) → summarizeTool(analyzeResult)
+   */
+  chainTools(tools: Array<{ call: (input: string) => Promise<string> }>): (input: string) => Promise<string> {
+    const sdk = this.sdk
+    const agentId = this.agentId
+    return async (input: string): Promise<string> => {
+      let current = input
+      const log: Array<{ tool: number; input: string; output: string }> = []
+      for (let i = 0; i < tools.length; i++) {
+        const output = await tools[i].call(current)
+        log.push({ tool: i, input: current, output: String(output).slice(0, 500) })
+        current = String(output)
+      }
+      // Log the chain execution
+      try {
+        await (sdk as any).clawfsWrite(
+          `/agents/${agentId}/langchain/chain-logs/chain_${Date.now()}.json`,
+          JSON.stringify({ tools_count: tools.length, log, final_output: current.slice(0, 1000) })
+        )
+      } catch {}
+      return current
     }
   }
 }
