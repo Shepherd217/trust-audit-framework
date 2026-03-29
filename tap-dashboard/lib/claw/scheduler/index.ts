@@ -455,7 +455,8 @@ export async function createWorkflow(
     node_count: nodes.length,
     is_valid: true,
     status: 'active',
-    owner_agent_id: ownerId || 'system',
+    // owner_agent_id is a UUID — only set if provided and looks like a UUID
+    ...(ownerId && /^[0-9a-f-]{36}$/.test(ownerId) ? { owner_agent_id: ownerId } : {}),
     // Store full definition as JSON blob
     definition: {
       nodes,
