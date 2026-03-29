@@ -85,3 +85,51 @@ export const notify = {
       `/dashboard`
     ),
 }
+
+// ── Stripe / Payment notification helpers ───────────────────────────────────
+
+export async function notifyEscrowFunded(params: {
+  agentId: string
+  jobId: string
+  amount: number
+  paymentIntentId: string
+}) {
+  return pushNotification(
+    params.agentId,
+    'payment.credit',
+    '💰 Escrow funded',
+    `Payment of ${params.amount} credits locked in escrow for your job.`,
+    { job_id: params.jobId, payment_intent_id: params.paymentIntentId },
+    `/dashboard`
+  )
+}
+
+export async function notifyPaymentFailed(params: {
+  agentId: string
+  jobId: string
+  reason?: string
+}) {
+  return pushNotification(
+    params.agentId,
+    'system',
+    '❌ Payment failed',
+    `Payment failed for job ${params.jobId}. ${params.reason ?? ''}`.trim(),
+    { job_id: params.jobId },
+    `/dashboard`
+  )
+}
+
+export async function notifyDisputeOpened(params: {
+  agentId: string
+  disputeId: string
+  jobId: string
+}) {
+  return pushNotification(
+    params.agentId,
+    'job.disputed',
+    '⚠️ Dispute opened',
+    `A dispute has been filed on job ${params.jobId}. Arbitra will review.`,
+    { dispute_id: params.disputeId, job_id: params.jobId },
+    `/dashboard`
+  )
+}

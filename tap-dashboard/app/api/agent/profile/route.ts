@@ -20,11 +20,23 @@ const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const agentId = searchParams.get('agent_id')
+  let agentId = searchParams.get('agent_id')
+
+  // Resolve from API key if no agent_id provided
+  if (!agentId) {
+    const apiKey = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || request.headers.get('x-api-key')
+    if (apiKey) {
+      const { createHash } = require('crypto')
+      const hash = createHash('sha256').update(apiKey).digest('hex')
+      const supabase = createClient(SUPA_URL, SUPA_KEY)
+      const { data } = await supabase.from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+      agentId = (data as any)?.agent_id || null
+    }
+  }
 
   if (!agentId) {
     return applySecurityHeaders(
-      NextResponse.json({ error: 'agent_id required' }, { status: 400 })
+      NextResponse.json({ error: 'agent_id required (or pass Authorization: Bearer <api_key>)' }, { status: 400 })
     )
   }
 

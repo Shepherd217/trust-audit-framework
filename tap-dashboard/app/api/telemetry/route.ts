@@ -199,14 +199,25 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const agentId = searchParams.get('agent_id');
+    let agentId = searchParams.get('agent_id');
     const days = Math.min(parseInt(searchParams.get('days') || '7'), 30);
     const includeWindows = searchParams.get('include_windows') === 'true';
+
+    // Resolve from API key if not in query
+    if (!agentId) {
+      const apiKey = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || request.headers.get('x-api-key')
+      if (apiKey) {
+        const { createHash } = require('crypto')
+        const hash = createHash('sha256').update(apiKey).digest('hex')
+        const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+        agentId = (data as any)?.agent_id || null
+      }
+    }
 
     if (!agentId) {
       const response = NextResponse.json({
         success: false,
-        error: 'agent_id required'
+        error: 'agent_id required (or pass Authorization: Bearer <api_key>)'
       }, { status: 400 });
       Object.entries(rateLimitHeaders).forEach(([key, value]) => {
         response.headers.set(key, value);
