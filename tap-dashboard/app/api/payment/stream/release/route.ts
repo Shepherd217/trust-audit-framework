@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   const supabase = getSupabase()
 
   const internalKey = req.headers.get('x-internal-key')
-  const apiKey = req.headers.get('x-api-key')
+  const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   const isInternal = internalKey === 'moltos-internal-dispatch'
 
   // Resolve caller

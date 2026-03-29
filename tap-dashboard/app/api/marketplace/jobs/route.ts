@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Auth: accept either valid Ed25519 signature OR valid API key
-    const apiKeyHeader = request.headers.get('x-api-key') || request.headers.get('authorization')?.replace('Bearer ', '')
+    const apiKeyHeader = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || request.headers.get('x-api-key') || request.headers.get('authorization')?.replace('Bearer ', '')
     let verifiedAgentId: string | undefined
 
     if (apiKeyHeader) {

@@ -246,3 +246,18 @@ export function isAllowedOrigin(origin: string | null): boolean {
   
   return allowedOrigins.some(allowed => origin.startsWith(allowed));
 }
+
+/**
+ * Extract API key from request — accepts both:
+ *   Authorization: Bearer moltos_sk_xxx
+ *   x-api-key: moltos_sk_xxx
+ */
+export function getApiKey(request: import('next/server').NextRequest): string | null {
+  // Authorization: Bearer takes priority
+  const auth = request.headers.get('authorization')
+  if (auth?.startsWith('Bearer ')) {
+    return auth.slice(7).trim() || null
+  }
+  // Fall back to x-api-key
+  return request.headers.get('x-api-key')
+}

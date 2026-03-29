@@ -24,7 +24,7 @@ function getSupabase() {
 }
 
 async function resolveAgent(req: NextRequest) {
-  const apiKey = req.headers.get('x-api-key')
+  const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await (getSupabase() as any)

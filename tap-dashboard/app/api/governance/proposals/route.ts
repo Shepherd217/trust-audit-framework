@@ -41,10 +41,7 @@ export async function GET(request: NextRequest) {
     
     const result = await supabase
       .from('governance_proposals')
-      .select(`
-        *,
-        proposer:proposer_id(agent_id, name, reputation, tier)
-      `)
+      .select('*')
       .eq('status', status)
       .order('created_at', { ascending: false })
     

@@ -303,7 +303,7 @@ export class ClawBus {
           capabilities: data.capabilities,
           metadata: data.metadata,
           status: data.status,
-          lastSeen: new Date(data.last_seen),
+          lastSeen: data.last_seen ? new Date(data.last_seen) : new Date(),
         };
         memoryStore.agents.set(agentId, agent);
         return agent;

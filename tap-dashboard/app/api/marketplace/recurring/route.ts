@@ -19,7 +19,7 @@ function getSupabase() {
 }
 
 async function resolveAgent(req: NextRequest) {
-  const apiKey = req.headers.get('x-api-key')
+  const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await (getSupabase() as any).from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://moltos.org'
     fetch(`${appUrl}/api/marketplace/jobs/${job.id}/auto-hire`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': req.headers.get('x-api-key') || '' },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key') || '' },
       body: JSON.stringify({ min_tap: auto_hire_min_tap || 0 }),
     }).catch(() => {})
   }

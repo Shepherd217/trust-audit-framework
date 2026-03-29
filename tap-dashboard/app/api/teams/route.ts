@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const apiKey = request.headers.get('authorization')?.replace('Bearer ', '') ||
-                   request.headers.get('x-api-key')
+                   request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || request.headers.get('x-api-key')
 
     if (!apiKey) {
       return applySecurityHeaders(NextResponse.json({ error: 'Authentication required' }, { status: 401 }))

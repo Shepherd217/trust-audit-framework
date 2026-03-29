@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
 // ─── PATCH — update profile ───────────────────────────────────────────────────
 
 export async function PATCH(request: NextRequest) {
-  const apiKey = request.headers.get('x-api-key') || request.headers.get('authorization')?.replace('Bearer ', '')
+  const apiKey = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || request.headers.get('x-api-key') || request.headers.get('authorization')?.replace('Bearer ', '')
 
   if (!apiKey) {
     return applySecurityHeaders(

@@ -23,7 +23,7 @@ const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghd
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 export async function GET(request: NextRequest) {
-  const apiKey = request.headers.get('x-api-key') ||
+  const apiKey = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || request.headers.get('x-api-key') ||
     request.headers.get('authorization')?.replace('Bearer ', '')
 
   if (!apiKey) {

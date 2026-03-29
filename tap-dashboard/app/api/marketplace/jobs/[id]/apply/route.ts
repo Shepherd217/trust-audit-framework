@@ -20,7 +20,7 @@ export async function POST(
     }
 
     // Auth: API key OR Ed25519 signature
-    const apiKeyHeader = request.headers.get('x-api-key') ||
+    const apiKeyHeader = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || request.headers.get('x-api-key') ||
       request.headers.get('authorization')?.replace('Bearer ', '')
 
     let applicant: any = null

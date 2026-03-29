@@ -28,7 +28,7 @@ async function resolveAgentId(apiKey: string): Promise<string | null> {
 export async function GET(request: NextRequest) {
   try {
     // Get API key from header (X-API-Key or Bearer)
-    const xApiKey = request.headers.get('x-api-key');
+    const xApiKey = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || request.headers.get('x-api-key');
     const authHeader = request.headers.get('authorization');
     const apiKey = xApiKey || authHeader?.replace('Bearer ', '');
 
