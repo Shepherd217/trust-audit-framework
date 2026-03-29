@@ -743,12 +743,11 @@ async function testClawID() {
     const challengeHash = createHash('sha256').update(challenge).digest('hex')
     const { signature, timestamp } = agentKeys.sign({ path: '/clawid/verify', content_hash: challengeHash })
 
-    // Verify
+    // Verify — endpoint uses camelCase publicKey
     const { status: vS, data: vD } = await req('POST', '/api/clawid/verify', {
       agent_id: agentId, challenge,
-      public_key: agentKeys.pubHex,
+      publicKey: agentKeys.pubHex,
       signature, timestamp,
-      content_hash: challengeHash,
     })
     vS === 200 ? c.pass(`verify → 200: valid=${vD.valid}`) : c.warn(`verify → ${vS}: ${JSON.stringify(vD).slice(0,80)}`)
   }
@@ -898,6 +897,29 @@ async function main() {
   } catch (e: any) {
     console.error('Setup failed:', e.message)
     process.exit(1)
+  }
+
+  // Bootstrap agent rep before arbitra test (needs 100 rep to file dispute)
+  c.section('Bootstrap — Earn reputation for tests')
+  try {
+    for (const task of ['write_memory', 'take_snapshot', 'verify_whoami', 'post_job']) {
+      const { status } = await req('POST', '/api/bootstrap/complete', { task_type: task }, apiKey)
+      if (status === 200) c.pass(`bootstrap ${task}`)
+    }
+    // Also directly bump reputation in DB for test purposes
+    if (SKEY) {
+      await fetch(`${SUPABASE}/rest/v1/agent_registry?agent_id=eq.${agentId}`, {
+        method: 'PATCH',
+        headers: {
+          apikey: SKEY, Authorization: `Bearer ${SKEY}`,
+          'Content-Type': 'application/json', Prefer: 'return=representation'
+        },
+        body: JSON.stringify({ reputation: 150 })
+      })
+      c.pass('Set test agent reputation to 150')
+    }
+  } catch (e: any) {
+    c.warn(`Bootstrap failed: ${e.message}`)
   }
 
   try {

@@ -445,23 +445,28 @@ export async function createWorkflow(
     startNodeId = nodes[0].id;
   }
   
-  // Build workflow object
+  // Build workflow object — map to DB schema (definition JSON blob, not separate edges/nodes columns)
   const workflowId = generateId();
   const workflow: any = {
-    id: workflowId,
+    workflow_id: workflowId,
     name: definition.name,
     description: definition.description,
-    version: 1,
-    nodes,
-    edges,
-    start_node_id: startNodeId!,
-    global_timeout_ms: definition.globalTimeoutMs,
-    max_concurrent_nodes: definition.maxConcurrentNodes,
-    default_retry_policy: definition.defaultRetryPolicy,
-    owner_id: ownerId || 'system',
-    budget_limit: definition.budgetLimit,
-    payment_token: definition.paymentToken,
-    is_active: true,
+    version: '1.0',
+    node_count: nodes.length,
+    is_valid: true,
+    status: 'active',
+    // Store full definition as JSON blob
+    definition: {
+      nodes,
+      edges,
+      startNodeId: startNodeId!,
+      globalTimeoutMs: definition.globalTimeoutMs,
+      maxConcurrentNodes: definition.maxConcurrentNodes,
+      defaultRetryPolicy: definition.defaultRetryPolicy,
+      budgetLimit: definition.budgetLimit,
+      triggers: (definition as any).triggers,
+    },
+    metadata: { owner_id: ownerId || 'system' },
   };
   
   // Store in Supabase
