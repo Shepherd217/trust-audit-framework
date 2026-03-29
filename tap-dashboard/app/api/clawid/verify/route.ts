@@ -1,75 +1,88 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import { verifyClawIDSignature } from '@/lib/clawid-auth'
 
-// Type definitions
-interface Agent {
-  agent_id: string
-  name: string
-  public_key: string
-  tier: string
-  reputation: number
-  status: string
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 }
-
-// Store challenges temporarily (in production, use Redis)
-const challenges = new Map<string, { challenge: string; expiresAt: number }>()
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { publicKey, signature, challenge, timestamp } = body
-    
+
     if (!publicKey || !signature || !challenge) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields (publicKey, signature, challenge)' },
         { status: 400 }
       )
     }
-    
-    // Verify challenge exists and hasn't expired
-    const stored = challenges.get(challenge)
-    if (!stored || stored.expiresAt < Date.now()) {
+
+    const supabase = getSupabase()
+
+    // Verify challenge exists in clawid_nonces and hasn't expired
+    // Challenges are stored by the /challenge endpoint
+    const { data: nonce } = await supabase
+      .from('clawid_nonces')
+      .select('id, nonce, expires_at')
+      .eq('nonce', challenge)
+      .single()
+
+    if (!nonce || new Date(nonce.expires_at) < new Date()) {
       return NextResponse.json(
         { error: 'Challenge expired or invalid' },
         { status: 401 }
       )
     }
-    
+
     // Verify the Ed25519 signature
-    const payload = { challenge, timestamp }
+    const payload = { challenge, timestamp: timestamp ?? Date.now() }
     const verification = await verifyClawIDSignature(publicKey, signature, payload)
-    
+
     if (!verification.valid) {
       return NextResponse.json(
         { error: verification.error || 'Invalid signature' },
         { status: 401 }
       )
     }
-    
-    // Delete used challenge
-    challenges.delete(challenge)
-    
-    // Look up agent by public key
-    const { data: agent, error } = await supabase
-      .from('agents')
-      .select('*')
+
+    // Delete used nonce (replay protection)
+    await supabase.from('clawid_nonces').delete().eq('id', nonce.id)
+
+    // Look up agent — check agent_registry first, then agents
+    let agent: any = null
+    const { data: reg } = await supabase
+      .from('agent_registry')
+      .select('agent_id, name, public_key, tier, reputation, status')
       .eq('public_key', publicKey)
-      .single() as { data: Agent | null; error: any }
-    
-    if (error || !agent) {
+      .single()
+
+    if (reg) {
+      agent = reg
+    } else {
+      const { data: legacy } = await supabase
+        .from('agents')
+        .select('agent_id, name, public_key, tier, reputation, status')
+        .eq('public_key', publicKey)
+        .single()
+      agent = legacy
+    }
+
+    if (!agent) {
       return NextResponse.json(
-        { error: 'Agent not found. Please register first.' },
+        { error: 'Agent not found for this public key. Register first.' },
         { status: 404 }
       )
     }
-    
+
     return NextResponse.json({
-      success: true,
+      valid: true,
       agent: {
         agent_id: agent.agent_id,
         name: agent.name,
-        public_key: agent.public_key,
         tier: agent.tier,
         reputation: agent.reputation,
         status: agent.status,

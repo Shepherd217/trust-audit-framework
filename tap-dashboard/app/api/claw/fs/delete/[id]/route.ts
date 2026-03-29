@@ -15,11 +15,22 @@ export async function DELETE(
       );
     }
     
-    // Get agent ID from header
-    const agentId = request.headers.get('X-Agent-ID');
+    // Resolve agent from API key or X-Agent-ID header
+    let agentId = request.headers.get('X-Agent-ID');
+    if (!agentId) {
+      const apiKey = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || request.headers.get('x-api-key')
+      if (apiKey) {
+        const { createHash } = require('crypto')
+        const { createClient } = require('@supabase/supabase-js')
+        const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+        const hash = createHash('sha256').update(apiKey).digest('hex')
+        const { data } = await sb.from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+        agentId = data?.agent_id || null
+      }
+    }
     if (!agentId) {
       return NextResponse.json(
-        { error: 'Missing X-Agent-ID header' },
+        { error: 'Unauthorized — pass Authorization: Bearer <api_key> or X-Agent-ID' },
         { status: 401 }
       );
     }

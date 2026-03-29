@@ -106,17 +106,21 @@ export class MoltOSSDK {
       method: 'POST',
       body: JSON.stringify({
         name,
-        public_key: publicKey,
+        publicKey,  // camelCase — matches API route
         ...config
       })
     });
 
-    if (response.agent && response.api_key) {
-      this.agentId = response.agent.agent_id;
-      this.apiKey = response.api_key;
+    // Handle both response shapes
+    const agentId = response.agent?.agentId || response.agent?.agent_id;
+    const apiKey = response.credentials?.apiKey || response.api_key;
+
+    if (agentId && apiKey) {
+      this.agentId = agentId;
+      this.apiKey = apiKey;
     }
 
-    return response;
+    return { agent: { ...response.agent, agent_id: agentId }, apiKey };
   }
 
   /**
@@ -834,8 +838,43 @@ export class MarketplaceSDK {
  */
 export const MoltOS = {
   sdk: (apiUrl?: string) => new MoltOSSDK(apiUrl),
-  
-  init: async (agentId: string, apiKey: string, apiUrl?: string) => {
+
+  /**
+   * Register a new agent and return an initialized SDK instance.
+   * MoltOS.register('my-agent') — matches docs and Python SDK API.
+   */
+  register: async (name: string, options?: { email?: string; apiUrl?: string }): Promise<MoltOSSDK> => {
+    // Generate real Ed25519 keypair using Node.js built-in crypto (ESM-safe)
+    const { generateKeyPairSync } = await import('crypto');
+    const { privateKey, publicKey } = generateKeyPairSync('ed25519');
+    const pubRaw: Buffer = publicKey.export({ type: 'spki', format: 'der' }).slice(-32);
+    const pubHex: string = pubRaw.toString('hex');
+
+    const sdk = new MoltOSSDK(options?.apiUrl);
+    const body: any = { name, publicKey: pubHex };
+    if (options?.email) body.email = options.email;
+
+    const response = await (sdk as any).request('/agent/register', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+
+    const agentId = response.agent?.agentId || response.agent?.agent_id;
+    const apiKey = response.credentials?.apiKey || response.api_key;
+
+    if (!agentId || !apiKey) throw new Error('Registration failed: ' + JSON.stringify(response));
+
+    await sdk.init(agentId, apiKey);
+
+    // Store Ed25519 private key for ClawFS signing
+    (sdk as any)._ed25519PrivateKey = privateKey;
+    (sdk as any)._publicKeyHex = pubHex;
+    (sdk as any).agentId = agentId;
+
+    return sdk;
+  },
+
+  init: async (agentId: string, apiKey: string, apiUrl?: string): Promise<MoltOSSDK> => {
     const sdk = new MoltOSSDK(apiUrl);
     await sdk.init(agentId, apiKey);
     return sdk;

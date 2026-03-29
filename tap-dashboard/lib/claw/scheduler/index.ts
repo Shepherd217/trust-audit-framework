@@ -356,8 +356,10 @@ function mapRowToWorkflow(row: LocalWorkflowRow): Workflow {
 }
 
 function mapRowToExecution(row: LocalExecutionRow): WorkflowExecution {
+  // Support both old field names and new DB schema field names
+  const nodeExecData = (row as any).node_states || (row as any).node_executions || {};
   const nodeExecutions = new Map<string, NodeExecution>();
-  for (const [key, value] of Object.entries(row.node_executions || {})) {
+  for (const [key, value] of Object.entries(nodeExecData)) {
     const val = value as any;
     nodeExecutions.set(key, {
       ...val,
@@ -365,32 +367,31 @@ function mapRowToExecution(row: LocalExecutionRow): WorkflowExecution {
       completedAt: val.completed_at ? new Date(val.completed_at) : undefined,
     });
   }
-  
+
+  const rowAny = row as any;
+
   return {
-    id: row.id,
+    id: rowAny.execution_id || row.id,
     workflowId: row.workflow_id,
-    workflowVersion: row.workflow_version,
+    workflowVersion: rowAny.workflow_version || '1.0',
     status: row.status as ExecutionState,
     currentNodeId: row.current_node_id,
-    completedNodeIds: row.completed_node_ids || [],
+    completedNodeIds: rowAny.completed_nodes || rowAny.completed_node_ids || [],
     nodeExecutions,
-    input: row.input,
-    output: row.output,
-    context: row.context as any,
-    activeBranches: new Set(row.active_branches || []),
-    pendingJoins: new Map(Object.entries(row.pending_joins || {})),
+    input: rowAny.trigger_payload || rowAny.input,
+    output: rowAny.final_output || rowAny.output,
+    context: rowAny.global_state?.context ?? rowAny.context as any,
+    activeBranches: new Set(rowAny.pending_nodes || rowAny.active_branches || []),
+    pendingJoins: new Map(Object.entries(rowAny.pending_joins || {})),
     startedAt: new Date(row.started_at),
     completedAt: row.completed_at ? new Date(row.completed_at) : undefined,
-    estimatedCompletionAt: row.estimated_completion_at ? new Date(row.estimated_completion_at) : undefined,
-    progressPercent: row.progress_percent || 0,
-    budgetAllocated: row.budget_allocated || 0,
-    budgetSpent: row.budget_spent || 0,
-    payments: row.payments || [],
-    events: (row.events || []).map((e: any) => ({
-      ...e,
-      timestamp: new Date(e.timestamp),
-    })),
-    retryCount: new Map(Object.entries(row.retry_count || {})),
+    estimatedCompletionAt: undefined,
+    progressPercent: 0,
+    budgetAllocated: 0,
+    budgetSpent: 0,
+    payments: [],
+    events: [],
+    retryCount: new Map(),
     circuitBreakerStates: new Map(
       Object.entries(row.circuit_breaker_state || {}).map(([key, value]) => [
         key,
@@ -546,30 +547,21 @@ export async function executeWorkflow(
   const estimatedDuration = workflow.globalTimeoutMs || 300000; // Default 5 minutes
   const estimatedCompletionAt = new Date(startedAt.getTime() + estimatedDuration);
   
+  // Map to actual DB schema columns (claw_workflow_executions)
   const executionRow: any = {
-    id: executionId,
+    execution_id: executionId,
     workflow_id: workflowId,
-    workflow_version: workflow.version,
+    trigger_type: 'manual',
+    trigger_payload: input ?? {},
     status: 'running',
-    current_node_id: workflow.startNodeId,
-    completed_node_ids: [],
-    node_executions: nodeExecutions,
-    input,
-    context,
-    active_branches: workflow.startNodeId ? [workflow.startNodeId] : [],
-    pending_joins: {},
+    current_node_id: workflow.startNodeId ?? null,
+    // DB uses completed_nodes / pending_nodes / node_states (not active_branches etc)
+    completed_nodes: [],
+    pending_nodes: workflow.startNodeId ? [workflow.startNodeId] : [],
+    node_states: nodeExecutions,
+    global_state: { context, input },
     started_at: startedAt.toISOString(),
-    estimated_completion_at: estimatedCompletionAt.toISOString(),
-    progress_percent: 0,
-    budget_allocated: workflow.budgetLimit || 0,
-    budget_spent: 0,
-    payments: [],
-    events: initialEvents.map(e => ({
-      ...e,
-      timestamp: e.timestamp.toISOString(),
-    })),
-    retry_count: {},
-    circuit_breaker_state: {},
+    retry_count: 0,
   };
   
   const { data, error } = await supabase

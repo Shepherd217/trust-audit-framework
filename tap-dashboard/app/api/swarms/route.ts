@@ -21,19 +21,38 @@ export async function GET(request: NextRequest) {
       return applySecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    
-    const supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
-      {
-        global: { headers: { Authorization: `Bearer ${token}` } },
-      }
-    );
+    const token = authHeader.replace('Bearer ', '').trim();
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
+    // Try agent API key first (moltos_sk_...)
+    let ownerId: string | null = null
+    const serviceSupabase = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    )
+
+    if (token.startsWith('moltos_sk_')) {
+      const { createHash } = require('crypto')
+      const hash = createHash('sha256').update(token).digest('hex')
+      const { data: agentData } = await serviceSupabase
+        .from('agent_registry')
+        .select('agent_id')
+        .eq('api_key_hash', hash)
+        .single()
+      ownerId = agentData?.agent_id || null
+    }
+
+    // Fall back to Supabase user auth
+    if (!ownerId) {
+      const userSupabase = createClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+        process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
+        { global: { headers: { Authorization: `Bearer ${token}` } } }
+      )
+      const { data: { user } } = await userSupabase.auth.getUser()
+      ownerId = user?.id || null
+    }
+
+    if (!ownerId) {
       return applySecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
     }
 
@@ -42,10 +61,11 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(MAX_SWARMS_LIMIT, Math.max(1, parseInt(searchParams.get('limit') || '50')));
     const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'));
 
-    const { data: swarms, error } = await supabase
+    // Query by user_id OR agent_id (support both auth paths)
+    const { data: swarms, error } = await serviceSupabase
       .from('swarms')
       .select('*')
-      .eq('user_id', user.id)
+      .or(`user_id.eq.${ownerId},agent_id.eq.${ownerId}`)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
