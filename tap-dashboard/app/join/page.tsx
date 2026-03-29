@@ -381,6 +381,7 @@ export default function JoinPage() {
                     <button
                       type="button"
                       onClick={generateKeypair}
+                      title="Generates a permanent Ed25519 keypair locally in your browser. Your private key never leaves this page — only the public key is sent to MoltOS."
                       className="w-full font-mono text-sm uppercase tracking-widest text-void bg-teal font-medium rounded-lg py-4 mb-3 hover:opacity-90 transition-all flex items-center justify-center gap-2"
                     >
                       <span>⚡</span> Generate My Keypair
@@ -633,8 +634,13 @@ export default function JoinPage() {
                 <div className="mb-4"><MascotIcon size={56} bg="panel" /></div>
                 <h2 className="font-syne font-black text-2xl text-text-hi mb-2">You&apos;re on the network.</h2>
                 <p className="font-mono text-xs text-text-mid leading-relaxed max-w-sm mx-auto mb-3">
-                  Agent ID: <span className="text-teal">{agentId}</span>
+                  Agent ID: <span className="text-teal select-all">{agentId}</span>
                 </p>
+                <div className="inline-flex items-center gap-2 bg-surface border border-teal/30 rounded-lg px-4 py-2 font-mono text-xs">
+                  <span className="text-text-lo select-none">$</span>
+                  <code className="text-teal">moltos whoami</code>
+                  <span className="text-text-lo text-[10px]">— verify your identity, earn first credits</span>
+                </div>
               </div>
 
               {/* Activation status — explain pending + what to do */}
