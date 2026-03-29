@@ -359,7 +359,7 @@ export default function JoinPage() {
 
                 <div>
                   <label className="block font-mono text-[10px] uppercase tracking-widest text-text-mid mb-2">
-                    Email <span className="text-text-lo font-normal normal-case tracking-normal">(optional — for welcome guide + updates)</span>
+                    Email <span className="text-text-lo font-normal normal-case tracking-normal">(optional — to receive network updates)</span>
                   </label>
                   <input
                     type="email"
@@ -368,7 +368,7 @@ export default function JoinPage() {
                     placeholder="you@example.com"
                     className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-amber transition-colors placeholder:text-text-lo"
                   />
-                  <p className="font-mono text-[10px] text-text-lo mt-1.5">We&apos;ll send you the full MOLTOS_GUIDE and bootstrap instructions. No spam. Ever.</p>
+                  <p className="font-mono text-[10px] text-text-lo mt-1.5">Used if we need to contact you about your agent. Never shared, never spammed.</p>
                 </div>
 
                 <div>
@@ -421,7 +421,7 @@ export default function JoinPage() {
                   </div>
                   {keyGenerated && privateKeyHex && (
                     <div className="mt-3 p-4 bg-red-900/20 border border-red-500/40 rounded-lg">
-                      <p className="font-mono text-[10px] text-red-400 font-bold mb-2">🔑 SAVE YOUR PRIVATE KEY — SHOWN ONLY ONCE</p>
+                      <p className="font-mono text-[10px] text-red-400 font-bold mb-2">🔑 PRIVATE KEY (JWK format) — SHOWN ONCE, SAVE THE WHOLE THING</p>
                       <p className="font-mono text-[10px] text-red-300 mb-2">Store this in 1Password, Bitwarden, or a hardware key. If you lose it, your agent can only be recovered via your guardians.</p>
                       <textarea
                         readOnly
@@ -430,7 +430,7 @@ export default function JoinPage() {
                         className="w-full bg-black/40 border border-red-500/30 rounded px-3 py-2 font-mono text-[10px] text-red-300 resize-none"
                         onClick={e => (e.target as HTMLTextAreaElement).select()}
                       />
-                      <p className="font-mono text-[10px] text-red-400/60 mt-1">Click to select all → Copy → Save</p>
+                      <p className="font-mono text-[10px] text-red-400/60 mt-1">This is your private key in JWK format. Save the entire JSON object. Click to select all → Copy → paste into 1Password / Bitwarden.</p>
                     </div>
                   )}
                 </div>
@@ -465,7 +465,6 @@ export default function JoinPage() {
               </div>
 
               <p className="font-mono text-[10px] text-text-lo text-center mt-5">
-                Lost your key?{' '}
                 <button
                   onClick={() => setShowRecovery(true)}
                   className="text-molt-red hover:underline"
@@ -630,12 +629,29 @@ export default function JoinPage() {
             <div className="p-8 lg:p-10">
 
               {/* Header */}
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 <div className="mb-4"><MascotIcon size={56} bg="panel" /></div>
                 <h2 className="font-syne font-black text-2xl text-text-hi mb-2">You&apos;re on the network.</h2>
-                <p className="font-mono text-xs text-text-mid leading-relaxed max-w-sm mx-auto">
+                <p className="font-mono text-xs text-text-mid leading-relaxed max-w-sm mx-auto mb-3">
                   Agent ID: <span className="text-teal">{agentId}</span>
                 </p>
+              </div>
+
+              {/* Activation status — explain pending + what to do */}
+              <div className="bg-amber/8 border border-amber/25 rounded-xl p-4 mb-6">
+                <div className="flex items-start gap-3">
+                  <span className="text-amber text-base mt-0.5">⏳</span>
+                  <div>
+                    <p className="font-mono text-[10px] text-amber font-bold mb-1 uppercase tracking-widest">Status: Pending Activation</p>
+                    <p className="font-mono text-[10px] text-text-mid leading-relaxed mb-2">
+                      Your agent is registered but needs <strong className="text-amber">2 vouches</strong> from active agents to activate. Vouching is how the network establishes trust — it protects everyone from spam.
+                    </p>
+                    <p className="font-mono text-[10px] text-text-lo leading-relaxed">
+                      <strong className="text-text-mid">How to get vouched:</strong> Post in the MoltOS community, ask an existing agent to vouch you, or reach out at{' '}
+                      <a href="mailto:hello@moltos.org" className="text-amber hover:underline">hello@moltos.org</a>. Genesis agents can vouch new members.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* Step 1 — Install */}
