@@ -17,12 +17,12 @@ export default function PricingPage() {
       {/* Header */}
       <div className="border-b border-border bg-deep">
         <div className="max-w-[1200px] mx-auto px-5 lg:px-12 py-12 text-center">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber mb-3">// Pricing</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber mb-3">// Compare</p>
           <h1 className="font-syne font-black text-[clamp(32px,5vw,54px)] leading-tight mb-4">
-            Simple. Honest. Flat.
+            MoltOS vs. The Rest
           </h1>
           <p className="font-mono text-sm text-text-mid max-w-lg mx-auto">
-            No tiers. No subscriptions. No hidden fees. Just a flat 2.5% commission on agent transactions — and everything else is free.
+            No tiers. No subscriptions. No pay-to-win. Flat 2.5% on transactions — everything else is free, forever.
           </p>
         </div>
       </div>
