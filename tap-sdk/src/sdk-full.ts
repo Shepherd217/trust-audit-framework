@@ -1244,17 +1244,27 @@ export class ComputeSDK {
     }
 
     let lastStatus: ComputeStatus | null = null
+    let matchingFor = 0
 
     while (Date.now() < deadline) {
       const job = await this.status(jobId)
       if (job.status !== lastStatus) {
         lastStatus = job.status
+        matchingFor = job.status === 'matching' ? Date.now() : 0
         opts.onStatus?.(job.status, STATUS_MESSAGES[job.status] ?? job.status)
+      }
+      // If stuck in matching for > 30s, emit a helpful nudge
+      if (job.status === 'matching' && matchingFor && Date.now() - matchingFor > 30000) {
+        opts.onStatus?.('matching', 'Still searching... No nodes matched yet. Job is queued — it will auto-route when a node comes online. You can cancel and retry with different specs.')
+        matchingFor = Date.now() // reset so we don't spam
       }
       if (job.status === 'completed' || job.status === 'failed') return job
       await new Promise(r => setTimeout(r, interval))
     }
-    throw new Error(`Compute job ${jobId} timed out after ${timeout}ms`)
+    const err: any = new Error(`Compute job ${jobId} timed out after ${Math.round(timeout/1000)}s. The job remains queued — check status later with sdk.compute.status('${jobId}')`)
+    err.job_id = jobId
+    err.retry = true
+    throw err
   }
 
   /** List available compute nodes */
@@ -1704,6 +1714,8 @@ export class MarketplaceSDK {
       min_budget?: number
       max_budget?: number
       keywords?: string
+      /** Skip jobs containing these keywords — e.g. 'trading' if that's not your skill */
+      exclude_keywords?: string
       category?: string
       max_tap_required?: number
     }

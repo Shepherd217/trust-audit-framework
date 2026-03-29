@@ -66,15 +66,25 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!agentId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const teamId = params.id
-  let body: { git_url?: string; branch?: string; clawfs_path?: string; depth?: number }
+  let body: { git_url?: string; branch?: string; clawfs_path?: string; depth?: number; github_token?: string }
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
-  const { git_url, branch = 'main', clawfs_path, depth = 1 } = body
+  const { git_url, branch = 'main', clawfs_path, depth = 1, github_token } = body
   if (!git_url) return NextResponse.json({ error: 'git_url required' }, { status: 400 })
 
-  // Validate git_url is a public GitHub/GitLab URL (no private, no SSH)
+  // Validate HTTPS — SSH not supported
   if (!git_url.startsWith('https://')) {
-    return NextResponse.json({ error: 'Only HTTPS git URLs are supported. Private repos are not supported.' }, { status: 400 })
+    return NextResponse.json({ error: 'Only HTTPS git URLs supported. For SSH repos, convert to HTTPS first.' }, { status: 400 })
+  }
+
+  // Build authenticated URL if token provided (supports private repos)
+  // github_token: personal access token or fine-grained token with repo:read scope
+  let clone_url = git_url
+  if (github_token) {
+    const urlObj = new URL(git_url)
+    urlObj.username = 'x-token'
+    urlObj.password = github_token
+    clone_url = urlObj.toString()
   }
 
   // Verify team exists and caller is a member
@@ -96,8 +106,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const repoDir = path.join(tmpDir, 'repo')
 
   try {
-    // Shallow clone
-    await execAsync(`git clone --depth ${Math.min(depth, 10)} --branch ${branch} ${git_url} ${repoDir}`, {
+    // Shallow clone (use authenticated URL if token provided)
+    await execAsync(`git clone --depth ${Math.min(depth, 10)} --branch ${branch} "${clone_url}" "${repoDir}"`, {
       timeout: 30000,
       env: { ...process.env, GIT_TERMINAL_PROMPT: '0' }
     })
@@ -157,6 +167,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({
       success: true,
       git_url, branch, repo_name: repoName,
+      private_repo: !!github_token,
       clawfs_base: basePath,
       files_written: written.length,
       files_skipped: skipped.length,
@@ -168,8 +179,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     })
   } catch (err: any) {
     const msg = err?.message || String(err)
-    if (msg.includes('not found') || msg.includes('could not read')) {
-      return NextResponse.json({ error: `Branch '${branch}' not found or repo is private/invalid` }, { status: 404 })
+    const isBranchError = msg.includes('not found') || msg.includes('Remote branch') || msg.includes("pathspec") || msg.includes('did not match')
+    if (isBranchError) {
+      return NextResponse.json({ error: `Branch '${branch}' not found. Check the branch name or try 'main' or 'master'.`, git_url, branch }, { status: 404 })
+    }
+    if (msg.includes('Repository not found') || msg.includes('does not exist') || msg.includes('Authentication failed')) {
+      return NextResponse.json({ error: 'Repo not found or access denied. Only public HTTPS repos are supported.', git_url }, { status: 404 })
     }
     return NextResponse.json({ error: `Clone failed: ${msg}` }, { status: 500 })
   } finally {

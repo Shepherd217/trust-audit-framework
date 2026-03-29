@@ -236,7 +236,7 @@ function JoinPageInner() {
                         onChange={e => setRecoveryAgentId(e.target.value)}
                         placeholder="agent_abc123..."
                         required
-                        className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-molt-red transition-colors placeholder:text-text-lo"
+                        className="w-full bg-surface border border-border rounded-lg px-4 py-3.5 lg:py-3 font-mono text-sm text-text-hi outline-none focus:border-molt-red transition-colors placeholder:text-text-lo"
                       />
                       <p className="font-mono text-[10px] text-text-lo mt-1">Your agent ID from the original registration. Starts with &quot;agent_&quot;.</p>
                     </div>
@@ -281,7 +281,7 @@ function JoinPageInner() {
                         placeholder="Generate a new keypair below, or paste your new Ed25519 public key hex..."
                         required
                         rows={2}
-                        className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-xs text-text-hi outline-none focus:border-molt-red transition-colors resize-none placeholder:text-text-lo"
+                        className="w-full bg-surface border border-border rounded-lg px-4 py-3.5 lg:py-3 font-mono text-xs text-text-hi outline-none focus:border-molt-red transition-colors resize-none placeholder:text-text-lo"
                       />
                       <button
                         type="button"
@@ -308,7 +308,7 @@ function JoinPageInner() {
                         value={recoveryReason}
                         onChange={e => setRecoveryReason(e.target.value)}
                         placeholder="Lost hardware, compromised key..."
-                        className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-border-hi transition-colors placeholder:text-text-lo"
+                        className="w-full bg-surface border border-border rounded-lg px-4 py-3.5 lg:py-3 font-mono text-sm text-text-hi outline-none focus:border-border-hi transition-colors placeholder:text-text-lo"
                       />
                     </div>
 
@@ -423,7 +423,7 @@ function JoinPageInner() {
                     onChange={e => setName(e.target.value)}
                     placeholder="my-awesome-agent"
                     required
-                    className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-amber transition-colors placeholder:text-text-lo"
+                    className="w-full bg-surface border border-border rounded-lg px-4 py-3.5 lg:py-3 font-mono text-sm text-text-hi outline-none focus:border-amber transition-colors placeholder:text-text-lo"
                   />
                   <p className="font-mono text-[10px] text-text-lo mt-1.5">Lowercase, hyphens ok. This is your agent&apos;s display name on the network.</p>
                 </div>
@@ -437,7 +437,7 @@ function JoinPageInner() {
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-amber transition-colors placeholder:text-text-lo"
+                    className="w-full bg-surface border border-border rounded-lg px-4 py-3.5 lg:py-3 font-mono text-sm text-text-hi outline-none focus:border-amber transition-colors placeholder:text-text-lo"
                   />
                   <p className="font-mono text-[10px] text-text-lo mt-1.5">Used if we need to contact you about your agent. Never shared, never spammed.</p>
                 </div>
@@ -462,7 +462,7 @@ function JoinPageInner() {
                         }
                       }}
                       placeholder="ref_xxxxxxxx"
-                      className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-amber transition-colors placeholder:text-text-lo"
+                      className="w-full bg-surface border border-border rounded-lg px-4 py-3.5 lg:py-3 font-mono text-sm text-text-hi outline-none focus:border-amber transition-colors placeholder:text-text-lo"
                     />
                     {referralValid && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] text-teal">
@@ -509,7 +509,7 @@ function JoinPageInner() {
                       placeholder="Paste your Ed25519 public key hex..."
                       required
                       rows={2}
-                      className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-xs text-text-hi outline-none focus:border-amber transition-colors resize-none placeholder:text-text-lo"
+                      className="w-full bg-surface border border-border rounded-lg px-4 py-3.5 lg:py-3 font-mono text-xs text-text-hi outline-none focus:border-amber transition-colors resize-none placeholder:text-text-lo"
                     />
                     <p className="font-mono text-[10px] text-text-lo mt-1">
                       Your public key is registered on the network. Your private key never leaves your machine.{' '}
@@ -665,7 +665,7 @@ function JoinPageInner() {
                     {copiedField === 'apiKey' ? '✓ Copied' : 'Copy'}
                   </button>
                 </div>
-                <div className="bg-void border border-amber/40 rounded-lg px-4 py-3 font-mono text-xs text-amber break-all leading-relaxed select-all cursor-text">
+                <div className="bg-void border border-amber/40 rounded-lg px-4 py-3.5 lg:py-3 font-mono text-xs text-amber break-all leading-relaxed select-all cursor-text">
                   {apiKey}
                 </div>
               </div>

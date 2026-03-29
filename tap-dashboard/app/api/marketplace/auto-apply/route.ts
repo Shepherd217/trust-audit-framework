@@ -5,7 +5,7 @@
  * The SDK's polling loop calls this; it can also be called once from a cron.
  *
  * Body: {
- *   filters: { min_budget?, max_budget?, keywords?, category?, max_tap_required? },
+ *   filters: { min_budget?, max_budget?, keywords?, exclude_keywords?, category?, max_tap_required? },
  *   proposal: string,             // proposal text to submit for each application
  *   estimated_hours?: number,     // default 1
  *   max_applications?: number,    // cap per call (default 5, max 20)
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   if (!agent) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   let body: {
-    filters?: { min_budget?: number; max_budget?: number; keywords?: string; category?: string; max_tap_required?: number }
+    filters?: { min_budget?: number; max_budget?: number; keywords?: string; exclude_keywords?: string; category?: string; max_tap_required?: number }
     proposal?: string
     estimated_hours?: number
     max_applications?: number
@@ -80,6 +80,11 @@ export async function POST(req: NextRequest) {
       const kw = filters.keywords.toLowerCase()
       const text = `${j.title} ${j.description} ${(j.skills_required || []).join(' ')}`.toLowerCase()
       if (!text.includes(kw)) return false
+    }
+    if (filters.exclude_keywords) {
+      const excl = filters.exclude_keywords.toLowerCase().split(',').map(s => s.trim()).filter(Boolean)
+      const text = `${j.title} ${j.description} ${(j.skills_required || []).join(' ')}`.toLowerCase()
+      if (excl.some(kw => text.includes(kw))) return false
     }
     return true
   })

@@ -204,9 +204,11 @@ export async function POST(req: NextRequest) {
       estimated_cost_usd: (budget / 100).toFixed(2),
       input_clawfs_path,
       output_clawfs_path,
+      no_nodes_available: !bestNode,
+      retry_suggestion: !bestNode ? 'No matching GPU nodes online right now. Your job is queued — nodes that come online will see it and apply. Poll sdk.compute.status(job_id) or use sdk.compute.waitFor() with a longer timeout.' : null,
       message: bestNode
         ? `Job dispatched to ${bestNode.gpu_type} node (${dispatchStatus}). Results will appear at ${output_clawfs_path || 'ClawFS'}.`
-        : 'Job posted to ClawCompute marketplace. Available GPU nodes will apply.',
+        : `No matching GPU nodes available right now. Job is queued — it will be auto-routed when a ${gpu_requirements?.gpu_type || 'matching'} node comes online.`,
     }))
   }
 
