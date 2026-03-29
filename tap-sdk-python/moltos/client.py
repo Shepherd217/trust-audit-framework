@@ -968,6 +968,81 @@ class LangChain(_BaseNamespace):
         }
 
 
+
+
+class Assets(_BaseNamespace):
+    """ClawStore — TAP-backed digital goods + skills marketplace.
+    Unlike ClaHub: verified publishers only, TAP-backed trust, reviews from verified buyers only.
+    """
+    def list(self, type=None, q=None, tags=None, min_seller_tap=0,
+             max_price=None, sort="tap", limit=20, offset=0) -> dict:
+        """Browse ClawStore. sort: tap|popular|newest|price_asc|price_desc"""
+        p = f"sort={sort}&limit={limit}&offset={offset}"
+        if type: p += f"&type={type}"
+        if q: p += f"&q={q}"
+        if tags: p += f"&tags={','.join(tags)}"
+        if min_seller_tap: p += f"&min_seller_tap={min_seller_tap}"
+        if max_price is not None: p += f"&max_price={max_price}"
+        return self._c._get(f"/assets?{p}")
+
+    def get(self, asset_id: str) -> dict:
+        """Get asset detail + reviews + purchase count."""
+        return self._c._get(f"/assets/{asset_id}")
+
+    def sell(self, type: str, title: str, description: str,
+             price_credits: int = 0, tags: list = None,
+             clawfs_path: str = None, endpoint_url: str = None,
+             version: str = "1.0.0", min_buyer_tap: int = 0) -> dict:
+        """Publish an asset. type: file|skill|template|bundle.
+        file/template: clawfs_path required.
+        skill: endpoint_url required (must be live HTTPS, verified at publish).
+        Example:
+            agent.assets.sell(type="file", title="BTC Tick Data",
+                description="Cleaned parquet 2022-2025.", price_credits=1500,
+                tags=["trading","bitcoin"], clawfs_path="/agents/me/data/btc")
+        """
+        return self._c._post("/assets", {
+            "type": type, "title": title, "description": description,
+            "price_credits": price_credits, "tags": tags or [],
+            "clawfs_path": clawfs_path, "endpoint_url": endpoint_url,
+            "version": version, "min_buyer_tap": min_buyer_tap,
+        })
+
+    def buy(self, asset_id: str) -> dict:
+        """Purchase an asset. Credits deducted, access delivered.
+        Returns: { access_key (skills), clawfs_path (files), endpoint_url, ... }
+        """
+        return self._c._post(f"/assets/{asset_id}/purchase", {})
+
+    def review(self, asset_id: str, rating: int, text: str = None) -> dict:
+        """Review a purchased asset (1-5). Must be verified buyer.
+        5 stars +1 TAP to seller. 1-2 stars -1 TAP from seller.
+        """
+        b = {"rating": rating}
+        if text: b["review_text"] = text
+        return self._c._post(f"/assets/{asset_id}/review", b)
+
+    def my_sales(self) -> dict:
+        """Your seller dashboard: listings, sales revenue."""
+        return self._c._get("/assets/my?view=selling")
+
+    def my_purchases(self) -> list:
+        """Assets you have purchased."""
+        return self._c._get("/assets/my?view=purchased").get("purchased", [])
+
+    def unpublish(self, asset_id: str) -> dict:
+        """Unpublish your asset. Existing buyers retain access."""
+        import urllib.request
+        req = urllib.request.Request(
+            f"{self._c._api_url}/assets/{asset_id}",
+            headers=self._c._headers(), method="DELETE"
+        )
+        try:
+            with urllib.request.urlopen(req) as r:
+                return json.loads(r.read())
+        except Exception as e:
+            raise MoltOSError(str(e))
+
 class MoltOSClient:
     """Low-level MoltOS API client. Use MoltOS() for the high-level interface."""
 
@@ -990,7 +1065,7 @@ class MoltOSClient:
         self.teams = Teams(self)
         self.workflow = Workflow(self)
         self.market = Market(self)
-        self.langchain = LangChain(self)
+        self.assets = Assets(self); self.langchain = LangChain(self)
 
     def _headers(self) -> dict:
         return {

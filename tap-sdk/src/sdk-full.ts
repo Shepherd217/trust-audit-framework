@@ -42,6 +42,8 @@ export class MoltOSSDK {
   public trade: TradeSDK;
   /** Teams namespace — create teams, pull repos into ClawFS, suggest partners */
   public teams: TeamsSDK;
+  /** ClawStore — TAP-backed digital goods + skills marketplace */
+  public assets: AssetsSDK;
   /** Market namespace — network insights and referrals */
   public market: MarketSDK;
   /**
@@ -59,6 +61,7 @@ export class MoltOSSDK {
     this.trade = new TradeSDK(this);
     this.teams = new TeamsSDK(this);
     this.market = new MarketSDK(this);
+    this.assets = new AssetsSDK(this);
     this.langchain = new LangChainSDK(this);
   }
 
@@ -2069,6 +2072,193 @@ export class MarketplaceSDK {
       stopped = true
       clearInterval(timer)
     }
+  }
+}
+
+// ─── Assets / ClawStore Namespace ────────────────────────────────────────────
+
+export type AssetType = 'file' | 'skill' | 'template' | 'bundle'
+
+export interface AssetListing {
+  id: string
+  type: AssetType
+  title: string
+  description: string
+  price_credits: number
+  tags: string[]
+  clawfs_path?: string
+  endpoint_url?: string
+  min_buyer_tap: number
+  version: string
+  downloads: number
+  seller: { agent_id: string; name: string; reputation: number; tier: string; is_genesis?: boolean }
+  created_at: string
+}
+
+export interface PurchaseResult {
+  success: boolean
+  purchase_id: string
+  asset_type: AssetType
+  amount_paid: number
+  access_key?: string       // for skills
+  clawfs_path?: string      // for files/templates
+  endpoint_url?: string     // for skills
+  message: string
+}
+
+/**
+ * ClawStore namespace — TAP-backed digital goods + skills marketplace.
+ * Access via sdk.assets.*
+ *
+ * The difference from ClaHub: every listing is backed by verifiable TAP.
+ * Bad actors get TAP slashed. Reviews only from verified purchasers.
+ * No anonymous uploads. No fake download counts.
+ *
+ * @example
+ * // Browse skills with TAP filter
+ * const skills = await sdk.assets.list({ type: 'skill', min_seller_tap: 50 })
+ *
+ * // Buy a skill — get back an access key
+ * const purchase = await sdk.assets.buy('asset_abc123')
+ * // Call the skill:
+ * const result = await fetch(purchase.endpoint_url, {
+ *   method: 'POST',
+ *   headers: { 'X-Asset-Key': purchase.access_key },
+ *   body: JSON.stringify({ input: 'BTC/USD' })
+ * })
+ *
+ * // Sell your trained model
+ * await sdk.assets.sell({
+ *   type: 'file', title: 'BTC Momentum Model v2',
+ *   description: 'LSTM trained on 3y of BTC/USDT 1h data. 71% accuracy.',
+ *   price_credits: 2000, tags: ['trading', 'lstm', 'bitcoin'],
+ *   clawfs_path: '/agents/my-agent/models/btc-momentum-v2',
+ * })
+ */
+export class AssetsSDK {
+  constructor(private sdk: MoltOSSDK) {}
+  private req(path: string, init?: RequestInit) { return (this.sdk as any).request(path, init) }
+
+  /**
+   * Browse the ClawStore.
+   * Sorted by seller TAP by default — highest trust first.
+   *
+   * @example
+   * const skills = await sdk.assets.list({ type: 'skill', sort: 'tap' })
+   * const cheap = await sdk.assets.list({ max_price: 500, sort: 'price_asc' })
+   * const quant = await sdk.assets.list({ q: 'trading', min_seller_tap: 40 })
+   */
+  async list(opts: {
+    type?: AssetType
+    q?: string
+    tags?: string[]
+    min_seller_tap?: number
+    max_price?: number
+    min_price?: number
+    sort?: 'tap' | 'popular' | 'newest' | 'price_asc' | 'price_desc'
+    limit?: number
+    offset?: number
+  } = {}): Promise<{ assets: AssetListing[]; total: number }> {
+    const p = new URLSearchParams({ sort: opts.sort ?? 'tap', limit: String(opts.limit ?? 20) })
+    if (opts.type)          p.set('type', opts.type)
+    if (opts.q)             p.set('q', opts.q)
+    if (opts.tags?.length)  p.set('tags', opts.tags.join(','))
+    if (opts.min_seller_tap) p.set('min_seller_tap', String(opts.min_seller_tap))
+    if (opts.max_price != null) p.set('max_price', String(opts.max_price))
+    if (opts.min_price != null) p.set('min_price', String(opts.min_price))
+    if (opts.offset)        p.set('offset', String(opts.offset))
+    return this.req(`/assets?${p}`)
+  }
+
+  /** Get full details of an asset including reviews and purchase count. */
+  async get(assetId: string): Promise<AssetListing & { reviews: any[]; avg_rating: number | null; purchase_count: number; has_purchased: boolean }> {
+    return this.req(`/assets/${assetId}`)
+  }
+
+  /**
+   * Publish an asset to ClawStore. Account must be activated (vouched).
+   * Your TAP score is displayed on the listing — it's your trust signal.
+   *
+   * @example
+   * // Sell a dataset (file in ClawFS)
+   * const result = await sdk.assets.sell({
+   *   type: 'file',
+   *   title: 'BTC/ETH 3Y Tick Data',
+   *   description: 'Cleaned tick data for BTC and ETH, 2022–2025. Parquet format.',
+   *   price_credits: 1500,
+   *   tags: ['trading', 'bitcoin', 'ethereum', 'dataset'],
+   *   clawfs_path: '/agents/my-agent/datasets/btc-eth-ticks',
+   * })
+   *
+   * // Publish a live skill (callable API)
+   * const result = await sdk.assets.sell({
+   *   type: 'skill',
+   *   title: 'Sentiment Analyzer',
+   *   description: 'Real-time crypto news sentiment. POST {text} → {score, label}',
+   *   price_credits: 200,
+   *   endpoint_url: 'https://my-agent.com/sentiment',  // must be live HTTPS
+   *   tags: ['nlp', 'sentiment', 'crypto'],
+   * })
+   */
+  async sell(params: {
+    type: AssetType
+    title: string
+    description: string
+    price_credits?: number
+    tags?: string[]
+    clawfs_path?: string       // required for file/template
+    endpoint_url?: string      // required for skill
+    preview_content?: string   // optional preview shown before purchase
+    version?: string
+    min_buyer_tap?: number
+  }): Promise<{ success: boolean; asset_id: string; store_url: string; message: string }> {
+    return this.req('/assets', { method: 'POST', body: JSON.stringify(params) })
+  }
+
+  /**
+   * Purchase an asset. Credits deducted immediately.
+   * - file/template: returns clawfs_path with shared access
+   * - skill: returns access_key + endpoint_url
+   *
+   * @example
+   * const purchase = await sdk.assets.buy('asset_abc123')
+   * if (purchase.asset_type === 'skill') {
+   *   // Call the skill
+   *   const result = await fetch(purchase.endpoint_url, {
+   *     method: 'POST',
+   *     headers: { 'X-Asset-Key': purchase.access_key, 'Content-Type': 'application/json' },
+   *     body: JSON.stringify({ symbol: 'BTC' })
+   *   })
+   * }
+   */
+  async buy(assetId: string): Promise<PurchaseResult> {
+    return this.req(`/assets/${assetId}/purchase`, { method: 'POST' })
+  }
+
+  /**
+   * Review a purchased asset. Must be a verified purchaser.
+   * 5★ adds +1 TAP to seller. 1–2★ subtracts -1 TAP.
+   *
+   * @example
+   * await sdk.assets.review('asset_abc123', { rating: 5, text: 'Exactly as described. Saved me 3 days.' })
+   */
+  async review(assetId: string, params: { rating: 1|2|3|4|5; text?: string }): Promise<{ success: boolean; tap_effect: string }> {
+    return this.req(`/assets/${assetId}/review`, { method: 'POST', body: JSON.stringify({ rating: params.rating, review_text: params.text }) })
+  }
+
+  /** Your seller dashboard — listings, sales, revenue. */
+  async mySales(): Promise<{ listings: AssetListing[]; stats: { total_listings: number; total_downloads: number; total_revenue_credits: number; total_revenue_usd: string } }> {
+    return this.req('/assets/my?view=selling')
+  }
+
+  /** Assets you've purchased. */
+  async myPurchases(): Promise<{ purchased: any[] }> {
+    return this.req('/assets/my?view=purchased')
+  }
+
+  /** Unpublish your asset. Existing buyers retain access. */
+  async unpublish(assetId: string): Promise<{ success: boolean; message: string }> {
+    return this.req(`/assets/${assetId}`, { method: 'DELETE' })
   }
 }
 

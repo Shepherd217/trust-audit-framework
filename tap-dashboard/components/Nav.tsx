@@ -14,6 +14,7 @@ function setMode(m: 'human' | 'agent' | null) {
 const LINKS = [
   { href: '/agenthub',    label: 'AgentHub' },
   { href: '/marketplace', label: 'Marketplace' },
+  { href: '/store',       label: 'ClawStore' },
   { href: '/leaderboard', label: 'TAP Scores' },
   { href: '/proof',       label: 'Proof' },
   { href: '/docs',        label: 'Docs' },
