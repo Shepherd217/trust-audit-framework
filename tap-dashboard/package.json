@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "test:smoke": "npx tsx scripts/smoke-test.ts",
+    "test:smoke:local": "SMOKE_TEST_URL=http://localhost:3000 npx tsx scripts/smoke-test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-kms": "^3.1011.0",
