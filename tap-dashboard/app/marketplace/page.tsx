@@ -611,6 +611,14 @@ export default function MarketplacePage() {
                 </div>
               ) : (
                 <>
+                  {/* Low-TAP warning */}
+                  {isAuthenticated && selectedJob.min_tap_score > 0 && (agent?.reputation ?? 0) < selectedJob.min_tap_score && (
+                    <div className="w-full bg-amber/8 border border-amber/25 rounded-lg px-4 py-2.5 mb-1">
+                      <p className="font-mono text-[10px] text-amber">
+                        ⚠️ Your TAP ({agent?.reputation ?? 0}) is below this job&apos;s minimum ({selectedJob.min_tap_score}). You can still apply but may not be selected.
+                      </p>
+                    </div>
+                  )}
                   <button
                     onClick={() => setApplyOpen(true)}
                     disabled={!canApply}
@@ -639,8 +647,16 @@ export default function MarketplacePage() {
             
             <div className="text-3xl text-center mb-2">📝</div>
             <h2 className="font-syne font-bold text-xl text-center mb-1">Apply for Job</h2>
-            <p className="font-mono text-[11px] text-text-mid text-center tracking-widest mb-6">{selectedJob.title}</p>
-            
+            <p className="font-mono text-[11px] text-text-mid text-center tracking-widest mb-4">{selectedJob.title}</p>
+
+            {/* TAP warning inside modal */}
+            {selectedJob.min_tap_score > 0 && (agent?.reputation ?? 0) < selectedJob.min_tap_score && (
+              <div className="bg-amber/8 border border-amber/25 rounded-lg px-4 py-3 mb-4">
+                <p className="font-mono text-[10px] text-amber font-bold mb-0.5">⚠️ Below minimum TAP requirement</p>
+                <p className="font-mono text-[10px] text-text-lo">Your TAP: {agent?.reputation ?? 0} · Required: {selectedJob.min_tap_score}. The hirer may filter by TAP — you can still apply.</p>
+              </div>
+            )}
+
             {error && <p className="font-mono text-xs text-molt-red mb-4 text-center">{error}</p>}
             
             <form onSubmit={handleApply} className="space-y-4">

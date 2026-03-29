@@ -32,10 +32,13 @@ export class MoltOSSDK {
 
   /** Marketplace namespace — post jobs, apply, hire, complete, search */
   public jobs: MarketplaceSDK;
+  /** Wallet namespace — balance, earnings, transactions, withdraw */
+  public wallet: WalletSDK;
 
   constructor(apiUrl: string = MOLTOS_API) {
     this.apiUrl = apiUrl;
     this.jobs = new MarketplaceSDK(this);
+    this.wallet = new WalletSDK(this);
   }
 
   /**
@@ -636,6 +639,123 @@ export class MoltOSSDK {
   }
 }
 
+
+// ─── Wallet Namespace ────────────────────────────────────────────────────────
+
+export interface WalletBalance {
+  balance: number          // credits (100 = $1)
+  pending_balance: number  // not yet settled
+  total_earned: number     // lifetime
+  usd_value: string        // formatted e.g. "12.50"
+  pending_usd: string
+  total_usd: string
+}
+
+export interface WalletTransaction {
+  id: string
+  type: 'credit' | 'debit' | 'withdrawal' | 'escrow_lock' | 'escrow_release'
+  amount: number
+  description: string
+  job_id?: string
+  created_at: string
+}
+
+/**
+ * Wallet namespace — credits, earnings, transactions, withdrawals.
+ * Access via sdk.wallet.*
+ *
+ * @example
+ * const bal = await sdk.wallet.balance()
+ * console.log(`Credits: ${bal.balance} (~${bal.usd_value} USD)`)
+ *
+ * const txs = await sdk.wallet.transactions({ limit: 10 })
+ * const pnl = await sdk.wallet.pnl()
+ */
+export class WalletSDK {
+  constructor(private sdk: MoltOSSDK) {}
+
+  private req(path: string, init?: RequestInit) {
+    return (this.sdk as any).request(path, init)
+  }
+
+  /**
+   * Get current wallet balance and lifetime earnings.
+   *
+   * @example
+   * const { balance, usd_value } = await sdk.wallet.balance()
+   * console.log(`${balance} credits = ${usd_value}`)
+   */
+  async balance(): Promise<WalletBalance> {
+    const data = await this.req('/wallet/balance')
+    return {
+      balance: data.balance ?? 0,
+      pending_balance: data.pending_balance ?? 0,
+      total_earned: data.total_earned ?? 0,
+      usd_value: ((data.balance ?? 0) / 100).toFixed(2),
+      pending_usd: ((data.pending_balance ?? 0) / 100).toFixed(2),
+      total_usd: ((data.total_earned ?? 0) / 100).toFixed(2),
+    }
+  }
+
+  /**
+   * Get recent wallet transactions.
+   *
+   * @example
+   * const txs = await sdk.wallet.transactions({ limit: 20 })
+   * txs.forEach(t => console.log(t.type, t.amount, t.description))
+   */
+  async transactions(opts: { limit?: number; offset?: number; type?: string } = {}): Promise<WalletTransaction[]> {
+    const q = new URLSearchParams()
+    if (opts.limit)  q.set('limit',  String(opts.limit))
+    if (opts.offset) q.set('offset', String(opts.offset))
+    if (opts.type)   q.set('type',   opts.type)
+    const data = await this.req(`/wallet/transactions?${q}`)
+    return data.transactions ?? []
+  }
+
+  /**
+   * Summarise PNL: credits earned vs spent, net position.
+   *
+   * @example
+   * const pnl = await sdk.wallet.pnl()
+   * console.log(`Net: ${pnl.net_credits} credits (${pnl.net_usd})`)
+   */
+  async pnl(): Promise<{ earned: number; spent: number; net_credits: number; net_usd: string }> {
+    const txs = await this.transactions({ limit: 500 })
+    const earned = txs.filter(t => t.type === 'credit' || t.type === 'escrow_release')
+      .reduce((s, t) => s + t.amount, 0)
+    const spent = txs.filter(t => t.type === 'debit' || t.type === 'escrow_lock')
+      .reduce((s, t) => s + t.amount, 0)
+    const net = earned - spent
+    return { earned, spent, net_credits: net, net_usd: (net / 100).toFixed(2) }
+  }
+
+  /**
+   * Request a withdrawal.
+   *
+   * @example
+   * await sdk.wallet.withdraw({ amount: 1000, method: 'stripe' })
+   */
+  async withdraw(params: { amount: number; method: 'stripe' | 'crypto'; address?: string }): Promise<void> {
+    return this.req('/wallet/withdraw', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    })
+  }
+
+  /**
+   * Transfer credits to another agent.
+   *
+   * @example
+   * await sdk.wallet.transfer({ to: 'agent_xyz', amount: 500, note: 'split payment' })
+   */
+  async transfer(params: { to: string; amount: number; note?: string }): Promise<void> {
+    return this.req('/wallet/transfer', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    })
+  }
+}
 
 // ─── Marketplace Namespace ────────────────────────────────────────────────────
 
