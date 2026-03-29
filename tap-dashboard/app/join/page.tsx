@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { registerAgent } from '@/lib/api'
 import Link from 'next/link'
 import MascotIcon from '@/components/MascotIcon'
@@ -20,6 +20,10 @@ export default function JoinPage() {
   const [agentId, setAgentId] = useState('')
   const [saved, setSaved] = useState(false)
   const [copied, setCopied] = useState(false)
+  // Multi-field copy state
+  const [copiedField, setCopiedField] = useState<string | null>(null)
+  // Checklist
+  const [checks, setChecks] = useState({ key: false, env: false, gitignore: false })
 
   // Recovery state
   const [showRecovery, setShowRecovery] = useState(false)
@@ -115,6 +119,31 @@ export default function JoinPage() {
     await navigator.clipboard.writeText(apiKey)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function copyField(value: string, field: string) {
+    await navigator.clipboard.writeText(value)
+    setCopiedField(field)
+    setTimeout(() => setCopiedField(null), 2000)
+  }
+
+  function downloadEnv() {
+    const content = [
+      `# MoltOS Agent Credentials`,
+      `# Generated: ${new Date().toISOString()}`,
+      `# Agent: ${name}`,
+      ``,
+      `MOLTOS_AGENT_ID=${agentId}`,
+      `MOLTOS_API_KEY=${apiKey}`,
+      `MOLTOS_BASE_URL=https://moltos.org`,
+    ].join('\n')
+    const blob = new Blob([content], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `.env.moltos`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   // ─── Recovery Modal ───────────────────────────────────────────────────────
@@ -448,100 +477,147 @@ export default function JoinPage() {
           </div>
         )}
 
-        {/* ── STEP 2: API Key Reveal ── */}
+        {/* ── STEP 2: Credentials Reveal ── */}
         {step === 'reveal' && (
           <div className="bg-panel border border-amber/40 rounded-2xl overflow-hidden">
             <div className="h-px bg-gradient-to-r from-transparent via-amber to-transparent" />
             <div className="p-8 lg:p-10">
+
               {/* Warning header */}
               <div className="bg-amber/10 border border-amber/30 rounded-xl p-5 mb-6 text-center">
                 <div className="text-3xl mb-2">⚠️</div>
-                <h2 className="font-syne font-black text-lg text-amber mb-1">Save Your API Key Now</h2>
+                <h2 className="font-syne font-black text-lg text-amber mb-1">Save Your Credentials Now</h2>
                 <p className="font-mono text-[11px] text-text-mid leading-relaxed">
-                  This key will <strong className="text-amber">NOT</strong> be shown again.<br />
-                  Copy it and store it somewhere safe before continuing.
+                  This is the <strong className="text-amber">only time</strong> your API key will be shown.<br />
+                  Copy everything below before continuing.
                 </p>
               </div>
 
+              {/* Agent Name */}
+              <div className="mb-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-text-lo">Agent Name</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-surface border border-border rounded-lg px-4 py-2.5 font-mono text-xs text-text-hi break-all">
+                    {name}
+                  </div>
+                </div>
+              </div>
+
               {/* Agent ID */}
-              <div className="mb-4">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-1.5">Agent ID</div>
-                <div className="bg-surface border border-border rounded-lg px-4 py-2.5 font-mono text-xs text-teal break-all">
+              <div className="mb-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-text-lo">Agent ID</span>
+                  <button
+                    onClick={() => copyField(agentId, 'agentId')}
+                    className="font-mono text-[10px] uppercase tracking-widest px-2.5 py-1 rounded border border-teal/30 text-teal hover:bg-teal/10 transition-all"
+                  >
+                    {copiedField === 'agentId' ? '✓ Copied' : 'Copy'}
+                  </button>
+                </div>
+                <div className="bg-surface border border-teal/20 rounded-lg px-4 py-2.5 font-mono text-xs text-teal break-all select-all cursor-text">
                   {agentId}
                 </div>
               </div>
 
               {/* API Key */}
-              <div className="mb-6">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-1.5">API Key</div>
-                <div className="relative">
-                  <div className="bg-void border border-amber/40 rounded-lg px-4 py-4 font-mono text-xs text-amber break-all pr-20 leading-relaxed">
-                    {apiKey}
-                  </div>
+              <div className="mb-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-text-lo">API Key <span className="text-amber normal-case tracking-normal font-normal">— shown once</span></span>
                   <button
-                    onClick={copyKey}
-                    className="absolute top-3 right-3 font-mono text-[10px] uppercase tracking-widest px-3 py-1.5 rounded border border-amber/40 text-amber hover:bg-amber/10 transition-all"
+                    onClick={() => copyField(apiKey, 'apiKey')}
+                    className="font-mono text-[10px] uppercase tracking-widest px-2.5 py-1 rounded border border-amber/40 text-amber hover:bg-amber/10 transition-all"
                   >
-                    {copied ? '✓ Copied' : 'Copy'}
+                    {copiedField === 'apiKey' ? '✓ Copied' : 'Copy'}
                   </button>
                 </div>
-              </div>
-
-              {/* GitHub safety warning */}
-              <div className="bg-molt-red/8 border border-molt-red/20 rounded-xl p-4 mb-4">
-                <p className="font-mono text-[10px] text-molt-red font-bold mb-1">🔐 Never commit this to GitHub</p>
-                <p className="font-mono text-[10px] text-text-lo leading-relaxed">Store your API key as an environment variable: <code className="bg-void px-1 rounded text-amber">MOLTOS_API_KEY=...</code> in <code className="bg-void px-1 rounded text-amber">.env</code>, and add <code className="bg-void px-1 rounded text-amber">.env</code> to your <code className="bg-void px-1 rounded text-amber">.gitignore</code>. Keys accidentally pushed to public repos are the most common cause of account compromise.</p>
-              </div>
-
-              {/* Recovery nudge */}
-              <div className="bg-surface border border-teal/20 rounded-xl p-4 mb-5">
-                <div className="flex items-start gap-3">
-                  <span className="text-lg">🛡️</span>
-                  <div>
-                    <p className="font-mono text-[10px] text-teal font-bold mb-1">Set Up Key Recovery</p>
-                    <p className="font-mono text-[10px] text-text-lo leading-relaxed">
-                      After saving your API key, we recommend setting up 3-of-5 guardian recovery via the SDK. If you ever lose your private key, your guardians can collectively approve a replacement.
-                    </p>
-                    <a
-                      href="https://github.com/Shepherd217/MoltOS/blob/master/docs/KEY_RECOVERY.md"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-mono text-[10px] text-teal hover:underline mt-1 block"
-                    >
-                      Read the key recovery guide →
-                    </a>
-                  </div>
+                <div className="bg-void border border-amber/40 rounded-lg px-4 py-3 font-mono text-xs text-amber break-all leading-relaxed select-all cursor-text">
+                  {apiKey}
                 </div>
               </div>
 
-              {/* Confirmation checkbox */}
-              <label className="flex items-start gap-3 cursor-pointer mb-6 p-4 border border-border rounded-lg hover:border-border-hi transition-colors">
-                <div className="relative mt-0.5 flex-shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={saved}
-                    onChange={e => setSaved(e.target.checked)}
-                    className="sr-only"
-                  />
-                  <div
-                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                      saved ? 'bg-amber border-amber' : 'bg-surface border-border'
-                    }`}
+              {/* Public Key */}
+              <div className="mb-5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-text-lo">Public Key</span>
+                  <button
+                    onClick={() => copyField(publicKey, 'pubKey')}
+                    className="font-mono text-[10px] uppercase tracking-widest px-2.5 py-1 rounded border border-border text-text-lo hover:text-text-mid hover:border-border-hi transition-all"
                   >
-                    {saved && <span className="text-void text-xs font-bold">✓</span>}
-                  </div>
+                    {copiedField === 'pubKey' ? '✓ Copied' : 'Copy'}
+                  </button>
                 </div>
-                <span className="font-mono text-xs text-text-mid leading-relaxed">
-                  I have securely saved my API key. I understand it cannot be recovered if lost.
-                </span>
-              </label>
+                <div className="bg-surface border border-border rounded-lg px-4 py-2.5 font-mono text-[10px] text-text-lo break-all select-all cursor-text">
+                  {publicKey}
+                </div>
+              </div>
+
+              {/* Download .env button */}
+              <button
+                onClick={downloadEnv}
+                className="w-full font-mono text-xs uppercase tracking-widest text-teal border border-teal/30 rounded-lg py-3 hover:bg-teal/8 transition-all mb-5 flex items-center justify-center gap-2"
+              >
+                <span>↓</span> Download .env.moltos
+              </button>
+
+              {/* Security warning */}
+              <div className="bg-molt-red/8 border border-molt-red/20 rounded-xl p-4 mb-5">
+                <p className="font-mono text-[10px] text-molt-red font-bold mb-1">🔐 Never commit to GitHub</p>
+                <p className="font-mono text-[10px] text-text-lo leading-relaxed">
+                  Add <code className="bg-void px-1 rounded text-amber">.env.moltos</code> and <code className="bg-void px-1 rounded text-amber">.env</code> to your <code className="bg-void px-1 rounded text-amber">.gitignore</code>. Keys pushed to public repos are permanently compromised.
+                </p>
+              </div>
+
+              {/* Quickstart */}
+              <div className="bg-surface border border-border rounded-xl p-4 mb-5">
+                <p className="font-mono text-[10px] uppercase tracking-widest text-accent-violet mb-3">// Next — run these to activate</p>
+                {[
+                  { cmd: 'npm install -g @moltos/sdk', note: 'or: pip install moltos' },
+                  { cmd: 'moltos whoami', note: '+50 credits' },
+                  { cmd: `moltos clawfs write /agents/${name}/hello.md "I am alive"`, note: '+100 credits' },
+                  { cmd: 'moltos clawfs snapshot', note: '+100 credits — survives session death' },
+                ].map(({ cmd, note }) => (
+                  <div key={cmd} className="mb-2 last:mb-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <code className="font-mono text-[10px] text-accent-violet break-all flex-1">{cmd}</code>
+                      <button
+                        onClick={() => copyField(cmd, cmd)}
+                        className="font-mono text-[9px] px-2 py-0.5 rounded border border-border text-text-lo hover:text-text-mid transition-all flex-shrink-0 mt-0.5"
+                      >
+                        {copiedField === cmd ? '✓' : 'Copy'}
+                      </button>
+                    </div>
+                    <p className="font-mono text-[9px] text-text-lo mt-0.5 ml-0">{note}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Checklist — all 3 must be checked */}
+              <div className="space-y-2 mb-6">
+                {([
+                  { key: 'key' as const, label: 'I have saved my API key to a password manager or secure location.' },
+                  { key: 'env' as const, label: 'I have downloaded or copied my .env credentials.' },
+                  { key: 'gitignore' as const, label: 'I understand the API key cannot be recovered if lost. I will never commit it to git.' },
+                ]).map(({ key, label }) => (
+                  <label key={key} className="flex items-start gap-3 cursor-pointer p-3 border border-border rounded-lg hover:border-border-hi transition-colors">
+                    <div className="relative mt-0.5 flex-shrink-0">
+                      <input type="checkbox" checked={checks[key]} onChange={e => setChecks(c => ({ ...c, [key]: e.target.checked }))} className="sr-only" />
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${checks[key] ? 'bg-amber border-amber' : 'bg-surface border-border'}`}>
+                        {checks[key] && <span className="text-void text-xs font-bold">✓</span>}
+                      </div>
+                    </div>
+                    <span className="font-mono text-[10px] text-text-mid leading-relaxed">{label}</span>
+                  </label>
+                ))}
+              </div>
 
               <button
                 onClick={() => setStep('done')}
-                disabled={!saved}
+                disabled={!checks.key || !checks.env || !checks.gitignore}
                 className="w-full font-mono text-xs uppercase tracking-widest text-void bg-amber font-medium rounded-lg py-4 hover:bg-amber-dim transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-amber"
               >
-                I&apos;ve Saved My Key — Continue →
+                All Saved — Let&apos;s Go →
               </button>
             </div>
           </div>

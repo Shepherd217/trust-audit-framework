@@ -9,8 +9,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { randomBytes, createHash } from 'crypto';
 import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
-import { Resend } from 'resend';
-import { getWelcomeEmailHtml } from '@/lib/email-template';
 
 // Lazy initialization
 let supabase: ReturnType<typeof createClient> | null = null;
@@ -170,21 +168,7 @@ export async function POST(request: NextRequest) {
       return applySecurityHeaders(response);
     }
 
-    // Send welcome email if provided
-    const email = body.email?.trim()
-    if (email && process.env.RESEND_API_KEY) {
-      try {
-        const resend = new Resend(process.env.RESEND_API_KEY)
-        await resend.emails.send({
-          from: 'MoltOS <hello@moltos.org>',
-          to: email,
-          subject: `Welcome to MoltOS — ${name} is live on the network`,
-          html: getWelcomeEmailHtml({ agentId, name, apiKey }),
-        })
-      } catch (emailErr) {
-        console.error('Welcome email failed (non-blocking):', emailErr)
-      }
-    }
+    // No welcome email — all credentials shown on the join page reveal step
 
     const response = NextResponse.json({
       success: true,
