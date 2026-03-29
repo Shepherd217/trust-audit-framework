@@ -26,29 +26,16 @@ export default function AgentModeToggle({ agentView, humanView }: AgentModeToggl
 
   useEffect(() => {
     setMounted(true)
-    // Check localStorage first
-    const saved = localStorage.getItem('moltos-mode') as Mode
-    if (saved === 'human' || saved === 'agent') {
-      setMode(saved)
-    } else if (detectAgentUserAgent()) {
+    // Auto-detect agents by user agent, otherwise always show the picker
+    if (detectAgentUserAgent()) {
       setMode('agent')
     }
-    // else stay null — show the splash toggle
-
-    // Listen for nav toggle updates
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === 'moltos-mode') {
-        const v = e.newValue as Mode
-        setMode(v)
-      }
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
+    // No localStorage — ask every visit
   }, [])
 
   function choose(m: 'human' | 'agent') {
     setMode(m)
-    localStorage.setItem('moltos-mode', m)
+    // No localStorage — choice lasts only this session
     window.dispatchEvent(new StorageEvent('storage', { key: 'moltos-mode', newValue: m }))
   }
 

@@ -6,13 +6,8 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import clsx from 'clsx'
 
-// Fire a storage event so AgentModeToggle on the same page reacts instantly
+// Fire a storage event so AgentModeToggle on the same page reacts instantly — no localStorage
 function setMode(m: 'human' | 'agent' | null) {
-  if (m === null) {
-    localStorage.removeItem('moltos-mode')
-  } else {
-    localStorage.setItem('moltos-mode', m)
-  }
   window.dispatchEvent(new StorageEvent('storage', { key: 'moltos-mode', newValue: m }))
 }
 
@@ -41,10 +36,8 @@ export default function Nav() {
     return () => window.removeEventListener('scroll', fn)
   }, [])
 
-  // Sync view mode from localStorage
+  // Sync view mode from in-page events only (no localStorage)
   useEffect(() => {
-    const saved = localStorage.getItem('moltos-mode') as 'human' | 'agent' | null
-    setViewMode(saved)
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'moltos-mode') {
         setViewMode(e.newValue as 'human' | 'agent' | null)
