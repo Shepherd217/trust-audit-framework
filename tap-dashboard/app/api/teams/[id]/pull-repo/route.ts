@@ -66,10 +66,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!agentId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const teamId = params.id
-  let body: { git_url?: string; branch?: string; clawfs_path?: string; depth?: number; github_token?: string }
+  let body: { git_url?: string; branch?: string; clawfs_path?: string; depth?: number; github_token?: string; chunk_size?: number; chunk_offset?: number }
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
-  const { git_url, branch = 'main', clawfs_path, depth = 1, github_token } = body
+  const { git_url, branch = 'main', clawfs_path, depth = 1, github_token, chunk_size = 100, chunk_offset = 0 } = body
   if (!git_url) return NextResponse.json({ error: 'git_url required' }, { status: 400 })
 
   // Validate HTTPS — SSH not supported
@@ -115,7 +115,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // Walk files
     const files: { rel: string; abs: string }[] = []
     await walkDir(repoDir, repoDir, files)
-    const limited = files.slice(0, MAX_FILES)
+
+    // Chunking support — for large repos, call multiple times with increasing chunk_offset
+    const effectiveChunkSize = Math.min(chunk_size, MAX_FILES)
+    const limited = files.slice(chunk_offset, chunk_offset + effectiveChunkSize)
+    const hasMore = files.length > chunk_offset + effectiveChunkSize
 
     // Determine base ClawFS path
     const repoName = git_url.split('/').pop()?.replace('.git', '') || 'repo'
@@ -171,11 +175,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       clawfs_base: basePath,
       files_written: written.length,
       files_skipped: skipped.length,
+      total_files_in_repo: files.length,
+      chunk_offset,
+      chunk_size: effectiveChunkSize,
+      has_more: hasMore,
+      next_chunk_offset: hasMore ? chunk_offset + effectiveChunkSize : null,
       total_bytes: manifest.total_bytes,
       manifest_path: `${basePath}/_manifest.json`,
-      written: written.slice(0, 20), // first 20 for preview
+      written: written.slice(0, 20),
       skipped,
-      message: `Cloned ${repoName}@${branch} → ${written.length} files written to ${basePath}`,
+      message: hasMore
+        ? `Chunk ${Math.floor(chunk_offset / effectiveChunkSize) + 1}: ${written.length} files written. ${files.length - chunk_offset - effectiveChunkSize} files remaining — call again with chunk_offset: ${chunk_offset + effectiveChunkSize}`
+        : `Cloned ${repoName}@${branch} → ${written.length} files written to ${basePath}`,
     })
   } catch (err: any) {
     const msg = err?.message || String(err)

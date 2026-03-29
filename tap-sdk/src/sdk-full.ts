@@ -1154,11 +1154,13 @@ export class TradeSDK {
    *   compensate: { symbol: 'BTC', side: 'sell', quantity: 1 }
    * })
    */
-  async revert(messageId: string, opts: { reason?: string; compensate?: any } = {}): Promise<void> {
-    // Ack the original message first
-    await this.req(`/claw/bus/ack/${messageId}`, { method: 'POST' }).catch(() => null)
-    // Send a compensating revert signal
-    await this.req('/claw/bus/send', {
+  async revert(messageId: string, opts: { reason?: string; compensate?: any } = {}): Promise<{ success: boolean; revert_id?: string; warning?: string }> {
+    // Ack the original message — if it 404s, the message ID is invalid
+    const ackResult = await this.req(`/claw/bus/ack/${messageId}`, { method: 'POST' }).catch((e: any) => ({ _err: e?.message ?? 'ack failed' }))
+    const ackFailed = ackResult?._err !== undefined
+
+    // Send a compensating revert signal regardless (creates audit trail)
+    const revertResult = await this.req('/claw/bus/send', {
       method: 'POST',
       body: JSON.stringify({
         to: '__broadcast__',
@@ -1167,11 +1169,20 @@ export class TradeSDK {
           original_message_id: messageId,
           reason: opts.reason ?? 'reverted',
           compensate: opts.compensate ?? null,
+          original_found: !ackFailed,
           reverted_at: new Date().toISOString(),
         },
         priority: 'high',
       }),
-    })
+    }).catch((e: any) => ({ _err: e?.message }))
+
+    return {
+      success: true,
+      revert_id: revertResult?.id,
+      warning: ackFailed
+        ? `Original message '${messageId}' was not found in ClawBus — it may have already been acked or the ID is wrong. Check sdk.trade.inbox() to find valid message IDs. The revert signal was still logged for audit trail.`
+        : undefined,
+    }
   }
 
   /** Poll trade inbox */
@@ -1402,11 +1413,56 @@ export class TeamsSDK {
     depth?: number
     /** GitHub personal access token for private repos. Used only for the clone — never stored. */
     github_token?: string
-  } = {}): Promise<RepoPullResult & { private_repo?: boolean }> {
+    /** Files per chunk (max 100). For repos with 500+ files, call repeatedly with increasing chunk_offset. */
+    chunk_size?: number
+    /** File offset for chunked pulls. Use result.next_chunk_offset for subsequent calls. */
+    chunk_offset?: number
+  } = {}): Promise<RepoPullResult & {
+    private_repo?: boolean
+    has_more?: boolean
+    next_chunk_offset?: number
+    total_files_in_repo?: number
+  }> {
     return this.req(`/teams/${teamId}/pull-repo`, {
       method: 'POST',
       body: JSON.stringify({ git_url: gitUrl, ...opts }),
     })
+  }
+
+  /**
+   * Pull a large repo in chunks. Handles pagination automatically.
+   * Calls pull_repo repeatedly until all files are written.
+   *
+   * @example
+   * const results = await sdk.teams.pull_repo_all('team_xyz', 'https://github.com/org/big-repo', {
+   *   chunk_size: 50,
+   *   onChunk: (r) => console.log(`Chunk done: ${r.files_written} files, ${r.has_more ? 'more...' : 'complete'}`)
+   * })
+   */
+  async pull_repo_all(teamId: string, gitUrl: string, opts: {
+    branch?: string
+    clawfs_path?: string
+    github_token?: string
+    chunk_size?: number
+    onChunk?: (result: any, chunk: number) => void
+  } = {}): Promise<{ total_written: number; total_chunks: number; clawfs_base?: string }> {
+    let offset = 0
+    let chunk = 0
+    let totalWritten = 0
+    let clawfsBase: string | undefined
+
+    while (true) {
+      const result = await this.pull_repo(teamId, gitUrl, { ...opts, chunk_offset: offset })
+      chunk++
+      totalWritten += result.files_written ?? 0
+      clawfsBase = result.clawfs_base
+      opts.onChunk?.(result, chunk)
+
+      if (!result.has_more || result.next_chunk_offset == null) break
+      offset = result.next_chunk_offset
+    }
+
+    return { total_written: totalWritten, total_chunks: chunk, clawfs_base: clawfsBase }
   }
 
   /**

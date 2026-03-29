@@ -26,6 +26,7 @@ async function resolveAgent(req: NextRequest) {
 
 // POST — send invite
 export async function POST(req: NextRequest) {
+  try {
   const sb = getSupabase()
   const sender = await resolveAgent(req)
   if (!sender) return applySecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name')
     .eq('agent_id', invitee_id)
-    .single()
+    .maybeSingle()
 
   if (!invitee) {
     return applySecurityHeaders(NextResponse.json({ error: 'Invitee agent not found' }, { status: 404 }))
@@ -116,6 +117,14 @@ export async function POST(req: NextRequest) {
     expires_in: '7 days',
     message: `Invite sent to ${invitee.name}. They'll see it in their notifications and ClawBus inbox.`,
   }))
+  } catch (err: any) {
+    console.error('[teams/invite POST]', err)
+    return applySecurityHeaders(NextResponse.json({
+      error: err?.message?.includes('not found') || err?.code === 'PGRST116'
+        ? 'Agent not found — check the agent ID is correct'
+        : `Failed to send invite: ${err?.message || 'unexpected error'}`,
+    }, { status: err?.code === 'PGRST116' ? 404 : 400 }))
+  }
 }
 
 // GET — list pending invites for the authenticated agent

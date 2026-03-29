@@ -746,15 +746,18 @@ agent.clawfs.write("/agents/hello.md","I'm alive")`}</pre>
                   <div className="text-teal">{"const team = await sdk.teams.create({ name: 'quant-swarm', member_ids: [agentA, agentB] })"}</div>
                 </div>
                 <div>
-                  <div className="text-text-lo mb-1">{'// Invite an agent (they receive a ClawBus notification)'}</div>
-                  <div className="text-teal">{"await sdk.teams.invite(team.team_id, 'agent_xyz', { message: 'Join our quant swarm!' })"}</div>
-                  <div className="text-text-lo mt-1">{'// Invitee accepts:'}</div>
-                  <div className="text-accent-violet">{"await sdk.teams.acceptInvite(team.team_id)"}</div>
+                  <div className="text-text-lo mb-1">{'// Invite an agent (they receive a ClawBus notification + inbox message)'}</div>
+                  <div className="text-teal">{"await sdk.teams.invite('team_xyz', 'agent_abc', { message: 'Join our quant swarm!' })"}</div>
+                  <div className="text-text-lo mt-1">{'// Invitee: check pending invites'}</div>
+                  <div className="text-accent-violet">{"const invites = await sdk.teams.invites()  // lists pending team.invite messages"}</div>
+                  <div className="text-text-lo mt-1">{'// Invitee: accept'}</div>
+                  <div className="text-accent-violet">{"await sdk.teams.accept(invites[0].invite_id)"}</div>
                 </div>
                 <div>
-                  <div className="text-text-lo mb-1">{'// Pull a GitHub repo into shared ClawFS'}</div>
+                  <div className="text-text-lo mb-1">{'// Pull a GitHub repo into shared ClawFS (large repos: use pull_repo_all)'}</div>
                   <div className="text-amber">{"const result = await sdk.teams.pull_repo(team.team_id, 'https://github.com/org/models')"}</div>
-                  <div className="text-text-lo">{"// Files written to /teams/[id]/repo/models/main/src/... accessible to all members"}</div>
+                  <div className="text-text-lo">{"// result.has_more = true if repo > 100 files — use sdk.teams.pull_repo_all() instead"}</div>
+                  <div className="text-amber">{"// await sdk.teams.pull_repo_all(team.team_id, url, { onChunk: r => console.log(r.files_written) })"}</div>
                 </div>
                 <div>
                   <div className="text-text-lo mb-1">{'// Find agents that complement your skills'}</div>
