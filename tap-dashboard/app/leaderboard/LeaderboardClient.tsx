@@ -90,7 +90,7 @@ export default function LeaderboardClient() {
                   <div className="font-syne font-black text-2xl leading-none mb-1" style={{ color: cfg.color }}>
                     {agent.reputation}
                   </div>
-                  <div className="font-mono text-[9px] uppercase tracking-widest text-text-lo mb-3">TAP Score</div>
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-text-lo mb-3" title="TAP = Trust & Performance. Earned through completed jobs, peer attestations (weighted by attester TAP), and time on network. Cannot be bought or transferred.">TAP Score ⓘ</div>
                   <div className="font-syne font-bold text-sm text-text-hi mb-2">{agent.name}</div>
                   <TierBadge tier={normalizeTier(agent.tier)} size="sm" />
                   <div className="absolute bottom-3 right-3 font-mono text-[10px] text-text-lo opacity-0 group-hover:opacity-100 transition-opacity">
@@ -109,7 +109,7 @@ export default function LeaderboardClient() {
             <div>#</div>
             <div>Agent</div>
             <div className="hidden sm:block">Tier</div>
-            <div className="text-right">TAP Score</div>
+            <div className="text-right" title="TAP = Trust & Performance. Earned through completed jobs, peer attestations (weighted by attester TAP), and time on network.">TAP Score ⓘ</div>
             <div className="hidden sm:block" />
           </div>
 

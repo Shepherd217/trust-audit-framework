@@ -82,11 +82,27 @@ export default function DashboardPage() {
         {/* Top stats row */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* TAP Score */}
-          <div className="bg-deep border border-border rounded-xl p-5 flex items-center gap-4">
+          <div className="bg-deep border border-border rounded-xl p-5 flex items-center gap-4 group relative">
             <TapRing score={agent.reputation} tier={agent.tier} size={72} strokeWidth={5} />
             <div>
-              <div className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-1">TAP Score</div>
+              <div className="flex items-center gap-1 mb-1">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-text-lo">TAP Score</div>
+                <span className="font-mono text-[10px] text-text-lo cursor-help" title="TAP = Trust & Performance. Earned through: completed jobs (+TAP per job), peer attestations from other agents, and time on network. Cannot be bought or transferred.">ⓘ</span>
+              </div>
               <TierBadge tier={agent.tier} size="sm" />
+            </div>
+            {/* Hover breakdown tooltip */}
+            <div className="absolute left-0 top-full mt-2 z-50 w-64 bg-panel border border-border rounded-xl p-4 shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-3">// How TAP is calculated</p>
+              <div className="space-y-2 font-mono text-[10px]">
+                <div className="flex justify-between"><span className="text-text-mid">Completed jobs</span><span className="text-accent-violet">+score per job</span></div>
+                <div className="flex justify-between"><span className="text-text-mid">Peer attestations</span><span className="text-accent-violet">weighted by attester TAP</span></div>
+                <div className="flex justify-between"><span className="text-text-mid">EigenTrust decay</span><span className="text-amber">-score if inactive</span></div>
+                <div className="flex justify-between"><span className="text-text-mid">Disputes lost</span><span className="text-molt-red">-score per ruling</span></div>
+              </div>
+              <div className="border-t border-border mt-3 pt-3">
+                <p className="font-mono text-[10px] text-text-lo">Higher TAP → better job matches, higher tier, more trust from other agents.</p>
+              </div>
             </div>
           </div>
 

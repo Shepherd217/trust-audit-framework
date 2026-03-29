@@ -42,6 +42,8 @@ export default function JoinPage() {
     guardians: { guardian_id: string; guardian_type: string }[]
   } | null>(null)
 
+  const [privateKeyCopied, setPrivateKeyCopied] = useState(false)
+
   async function generateKeypair() {
     const keypair = await window.crypto.subtle.generateKey(
       { name: 'Ed25519' }, true, ['sign', 'verify']
@@ -49,9 +51,16 @@ export default function JoinPage() {
     const pubRaw  = await window.crypto.subtle.exportKey('raw', keypair.publicKey)
     const privJwk = await window.crypto.subtle.exportKey('jwk', keypair.privateKey)
     const pubHex  = Array.from(new Uint8Array(pubRaw)).map(b => b.toString(16).padStart(2,'0')).join('')
+    const privStr = JSON.stringify(privJwk)
     setPublicKey(pubHex)
-    setPrivateKeyHex(JSON.stringify(privJwk))
+    setPrivateKeyHex(privStr)
     setKeyGenerated(true)
+    // Auto-copy private key to clipboard immediately
+    try {
+      await navigator.clipboard.writeText(privStr)
+      setPrivateKeyCopied(true)
+      setTimeout(() => setPrivateKeyCopied(false), 4000)
+    } catch { /* clipboard permission denied — user copies manually */ }
   }
 
   async function generateRecoveryKeypair() {
@@ -422,8 +431,21 @@ export default function JoinPage() {
                   </div>
                   {keyGenerated && privateKeyHex && (
                     <div className="mt-3 p-4 bg-red-900/20 border border-red-500/40 rounded-lg">
-                      <p className="font-mono text-[10px] text-red-400 font-bold mb-2">🔑 PRIVATE KEY (JWK format) — SHOWN ONCE, SAVE THE WHOLE THING</p>
-                      <p className="font-mono text-[10px] text-red-300 mb-2">Store this in 1Password, Bitwarden, or a hardware key. If you lose it, your agent can only be recovered via your guardians.</p>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="font-mono text-[10px] text-red-400 font-bold">🔑 PRIVATE KEY — SHOWN ONCE</p>
+                        {privateKeyCopied
+                          ? <span className="font-mono text-[10px] text-teal font-bold">✓ Copied to clipboard</span>
+                          : <button
+                              onClick={async () => {
+                                await navigator.clipboard.writeText(privateKeyHex)
+                                setPrivateKeyCopied(true)
+                                setTimeout(() => setPrivateKeyCopied(false), 4000)
+                              }}
+                              className="font-mono text-[10px] text-red-400 border border-red-500/40 rounded px-2 py-0.5 hover:bg-red-500/10 transition-all"
+                            >Copy</button>
+                        }
+                      </div>
+                      <p className="font-mono text-[10px] text-red-300 mb-2">Store in 1Password, Bitwarden, or a hardware key. If you lose it, recovery requires your guardians.</p>
                       <textarea
                         readOnly
                         rows={3}
@@ -431,7 +453,11 @@ export default function JoinPage() {
                         className="w-full bg-black/40 border border-red-500/30 rounded px-3 py-2 font-mono text-[10px] text-red-300 resize-none"
                         onClick={e => (e.target as HTMLTextAreaElement).select()}
                       />
-                      <p className="font-mono text-[10px] text-red-400/60 mt-1">This is your private key in JWK format. Save the entire JSON object. Click to select all → Copy → paste into 1Password / Bitwarden.</p>
+                      {privateKeyCopied && (
+                        <p className="font-mono text-[10px] text-teal mt-2">
+                          ✓ Auto-copied to clipboard — paste it into your password manager now before continuing.
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>

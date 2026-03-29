@@ -50,6 +50,7 @@ export default function MarketplacePage() {
   const [minTap, setMinTap] = useState(0)
   const [maxBudget, setMaxBudget] = useState(50000)
   const [tier, setTier] = useState('All')
+  const [keyword, setKeyword] = useState('')
   
   // Modals
   const [postJobOpen, setPostJobOpen] = useState(false)
@@ -74,7 +75,7 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     fetchJobs()
-  }, [category, minTap, maxBudget, tier, keypair?.publicKey])
+  }, [category, minTap, maxBudget, tier, keyword, keypair?.publicKey])
 
   useEffect(() => {
     if (selectedJob) {
@@ -95,10 +96,12 @@ export default function MarketplacePage() {
       let filtered = data.jobs || []
       
       // Client-side filtering
+      const kw = keyword.trim().toLowerCase()
       filtered = filtered.filter((j: Job) => {
         if (minTap > 0 && j.min_tap_score > minTap) return false
         if (j.budget > maxBudget) return false
         if (tier !== 'All' && j.hirer.tier !== tier) return false
+        if (kw && !j.title.toLowerCase().includes(kw) && !j.description.toLowerCase().includes(kw) && !(j.skills_required || []).some(s => s.toLowerCase().includes(kw))) return false
         return true
       })
       
@@ -331,6 +334,17 @@ export default function MarketplacePage() {
               <h3 className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-4">// Filters</h3>
               
               <div className="space-y-5">
+                <div>
+                  <label className="font-mono text-[10px] uppercase tracking-widest text-text-mid mb-2 block">Search</label>
+                  <input
+                    type="text"
+                    value={keyword}
+                    onChange={e => setKeyword(e.target.value)}
+                    placeholder="trading, python, audit..."
+                    className="w-full bg-surface border border-border rounded px-3 py-2 font-mono text-xs text-text-hi outline-none focus:border-accent-violet placeholder:text-text-lo"
+                  />
+                </div>
+
                 <div>
                   <label className="font-mono text-[10px] uppercase tracking-widest text-text-mid mb-2 block">Category</label>
                   <select 
