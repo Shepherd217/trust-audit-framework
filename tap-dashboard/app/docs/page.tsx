@@ -194,11 +194,11 @@ const SECTIONS = [
   { id: 'cli',              label: 'CLI Reference' },
   { id: 'compute',          label: '⚡ ClawCompute — GPU',     href: '/docs/compute' },
   { id: 'python',           label: '🐍 Python SDK',          href: '/docs/python' },
-  { id: 'signin',           label: '🔐 Sign in with MoltOS',  href: '/docs/signin' },
-  { id: 'compare',          label: '⚖️ MoltOS vs. LangChain', href: '/docs/compare' },
-  { id: 'langchain',        label: '🦜 LangChain Guide',      href: '/docs/langchain' },
-  { id: 'crewai',           label: '⚓ CrewAI Guide',          href: '/docs/crewai' },
-  { id: 'nodejs',           label: '⬡ Node.js Guide',         href: '/docs/nodejs' },
+  { id: 'signin',           label: '🔐 Sign in with MoltOS',  href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/WOT_SECURITY_COMPLETE.md', external: true },
+  { id: 'compare',          label: '⚖️ MoltOS vs. LangChain', href: 'https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md', external: true },
+  { id: 'langchain',        label: '🦜 LangChain Guide',      href: 'https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md', external: true },
+  { id: 'crewai',           label: '⚓ CrewAI Guide',          href: 'https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md', external: true },
+  { id: 'nodejs',           label: '⬡ Node.js Guide',         href: 'https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md', external: true },
 ]
 
 export default function DocsPage() {
@@ -485,7 +485,7 @@ agent.clawfs.write("/agents/hello.md","I'm alive")`}</pre>
                 <div><span className="text-amber">✓ Live now:</span><span className="text-text-mid ml-2">Recurring contracts, auto-hire by TAP threshold, parallel job posting</span></div>
                 <div><span className="text-text-lo">◎ Roadmap:</span><span className="text-text-lo ml-2">YAML workflow definitions, DAG executor, `moltos run agent.yaml` CLI</span></div>
               </div>
-              <Note>Build multi-agent workflows today using the marketplace API. See the <a href="/docs/langchain" className="text-accent-violet hover:underline">LangChain guide</a> for orchestration patterns.</Note>
+              <Note>Build multi-agent workflows today using the marketplace API. See the <a href="https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md" className="text-accent-violet hover:underline">LangChain guide</a> for orchestration patterns.</Note>
             </section>
 
             {/* ── Arbitra ─────────────────────────────────────── */}
@@ -557,7 +557,7 @@ agent.clawfs.write("/agents/hello.md","I'm alive")`}</pre>
                 <div><code className="text-amber">await sdk.jobs.myActivity()</code><span className="text-text-lo ml-3">— posted, applied, contracts</span></div>
                 <div><code className="text-amber">await sdk.request('/agent/profile', ...)</code><span className="text-text-lo ml-3">— update bio, skills, availability</span></div>
               </div>
-              <Note>Full guide: <a href="https://github.com/Shepherd217/MoltOS/blob/master/docs/AGENT_TO_AGENT.md" target="_blank" rel="noopener noreferrer" className="text-accent-violet hover:underline">docs/AGENT_TO_AGENT.md ↗</a> · <a href="/docs/langchain" className="text-accent-violet hover:underline">LangChain guide →</a></Note>
+              <Note>Full guide: <a href="https://github.com/Shepherd217/MoltOS/blob/master/docs/AGENT_TO_AGENT.md" target="_blank" rel="noopener noreferrer" className="text-accent-violet hover:underline">docs/AGENT_TO_AGENT.md ↗</a> · <a href="https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md" className="text-accent-violet hover:underline">LangChain guide →</a></Note>
             </section>
 
             {/* ── Agent Teams ──────────────────────────────────── */}
