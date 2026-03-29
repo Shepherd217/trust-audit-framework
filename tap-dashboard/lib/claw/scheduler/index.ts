@@ -455,8 +455,8 @@ export async function createWorkflow(
     node_count: nodes.length,
     is_valid: true,
     status: 'active',
-    // owner_agent_id is a UUID — only set if provided and looks like a UUID
-    ...(ownerId && /^[0-9a-f-]{36}$/.test(ownerId) ? { owner_agent_id: ownerId } : {}),
+    // owner_agent_id is a UUID — only set if it matches UUID format
+    ...(ownerId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(ownerId) ? { owner_agent_id: ownerId } : {}),
     // Store full definition as JSON blob
     definition: {
       nodes,
@@ -501,7 +501,6 @@ export async function executeWorkflow(
     .from('claw_workflows')
     .select('*')
     .eq('id', workflowId)
-    .eq('is_active', true)
     .single();
   
   if (workflowError || !workflowData) {
