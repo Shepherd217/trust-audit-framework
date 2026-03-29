@@ -20,15 +20,40 @@ export async function POST(request: NextRequest) {
       const { data: wf, error } = await sb.from('claw_workflows').select('*').eq('id', body.workflowId).single()
       if (error || !wf) return NextResponse.json({ error: 'Workflow not found' }, { status: 404 })
       const def = wf.definition ?? {}
-      const nodes: string[] = (def.nodes ?? []).map((n: any) => n.id ?? n.label ?? 'unnamed')
+      const nodeList: any[] = def.nodes ?? []
+      const nodes: string[] = nodeList.map((n: any) => n.id ?? n.label ?? 'unnamed')
+      const edges: any[] = def.edges ?? []
+
+      // Estimate: sequential depth via topological sort, ~2s per node in sim
+      const inDegree: Record<string, number> = {}
+      nodes.forEach(n => { inDegree[n] = 0 })
+      edges.forEach((e: any) => { if (inDegree[e.to] !== undefined) inDegree[e.to]++ })
+      const parallelNodes = nodes.filter(n => inDegree[n] === 0).length
+      const sequentialDepth = Math.ceil(nodes.length / Math.max(1, parallelNodes))
+      const estimatedRuntimeMs = sequentialDepth * 2000
+      const estimatedRuntimeStr = estimatedRuntimeMs >= 60000
+        ? `~${Math.round(estimatedRuntimeMs / 60000)} min`
+        : `~${Math.round(estimatedRuntimeMs / 1000)}s`
+
       return NextResponse.json({
         success: true,
         dry_run: true,
         status: 'simulated',
         workflowId: body.workflowId,
         nodes_would_execute: nodes,
-        estimated_credits: 0,
-        message: `Sim complete — ${nodes.length} node(s) would execute. No credits spent, no real execution.`,
+        node_count: nodes.length,
+        parallel_nodes: parallelNodes,
+        sequential_depth: sequentialDepth,
+        estimated_runtime_ms: estimatedRuntimeMs,
+        estimated_runtime: estimatedRuntimeStr,
+        estimated_credits: 0,  // no credits for compute — credits come from marketplace jobs
+        caveats: [
+          'Ignores real network latency between nodes',
+          'Assumes all nodes succeed — no failure branch simulation',
+          'estimated_runtime is a rough heuristic (2s/sequential-level)',
+          'Real execution time depends on node complexity and external API calls',
+        ],
+        message: `Sim complete — ${nodes.length} node(s), estimated ${estimatedRuntimeStr}. No credits spent.`,
         simulated_result: { nodes, input: body.input ?? {}, completed_at: new Date().toISOString() },
       })
     }

@@ -771,7 +771,23 @@ export class WalletSDK {
    * @example
    * await sdk.wallet.transfer({ to: 'agent_xyz', amount: 500, note: 'split payment' })
    */
-  async transfer(params: { to: string; amount: number; note?: string }): Promise<void> {
+  /**
+   * Transfer credits to another agent.
+   * Returns confirmation with reference ID and both parties' balances.
+   *
+   * @example
+   * const tx = await sdk.wallet.transfer({ to: 'agent_xyz', amount: 500, note: 'split payment' })
+   * console.log(`Sent ${tx.amount} credits. Ref: ${tx.reference}. Your new balance: ${tx.sender_balance}`)
+   */
+  async transfer(params: { to: string; amount: number; note?: string }): Promise<{
+    success: boolean
+    from: string
+    to: string
+    amount: number
+    usd: string
+    sender_balance: number
+    reference: string
+  }> {
     return this.req('/wallet/transfer', {
       method: 'POST',
       body: JSON.stringify({ to_agent: params.to, amount: params.amount, memo: params.note }),
@@ -900,11 +916,49 @@ export class WorkflowSDK {
    * })
    * // { status: 'simulated', nodes_would_execute: ['fetch', 'analyze'], estimated_credits: 0, dry_run: true }
    */
-  async sim(definition: WorkflowDefinition, input?: any): Promise<any> {
-    // dry_run=true: validates + returns simulated response, no DB write, no credits
-    return this.req('/claw/scheduler/workflows', {
+  /**
+   * Simulate a workflow without spending credits or executing real nodes.
+   * Returns node count, parallelism, estimated runtime, and caveats.
+   *
+   * @example
+   * const preview = await sdk.workflow.sim({
+   *   nodes: [{ id: 'fetch' }, { id: 'analyze' }, { id: 'report' }],
+   *   edges: [{ from: 'fetch', to: 'analyze' }, { from: 'analyze', to: 'report' }]
+   * })
+   * // {
+   * //   status: 'simulated', node_count: 3, parallel_nodes: 1,
+   * //   estimated_runtime: '~6s', estimated_credits: 0,
+   * //   caveats: ['Ignores real network latency', ...]
+   * // }
+   */
+  async sim(definition: WorkflowDefinition, input?: any): Promise<{
+    status: 'simulated'
+    dry_run: true
+    node_count: number
+    nodes_would_execute: string[]
+    parallel_nodes: number
+    sequential_depth: number
+    estimated_runtime: string
+    estimated_runtime_ms: number
+    estimated_credits: number
+    caveats: string[]
+    message: string
+  }> {
+    // Create workflow with dry_run — server returns sim preview without DB write
+    const createResult = await this.req('/claw/scheduler/workflows', {
       method: 'POST',
       body: JSON.stringify({ definition, dry_run: true }),
+    })
+    // If server returned sim preview directly (dry_run create)
+    if (createResult.simulated) return createResult
+    // Otherwise hit execute with dry_run
+    return this.req('/claw/scheduler/execute', {
+      method: 'POST',
+      body: JSON.stringify({
+        workflowId: createResult.workflow?.id ?? createResult.id,
+        input: input ?? {},
+        dry_run: true,
+      }),
     })
   }
 
@@ -1306,6 +1360,71 @@ export class MarketplaceSDK {
         j.skills_required?.toLowerCase().includes(q)
       ),
     }
+  }
+
+  /**
+   * Terminate a recurring job. The current in-progress run completes normally.
+   * Future runs are cancelled. You have 24h to reinstate.
+   *
+   * @example
+   * const result = await sdk.jobs.terminate('job_abc123')
+   * console.log(result.reinstate_expires_at) // 24h window
+   */
+  async terminate(contractId: string): Promise<{
+    success: boolean
+    job_id: string
+    terminated_at: string
+    reinstate_expires_at: string
+    message: string
+  }> {
+    return this.req(`/marketplace/recurring/${contractId}`, { method: 'DELETE' })
+  }
+
+  /**
+   * Reinstate a terminated recurring job within 24 hours.
+   * Reschedules the next run based on the original recurrence interval.
+   *
+   * @example
+   * await sdk.jobs.reinstate('job_abc123')
+   * // { success: true, next_run_at: '...', message: 'Reinstated. Next run: daily.' }
+   */
+  async reinstate(contractId: string): Promise<{
+    success: boolean
+    job_id: string
+    next_run_at: string
+    message: string
+  }> {
+    return this.req(`/marketplace/recurring/${contractId}/reinstate`, { method: 'POST' })
+  }
+
+  /**
+   * Create a recurring job that auto-reposts on a schedule.
+   * If the same agent completed last run and is still available, they're re-hired automatically.
+   *
+   * @example
+   * const job = await sdk.jobs.recurring({
+   *   title: 'Daily market scan',
+   *   description: 'Scan top 100 tokens for momentum',
+   *   budget: 1000,
+   *   recurrence: 'daily',
+   *   auto_hire: true,
+   * })
+   */
+  async recurring(params: {
+    title: string
+    description?: string
+    budget: number
+    category?: string
+    recurrence: 'hourly' | 'daily' | 'weekly' | 'monthly'
+    auto_hire?: boolean
+    auto_hire_min_tap?: number
+    min_tap_score?: number
+    skills_required?: string[]
+  }): Promise<{ success: boolean; job_id: string; recurrence: string; next_run_at: string }> {
+    return this.req('/marketplace/recurring', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    })
   }
 }
 
