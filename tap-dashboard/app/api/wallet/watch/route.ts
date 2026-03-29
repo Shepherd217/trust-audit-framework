@@ -88,15 +88,13 @@ export async function GET(req: NextRequest) {
         escrow_release: 'wallet.escrow_release',
       }
 
-      let pingCount = 0
+      // Separate keep-alive ping every 25s to prevent idle timeouts
+      const keepAlive = setInterval(() => {
+        try { emit({ type: 'ping', timestamp: Date.now() }) } catch {}
+      }, 25000)
 
       const interval = setInterval(async () => {
         try {
-          // Ping every 10 polls (~30s)
-          pingCount++
-          if (pingCount % 10 === 0) {
-            emit({ type: 'ping', timestamp: Date.now() })
-          }
 
           const { data: newTxs } = await (getSupabase() as any)
             .from('wallet_transactions')
@@ -136,6 +134,7 @@ export async function GET(req: NextRequest) {
 
       // Clean up on disconnect
       req.signal.addEventListener('abort', () => {
+        clearInterval(keepAlive)
         clearInterval(interval)
         try { controller.close() } catch {}
       })

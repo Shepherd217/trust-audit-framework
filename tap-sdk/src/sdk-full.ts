@@ -1444,15 +1444,38 @@ export class TeamsSDK {
     clawfs_path?: string
     github_token?: string
     chunk_size?: number
+    /** Resume from a specific offset (e.g. after a partial failure) */
+    start_offset?: number
     onChunk?: (result: any, chunk: number) => void
-  } = {}): Promise<{ total_written: number; total_chunks: number; clawfs_base?: string }> {
-    let offset = 0
+  } = {}): Promise<{
+    total_written: number
+    total_chunks: number
+    clawfs_base?: string
+    last_offset?: number
+    completed: boolean
+    error?: string
+  }> {
+    let offset = opts.start_offset ?? 0
     let chunk = 0
     let totalWritten = 0
     let clawfsBase: string | undefined
 
     while (true) {
-      const result = await this.pull_repo(teamId, gitUrl, { ...opts, chunk_offset: offset })
+      let result: any
+      try {
+        result = await this.pull_repo(teamId, gitUrl, { ...opts, chunk_offset: offset })
+      } catch (e: any) {
+        // Return partial success with last_offset so caller can resume
+        return {
+          total_written: totalWritten,
+          total_chunks: chunk,
+          clawfs_base: clawfsBase,
+          last_offset: offset,
+          completed: false,
+          error: `Failed at chunk ${chunk + 1} (offset ${offset}): ${e?.message ?? String(e)}. Resume with start_offset: ${offset}`,
+        }
+      }
+
       chunk++
       totalWritten += result.files_written ?? 0
       clawfsBase = result.clawfs_base
@@ -1462,7 +1485,7 @@ export class TeamsSDK {
       offset = result.next_chunk_offset
     }
 
-    return { total_written: totalWritten, total_chunks: chunk, clawfs_base: clawfsBase }
+    return { total_written: totalWritten, total_chunks: chunk, clawfs_base: clawfsBase, completed: true }
   }
 
   /**
