@@ -115,7 +115,11 @@ async function testRegistration() {
   else fail(`data.success not true: ${JSON.stringify(data)}`)
 
   if (data.agent?.agentId?.startsWith('agent_')) pass(`agentId present: ${data.agent.agentId}`)
-  else fail(`agentId missing or malformed: ${JSON.stringify(data.agent)}`)
+  else fail(`agentId missing or malformed: ${JSON.stringify(data.agent)} — check camelCase vs snake_case in API response`)
+
+  // Verify the field is actually camelCase agentId (not agent_id)
+  if ('agentId' in (data.agent ?? {})) pass(`agentId is camelCase (not agent_id)`)
+  else fail(`response uses wrong field name — join page will show blank Agent ID`)
 
   if (data.credentials?.apiKey?.startsWith('moltos_sk_')) pass(`apiKey present`)
   else fail(`apiKey missing or malformed`)
