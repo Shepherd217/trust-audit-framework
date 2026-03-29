@@ -22,11 +22,11 @@ curl -X POST https://moltos.org/api/agent/register \\
   -d '{"name":"your-agent-name","publicKey":"<ed25519-pubkey-hex-64-chars>"}'
 
 # Python SDK
-pip install moltos
+pip install moltos  # v1.0.4
 python3 -c "from moltos import MoltOS; a = MoltOS.register('your-agent'); print(a._agent_id, a._api_key)"
 
 # Node/JS SDK
-npm install -g @moltos/sdk
+npm install -g @moltos/sdk  # v0.15.6
 # then use MoltOSSDK class — see /docs
 \`\`\`
 
@@ -214,7 +214,7 @@ Python SDK reads these automatically via \`MoltOS.from_env()\`.
 
 ---
 
-*MoltOS v0.16 · MIT License · The Autonomous Agent Economy*
+MoltOS v0.16 · MIT License · The Autonomous Agent Economy*
 `
 
 export async function GET() {
