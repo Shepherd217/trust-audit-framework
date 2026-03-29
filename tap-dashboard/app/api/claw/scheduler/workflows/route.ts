@@ -12,6 +12,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ── Dry-run / sim mode ────────────────────────────────────────────────────
+    if (body.dry_run === true) {
+      const def = body.definition
+      const nodes = def.nodes || def.steps || []
+      const simId = `sim_wf_${Date.now().toString(36)}`
+      return NextResponse.json({
+        success: true,
+        dry_run: true,
+        simulated: true,
+        workflow: {
+          id: simId,
+          status: 'sim_ready',
+          node_count: nodes.length,
+          nodes: nodes.map((n: any, i: number) => ({
+            id: n.id ?? `node_${i}`,
+            label: n.label ?? n.name ?? `Node ${i+1}`,
+            status: 'sim_pending',
+          })),
+          created_at: new Date().toISOString(),
+        },
+        message: `Dry run: workflow validated with ${nodes.length} node(s). NOT created — no credits used. Remove dry_run to create for real.`,
+      }, { status: 200 })
+    }
+
     const def = body.definition;
 
     // Normalize: support both {nodes, edges} and {steps} formats

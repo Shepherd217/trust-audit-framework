@@ -1,7 +1,8 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useAuth } from '@/lib/auth'
 import { signChallenge } from '@/lib/claw/id'
+import { useRouter, useSearchParams } from 'next/navigation'
 import clsx from 'clsx'
 import MascotIcon from '@/components/MascotIcon'
 
@@ -38,8 +39,10 @@ interface Application {
 const CATEGORIES = ['All', 'Trading', 'Support', 'Research', 'Development', 'Marketing']
 const TIERS = ['All', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond']
 
-export default function MarketplacePage() {
+function MarketplaceInner() {
   const { keypair, agent, isAuthenticated } = useAuth()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
@@ -80,8 +83,21 @@ export default function MarketplacePage() {
   useEffect(() => {
     if (selectedJob) {
       fetchApplications(selectedJob.id)
+      // Persist job ID in URL so TAP warning survives refresh
+      const params = new URLSearchParams(window.location.search)
+      params.set('job', selectedJob.id)
+      router.replace(`?${params.toString()}`, { scroll: false })
     }
   }, [selectedJob])
+
+  // Restore selected job from URL on load
+  useEffect(() => {
+    const jobId = searchParams.get('job')
+    if (jobId && jobs.length > 0 && !selectedJob) {
+      const found = jobs.find(j => j.id === jobId)
+      if (found) { setSelectedJob(found); setJobDetailOpen(true) }
+    }
+  }, [jobs, searchParams])
 
   async function fetchJobs() {
     setLoading(true)
@@ -568,7 +584,12 @@ export default function MarketplacePage() {
       {jobDetailOpen && selectedJob && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-void/95 backdrop-blur-xl">
           <div className="w-full max-w-2xl bg-panel border border-border-hi rounded-xl p-8 relative max-h-[90vh] overflow-y-auto">
-            <button onClick={() => setJobDetailOpen(false)} className="absolute top-4 right-4 text-text-lo hover:text-text-hi">✕</button>
+            <button onClick={() => {
+              setJobDetailOpen(false)
+              const params = new URLSearchParams(window.location.search)
+              params.delete('job')
+              router.replace(params.toString() ? `?${params}` : window.location.pathname, { scroll: false })
+            }} className="absolute top-4 right-4 text-text-lo hover:text-text-hi">✕</button>
             
             <div className="flex items-center gap-2 mb-4">
               <span className="font-mono text-[10px] uppercase tracking-widest text-accent-violet border border-accent-violet/30 px-2 py-0.5 rounded">{selectedJob.category}</span>
@@ -622,13 +643,13 @@ export default function MarketplacePage() {
                   <button
                     onClick={() => setApplyOpen(true)}
                     disabled={!canApply}
-                    className="flex-1 font-mono text-xs uppercase tracking-widest text-void bg-accent-violet font-medium rounded-lg py-3 hover:bg-accent-purple transition-all disabled:opacity-50"
+                    className="flex-1 font-mono text-xs uppercase tracking-widest text-void bg-accent-violet font-medium rounded-lg py-4 lg:py-3 hover:bg-accent-purple transition-all disabled:opacity-50 min-h-[52px] lg:min-h-0"
                   >
                     Apply Now
                   </button>
                   <button
                     onClick={() => {}} // Would show dispute modal
-                    className="font-mono text-xs uppercase tracking-widest text-text-mid border border-border rounded-lg px-4 py-3 hover:border-molt-red hover:text-molt-red transition-all"
+                    className="font-mono text-xs uppercase tracking-widest text-text-mid border border-border rounded-lg px-5 py-4 lg:py-3 hover:border-molt-red hover:text-molt-red transition-all min-h-[52px] lg:min-h-0"
                   >
                     Dispute
                   </button>
@@ -696,5 +717,13 @@ export default function MarketplacePage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function MarketplacePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen pt-16 flex items-center justify-center"><p className="font-mono text-xs text-text-lo">Loading marketplace...</p></div>}>
+      <MarketplaceInner />
+    </Suspense>
   )
 }

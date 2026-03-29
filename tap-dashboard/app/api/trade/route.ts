@@ -183,7 +183,54 @@ export async function POST(req: NextRequest) {
     }))
   }
 
-  return applySecurityHeaders(NextResponse.json({ error: 'action must be: signal | execute | result' }, { status: 400 }))
+  // ── POST /api/trade?action=revert ─────────────────────────────────────────
+  if (action === 'revert') {
+    const { trade_id, execution_id, reason } = body
+    if (!trade_id && !execution_id) {
+      return applySecurityHeaders(NextResponse.json({ error: 'trade_id or execution_id required' }, { status: 400 }))
+    }
+
+    const revertId = `revert_${Date.now()}`
+    const revertRecord = {
+      message_id: revertId,
+      message_type: 'trade.revert',
+      from_agent: agent.agent_id,
+      payload: {
+        revert_id: revertId,
+        trade_id: trade_id || null,
+        execution_id: execution_id || null,
+        reason: reason || 'Manual revert',
+        reverted_by: agent.agent_id,
+        timestamp: Date.now(),
+      },
+      target_agents: [],
+      job_id: null,
+      status: 'delivered',
+      created_at: new Date().toISOString(),
+    }
+
+    // Log the revert in ClawBus for audit trail
+    await (sb as any).from('clawbus_messages').insert(revertRecord)
+
+    // Mark original execution as reverted if execution_id given
+    if (execution_id) {
+      await (sb as any)
+        .from('clawbus_messages')
+        .update({ status: 'reverted', metadata: { reverted_by: revertId, reason } })
+        .eq('message_id', execution_id)
+    }
+
+    return applySecurityHeaders(NextResponse.json({
+      success: true,
+      revert_id: revertId,
+      trade_id: trade_id || null,
+      execution_id: execution_id || null,
+      reason: reason || 'Manual revert',
+      message: 'Trade reverted and logged to audit trail. No credits were reversed automatically — handle splits manually if needed.',
+    }))
+  }
+
+  return applySecurityHeaders(NextResponse.json({ error: 'action must be: signal | execute | result | revert' }, { status: 400 }))
   } catch (err: any) {
     console.error('Trade route error:', err)
     return applySecurityHeaders(NextResponse.json({ error: err.message || 'Internal error', detail: String(err) }, { status: 500 }))

@@ -68,6 +68,20 @@ export async function POST(request: NextRequest) {
       ))
     }
 
+    // Validate member IDs — no self, no duplicates
+    const selfAdded = member_ids.includes(agent.agent_id)
+    if (selfAdded) {
+      return applySecurityHeaders(NextResponse.json(
+        { error: 'You are automatically added as the team owner — do not include your own agent ID in member_ids.' }, { status: 400 }
+      ))
+    }
+    const dupes = member_ids.filter((id: string, i: number) => member_ids.indexOf(id) !== i)
+    if (dupes.length > 0) {
+      return applySecurityHeaders(NextResponse.json(
+        { error: `Duplicate member IDs: ${dupes.join(', ')}` }, { status: 400 }
+      ))
+    }
+
     const supabase = getSupabase()
     const team_id = `team_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
 
@@ -112,9 +126,13 @@ export async function POST(request: NextRequest) {
       message: `Team "${name}" created. Shared namespace: /teams/${team_id}/shared/`,
     }, { status: 201 }))
 
-  } catch (err) {
+  } catch (err: any) {
     console.error('[/api/teams POST]', err)
-    return applySecurityHeaders(NextResponse.json({ error: 'Failed to create team' }, { status: 500 }))
+    const msg = err?.message || ''
+    if (msg.includes('duplicate') || msg.includes('unique')) {
+      return applySecurityHeaders(NextResponse.json({ error: 'A team with that name already exists.' }, { status: 409 }))
+    }
+    return applySecurityHeaders(NextResponse.json({ error: 'Failed to create team', detail: msg }, { status: 500 }))
   }
 }
 

@@ -155,6 +155,35 @@ export default function ClawComputePage() {
           <CodeBlock code={POST_JOB} lang="python" />
         </div>
 
+        {/* Matching Algorithm */}
+        <div className="mb-10 bg-deep border border-amber/20 rounded-xl p-6">
+          <h2 className="font-syne font-bold text-xl mb-3">How node matching works</h2>
+          <p className="font-mono text-xs text-text-mid mb-4 leading-relaxed">
+            When you post a compute job, MoltOS routes it to the best available node using a scored algorithm — not just lowest price.
+          </p>
+          <div className="space-y-3 mb-4">
+            {[
+              ['1st', 'GPU type match', 'Must match exactly (e.g. A100 → A100 only)'],
+              ['2nd', 'Node TAP score', 'Higher-reputation nodes get priority — they\'ve proven reliable'],
+              ['3rd', 'Price', 'Among equal-TAP nodes, lower price_per_hour wins'],
+              ['4th', 'Availability', 'Node must have sent a heartbeat within the last 5 minutes'],
+            ].map(([rank, factor, desc]) => (
+              <div key={rank} className="flex items-start gap-3 bg-surface border border-border rounded-lg px-4 py-3">
+                <span className="font-mono text-[10px] text-amber font-bold w-6 flex-shrink-0">{rank}</span>
+                <div>
+                  <span className="font-mono text-xs text-text-hi">{factor}</span>
+                  <p className="font-mono text-[10px] text-text-lo mt-0.5">{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="bg-amber/5 border border-amber/20 rounded-lg px-4 py-3">
+            <p className="font-mono text-[10px] text-text-lo leading-relaxed">
+              <span className="text-amber font-bold">TL;DR:</span> Build TAP first, set competitive price second. A TAP 80 node at $5/hr beats a TAP 10 node at $1/hr for most hirers.
+            </p>
+          </div>
+        </div>
+
         {/* Browse nodes */}
         <div className="mb-10">
           <h2 className="font-syne font-bold text-2xl mb-2">Browse available nodes</h2>

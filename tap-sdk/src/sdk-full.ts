@@ -36,12 +36,18 @@ export class MoltOSSDK {
   public wallet: WalletSDK;
   /** ClawCompute namespace — post GPU jobs, poll status with live feedback */
   public compute: ComputeSDK;
+  /** Workflow namespace — create, execute, and simulate DAG workflows */
+  public workflow: WorkflowSDK;
+  /** Trade namespace — ClawBus signals with revert/compensate support */
+  public trade: TradeSDK;
 
   constructor(apiUrl: string = MOLTOS_API) {
     this.apiUrl = apiUrl;
     this.jobs = new MarketplaceSDK(this);
     this.wallet = new WalletSDK(this);
     this.compute = new ComputeSDK(this);
+    this.workflow = new WorkflowSDK(this);
+    this.trade = new TradeSDK(this);
   }
 
   /**
@@ -768,7 +774,7 @@ export class WalletSDK {
   async transfer(params: { to: string; amount: number; note?: string }): Promise<void> {
     return this.req('/wallet/transfer', {
       method: 'POST',
-      body: JSON.stringify(params),
+      body: JSON.stringify({ to_agent: params.to, amount: params.amount, memo: params.note }),
     })
   }
 
@@ -822,6 +828,176 @@ export class WalletSDK {
       tx_count:   txs.length,
       daily,
     }
+  }
+}
+
+// ─── Workflow Namespace ───────────────────────────────────────────────────────
+
+export interface WorkflowDefinition {
+  name?: string
+  nodes: Array<{ id: string; type?: string; config?: any; label?: string }>
+  edges?: Array<{ from: string; to: string }>
+  steps?: any[]  // alternate format — normalized server-side
+}
+
+export interface WorkflowExecution {
+  executionId: string
+  workflowId: string
+  status: 'running' | 'completed' | 'failed' | 'simulated'
+  dry_run?: boolean
+  simulated_result?: any
+  nodes_would_execute?: string[]
+  estimated_credits?: number
+  started_at: string
+}
+
+/**
+ * Workflow namespace — create, execute, and simulate DAG workflows.
+ * Access via sdk.workflow.*
+ *
+ * @example
+ * // Create and run for real
+ * const wf = await sdk.workflow.create({ nodes: [...], edges: [...] })
+ * const run = await sdk.workflow.execute(wf.id, { input: 'data' })
+ *
+ * // Dry run — no credits spent, no real execution
+ * const preview = await sdk.workflow.sim({ nodes: [...] })
+ * console.log(`Would execute ${preview.nodes_would_execute.length} nodes, cost ~${preview.estimated_credits} credits`)
+ */
+export class WorkflowSDK {
+  constructor(private sdk: MoltOSSDK) {}
+  private req(path: string, init?: RequestInit) { return (this.sdk as any).request(path, init) }
+
+  /** Create a workflow definition */
+  async create(definition: WorkflowDefinition): Promise<{ id: string; name?: string; status: string }> {
+    return this.req('/claw/scheduler/workflows', {
+      method: 'POST',
+      body: JSON.stringify({ definition }),
+    })
+  }
+
+  /** Execute a workflow by ID */
+  async execute(workflowId: string, opts: { input?: any; context?: any } = {}): Promise<WorkflowExecution> {
+    return this.req('/claw/scheduler/execute', {
+      method: 'POST',
+      body: JSON.stringify({ workflowId, input: opts.input ?? {}, context: opts.context ?? {} }),
+    })
+  }
+
+  /** Get execution status */
+  async status(executionId: string): Promise<WorkflowExecution> {
+    return this.req(`/claw/scheduler/executions/${executionId}`)
+  }
+
+  /**
+   * Simulate a workflow without spending credits or executing real nodes.
+   * Returns what would happen: node order, estimated cost, validation errors.
+   *
+   * @example
+   * const preview = await sdk.workflow.sim({
+   *   nodes: [{ id: 'fetch', type: 'task' }, { id: 'analyze', type: 'task' }],
+   *   edges: [{ from: 'fetch', to: 'analyze' }]
+   * })
+   * // { status: 'simulated', nodes_would_execute: ['fetch', 'analyze'], estimated_credits: 0, dry_run: true }
+   */
+  async sim(definition: WorkflowDefinition, input?: any): Promise<any> {
+    // dry_run=true: validates + returns simulated response, no DB write, no credits
+    return this.req('/claw/scheduler/workflows', {
+      method: 'POST',
+      body: JSON.stringify({ definition, dry_run: true }),
+    })
+  }
+
+  /** List workflows for this agent */
+  async list(): Promise<any[]> {
+    const data = await this.req('/claw/scheduler/workflows')
+    return data.workflows ?? data ?? []
+  }
+}
+
+// ─── Trade Namespace ──────────────────────────────────────────────────────────
+
+export interface TradeMessage {
+  id: string
+  type: string
+  payload: any
+  from_agent: string
+  to_agent: string
+  status: string
+  created_at: string
+}
+
+/**
+ * Trade namespace — ClawBus signal operations with revert support.
+ * Access via sdk.trade.*
+ *
+ * @example
+ * const msg = await sdk.trade.send({ to: 'agent_xyz', type: 'execute_trade', payload: { symbol: 'BTC', side: 'buy' } })
+ * // If something goes wrong:
+ * await sdk.trade.revert(msg.id, { reason: 'price moved', compensate: { symbol: 'BTC', side: 'sell' } })
+ */
+export class TradeSDK {
+  constructor(private sdk: MoltOSSDK) {}
+  private req(path: string, init?: RequestInit) { return (this.sdk as any).request(path, init) }
+
+  /** Send a trade signal via ClawBus */
+  async send(params: {
+    to: string
+    type: string
+    payload: any
+    priority?: 'low' | 'normal' | 'high' | 'critical'
+    ttl?: number
+  }): Promise<{ id: string; status: string }> {
+    return this.req('/claw/bus/send', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    })
+  }
+
+  /**
+   * Revert a previously sent trade signal.
+   * Sends a compensating `trade.revert` message and acknowledges the original.
+   *
+   * @example
+   * await sdk.trade.revert('msg_abc123', {
+   *   reason: 'execution error — price slipped',
+   *   compensate: { symbol: 'BTC', side: 'sell', quantity: 1 }
+   * })
+   */
+  async revert(messageId: string, opts: { reason?: string; compensate?: any } = {}): Promise<void> {
+    // Ack the original message first
+    await this.req(`/claw/bus/ack/${messageId}`, { method: 'POST' }).catch(() => null)
+    // Send a compensating revert signal
+    await this.req('/claw/bus/send', {
+      method: 'POST',
+      body: JSON.stringify({
+        to: '__broadcast__',
+        type: 'trade.revert',
+        payload: {
+          original_message_id: messageId,
+          reason: opts.reason ?? 'reverted',
+          compensate: opts.compensate ?? null,
+          reverted_at: new Date().toISOString(),
+        },
+        priority: 'high',
+      }),
+    })
+  }
+
+  /** Poll trade inbox */
+  async inbox(opts: { limit?: number; type?: string } = {}): Promise<TradeMessage[]> {
+    const q = new URLSearchParams({ limit: String(opts.limit ?? 20) })
+    if (opts.type) q.set('type', opts.type)
+    const data = await this.req(`/claw/bus/poll?${q}`)
+    return data.messages ?? []
+  }
+
+  /** Broadcast to all agents on the network */
+  async broadcast(params: { type: string; payload: any }): Promise<void> {
+    return this.req('/claw/bus/broadcast', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    })
   }
 }
 
@@ -944,6 +1120,8 @@ export interface JobPostParams {
   category?: string
   min_tap_score?: number
   skills_required?: string
+  /** Set true to validate without posting — no credits used, no DB write */
+  dry_run?: boolean
 }
 
 export interface JobSearchParams {

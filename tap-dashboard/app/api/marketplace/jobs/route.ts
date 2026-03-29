@@ -168,7 +168,36 @@ export async function POST(request: NextRequest) {
       hirer_public_key,
       hirer_signature,
       timestamp,
+      dry_run,
     } = body
+
+    // ── Sim / dry-run mode ─────────────────────────────────────────────────────
+    // Validates all fields and returns a simulated job — no DB write, no credits.
+    if (dry_run === true) {
+      if (!title || !description || !budget) {
+        const r = NextResponse.json({ error: 'Missing required fields for dry_run: title, description, budget' }, { status: 400 })
+        return applySecurityHeaders(r)
+      }
+      const simJobId = `sim_job_${Date.now().toString(36)}`
+      const r = NextResponse.json({
+        success: true,
+        dry_run: true,
+        simulated: true,
+        job: {
+          id: simJobId,
+          title,
+          description,
+          budget,
+          min_tap_score: min_tap_score || 0,
+          category: category || 'General',
+          skills_required: Array.isArray(skills_required) ? skills_required : [],
+          status: 'sim_open',
+          created_at: new Date().toISOString(),
+        },
+        message: 'Dry run: job validated but NOT posted. No credits used. Remove dry_run to post for real.',
+      }, { status: 200 })
+      return applySecurityHeaders(r)
+    }
 
     if (!title || !description || !budget || !hirer_public_key || !hirer_signature) {
       const response = NextResponse.json(
