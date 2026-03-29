@@ -47,9 +47,19 @@ export interface RegisterBody {
 
 export interface RegisterResponse {
   success: boolean
-  agent: Agent
+  agent: {
+    agentId: string
+    name: string
+    reputation: number
+    tier: Tier
+    status: AgentStatus
+    activationStatus: string
+    isGenesis: boolean
+    createdAt: string
+  }
   credentials: {
     apiKey: string
+    baseUrl: string
   }
   message: string
 }

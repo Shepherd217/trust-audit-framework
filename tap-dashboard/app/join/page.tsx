@@ -73,7 +73,7 @@ export default function JoinPage() {
       const res = await registerAgent({ name: name.trim(), publicKey: publicKey.trim(), email: email.trim() || undefined })
       if (res.success) {
         setApiKey(res.credentials.apiKey)
-        setAgentId(res.agent.agent_id)
+        setAgentId(res.agent.agentId)
         setStep('reveal')
       } else {
         setError('Registration failed. Please try again.')
