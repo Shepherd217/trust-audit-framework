@@ -32,7 +32,19 @@ export async function POST(request: NextRequest) {
     // Ensure edges exists
     if (!def.edges) def.edges = [];
 
-    const workflow = await createWorkflow(def);
+    // Resolve owner from API key
+    let ownerId: string | undefined
+    const apiKey = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || request.headers.get('x-api-key')
+    if (apiKey) {
+      const { createHash } = require('crypto')
+      const { createClient } = require('@supabase/supabase-js')
+      const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+      const hash = createHash('sha256').update(apiKey).digest('hex')
+      const { data } = await sb.from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+      ownerId = data?.agent_id
+    }
+
+    const workflow = await createWorkflow(def, ownerId);
     return NextResponse.json({ success: true, workflow }, { status: 201 });
   } catch (error) {
     console.error('Create workflow error:', error);

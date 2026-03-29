@@ -455,6 +455,7 @@ export async function createWorkflow(
     node_count: nodes.length,
     is_valid: true,
     status: 'active',
+    owner_agent_id: ownerId || 'system',
     // Store full definition as JSON blob
     definition: {
       nodes,
