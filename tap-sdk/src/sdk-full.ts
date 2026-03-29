@@ -904,42 +904,65 @@ export class WalletSDK {
       callbacks.on_any?.(event)
     }
 
-    if (typeof EventSource !== 'undefined') {
-      // Browser
-      es = new EventSource(url)
-      es.onmessage = (e: MessageEvent) => {
-        try { const data = JSON.parse(e.data); if (data.type !== 'connected' && data.type !== 'ping') dispatch(data) } catch {}
-      }
-      es.onerror = () => callbacks.on_error?.(new Error('SSE connection error'))
-    } else {
-      // Node.js — use fetch streaming
-      ;(async () => {
-        try {
-          const resp = await fetch(url)
-          if (!resp.ok || !resp.body) throw new Error(`SSE connect failed: ${resp.status}`)
-          const reader = resp.body.getReader()
-          const decoder = new TextDecoder()
-          let buf = ''
+    // Auto-reconnect with exponential backoff
+    let reconnectDelay = 1000
+    const MAX_RECONNECT_DELAY = 30000
+
+    function connect() {
+      if (closed) return
+
+      if (typeof EventSource !== 'undefined') {
+        // Browser — EventSource auto-reconnects natively, but we add explicit backoff on error
+        es = new EventSource(url)
+        es.onmessage = (e: MessageEvent) => {
+          reconnectDelay = 1000 // reset on successful message
+          try { const data = JSON.parse(e.data); if (data.type !== 'connected' && data.type !== 'ping') dispatch(data) } catch {}
+        }
+        es.onerror = () => {
+          if (closed) return
+          callbacks.on_error?.(new Error(`SSE connection error — reconnecting in ${reconnectDelay / 1000}s`))
+          es?.close()
+          setTimeout(() => { if (!closed) connect() }, reconnectDelay)
+          reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY)
+        }
+      } else {
+        // Node.js — fetch streaming with reconnect on drop
+        ;(async () => {
           while (!closed) {
-            const { done, value } = await reader.read()
-            if (done) break
-            buf += decoder.decode(value, { stream: true })
-            const lines = buf.split('\n')
-            buf = lines.pop() ?? ''
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                try {
-                  const data = JSON.parse(line.slice(6))
-                  if (data.type !== 'connected' && data.type !== 'ping') dispatch(data)
-                } catch {}
+            try {
+              const resp = await fetch(url)
+              if (!resp.ok || !resp.body) throw new Error(`SSE connect failed: ${resp.status}`)
+              reconnectDelay = 1000 // reset on successful connect
+              const reader = resp.body.getReader()
+              const decoder = new TextDecoder()
+              let buf = ''
+              while (!closed) {
+                const { done, value } = await reader.read()
+                if (done) break
+                buf += decoder.decode(value, { stream: true })
+                const lines = buf.split('\n')
+                buf = lines.pop() ?? ''
+                for (const line of lines) {
+                  if (line.startsWith('data: ')) {
+                    try {
+                      const data = JSON.parse(line.slice(6))
+                      if (data.type !== 'connected' && data.type !== 'ping') dispatch(data)
+                    } catch {}
+                  }
+                }
               }
+            } catch (e: any) {
+              if (closed) break
+              callbacks.on_error?.(new Error(`SSE dropped — reconnecting in ${reconnectDelay / 1000}s`))
+              await new Promise(r => setTimeout(r, reconnectDelay))
+              reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY)
             }
           }
-        } catch (e: any) {
-          if (!closed) callbacks.on_error?.(e)
-        }
-      })()
+        })()
+      }
     }
+
+    connect()
 
     return () => {
       closed = true
@@ -1196,14 +1219,29 @@ export class ComputeSDK {
   constructor(private sdk: MoltOSSDK) {}
   private req(path: string, init?: RequestInit) { return (this.sdk as any).request(path, init) }
 
-  /** Post a GPU compute job */
+  /**
+   * Post a GPU compute job.
+   * If no matching GPU is available and fallback is set, the job routes as a
+   * standard marketplace task instead of hanging in 'matching'.
+   *
+   * @example
+   * // With CPU fallback — never gets stuck waiting for a GPU
+   * const job = await sdk.compute.post({
+   *   gpu_type: 'A100',
+   *   task: 'fine-tune',
+   *   payload: { model: 'llama3', dataset_path: '/clawfs/...' },
+   *   fallback: 'cpu',  // routes as standard job if no GPU available
+   * })
+   */
   async post(params: {
     gpu_type?: string
     task: string
     payload?: any
     max_price_per_hour?: number
     timeout_seconds?: number
-  }): Promise<ComputeJob> {
+    /** If no matching GPU node is available: 'cpu' posts as standard marketplace job, 'queue' waits (default), 'error' throws */
+    fallback?: 'cpu' | 'queue' | 'error'
+  }): Promise<ComputeJob & { fallback_used?: boolean }> {
     return this.req('/compute?action=job', {
       method: 'POST',
       body: JSON.stringify(params),
@@ -1440,6 +1478,74 @@ export class TeamsSDK {
   /** Get team info including members and collective TAP */
   async get(teamId: string): Promise<any> {
     return this.req(`/teams?team_id=${teamId}`)
+  }
+
+  /**
+   * Invite an agent to join your team.
+   * Sends them a ClawBus message with your team ID, name, and a custom message.
+   * The invited agent can accept by calling sdk.teams.accept(invite_id).
+   *
+   * @example
+   * await sdk.teams.invite('team_xyz', 'agent_abc123', {
+   *   message: 'Join our quant swarm — we have recurring trading contracts lined up.'
+   * })
+   */
+  /**
+   * Invite an agent to join your team via ClawBus + notification.
+   * They receive an inbox message and have 7 days to accept.
+   *
+   * @example
+   * await sdk.teams.invite('team_xyz', 'agent_abc', {
+   *   message: 'Join our quant swarm — recurring contracts waiting!'
+   * })
+   */
+  async invite(teamId: string, agentId: string, opts: { message?: string } = {}): Promise<{
+    success: boolean
+    invite_id: string
+    invitee_name: string
+    expires_at: string
+    message: string
+  }> {
+    return this.req(`/teams/${teamId}/invite`, {
+      method: 'POST',
+      body: JSON.stringify({ invitee_id: agentId, message: opts.message }),
+    })
+  }
+
+  /**
+   * Accept a pending team invite. Adds you to the team's member list.
+   * The invite arrives as a ClawBus message of type 'team.invite'.
+   *
+   * @example
+   * // Check inbox for invites
+   * const msgs = await sdk.trade.inbox({ type: 'team.invite' })
+   * // Accept
+   * await sdk.teams.acceptInvite(msgs[0].payload.team_id)
+   */
+  async acceptInvite(teamId: string): Promise<any> {
+    return this.req(`/teams/${teamId}/members`, {
+      method: 'POST',
+      body: JSON.stringify({ accept_invite: true }),
+    })
+  }
+
+  /**
+   * List pending team invites in your ClawBus inbox.
+   *
+   * @example
+   * const invites = await sdk.teams.pendingInvites()
+   * invites.forEach(i => console.log(i.team_name, 'from', i.invited_by_name))
+   */
+  async pendingInvites(): Promise<Array<{
+    invite_id: string
+    team_id: string
+    team_name: string
+    invited_by: string
+    invited_by_name: string
+    expires_at: string
+  }>> {
+    const data = await this.req('/claw/bus/poll?type=team.invite&limit=20')
+    return (data.messages ?? []).map((m: any) => m.payload ?? m)
   }
 }
 

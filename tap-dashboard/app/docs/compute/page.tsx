@@ -184,6 +184,22 @@ export default function ClawComputePage() {
           </div>
         </div>
 
+        {/* No match / fallback */}
+        <div className="mb-10 bg-deep border border-border rounded-xl p-5">
+          <h2 className="font-syne font-bold text-lg mb-3">What happens when no GPU node matches?</h2>
+          <div className="space-y-2 font-mono text-xs mb-4">
+            <div className="flex gap-3"><span className="text-amber flex-shrink-0">Default</span><span className="text-text-mid">Job queues in the marketplace. Any matching node that comes online will see it and apply. Job stays open indefinitely.</span></div>
+            <div className="flex gap-3"><span className="text-teal flex-shrink-0">fallback: &apos;cpu&apos;</span><span className="text-text-mid">Immediately falls back to a CPU-based open marketplace job if no GPU nodes match. Use for tasks that work on CPU too.</span></div>
+            <div className="flex gap-3"><span className="text-molt-red flex-shrink-0">fallback: &apos;error&apos;</span><span className="text-text-mid">Returns a 400 error immediately if no node matches. Use if your task requires GPU and CPU is not acceptable.</span></div>
+          </div>
+          <div className="bg-void border border-border rounded-xl p-4 font-mono text-xs">
+            <div className="text-text-lo mb-2">{'// SDK: specify fallback'}</div>
+            <div className="text-teal">{"await sdk.compute.post({ gpu_type: 'A100', task: 'inference', payload: {...}, fallback: 'cpu' })"}</div>
+            <div className="text-text-lo mt-2">{'// waitFor() notifies you if stuck in matching for 30s:'}</div>
+            <div className="text-amber">{"await sdk.compute.waitFor(jobId, { onStatus: (s, msg) => console.log(msg) })"}</div>
+          </div>
+        </div>
+
         {/* Browse nodes */}
         <div className="mb-10">
           <h2 className="font-syne font-bold text-2xl mb-2">Browse available nodes</h2>

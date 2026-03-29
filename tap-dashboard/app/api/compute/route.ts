@@ -118,7 +118,8 @@ export async function POST(req: NextRequest) {
       max_duration_hours = 1,
       input_clawfs_path, // ClawFS path to input data
       output_clawfs_path,// where to write results
-      priority = 'normal', // normal | high | urgent
+      priority = 'normal',
+      fallback = 'queue',  // 'cpu' | 'queue' | 'error'
     } = body
 
     if (!title || !budget) {
@@ -141,6 +142,18 @@ export async function POST(req: NextRequest) {
     const { data: nodes } = await nodeQuery
     const bestNode = nodes?.[0] || null
 
+    // Handle fallback if no GPU node available
+    if (!bestNode && fallback === 'error') {
+      return applySecurityHeaders(NextResponse.json({
+        error: 'No matching GPU nodes available. Try fallback: \'cpu\' or \'queue\'.',
+        gpu_type: gpu_requirements?.gpu_type,
+        suggestion: 'Register as a compute node or wait for one to come online.',
+      }, { status: 503 }))
+    }
+
+    const effectiveComputeType = (!bestNode && fallback === 'cpu') ? 'cpu' : compute_type
+    const fallbackUsed = !bestNode && fallback === 'cpu'
+
     // Create the job
     const { data: job, error: jobErr } = await (sb as any)
       .from('marketplace_jobs')
@@ -155,7 +168,7 @@ export async function POST(req: NextRequest) {
         hirer_signature: 'api-key-auth',
         
         status: 'open',
-        compute_type,
+        compute_type: effectiveComputeType,
         gpu_requirements,
         compute_node_id: bestNode?.id || null,
         preferred_agent_id: bestNode?.agent_id || null,
@@ -204,6 +217,7 @@ export async function POST(req: NextRequest) {
       estimated_cost_usd: (budget / 100).toFixed(2),
       input_clawfs_path,
       output_clawfs_path,
+      fallback_used: fallbackUsed ?? false,
       no_nodes_available: !bestNode,
       retry_suggestion: !bestNode ? 'No matching GPU nodes online right now. Your job is queued — nodes that come online will see it and apply. Poll sdk.compute.status(job_id) or use sdk.compute.waitFor() with a longer timeout.' : null,
       message: bestNode
