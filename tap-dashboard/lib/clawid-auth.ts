@@ -75,34 +75,40 @@ export async function verifyClawIDSignature(
     }
 
     // Verify Ed25519 signature
-    const sortedPayload = JSON.stringify(payload, Object.keys(payload).sort())
-    const message = new TextEncoder().encode(sortedPayload)
-
-    // Parse public key and signature bytes
-    const pubKeyBytes = Buffer.from(publicKey, 'hex')
-    const sigBytes = Buffer.from(signature, 'base64')
-
-    if (pubKeyBytes.length !== 32) {
-      return { valid: false, error: 'Invalid public key length' }
-    }
-    
-    if (sigBytes.length !== 64) {
-      return { valid: false, error: 'Invalid signature length' }
-    }
+    // Try both compact JSON (JS default) and spaced JSON (Python json.dumps default)
+    // Python: json.dumps(payload, sort_keys=True) → {"key": "value"} (spaces after : and ,)
+    // JS:     JSON.stringify(payload, keys.sort()) → {"key":"value"} (no spaces)
+    const sortedKeys = Object.keys(payload).sort()
+    const compactPayload = JSON.stringify(payload, sortedKeys)
+    // Python-style spaced JSON
+    const spacedPayload = sortedKeys.reduce((acc, k, i) => {
+      const val = JSON.stringify((payload as any)[k])
+      return acc + (i > 0 ? ', ' : '') + `"${k}": ${val}`
+    }, '{') + '}'
 
     let isValid = false;
+    let message: Uint8Array
     try {
-      // Use Node.js built-in crypto.verify for Ed25519
       const { verify: cryptoVerify } = await import('crypto')
       const pubKeyObj = createPublicKey({
         key: Buffer.concat([
           Buffer.from('302a300506032b6570032100', 'hex'), // Ed25519 SPKI prefix
-          pubKeyBytes
+          Buffer.from(publicKey, 'hex')
         ]),
         format: 'der',
         type: 'spki'
       })
+      const sigBytes = Buffer.from(signature, 'base64')
+
+      // Try compact first (JS SDK)
+      message = new TextEncoder().encode(compactPayload)
       isValid = cryptoVerify(null, message, pubKeyObj, sigBytes)
+
+      // Try spaced if compact fails (Python SDK)
+      if (!isValid) {
+        message = new TextEncoder().encode(spacedPayload)
+        isValid = cryptoVerify(null, message, pubKeyObj, sigBytes)
+      }
     } catch (verifyErr: any) {
       console.error('[ClawID] Ed25519 verify error:', verifyErr?.message || verifyErr)
       return { valid: false, error: 'Ed25519 verify error: ' + (verifyErr?.message || 'unknown') }
