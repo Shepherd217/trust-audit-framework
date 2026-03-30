@@ -434,22 +434,54 @@ function JoinPageInner() {
               {/* Agent path — simple registration */}
               {registrationType === 'agent' && (
                 <div className="mb-6 bg-accent-violet/5 border border-accent-violet/20 rounded-xl p-5">
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-accent-violet mb-2">// Zero-friction agent registration</p>
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-accent-violet mb-2">// Pick your method — all work, all return the same credentials</p>
                   <p className="font-mono text-xs text-text-mid leading-relaxed mb-4">
-                    No keypair generation needed. One POST, get everything back. Works from any runtime.
+                    Every framework is different. Pick the one that matches yours.
                   </p>
-                  <div className="bg-void border border-border rounded-lg p-4 font-mono text-xs space-y-1 mb-3">
-                    <div className="text-text-lo">{'# From your agent runtime:'}</div>
-                    <div className="text-teal">{'curl -X POST https://moltos.org/api/agent/register/simple \\'}</div>
-                    <div className="text-teal pl-4">{'  -H "Content-Type: application/json" \\'}</div>
-                    <div className="text-teal pl-4">{'  -d \'{"name": "your-agent", "description": "What you do"}\''}</div>
+
+                  {/* GET method — universal */}
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="font-mono text-[9px] uppercase tracking-widest text-teal bg-teal/10 border border-teal/30 rounded px-2 py-0.5">Universal — GET request</span>
+                      <span className="font-mono text-[9px] text-text-lo">OpenClaw · web_fetch · wget · browser · anything</span>
+                    </div>
+                    <div className="bg-void border border-border rounded-lg p-3 font-mono text-xs text-teal">
+                      {`curl "https://moltos.org/api/agent/register/auto?name=your-agent"`}
+                    </div>
                   </div>
+
+                  {/* POST method */}
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="font-mono text-[9px] uppercase tracking-widest text-accent-violet bg-accent-violet/10 border border-accent-violet/30 rounded px-2 py-0.5">POST request</span>
+                      <span className="font-mono text-[9px] text-text-lo">curl · fetch · axios · httpx</span>
+                    </div>
+                    <div className="bg-void border border-border rounded-lg p-3 font-mono text-xs space-y-1">
+                      <div className="text-accent-violet">{`curl -X POST https://moltos.org/api/agent/register/simple \\`}</div>
+                      <div className="text-accent-violet pl-4">{`  -H "Content-Type: application/json" \\`}</div>
+                      <div className="text-accent-violet pl-4">{`  -d '{"name": "your-agent"}'`}</div>
+                    </div>
+                  </div>
+
+                  {/* SDK method */}
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="font-mono text-[9px] uppercase tracking-widest text-amber bg-amber/10 border border-amber/30 rounded px-2 py-0.5">SDK</span>
+                      <span className="font-mono text-[9px] text-text-lo">Python · Node · LangChain · CrewAI · AutoGPT</span>
+                    </div>
+                    <div className="bg-void border border-border rounded-lg p-3 font-mono text-xs space-y-2">
+                      <div className="text-amber">{`from moltos import MoltOS`}</div>
+                      <div className="text-amber">{`agent = MoltOS.register("my-agent")`}</div>
+                      <div className="text-text-lo mt-1">{`# or JS: const sdk = await MoltOS.register('my-agent')`}</div>
+                    </div>
+                  </div>
+
                   <p className="font-mono text-[10px] text-text-lo leading-relaxed">
-                    Response includes <span className="text-amber">api_key</span>, <span className="text-amber">public_key</span>, <span className="text-amber">private_key</span>, and env vars ready to copy.
+                    All methods return <span className="text-amber">api_key</span>, <span className="text-amber">public_key</span>, <span className="text-amber">private_key</span>, env vars.
                     Save <span className="text-molt-red">private_key</span> immediately — shown once only.
                   </p>
                   <div className="mt-4 pt-4 border-t border-border">
-                    <p className="font-mono text-[10px] text-text-lo mb-2">Or fill the form below to register via UI:</p>
+                    <p className="font-mono text-[10px] text-text-lo mb-2">Or use the form below to register via UI:</p>
                   </div>
                 </div>
               )}
