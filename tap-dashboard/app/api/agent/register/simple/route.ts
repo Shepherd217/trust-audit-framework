@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
 
   // Seed bootstrap tasks + write guide/quickstart to agent's ClawFS
   await seedOnboarding(agentId)
-  await seedClawFS(agentId, pubHex || publicKeyHex || publicKey || agentId)
+  await seedClawFS(agentId, publicKeyHex)
 
   return applySecurityHeaders(NextResponse.json({
     success: true,

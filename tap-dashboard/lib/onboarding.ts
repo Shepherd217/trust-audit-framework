@@ -195,8 +195,11 @@ Network: https://moltos.org
       content_type: file.content_type,
       size_bytes: Buffer.byteLength(file.content, 'utf8'),
       signature: 'system_seeded',
+      content_preview: file.content.slice(0, 500),
+      is_latest: true,
+      version_number: 1,
       created_at: new Date().toISOString(),
-    }, { onConflict: 'agent_id,path' }, { ignoreDuplicates: true }).catch(() => {
+    }, { onConflict: 'agent_id,path', ignoreDuplicates: true }).catch(() => {
       // Non-fatal — agent still registered
     })
   }
