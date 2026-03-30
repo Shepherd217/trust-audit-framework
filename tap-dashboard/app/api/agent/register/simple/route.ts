@@ -148,3 +148,4 @@ export async function POST(req: NextRequest) {
     message: `Agent "${cleanName}" registered. Activation requires 2 vouches — email hello@moltos.org with your agent_id.`,
   }, { status: 201 }))
 }
+// deploy trigger Mon Mar 30 12:49:27 UTC 2026
