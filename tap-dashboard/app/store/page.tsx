@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth'
 const TYPE_LABELS: Record<string, { icon: string; label: string; desc: string }> = {
   all:      { icon: '🏪', label: 'All',       desc: 'Everything' },
   file:     { icon: '📦', label: 'Files',     desc: 'Datasets, models, prompt libraries' },
-  skill:    { icon: '⚡', label: 'Skills',    desc: 'Live callable API endpoints' },
+  skill:    { icon: '⚡', label: 'Skills',    desc: 'Live callable API endpoints — POST input, get results', detail: 'POST your input, get results. Buy to get an access key.' },
   template: { icon: '🔀', label: 'Templates', desc: 'Pre-built DAG workflows' },
   bundle:   { icon: '🎁', label: 'Bundles',   desc: 'Skills + files + templates together' },
 }
@@ -86,6 +86,7 @@ function StoreInner() {
   const [sort, setSort] = useState('tap')
   const [query, setQuery] = useState('')
   const [maxPrice, setMaxPrice] = useState<number | null>(null)
+  const [listMode, setListMode] = useState(false)
 
   useEffect(() => {
     fetch()
@@ -220,14 +221,29 @@ function StoreInner() {
                 className="w-full bg-deep border border-border rounded-xl px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-accent-violet placeholder:text-text-lo" />
             </div>
 
-            {/* Count */}
-            <div className="font-mono text-[10px] text-text-lo mb-4">
-              {loading ? 'Loading...' : `${filteredAssets.length} asset${filteredAssets.length !== 1 ? 's' : ''}`}
-              {type !== 'all' && ` · ${TYPE_LABELS[type].label}`}
+            {/* Count + view toggle */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="font-mono text-[10px] text-text-lo">
+                {loading ? 'Loading...' : `${filteredAssets.length} asset${filteredAssets.length !== 1 ? 's' : ''}`}
+                {type !== 'all' && ` · ${(TYPE_LABELS[type] as any).label}`}
+                {type !== 'all' && (TYPE_LABELS[type] as any).detail && (
+                  <span className="ml-2 text-text-lo/60 hidden sm:inline">— {(TYPE_LABELS[type] as any).detail}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setListMode(false)} title="Grid view"
+                  className={`p-1.5 rounded transition-all ${!listMode ? 'bg-accent-violet/20 text-accent-violet' : 'text-text-lo hover:text-text-mid'}`}>
+                  <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M1 2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1H2a1 1 0 01-1-1V2zm5 0a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V2zm5 0a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1V2zM1 7a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1H2a1 1 0 01-1-1V7zm5 0a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V7zm5 0a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1V7zM1 12a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1H2a1 1 0 01-1-1v-2zm5 0a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2zm5 0a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2z"/></svg>
+                </button>
+                <button onClick={() => setListMode(true)} title="List view"
+                  className={`p-1.5 rounded transition-all ${listMode ? 'bg-accent-violet/20 text-accent-violet' : 'text-text-lo hover:text-text-mid'}`}>
+                  <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M2.5 12a.5.5 0 01.5-.5h10a.5.5 0 010 1H3a.5.5 0 01-.5-.5zm0-4a.5.5 0 01.5-.5h10a.5.5 0 010 1H3a.5.5 0 01-.5-.5zm0-4a.5.5 0 01.5-.5h10a.5.5 0 010 1H3a.5.5 0 01-.5-.5z"/></svg>
+                </button>
+              </div>
             </div>
 
             {loading ? (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div {...{className: listMode ? "space-y-3" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}}>
                 {[1,2,3,4,5,6].map(i => <div key={i} className="h-52 bg-deep border border-border rounded-xl animate-pulse" />)}
               </div>
             ) : filteredAssets.length === 0 ? (
@@ -241,7 +257,7 @@ function StoreInner() {
                 )}
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div {...{className: listMode ? "space-y-3" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}}>
                 {filteredAssets.map((asset: any) => <AssetCard key={asset.id} asset={asset} />)}
               </div>
             )}
