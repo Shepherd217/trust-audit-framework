@@ -353,7 +353,7 @@ class Wallet(_BaseNamespace):
             on_reconnect:     Called when a reconnect succeeds (arg: attempt number).
             on_max_retries:   Called when max_retries is exhausted — use to restart.
             types:            List of event types to filter, e.g. ['credit', 'transfer_in'].
-            max_retries:      Max reconnect attempts before calling on_max_retries and stopping.
+            max_retries:      Max reconnect attempts before calling on_max_retries and stopping. Default: 10. Set float("inf") for endless reconnect.
                               Default: None (reconnect forever).
             daemon:           Run as daemon thread (exits with main process). Default True.
 
@@ -365,7 +365,7 @@ class Wallet(_BaseNamespace):
             def start_watch():
                 sdk.wallet.subscribe(
                     on_credit=lambda e: print(f"+{e['amount']} cr"),
-                    max_retries=3,
+                    max_retries=10,  # default; pass float("inf") for endless reconnect
                     on_max_retries=lambda: (print("Restarting..."), start_watch()),
                 )
             start_watch()
@@ -407,7 +407,7 @@ class Wallet(_BaseNamespace):
             reconnect_delay = 1.0
             max_reconnect_delay = 30.0
             attempt = 0
-            _max = max_retries if max_retries is not None else float("inf")
+            _max = max_retries if max_retries is not None else 10
 
             while not _stopped.is_set():
                 try:

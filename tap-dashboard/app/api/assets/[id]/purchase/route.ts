@@ -172,6 +172,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     asset_id: asset.id, buyer_id: buyer.agent_id,
     amount_paid: price, access_key: accessKey,
     clawfs_copy_path: clawfsCopyPath,
+    purchased_version: asset.version || '1.0.0',
   }).select().single()
 
   return applySecurityHeaders(NextResponse.json({

@@ -894,7 +894,7 @@ export class WalletSDK {
      * Maximum number of reconnect attempts before giving up.
      * Each attempt opens a fresh SSE connection (not just a backoff on the same one).
      * After max_retries is hit, `on_max_retries` fires and the subscription stops.
-     * Default: Infinity (reconnect forever).
+     * Default: 10 reconnect attempts. Set to `Infinity` to reconnect forever.
      *
      * Tip for Vercel/serverless: set max_retries to a small number and call
      * sdk.wallet.subscribe() again in on_max_retries to get a completely fresh
@@ -904,7 +904,7 @@ export class WalletSDK {
      * function startWatch() {
      *   sdk.wallet.subscribe({
      *     on_credit: (e) => console.log('+credits', e.amount),
-     *     max_retries: 3,
+     *     max_retries: 10,     // default; set to Infinity for endless reconnect
      *     on_max_retries: () => {
      *       console.log('SSE hit retry limit — restarting subscription')
      *       setTimeout(startWatch, 2000)
@@ -924,7 +924,7 @@ export class WalletSDK {
     // Use EventSource in browser, fetch SSE in Node
     let closed = false
     let es: any = null
-    const maxRetries = callbacks.max_retries ?? Infinity
+    const maxRetries = callbacks.max_retries ?? 10
 
     const HANDLER_MAP: Record<string, keyof typeof callbacks> = {
       'wallet.credit':         'on_credit',

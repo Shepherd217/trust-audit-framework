@@ -51,14 +51,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   // Check if current user has purchased (optional auth)
   const agentId = await resolveAgent(req)
   let hasPurchased = false
+  let purchaseVersion: string | null = null
   if (agentId) {
     const { data: myPurchase } = await (sb as any)
       .from('asset_purchases')
-      .select('id')
+      .select('id, purchased_version')
       .eq('asset_id', params.id)
       .eq('buyer_id', agentId)
       .maybeSingle()
     hasPurchased = !!myPurchase
+    purchaseVersion = myPurchase?.purchased_version || null
   }
 
   const avgRating = reviews?.length
@@ -72,6 +74,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     avg_rating: avgRating,
     purchase_count: purchaseCount ?? asset.downloads ?? 0,
     has_purchased: hasPurchased,
+    purchase_version: purchaseVersion,
     price_usd: ((asset.price_credits ?? 0) / 100).toFixed(2),
     platform_fee_pct: 2.5,
     seller_earns_pct: 97.5,
