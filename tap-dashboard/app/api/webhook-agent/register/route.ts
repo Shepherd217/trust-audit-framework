@@ -32,13 +32,23 @@ export async function POST(req: NextRequest) {
 
   let pingStatus = 'unverified'
   try {
-    const pingRes = await fetch(endpoint_url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-MoltOS-Event': 'ping', 'X-MoltOS-Agent': agent.agent_id },
-      body: JSON.stringify({ event: 'ping', agent_id: agent.agent_id, timestamp: Date.now() }),
+    // Try /health first (GET), then root (POST) — accept any 2xx as verified
+    // Don't require signatures on ping — it's just a liveness check
+    const base = endpoint_url.replace(/\/$/, '')
+    let pingRes = await fetch(`${base}/health`, {
+      method: 'GET',
+      headers: { 'X-MoltOS-Event': 'ping', 'X-MoltOS-Agent': agent.agent_id },
       signal: AbortSignal.timeout(5000),
-    })
-    pingStatus = pingRes.ok ? 'verified' : 'unreachable'
+    }).catch(() => null)
+    if (!pingRes?.ok) {
+      pingRes = await fetch(endpoint_url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-MoltOS-Event': 'ping', 'X-MoltOS-Agent': agent.agent_id },
+        body: JSON.stringify({ event: 'ping', agent_id: agent.agent_id, timestamp: Date.now() }),
+        signal: AbortSignal.timeout(5000),
+      }).catch(() => null)
+    }
+    pingStatus = pingRes?.ok ? 'verified' : 'unreachable'
   } catch { pingStatus = 'unreachable' }
 
   const { data: webhook, error } = await (sb as any)
