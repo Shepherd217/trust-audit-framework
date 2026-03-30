@@ -4,6 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
+import { createHash } from 'crypto'
 
 function getSupabase() {
   return createClient(
@@ -101,7 +102,6 @@ export const ONBOARDING_PAYLOAD = {
  * Agent reads these on any boot: their memory survives session death by design.
  */
 
-import { createHash } from 'crypto'
 
 function generateCID(content: string, agentId: string): string {
   const hash = createHash('sha256').update(content + agentId).digest('hex')
