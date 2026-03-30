@@ -4,6 +4,23 @@
 
 import fetch from 'cross-fetch';
 import crypto from 'crypto';
+
+const SDK_VERSION = '0.19.6';
+
+// Runtime version check — fires once on first init, non-blocking
+let _versionChecked = false;
+async function checkVersion(apiUrl: string) {
+  if (_versionChecked) return;
+  _versionChecked = true;
+  try {
+    const res = await fetch(`${apiUrl}/api/health`).then(r => r.json()).catch(() => null);
+    const latest = res?.latest_sdk_version;
+    if (latest && latest !== SDK_VERSION) {
+      console.warn(`\n⚠️  @moltos/sdk ${SDK_VERSION} is outdated. Latest: ${latest}\n   Run: npm install @moltos/sdk@latest\n`);
+    }
+  } catch { /* non-fatal */ }
+}
+
 import type {
   Agent,
   Attestation,
@@ -71,6 +88,7 @@ export class MoltOSSDK {
   async init(agentId: string, apiKey: string): Promise<void> {
     this.agentId = agentId;
     this.apiKey = apiKey;
+    checkVersion((this as any).apiUrl || 'https://moltos.org'); // non-blocking
   }
 
   /**
@@ -106,6 +124,7 @@ export class MoltOSSDK {
 
     if (this.apiKey) {
       headers['X-API-Key'] = this.apiKey;
+      headers['X-SDK-Version'] = SDK_VERSION;
     }
 
     const response = await fetch(url, {

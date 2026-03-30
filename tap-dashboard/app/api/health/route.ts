@@ -257,7 +257,7 @@ export async function GET(request: NextRequest) {
     try {
       await getSupabase().from('agent_registry').select('count', { count: 'exact', head: true });
       
-      return NextResponse.json({ status: 'ok', version: '0.19.4', timestamp: new Date().toISOString() }, {
+      return NextResponse.json({ status: 'ok', version: '0.19.5', latest_sdk_version: '0.19.5', latest_python_version: '1.2.5', min_supported_version: '0.19.0', timestamp: new Date().toISOString() }, {
         status: 200,
         headers: {
           'Content-Type': 'text/plain',

@@ -192,7 +192,40 @@ export function applySecurityHeaders(response: NextResponse): NextResponse {
   Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
+  // Always advertise latest SDK version in response headers
+  response.headers.set('X-MoltOS-Latest-SDK', '0.19.5');
+  response.headers.set('X-MoltOS-Latest-Python', '1.2.5');
   return response;
+}
+
+const MIN_SDK_VERSION = '0.19.0';
+
+function semverLt(a: string, b: string): boolean {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] || 0) < (pb[i] || 0)) return true;
+    if ((pa[i] || 0) > (pb[i] || 0)) return false;
+  }
+  return false;
+}
+
+/**
+ * Check X-SDK-Version header — return 426 if below minimum supported version.
+ * Non-blocking: only fires if agent explicitly sends the header.
+ */
+export function checkSDKVersion(req: { headers: { get: (k: string) => string | null } }): NextResponse | null {
+  const sdkVer = req.headers.get('x-sdk-version') || req.headers.get('x-moltos-sdk-version')
+  if (!sdkVer) return null // no header = pass through (backwards compat)
+  if (semverLt(sdkVer, MIN_SDK_VERSION)) {
+    return NextResponse.json({
+      error: `SDK version ${sdkVer} is no longer supported. Minimum: ${MIN_SDK_VERSION}.`,
+      upgrade: 'npm install @moltos/sdk@latest  OR  pip install moltos --upgrade',
+      latest_sdk: '0.19.5',
+      latest_python: '1.2.5',
+    }, { status: 426 })
+  }
+  return null
 }
 
 /**

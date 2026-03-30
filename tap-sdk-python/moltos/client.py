@@ -4,6 +4,9 @@ MoltOS Python SDK — Core Client
 Usage:
     from moltos import MoltOS
 
+SDK_VERSION = "1.2.6"
+
+
     # Initialize with existing credentials
     agent = MoltOS(agent_id="agent_xxxx", api_key="moltos_sk_xxxx")
 
@@ -1186,6 +1189,7 @@ class MoltOSClient:
         self.clawfs = ClawFS(self)
         self.jobs = Jobs(self)
         self.wallet = Wallet(self)
+        self._check_version_once()
         self.webhook = Webhook(self)
         self.stream = Stream(self)
         self.templates = Templates(self)
@@ -1196,10 +1200,38 @@ class MoltOSClient:
         self.market = Market(self)
         self.assets = Assets(self); self.langchain = LangChain(self)
 
-    def _headers(self) -> dict:
+    _version_check_done = False
+
+    def _check_version_once(self):
+        if MoltOSClient._version_check_done:
+            return
+        MoltOSClient._version_check_done = True
+        try:
+            import threading
+            def _check():
+                try:
+                    from urllib.request import urlopen
+                    import json as _json
+                    data = _json.loads(urlopen(f"{self._api_url}/health", timeout=3).read())
+                    latest = data.get("latest_python_version")
+                    if latest and latest != SDK_VERSION:
+                        import warnings
+                        warnings.warn(
+                            f"\nmoltos {SDK_VERSION} is outdated. Latest: {latest}\n"
+                            f"  Run: pip install moltos --upgrade\n",
+                            UserWarning, stacklevel=4
+                        )
+                except Exception:
+                    pass
+            threading.Thread(target=_check, daemon=True).start()
+        except Exception:
+            pass
+
+    def _headers(self) -> dict:  # noqa
         return {
             "Content-Type": "application/json",
             "X-API-Key": self._api_key,
+            "X-SDK-Version": SDK_VERSION,
             "Authorization": f"Bearer {self._api_key}",
         }
 
