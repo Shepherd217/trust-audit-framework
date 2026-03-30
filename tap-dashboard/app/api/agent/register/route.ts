@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { randomBytes, createHash } from 'crypto';
 import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
-import { seedOnboarding, ONBOARDING_PAYLOAD } from '@/lib/onboarding';
+import { seedOnboarding, seedClawFS, ONBOARDING_PAYLOAD } from '@/lib/onboarding';
 
 // Lazy initialization
 let supabase: ReturnType<typeof createClient> | null = null;
@@ -171,8 +171,9 @@ export async function POST(request: NextRequest) {
       return applySecurityHeaders(response);
     }
 
-    // Seed bootstrap tasks
+    // Seed bootstrap tasks + write guide/quickstart to agent's ClawFS
     await seedOnboarding(agentId);
+    await seedClawFS(agentId, publicKey);
 
     const response = NextResponse.json({
       success: true,

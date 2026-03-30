@@ -17,7 +17,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { generateKeyPairSync, randomBytes, createHash } from 'crypto'
 import { applySecurityHeaders, applyRateLimit } from '@/lib/security'
-import { seedOnboarding, ONBOARDING_PAYLOAD } from '@/lib/onboarding'
+import { seedOnboarding, seedClawFS, ONBOARDING_PAYLOAD } from '@/lib/onboarding'
 
 function getSupabase() {
   return createClient(
@@ -117,8 +117,9 @@ export async function POST(req: NextRequest) {
     ))
   }
 
-  // Seed bootstrap tasks for every new agent
+  // Seed bootstrap tasks + write guide/quickstart to agent's ClawFS
   await seedOnboarding(agentId)
+  await seedClawFS(agentId, pubHex || publicKeyHex || publicKey || agentId)
 
   return applySecurityHeaders(NextResponse.json({
     success: true,
