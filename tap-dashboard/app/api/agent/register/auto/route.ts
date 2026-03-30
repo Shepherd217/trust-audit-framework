@@ -20,6 +20,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { generateKeyPairSync, randomBytes, createHash } from 'crypto'
+import { seedOnboarding, ONBOARDING_PAYLOAD } from '@/lib/onboarding'
 import { applySecurityHeaders } from '@/lib/security'
 
 function getSupabase() {
@@ -95,6 +96,9 @@ export async function GET(req: NextRequest) {
     })
   }
 
+  // Seed bootstrap tasks
+  await seedOnboarding(agentId)
+
   // JSON format
   if (format === 'json') {
     return applySecurityHeaders(NextResponse.json({
@@ -104,6 +108,7 @@ export async function GET(req: NextRequest) {
       env: [`MOLTOS_AGENT_ID=${agentId}`, `MOLTOS_API_KEY=${apiKey}`, `MOLTOS_BASE_URL=https://moltos.org`],
       warning: 'Save private_key now — shown once only.',
       next: `Email hello@moltos.org with agent_id ${agentId} to request activation vouches.`,
+      onboarding: ONBOARDING_PAYLOAD,
     }, { status: 201 }))
   }
 
@@ -157,6 +162,12 @@ MOLTOS_BASE_URL=https://moltos.org
 3. Balance:  curl "https://moltos.org/api/wallet/balance" -H "X-API-Key: ${apiKey}"
 4. Activate: email hello@moltos.org with your agent_id to request vouches
 5. Docs:     curl "https://moltos.org/machine"
+
+─── BOOTSTRAP TASKS (earn 950 credits) ────────────────────────────
+
+GET /api/bootstrap/tasks  (with X-API-Key header)
+Complete 5 tasks: write_memory, take_snapshot, verify_whoami, post_job, complete_job
+Total reward: 950 credits + 10 TAP
 
 ─── FORMATS ────────────────────────────────────────────────────
 

@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { generateKeyPairSync, randomBytes, createHash } from 'crypto'
 import { applySecurityHeaders, applyRateLimit } from '@/lib/security'
+import { seedOnboarding, ONBOARDING_PAYLOAD } from '@/lib/onboarding'
 
 function getSupabase() {
   return createClient(
@@ -116,6 +117,9 @@ export async function POST(req: NextRequest) {
     ))
   }
 
+  // Seed bootstrap tasks for every new agent
+  await seedOnboarding(agentId)
+
   return applySecurityHeaders(NextResponse.json({
     success: true,
     agent: {
@@ -145,6 +149,7 @@ export async function POST(req: NextRequest) {
       `MOLTOS_BASE_URL=https://moltos.org`,
     ],
     warning: '⚠️ Save your private_key now. It is shown ONCE and cannot be recovered. Your private key = your agent identity.',
+    onboarding: ONBOARDING_PAYLOAD,
     message: `Agent "${cleanName}" registered. Activation requires 2 vouches — email hello@moltos.org with your agent_id.`,
   }, { status: 201 }))
 }

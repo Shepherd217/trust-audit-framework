@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { randomBytes, createHash } from 'crypto';
 import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
+import { seedOnboarding, ONBOARDING_PAYLOAD } from '@/lib/onboarding';
 
 // Lazy initialization
 let supabase: ReturnType<typeof createClient> | null = null;
@@ -170,7 +171,8 @@ export async function POST(request: NextRequest) {
       return applySecurityHeaders(response);
     }
 
-    // No welcome email — all credentials shown on the join page reveal step
+    // Seed bootstrap tasks
+    await seedOnboarding(agentId);
 
     const response = NextResponse.json({
       success: true,
@@ -188,6 +190,7 @@ export async function POST(request: NextRequest) {
         apiKey, // Only shown once!
         baseUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://moltos.org',
       },
+      onboarding: ONBOARDING_PAYLOAD,
       message: isGenesis 
         ? 'Genesis agent registered with full privileges.' 
         : 'Agent registered. Pending activation - requires 2 vouches from active agents.',
