@@ -887,8 +887,33 @@ export class WalletSDK {
     on_any?:           (event: WalletEvent) => void
     on_error?:         (err: Error) => void
     on_reconnect?:     (attempt: number) => void
+    on_max_retries?:   () => void
     /** Only fire callbacks for these event types. e.g. ['credit', 'transfer_in'] */
     types?:            Array<'credit' | 'debit' | 'transfer_in' | 'transfer_out' | 'withdrawal' | 'escrow_lock' | 'escrow_release'>
+    /**
+     * Maximum number of reconnect attempts before giving up.
+     * Each attempt opens a fresh SSE connection (not just a backoff on the same one).
+     * After max_retries is hit, `on_max_retries` fires and the subscription stops.
+     * Default: Infinity (reconnect forever).
+     *
+     * Tip for Vercel/serverless: set max_retries to a small number and call
+     * sdk.wallet.subscribe() again in on_max_retries to get a completely fresh
+     * connection — this defeats the 5-minute SSE hard timeout.
+     *
+     * @example
+     * function startWatch() {
+     *   sdk.wallet.subscribe({
+     *     on_credit: (e) => console.log('+credits', e.amount),
+     *     max_retries: 3,
+     *     on_max_retries: () => {
+     *       console.log('SSE hit retry limit — restarting subscription')
+     *       setTimeout(startWatch, 2000)
+     *     },
+     *   })
+     * }
+     * startWatch()
+     */
+    max_retries?: number
   }): Promise<() => void> {
     const apiKey = (this.sdk as any).apiKey
     if (!apiKey) throw new Error('SDK not initialized — call sdk.init() first')
@@ -899,6 +924,7 @@ export class WalletSDK {
     // Use EventSource in browser, fetch SSE in Node
     let closed = false
     let es: any = null
+    const maxRetries = callbacks.max_retries ?? Infinity
 
     const HANDLER_MAP: Record<string, keyof typeof callbacks> = {
       'wallet.credit':         'on_credit',
@@ -921,7 +947,7 @@ export class WalletSDK {
       callbacks.on_any?.(event)
     }
 
-    // Auto-reconnect with exponential backoff
+    // Auto-reconnect with exponential backoff + max_retries hard cap
     let reconnectDelay = 1000
     const MAX_RECONNECT_DELAY = 30000
     let reconnectAttempt = 0
@@ -933,28 +959,34 @@ export class WalletSDK {
         // Browser — EventSource with explicit backoff on error
         es = new EventSource(url)
         es.onmessage = (e: MessageEvent) => {
-          if (reconnectDelay !== 1000) {
-            reconnectDelay = 1000
-            reconnectAttempt = 0
-            callbacks.on_reconnect?.(reconnectAttempt)
-          }
+          // Successful message resets backoff state
+          reconnectDelay = 1000
+          reconnectAttempt = 0
           try { const data = JSON.parse(e.data); if (data.type !== 'connected' && data.type !== 'ping') dispatch(data) } catch {}
         }
         es.onerror = () => {
           if (closed) return
-          reconnectAttempt++
-          callbacks.on_error?.(new Error(`SSE connection error — reconnecting in ${reconnectDelay / 1000}s`))
           es?.close()
+          reconnectAttempt++
+          if (reconnectAttempt > maxRetries) {
+            closed = true
+            callbacks.on_max_retries?.()
+            return
+          }
+          callbacks.on_error?.(new Error(`SSE connection error — reconnecting in ${reconnectDelay / 1000}s (attempt ${reconnectAttempt}/${maxRetries === Infinity ? '∞' : maxRetries})`))
+          callbacks.on_reconnect?.(reconnectAttempt)
           setTimeout(() => { if (!closed) connect() }, reconnectDelay)
           reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY)
         }
       } else {
-        // Node.js — fetch streaming with reconnect on drop
+        // Node.js — fetch streaming with full reconnect on every drop
+        // Each reconnect opens a brand-new fetch/SSE connection (defeats Vercel 5-min timeout)
         ;(async () => {
           while (!closed) {
             try {
               const resp = await fetch(url)
               if (!resp.ok || !resp.body) throw new Error(`SSE connect failed: ${resp.status}`)
+              // Successful connect — reset backoff
               if (reconnectAttempt > 0) callbacks.on_reconnect?.(reconnectAttempt)
               reconnectDelay = 1000
               reconnectAttempt = 0
@@ -979,9 +1011,15 @@ export class WalletSDK {
             } catch (e: any) {
               if (closed) break
               reconnectAttempt++
-              callbacks.on_error?.(new Error(`SSE dropped — reconnecting in ${reconnectDelay / 1000}s`))
+              if (reconnectAttempt > maxRetries) {
+                closed = true
+                callbacks.on_max_retries?.()
+                break
+              }
+              callbacks.on_error?.(new Error(`SSE dropped — reconnecting in ${reconnectDelay / 1000}s (attempt ${reconnectAttempt}/${maxRetries === Infinity ? '∞' : maxRetries})`))
               await new Promise(r => setTimeout(r, reconnectDelay))
               reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY)
+              // Loop continues → opens a completely fresh fetch() connection
             }
           }
         })()

@@ -1,8 +1,41 @@
 'use client'
-import { useState } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth'
+
+// Tag vocabulary for auto-suggest — scored by keyword presence in description
+const TAG_VOCAB: Record<string, string[]> = {
+  trading:    ['trade', 'trading', 'signal', 'momentum', 'alpha', 'strategy', 'order', 'market', 'price', 'indicator'],
+  bitcoin:    ['bitcoin', 'btc', 'satoshi', 'lightning'],
+  ethereum:   ['ethereum', 'eth', 'evm', 'solidity', 'contract'],
+  crypto:     ['crypto', 'defi', 'token', 'chain', 'blockchain', 'wallet', 'nft'],
+  llm:        ['llm', 'gpt', 'claude', 'gemini', 'language model', 'language-model', 'chat', 'completion', 'prompt'],
+  fine_tuned: ['fine-tuned', 'finetuned', 'fine tuned', 'lora', 'qlora', 'adapter'],
+  embeddings: ['embedding', 'vector', 'semantic', 'similarity', 'cosine', 'faiss', 'rag', 'retrieval'],
+  dataset:    ['dataset', 'csv', 'rows', 'schema', 'labeled', 'annotated', 'training data', 'jsonl', 'parquet'],
+  python:     ['python', 'pandas', 'numpy', 'sklearn', 'scikit', 'torch', 'tensorflow', 'keras'],
+  typescript: ['typescript', 'javascript', 'node', 'bun', 'deno', 'npm'],
+  nlp:        ['nlp', 'text', 'sentiment', 'classification', 'summariz', 'extraction', 'named entity'],
+  vision:     ['vision', 'image', 'ocr', 'detection', 'segmentation', 'yolo', 'clip', 'diffusion'],
+  audio:      ['audio', 'speech', 'whisper', 'transcription', 'tts', 'voice', 'sound'],
+  time_series:['time series', 'timeseries', 'lstm', 'arima', 'forecasting', 'sequence', 'temporal'],
+  free:       [],  // added manually if price = 0
+  workflow:   ['workflow', 'dag', 'pipeline', 'orchestration', 'step', 'chain'],
+  agent:      ['agent', 'autonomous', 'tool use', 'function calling', 'agentic'],
+  api:        ['api', 'rest', 'endpoint', 'webhook', 'http', 'json'],
+}
+
+function suggestTags(description: string, title: string, price: number): string[] {
+  const text = `${title} ${description}`.toLowerCase()
+  const found: string[] = []
+  for (const [tag, keywords] of Object.entries(TAG_VOCAB)) {
+    if (tag === 'free') continue
+    if (keywords.some(kw => text.includes(kw))) found.push(tag)
+  }
+  if (price === 0) found.unshift('free')
+  return found.slice(0, 8)
+}
 
 const TYPE_INFO = {
   file:     { icon: '📦', label: 'File Asset', desc: 'Dataset, trained model, prompt library. Buyer gets a permanent copy in their ClawFS.', needs: 'clawfs_path' },
@@ -20,6 +53,8 @@ export default function SellPage() {
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState(0)
   const [tags, setTags] = useState('')
+  const [tagSuggestions, setTagSuggestions] = useState<string[]>([])
+  const suggestTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [clawfsPath, setClawfsPath] = useState('')
   const [endpointUrl, setEndpointUrl] = useState('')
   const [previewContent, setPreviewContent] = useState('')
@@ -128,7 +163,14 @@ export default function SellPage() {
 
           <div>
             <label className="block font-mono text-[10px] uppercase tracking-widest text-text-mid mb-2">Description *</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} required rows={3}
+            <textarea value={description} onChange={e => {
+              setDescription(e.target.value)
+              if (suggestTimer.current) clearTimeout(suggestTimer.current)
+              suggestTimer.current = setTimeout(() => {
+                const suggestions = suggestTags(e.target.value, title, price)
+                setTagSuggestions(suggestions)
+              }, 400)
+            }} required rows={3}
               placeholder="What does it do? What's the input/output? What data was it trained on?"
               className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-accent-violet resize-none placeholder:text-text-lo" />
           </div>
@@ -171,6 +213,35 @@ export default function SellPage() {
             <input type="text" value={tags} onChange={e => setTags(e.target.value)}
               placeholder="trading, lstm, bitcoin, python"
               className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-accent-violet placeholder:text-text-lo" />
+            {tagSuggestions.length > 0 && (
+              <div className="mt-2">
+                <span className="font-mono text-[9px] text-text-lo mr-2">// Suggested:</span>
+                <div className="inline-flex flex-wrap gap-1 mt-1">
+                  {tagSuggestions.map(tag => {
+                    const currentTags = tags.split(',').map(t => t.trim()).filter(Boolean)
+                    const already = currentTags.includes(tag)
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        disabled={already}
+                        onClick={() => {
+                          const current = tags.split(',').map(t => t.trim()).filter(Boolean)
+                          if (!current.includes(tag)) setTags([...current, tag].join(', '))
+                        }}
+                        className={`font-mono text-[9px] rounded-full px-2 py-0.5 border transition-all ${
+                          already
+                            ? 'border-accent-violet/30 text-accent-violet/50 bg-accent-violet/5 cursor-default'
+                            : 'border-border text-text-lo hover:border-accent-violet hover:text-accent-violet cursor-pointer bg-surface'
+                        }`}
+                      >
+                        {already ? '✓ ' : '+ '}{tag.replace('_', '-')}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           <div>

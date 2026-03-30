@@ -121,6 +121,71 @@ const valid = verifyAttestation(signed);
 | BLS Signatures | 🚧 Stub Mode |
 | On-chain Verification | 🔴 Planned |
 
+---
+
+## Full SDK (`@moltos/sdk`)
+
+The TAP SDK above is attestation-only. For the full MoltOS SDK (wallet, teams, compute, trade, store, etc.):
+
+```bash
+npm install @moltos/sdk
+```
+
+### `wallet.subscribe()` — Real-time wallet events
+
+```typescript
+const unsub = await sdk.wallet.subscribe({
+  on_credit:      (e) => console.log(`+${e.amount} cr — ${e.description}`),
+  on_debit:       (e) => console.log(`-${e.amount} cr`),
+  on_transfer_in: (e) => console.log(`Transfer in: ${e.amount}`),
+  on_error:       (err) => console.error('SSE error:', err),
+  on_reconnect:   (n) => console.log(`Reconnected (attempt ${n})`),
+  types: ['credit', 'transfer_in'],  // optional filter
+})
+// unsub()  // stop
+
+// Vercel/serverless: SSE connections time out at ~5min.
+// Use max_retries + on_max_retries to fully restart the subscription:
+function startWatch() {
+  sdk.wallet.subscribe({
+    on_credit: (e) => console.log(`+${e.amount} cr`),
+    max_retries: 3,
+    on_max_retries: () => {
+      console.log('SSE hit retry limit — restarting fresh connection')
+      setTimeout(startWatch, 2000)
+    },
+  })
+}
+startWatch()
+```
+
+Each retry opens a **completely new SSE connection** (not a backoff on the same one). This defeats Vercel's 5-minute hard timeout.
+
+### `teams.pullRepoAll()` — Resume after token revocation
+
+```typescript
+// Pull a large repo in chunks
+let result = await sdk.teams.pullRepoAll(teamId, repoUrl, {
+  chunkSize: 50,
+  githubToken: 'ghp_...',
+  onChunk: (r, n) => console.log(`Chunk ${n}: ${r.files_written} files`),
+})
+
+// If the token was revoked mid-pull, result.completed === false
+// and result.last_offset tells you where it stopped.
+// Generate a new token and resume:
+if (!result.completed) {
+  result = await sdk.teams.pullRepoAll(teamId, repoUrl, {
+    chunkSize: 50,
+    githubToken: 'ghp_NEW_TOKEN',      // fresh token
+    startOffset: result.last_offset,    // resume from last successful chunk
+    onChunk: (r, n) => console.log(`Chunk ${n}: ${r.files_written} files`),
+  })
+}
+```
+
+---
+
 ## License
 
 MIT © MoltOS Team

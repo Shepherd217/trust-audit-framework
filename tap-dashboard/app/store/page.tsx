@@ -23,10 +23,32 @@ function StarRating({ rating, count }: { rating: number | null; count: number })
   )
 }
 
-function AssetCard({ asset }: { asset: any }) {
+function BuyTooltip() {
+  return (
+    <span className="relative group/tip">
+      <span className="font-mono text-[8px] text-text-lo border border-border rounded-full px-1.5 py-0.5 cursor-help select-none hover:border-amber/50 hover:text-amber transition-colors">?</span>
+      <span className="pointer-events-none absolute bottom-full right-0 mb-1.5 w-52 bg-panel border border-amber/30 rounded-lg px-3 py-2 opacity-0 group-hover/tip:opacity-100 transition-opacity z-50 shadow-xl">
+        <span className="font-mono text-[9px] text-text-mid leading-relaxed block">
+          Permanent copy to your ClawFS — seller can&apos;t alter or revoke it after purchase.
+        </span>
+      </span>
+    </span>
+  )
+}
+
+function AssetCard({ asset, featured }: { asset: any; featured?: boolean }) {
   return (
     <Link href={`/store/${asset.id}`}
-      className="block bg-deep border border-border rounded-xl p-5 hover:border-accent-violet/50 hover:-translate-y-0.5 transition-all group">
+      className={`block border rounded-xl p-5 hover:-translate-y-0.5 transition-all group relative ${
+        featured
+          ? 'bg-amber/5 border-amber/30 hover:border-amber/60'
+          : 'bg-deep border-border hover:border-accent-violet/50'
+      }`}>
+      {featured && (
+        <span className="absolute top-3 right-3 font-mono text-[8px] uppercase tracking-widest text-amber border border-amber/30 rounded-full px-2 py-0.5 bg-amber/10">
+          Featured
+        </span>
+      )}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-xl">{TYPE_LABELS[asset.type]?.icon || '📦'}</span>
@@ -34,12 +56,17 @@ function AssetCard({ asset }: { asset: any }) {
             {TYPE_LABELS[asset.type]?.label}
           </span>
         </div>
-        <span className="font-syne font-black text-lg text-accent-violet">
-          {asset.price_credits === 0 ? 'Free' : `${asset.price_credits} cr`}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="font-syne font-black text-lg text-accent-violet">
+            {asset.price_credits === 0 ? 'Free' : `${asset.price_credits} cr`}
+          </span>
+          {asset.type === 'file' || asset.type === 'template' || asset.type === 'bundle' ? <BuyTooltip /> : null}
+        </div>
       </div>
 
-      <h3 className="font-syne font-bold text-sm text-text-hi mb-1 group-hover:text-accent-violet transition-colors line-clamp-1">
+      <h3 className={`font-syne font-bold text-sm mb-1 line-clamp-1 transition-colors ${
+        featured ? 'text-text-hi group-hover:text-amber' : 'text-text-hi group-hover:text-accent-violet'
+      }`}>
         {asset.title}
       </h3>
       <p className="font-mono text-[11px] text-text-lo leading-relaxed mb-3 line-clamp-2">{asset.description}</p>
@@ -80,6 +107,7 @@ function StoreInner() {
   const router = useRouter()
 
   const [assets, setAssets] = useState<any[]>([])
+  const [featured, setFeatured] = useState<any[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [type, setType] = useState(searchParams.get('type') || 'all')
@@ -90,6 +118,7 @@ function StoreInner() {
 
   useEffect(() => {
     fetch()
+    fetchFeatured()
   }, [type, sort, maxPrice])
 
   async function fetch() {
@@ -103,6 +132,15 @@ function StoreInner() {
     setAssets(data.assets || [])
     setTotal(data.total || 0)
     setLoading(false)
+  }
+
+  async function fetchFeatured() {
+    // Featured = free assets sorted by seller TAP desc, top 4
+    const params = new URLSearchParams({ sort: 'tap', limit: '4', max_price: '0' })
+    if (type !== 'all') params.set('type', type)
+    const res = await window.fetch(`/api/assets?${params}`)
+    const data = await res.json()
+    setFeatured(data.assets || [])
   }
 
   const filteredAssets = query
@@ -213,6 +251,22 @@ function StoreInner() {
 
           {/* Main content */}
           <div className="flex-1">
+            {/* Featured Assets — free spotlight, sorted by TAP */}
+            {featured.length > 0 && !query && (
+              <div className="mb-8">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber">// Featured Free</span>
+                  <div className="flex-1 h-px bg-amber/20" />
+                  <span className="font-mono text-[9px] text-text-lo">TAP-sorted · free to download</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {featured.map((asset: any) => (
+                    <AssetCard key={asset.id} asset={asset} featured />
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Search */}
             <div className="mb-5">
               <input type="text" value={query} onChange={e => setQuery(e.target.value)}

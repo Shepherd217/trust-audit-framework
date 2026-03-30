@@ -321,6 +321,135 @@ class Wallet(_BaseNamespace):
         """Quick lifetime PNL summary."""
         return self.analytics(period="all")
 
+    def subscribe(
+        self,
+        on_credit=None,
+        on_debit=None,
+        on_transfer_in=None,
+        on_transfer_out=None,
+        on_withdrawal=None,
+        on_escrow_lock=None,
+        on_escrow_release=None,
+        on_any=None,
+        on_error=None,
+        on_reconnect=None,
+        on_max_retries=None,
+        types=None,
+        max_retries=None,
+        daemon=True,
+    ):
+        """Subscribe to real-time wallet events via SSE in a background thread.
+
+        Args:
+            on_credit:        Called when credits arrive.
+            on_debit:         Called when credits are deducted.
+            on_transfer_in:   Called on incoming transfer.
+            on_transfer_out:  Called on outgoing transfer.
+            on_withdrawal:    Called on withdrawal.
+            on_escrow_lock:   Called when credits are locked in escrow.
+            on_escrow_release:Called when escrow is released.
+            on_any:           Called for every event regardless of type.
+            on_error:         Called on connection errors.
+            on_reconnect:     Called when a reconnect succeeds (arg: attempt number).
+            on_max_retries:   Called when max_retries is exhausted — use to restart.
+            types:            List of event types to filter, e.g. ['credit', 'transfer_in'].
+            max_retries:      Max reconnect attempts before calling on_max_retries and stopping.
+                              Default: None (reconnect forever).
+            daemon:           Run as daemon thread (exits with main process). Default True.
+
+        Returns:
+            Callable: Call it to stop the subscription (``unsub()``).
+
+        Example (Vercel / serverless — defeat 5-min SSE timeout)::
+
+            def start_watch():
+                sdk.wallet.subscribe(
+                    on_credit=lambda e: print(f"+{e['amount']} cr"),
+                    max_retries=3,
+                    on_max_retries=lambda: (print("Restarting..."), start_watch()),
+                )
+            start_watch()
+        """
+        import threading
+        import json as _json
+
+        api_key = self._c._api_key
+        base_url = self._c._base_url.rstrip("/")
+        url = f"{base_url}/wallet/watch?api_key={api_key}"
+
+        HANDLER_MAP = {
+            "wallet.credit":         on_credit,
+            "wallet.debit":          on_debit,
+            "wallet.transfer_in":    on_transfer_in,
+            "wallet.transfer_out":   on_transfer_out,
+            "wallet.withdrawal":     on_withdrawal,
+            "wallet.escrow_lock":    on_escrow_lock,
+            "wallet.escrow_release": on_escrow_release,
+        }
+
+        _stopped = threading.Event()
+
+        def _dispatch(event: dict):
+            etype = event.get("type", "")
+            short = etype.replace("wallet.", "")
+            if types and short not in types:
+                return
+            handler = HANDLER_MAP.get(etype)
+            if handler:
+                handler(event)
+            if on_any:
+                on_any(event)
+
+        def _run():
+            import urllib.request
+            import time as _time
+
+            reconnect_delay = 1.0
+            max_reconnect_delay = 30.0
+            attempt = 0
+            _max = max_retries if max_retries is not None else float("inf")
+
+            while not _stopped.is_set():
+                try:
+                    req = urllib.request.Request(url)
+                    with urllib.request.urlopen(req, timeout=300) as resp:
+                        if attempt > 0 and on_reconnect:
+                            on_reconnect(attempt)
+                        reconnect_delay = 1.0
+                        attempt = 0
+                        buf = ""
+                        for raw in resp:
+                            if _stopped.is_set():
+                                return
+                            line = raw.decode("utf-8", errors="replace").rstrip("\n")
+                            if line.startswith("data: "):
+                                try:
+                                    data = _json.loads(line[6:])
+                                    if data.get("type") not in ("connected", "ping"):
+                                        _dispatch(data)
+                                except Exception:
+                                    pass
+                except Exception as exc:
+                    if _stopped.is_set():
+                        return
+                    attempt += 1
+                    if attempt > _max:
+                        if on_max_retries:
+                            on_max_retries()
+                        return
+                    if on_error:
+                        on_error(f"SSE dropped — reconnecting in {reconnect_delay}s (attempt {attempt}/{int(_max) if _max != float('inf') else '∞'}): {exc}")
+                    _time.sleep(reconnect_delay)
+                    reconnect_delay = min(reconnect_delay * 2, max_reconnect_delay)
+
+        t = threading.Thread(target=_run, daemon=daemon)
+        t.start()
+
+        def unsub():
+            _stopped.set()
+
+        return unsub
+
 
 class Compute(_BaseNamespace):
     """ClawCompute — GPU compute marketplace.
