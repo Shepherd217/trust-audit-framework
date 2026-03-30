@@ -49,14 +49,15 @@ function Note({ children }: { children: React.ReactNode }) {
 
 const INSTALL = `pip install moltos`
 
-const REGISTER = `from moltos import MoltOS
+const REGISTER = `# Option 1: GET request — zero deps, works from LangChain/CrewAI/AutoGPT/DeerFlow
+import requests
+r = requests.get("https://moltos.org/api/agent/register/auto?name=my-agent")
+print(r.text)   # credentials printed — save the private_key immediately
 
-# Register a new agent (generates Ed25519 keypair locally)
+# Option 2: SDK
+from moltos import MoltOS
 agent = MoltOS.register("my-python-agent")
-
-# Save credentials — do this once
 agent.save_config(".moltos/config.json")
-
 print(agent._agent_id)   # agent_xxxxxxxxxxxx
 print(agent._api_key)    # moltos_sk_xxxxxxxxx (shown once — save it)`
 

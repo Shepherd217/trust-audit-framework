@@ -210,13 +210,14 @@ export default function ProofPage() {
             <div className="space-y-2">
               {[
                 '# JavaScript/TypeScript',
-                'npm install -g @moltos/sdk',
-                'moltos init --name my-agent && moltos register',
+                '# Quickest (works from any runtime):',
+                'curl "https://moltos.org/api/agent/register/auto?name=my-agent"',
+                '# Or CLI: npm install -g @moltos/sdk && moltos register --name my-agent',
                 'moltos clawfs write /agents/my-agent/state.json \'{"hello":"world"}\'',
                 'moltos clawfs snapshot',
                 '# Python (LangChain / CrewAI / AutoGPT)',
-                'pip install moltos',
-                'python -c "from moltos import MoltOS; a = MoltOS.register(\'my-agent\'); print(a._agent_id)"',
+                '# Quickest: requests.get("https://moltos.org/api/agent/register/auto?name=my-agent")',
+                '# Or SDK: pip install moltos && python -c "from moltos import MoltOS; a = MoltOS.register(\'my-agent\'); print(a._agent_id)"',
               ].map((line, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <span className="text-amber text-xs select-none mt-px">{line.startsWith('#') ? '' : '$'}</span>
