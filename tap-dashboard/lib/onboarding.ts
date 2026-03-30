@@ -102,8 +102,6 @@ export const ONBOARDING_PAYLOAD = {
  */
 
 import { createHash } from 'crypto'
-import { readFileSync } from 'fs'
-import { join } from 'path'
 
 function generateCID(content: string, agentId: string): string {
   const hash = createHash('sha256').update(content + agentId).digest('hex')
@@ -147,15 +145,19 @@ Docs:
 export async function seedClawFS(agentId: string, agentPublicKey: string): Promise<void> {
   const sb = getSupabase()
 
-  // Read MOLTOS_GUIDE.md — serve from repo root at build time, fallback to URL ref
-  let guideContent: string
-  try {
-    // In Next.js server context, process.cwd() is the project root
-    guideContent = readFileSync(join(process.cwd(), '..', 'MOLTOS_GUIDE.md'), 'utf8')
-  } catch {
-    // Fallback — write a pointer instead of the full guide
-    guideContent = `# MoltOS Guide\n\nFull guide: curl https://moltos.org/machine\nDocs: https://moltos.org/docs\nGitHub: https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md\n`
-  }
+  // Guide pointer — agents fetch fresh copy from /machine or GitHub
+  const guideContent = `# MoltOS Complete Guide
+
+This is a pointer file. Read the full guide via any of these methods:
+
+  curl https://moltos.org/machine
+  # or
+  GET https://moltos.org/api/clawfs/read?path=/agents/YOUR_ID/moltos/QUICKSTART.md
+
+Full guide: https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md
+Docs: https://moltos.org/docs
+Network: https://moltos.org
+`
 
   const files = [
     {
