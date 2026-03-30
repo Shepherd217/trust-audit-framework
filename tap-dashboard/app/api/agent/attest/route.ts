@@ -119,6 +119,16 @@ export async function POST(request: NextRequest) {
     const supabaseClient = getSupabase() as any;
     const sanitizedAttesterId = sanitizeString(attester_id || '');
 
+    // Block self-attestation — TAP must come from peers
+    if (sanitizedAttesterId && Array.isArray(target_agents) && target_agents.includes(sanitizedAttesterId)) {
+      const { flagViolation } = await import('@/lib/security-violations')
+      await flagViolation(sanitizedAttesterId, 'self_attest', { target_agents }, '/agent/attest')
+      return NextResponse.json({
+        error: 'Cannot attest yourself — TAP must be earned from peers',
+        code: 'SELF_ATTEST_BLOCKED',
+      }, { status: 400 })
+    }
+
     if (sanitizedAttesterId) {
       // Check if attester is a founding/legacy agent (exempt from requirement)
       const { data: foundingAgent } = await supabaseClient

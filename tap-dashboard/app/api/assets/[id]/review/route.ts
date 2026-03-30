@@ -51,6 +51,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const { data: asset } = await (sb as any).from('agent_assets')
     .select('id, title, seller_id').eq('id', params.id).single()
   if (!asset) return applySecurityHeaders(NextResponse.json({ error: 'Asset not found' }, { status: 404 }))
+  // Block seller reviewing their own asset
+  if (asset.seller_id === reviewer.agent_id) {
+    const { flagViolation } = await import('@/lib/security-violations')
+    await flagViolation(reviewer.agent_id, 'self_review', { asset_id: params.id }, '/assets/review')
+    return applySecurityHeaders(NextResponse.json({ error: 'Cannot review your own asset' }, { status: 400 }))
+  }
 
   // Auto-moderation: flag low-effort reviews (<10 words) as pending
   const wordCount = (review_text || '').trim().split(/\s+/).filter(Boolean).length
