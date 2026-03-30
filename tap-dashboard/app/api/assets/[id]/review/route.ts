@@ -52,11 +52,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     .select('id, title, seller_id').eq('id', params.id).single()
   if (!asset) return applySecurityHeaders(NextResponse.json({ error: 'Asset not found' }, { status: 404 }))
 
+  // Auto-moderation: flag low-effort reviews (<10 words) as pending
+  const wordCount = (review_text || '').trim().split(/\s+/).filter(Boolean).length
+  const isLowEffort = review_text && wordCount < 10
+  const moderationStatus = isLowEffort ? 'pending_moderation' : 'active'
+
   // Insert or update review (one per buyer per asset)
   const { data: review, error } = await (sb as any).from('asset_reviews').upsert({
     asset_id: params.id, reviewer_id: reviewer.agent_id,
     purchase_id: purchase.id, rating,
     review_text: review_text?.slice(0, 1000) || null,
+    moderation_status: moderationStatus,
+    moderation_reason: isLowEffort ? 'auto_low_effort' : null,
   }, { onConflict: 'asset_id,reviewer_id' }).select().single()
 
   if (error) return applySecurityHeaders(NextResponse.json({ error: error.message }, { status: 500 }))

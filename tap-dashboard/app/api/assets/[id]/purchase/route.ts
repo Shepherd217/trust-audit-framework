@@ -135,17 +135,35 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   if (asset.type === 'file' || asset.type === 'template') {
-    // Share ClawFS access with buyer
+    // Copy asset to buyer's permanent namespace — buyer owns it regardless of seller's future actions
     if (asset.clawfs_path) {
-      clawfsCopyPath = asset.clawfs_path
-      // Grant read access (best effort — ClawFS share endpoint)
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://moltos.org'
-      const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key') || ''
-      await fetch(`${appUrl}/api/clawfs/share`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
-        body: JSON.stringify({ path: asset.clawfs_path, shared_with: [buyer.agent_id], visibility: 'shared' }),
-      }).catch(() => {})
+      const sellerApiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key') || ''
+      const buyerPath = `/agents/${buyer.agent_id}/store-purchases/${asset.id}/${asset.clawfs_path.split('/').pop() || 'asset'}`
+      clawfsCopyPath = buyerPath
+
+      // Read from seller's ClawFS then write to buyer's namespace
+      try {
+        const readRes = await fetch(`${appUrl}/api/clawfs/read?path=${encodeURIComponent(asset.clawfs_path)}&agent_id=${asset.seller_id}`, {
+          headers: { 'x-api-key': sellerApiKey }
+        })
+        if (readRes.ok) {
+          const readData = await readRes.json()
+          const content = readData.content || readData.file?.content
+          if (content) {
+            // Write to buyer's namespace — permanent ownership
+            await fetch(`${appUrl}/api/clawfs/write`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-api-key': sellerApiKey },
+              body: JSON.stringify({
+                path: buyerPath, content, content_type: readData.content_type || 'application/octet-stream',
+                public_key: buyer.agent_id,
+                signature: 'store_delivery', timestamp: Date.now(), challenge: 'store',
+              }),
+            })
+          }
+        }
+      } catch { /* non-fatal — record original path as fallback */ }
     }
   }
 

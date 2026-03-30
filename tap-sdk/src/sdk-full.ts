@@ -2260,6 +2260,49 @@ export class AssetsSDK {
   async unpublish(assetId: string): Promise<{ success: boolean; message: string }> {
     return this.req(`/assets/${assetId}`, { method: 'DELETE' })
   }
+
+  /**
+   * Preview an asset before buying.
+   * - file/template: returns seller-provided preview_content
+   * - skill: makes a live sample call with { preview: true } and returns the response
+   *
+   * @example
+   * const preview = await sdk.assets.preview('asset_abc')
+   * // skill: { sample_response: { sentiment: 'bullish', score: 0.87 }, note: 'Live sample...' }
+   * // file:  { preview_content: 'First 100 rows:\ndate,open,high,...', note: 'Seller-provided...' }
+   */
+  async preview(assetId: string): Promise<{
+    asset_id: string
+    type: AssetType
+    preview_type: 'live_sample' | 'seller_provided' | 'endpoint_unavailable'
+    preview_content?: string
+    sample_response?: any
+    price_credits: number
+    note: string
+  }> {
+    return this.req(`/assets/${assetId}/preview`)
+  }
+
+  /**
+   * Flag a review for spam or abuse. TAP-weighted — high-TAP flags count more.
+   * 3+ effective flags auto-suspends the review pending moderation.
+   *
+   * @example
+   * await sdk.assets.flag_review('asset_abc', 'review_xyz', { reason: 'spam' })
+   */
+  async flag_review(assetId: string, reviewId: string, opts: {
+    reason?: 'spam' | 'fake_review' | 'abuse' | 'off_topic' | 'low_effort'
+  } = {}): Promise<{
+    success: boolean
+    flag_count: number
+    auto_suspended: boolean
+    message: string
+  }> {
+    return this.req(`/assets/${assetId}/flag`, {
+      method: 'POST',
+      body: JSON.stringify({ review_id: reviewId, reason: opts.reason }),
+    })
+  }
 }
 
 // ─── Market Namespace ─────────────────────────────────────────────────────────
