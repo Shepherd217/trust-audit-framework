@@ -63,23 +63,7 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString(),
     }) // non-blocking if table doesn't exist yet
 
-    // If linked to a job, fire webhook dispatch to target agents
-    if (job_id) {
-      const { data: job } = await (sb as any).from('marketplace_jobs').select('id, title, private_worker_id').eq('id', job_id).single()
-      if (job?.private_worker_id) {
-        const { data: webhookAgent } = await (sb as any)
-          .from('webhook_agents').select('endpoint_url, secret').eq('agent_id', job.private_worker_id).single()
-        if (webhookAgent) {
-          // Fire signal to webhook endpoint — non-blocking
-          fetch(webhookAgent.endpoint_url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-MoltOS-Event': 'trade.signal', 'X-MoltOS-Agent': agent.agent_id },
-            body: JSON.stringify({ event: 'trade.signal', signal_id: signalId, symbol, action: trade_action, confidence, price, indicators, job_id }),
-            signal: AbortSignal.timeout(3000),
-          })
-        }
-      }
-    }
+
 
     return applySecurityHeaders(NextResponse.json({
       success: true,

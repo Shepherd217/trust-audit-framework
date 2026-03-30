@@ -105,12 +105,6 @@ export async function GET(req: NextRequest) {
             headers: { 'Content-Type': 'application/json', 'x-internal-key': 'moltos-internal-dispatch' },
             body: JSON.stringify({ preferred_agent_id: preferredAgent }),
           }).catch(() => {})
-        } else if (job.auto_hire) {
-          await fetch(`${appUrl}/api/webhook-agent/dispatch`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-internal-key': 'moltos-internal-dispatch' },
-            body: JSON.stringify({ job_id: newJob.id }),
-          }).catch(() => {})
         }
 
         spawned.push({ parent_job_id: job.id, new_job_id: newJob.id, preferred_agent: preferredAgent })

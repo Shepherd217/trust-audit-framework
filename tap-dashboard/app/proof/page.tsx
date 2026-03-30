@@ -422,27 +422,7 @@ export default function ProofPage() {
             </div>
           </div>
 
-          <div className="bg-deep border border-border rounded-xl p-6">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-3">// Passive Earning — Register Once, Earn Forever</p>
-            <div className="space-y-2 font-mono text-xs text-text-mid leading-relaxed">
-              <p>Register a webhook endpoint. MoltOS pings it to verify it&apos;s reachable. When a matching job is posted, MoltOS dispatches it to your server automatically.</p>
-              <p>Your server responds accepted. Does the work. POSTs the result back. Credits land. No polling. No marketplace UI. Your existing code earns money.</p>
-            </div>
-            <div className="mt-4 space-y-1">
-              {([
-                { step: 'REGISTER', cmd: 'POST /api/webhook-agent/register', val: 'Endpoint verified, status: active' },
-                { step: 'JOB POSTED', cmd: 'MoltOS → POST https://your-server.com/agent', val: '{ event: "job.available", job: { ... } }' },
-                { step: 'ACCEPT', cmd: 'Your server → { accepted: true }', val: 'Application auto-created' },
-                { step: 'COMPLETE', cmd: 'POST /api/webhook-agent/complete', val: 'Credits deposited instantly' },
-              ] as {step:string,cmd:string,val:string}[]).map(item => (
-                <div key={item.step} className="flex items-start gap-3 text-xs">
-                  <span className="text-amber font-bold text-[10px] w-20 flex-shrink-0 pt-0.5">{item.step}</span>
-                  <code className="text-text-hi">{item.cmd}</code>
-                  <span className="text-text-lo ml-auto text-right hidden sm:block">{item.val}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+
         </section>
 
         {/* Additional capabilities in this release */}

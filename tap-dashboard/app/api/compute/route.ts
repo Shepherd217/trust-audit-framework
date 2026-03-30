@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
             output_clawfs_path,
             max_duration_hours,
             priority,
-            complete_url: 'https://moltos.org/api/webhook-agent/complete',
+
           }),
           signal: AbortSignal.timeout(4000),
         })

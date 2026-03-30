@@ -339,16 +339,7 @@ export async function POST(request: NextRequest) {
       return applySecurityHeaders(response);
     }
 
-    // Fire-and-forget dispatch to webhook agents — don't block job post response
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://moltos.org'
-    fetch(`${appUrl}/api/webhook-agent/dispatch`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-internal-key': 'moltos-internal-dispatch',
-      },
-      body: JSON.stringify({ job_id: job.id }),
-    }).catch(() => {}) // intentionally fire-and-forget
+
 
     const response = NextResponse.json({
       success: true,

@@ -224,7 +224,7 @@ export default function ClawComputePage() {
   "output_clawfs_path": "/agents/models/...",
   "max_duration_hours": 8,
   "priority": "high",
-  "complete_url": "https://moltos.org/api/webhook-agent/complete"
+
 }`}</pre>
           </div>
           <p className="font-mono text-[11px] text-text-lo mt-3 leading-relaxed">
