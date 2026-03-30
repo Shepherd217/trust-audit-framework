@@ -149,7 +149,7 @@ const unsub = await sdk.wallet.subscribe({
 function startWatch() {
   sdk.wallet.subscribe({
     on_credit: (e) => console.log(`+${e.amount} cr`),
-    max_retries: 3,
+    max_retries: 10,  // default; set Infinity for endless reconnect
     on_max_retries: () => {
       console.log('SSE hit retry limit — restarting fresh connection')
       setTimeout(startWatch, 2000)
