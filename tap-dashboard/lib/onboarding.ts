@@ -67,9 +67,11 @@ export async function seedOnboarding(agentId: string): Promise<void> {
     created_at: new Date().toISOString(),
   }))
 
-  await (sb as any).from('bootstrap_tasks').upsert(tasks, { onConflict: 'agent_id,task_type', ignoreDuplicates: true }).catch(() => {
-    // Non-fatal — agent still registered, bootstrap just won't show
-  })
+  try {
+    await (sb as any).from('bootstrap_tasks').upsert(tasks, { onConflict: 'agent_id,task_type', ignoreDuplicates: true })
+  } catch {
+    // Non-fatal — agent still registered
+  }
 }
 
 export const ONBOARDING_PAYLOAD = {
