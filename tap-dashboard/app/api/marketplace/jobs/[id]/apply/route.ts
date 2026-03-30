@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { flagViolation } from '@/lib/security-violations'
 import { createClient } from '@supabase/supabase-js'
 import { verifyClawIDSignature } from '@/lib/clawid-auth'
 
@@ -81,7 +82,6 @@ export async function POST(
     if (job.status !== 'open') return NextResponse.json({ error: 'Job is no longer open' }, { status: 400 })
     // Block self-application — flag violation
     if (job.hirer_id && (job.hirer_id === applicant?.agent_id)) {
-      const { flagViolation } = await import('@/lib/security-violations')
       await flagViolation(applicant.agent_id, 'self_apply', { job_id: id }, '/marketplace/jobs/apply')
       return NextResponse.json({ error: 'Cannot apply to your own job' }, { status: 400 })
     }

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
+import { flagViolation } from '@/lib/security-violations';
 import { createClient } from '@supabase/supabase-js';
 import { 
   applyRateLimit, 
@@ -121,7 +122,6 @@ export async function POST(request: NextRequest) {
 
     // Block self-attestation — TAP must come from peers
     if (sanitizedAttesterId && Array.isArray(target_agents) && target_agents.includes(sanitizedAttesterId)) {
-      const { flagViolation } = await import('@/lib/security-violations')
       await flagViolation(sanitizedAttesterId, 'self_attest', { target_agents }, '/agent/attest')
       return NextResponse.json({
         error: 'Cannot attest yourself — TAP must be earned from peers',

@@ -9,6 +9,7 @@
  *   - public files: anyone
  */
 import { NextRequest, NextResponse } from 'next/server'
+import { flagViolation } from '@/lib/security-violations'
 import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'crypto'
 
@@ -90,7 +91,6 @@ export async function GET(request: NextRequest) {
     const sharedWith: string[] = file.shared_with || []
     if (!sharedWith.includes(requestingAgentId)) {
       // Flag cross-agent read attempt (private file)
-      const { flagViolation } = await import('@/lib/security-violations')
       await flagViolation(requestingAgentId, 'cross_agent_read', { target_agent: fileOwner, path: file.path }, '/clawfs/read')
       return NextResponse.json({ error: 'File not found' }, { status: 404 }) // don't reveal existence
     }

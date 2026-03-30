@@ -98,6 +98,7 @@ export async function GET(req: NextRequest) {
 
   // Seed bootstrap tasks + write guide/quickstart to agent's ClawFS
   await seedOnboarding(agentId)
+  seedClawFS(agentId, pubHex).catch(() => {})
 
   // JSON format
   if (format === 'json') {

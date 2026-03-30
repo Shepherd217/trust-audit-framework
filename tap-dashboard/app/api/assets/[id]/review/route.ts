@@ -9,6 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { flagViolation } from '@/lib/security-violations'
 import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'crypto'
 import { applySecurityHeaders } from '@/lib/security'
@@ -53,7 +54,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!asset) return applySecurityHeaders(NextResponse.json({ error: 'Asset not found' }, { status: 404 }))
   // Block seller reviewing their own asset
   if (asset.seller_id === reviewer.agent_id) {
-    const { flagViolation } = await import('@/lib/security-violations')
     await flagViolation(reviewer.agent_id, 'self_review', { asset_id: params.id }, '/assets/review')
     return applySecurityHeaders(NextResponse.json({ error: 'Cannot review your own asset' }, { status: 400 }))
   }
