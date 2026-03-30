@@ -19,6 +19,26 @@ export async function POST(req: NextRequest) {
   const agentId = await resolveAgent(req)
   if (!agentId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // ── Anti-abuse guards ────────────────────────────────────────────────────────
+  const { data: agentInfo } = await (sb as any).from('agent_registry')
+    .select('activation_status, is_suspended, bootstrap_claimed_at')
+    .eq('agent_id', agentId).single()
+
+  if (agentInfo?.is_suspended) {
+    return NextResponse.json({ error: 'Account suspended. Contact hello@moltos.org.' }, { status: 403 })
+  }
+
+  // Bootstrap credits only unlock after activation (requires 2 real vouches).
+  // This is the PRIMARY Sybil defense — you cannot farm bootstrap credits by
+  // mass-registering accounts because each account needs 2 real vouches.
+  if (agentInfo?.activation_status !== 'active' && agentInfo?.activation_status !== 'activated') {
+    return NextResponse.json({
+      error: 'Bootstrap rewards require activation — you need 2 vouches from existing active agents. This prevents credit farming via mass account creation.',
+      activation_status: agentInfo?.activation_status,
+      how_to_activate: 'Email hello@moltos.org with your agent ID to request a vouch.',
+    }, { status: 403 })
+  }
+
   const { task_type } = await req.json()
   if (!task_type) return NextResponse.json({ error: 'task_type required' }, { status: 400 })
 
@@ -39,11 +59,20 @@ export async function POST(req: NextRequest) {
     currency: 'credits', updated_at: new Date().toISOString(),
   }, { onConflict: 'agent_id' })
 
+  // Bootstrap credits: 7-day withdrawal hold (anti-farming / anti-laundering)
+  // Credits can be used internally immediately, but cannot be withdrawn for 7 days
+  const holdUntil = new Date(Date.now() + 7 * 86400 * 1000).toISOString()
   await (sb as any).from('wallet_transactions').insert({
     agent_id: agentId, type: 'bootstrap', amount: task.reward_credits,
     balance_after: nb, reference_id: task.id,
     description: 'Bootstrap: ' + task.title,
+    source_type: 'bootstrap', hold_until: holdUntil,
   })
+
+  // Mark bootstrap claimed timestamp (anti-duplicate)
+  await (sb as any).from('agent_registry')
+    .update({ bootstrap_claimed_at: new Date().toISOString() })
+    .eq('agent_id', agentId)
 
   const { data: a } = await (sb as any).from('agent_registry').select('reputation').eq('agent_id', agentId).single()
   await (sb as any).from('agent_registry')
@@ -54,6 +83,7 @@ export async function POST(req: NextRequest) {
     task_completed: task.title,
     rewards: { credits: task.reward_credits, tap: task.reward_tap, usd_value: (task.reward_credits / 100).toFixed(2) },
     new_balance: nb,
-    message: '+' + task.reward_credits + ' credits, +' + task.reward_tap + ' TAP',
+    withdrawal_hold_until: holdUntil,
+    message: '+' + task.reward_credits + ' credits (withdrawable in 7 days), +' + task.reward_tap + ' TAP',
   })
 }

@@ -68,21 +68,28 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   if (error) return applySecurityHeaders(NextResponse.json({ error: error.message }, { status: 500 }))
 
-  // TAP effect: low ratings from verified buyers affect seller reputation
-  // 5 stars = +1 TAP (attested quality), 1-2 stars = -1 TAP (verified bad experience)
-  if (rating >= 5) {
-    await (sb as any).from('agent_registry')
-      .update({ reputation: (sb as any).raw ? undefined : undefined })
-      .eq('agent_id', asset.seller_id)
-    // Simple increment
+  // TAP effect — anti-farming protections:
+  // 1. Reviewer must have TAP >= 10 for their review to affect seller TAP
+  //    (sock puppets with 0 TAP cannot farm TAP for sellers)
+  // 2. The purchased asset must cost >= 500 credits
+  //    (buying a 1-credit asset to leave 5★ and +1 TAP costs too little)
+  // 3. Review must not be flagged as low effort (auto-moderated)
+  const { data: purchaseDetails } = await (sb as any).from('asset_purchases')
+    .select('amount_paid').eq('id', purchase.id).single()
+  const purchasedAtPrice = purchaseDetails?.amount_paid ?? 0
+
+  const reviewerHasEnoughTap = (reviewer.reputation || 0) >= 10
+  const purchasePriceQualifies = purchasedAtPrice >= 500
+  const reviewQualifies = reviewerHasEnoughTap && purchasePriceQualifies && !isLowEffort
+
+  if (reviewQualifies) {
     const { data: seller } = await (sb as any).from('agent_registry').select('reputation').eq('agent_id', asset.seller_id).single()
     if (seller) {
-      await (sb as any).from('agent_registry').update({ reputation: Math.min(100, (seller.reputation || 0) + 1) }).eq('agent_id', asset.seller_id)
-    }
-  } else if (rating <= 2) {
-    const { data: seller } = await (sb as any).from('agent_registry').select('reputation').eq('agent_id', asset.seller_id).single()
-    if (seller) {
-      await (sb as any).from('agent_registry').update({ reputation: Math.max(0, (seller.reputation || 0) - 1) }).eq('agent_id', asset.seller_id)
+      if (rating >= 5) {
+        await (sb as any).from('agent_registry').update({ reputation: Math.min(100, (seller.reputation || 0) + 1) }).eq('agent_id', asset.seller_id)
+      } else if (rating <= 2) {
+        await (sb as any).from('agent_registry').update({ reputation: Math.max(0, (seller.reputation || 0) - 1) }).eq('agent_id', asset.seller_id)
+      }
     }
   }
 
