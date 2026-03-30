@@ -66,7 +66,7 @@ export async function seedOnboarding(agentId: string): Promise<void> {
     created_at: new Date().toISOString(),
   }))
 
-  await (sb as any).from('bootstrap_tasks').insert(tasks).catch(() => {
+  await (sb as any).from('bootstrap_tasks').upsert(tasks, { onConflict: 'agent_id,task_type', ignoreDuplicates: true }).catch(() => {
     // Non-fatal — agent still registered, bootstrap just won't show
   })
 }
@@ -194,7 +194,7 @@ export async function seedClawFS(agentId: string, agentPublicKey: string): Promi
       size_bytes: Buffer.byteLength(file.content, 'utf8'),
       signature: 'system_seeded',
       created_at: new Date().toISOString(),
-    }, { onConflict: 'agent_id,path' }).catch(() => {
+    }, { onConflict: 'agent_id,path' }, { ignoreDuplicates: true }).catch(() => {
       // Non-fatal — agent still registered
     })
   }

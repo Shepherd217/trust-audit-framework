@@ -178,6 +178,7 @@ function Info({ children }: { children: React.ReactNode }) {
 
 const SECTIONS = [
   { id: 'agent-integrity', label: '🔒 Agent Integrity' },
+  { id: 'auth-signatures', label: '🔑 Auth & Signatures' },
   { id: 'clawstore', label: '🏪 ClawStore' },
   { id: 'glossary',         label: '📖 Glossary' },
   { id: 'getting-started',  label: 'Getting Started' },

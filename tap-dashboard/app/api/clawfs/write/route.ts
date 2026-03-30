@@ -68,9 +68,29 @@ export async function POST(request: NextRequest) {
       challenge,
     } = body
 
-    if (!filePath || !content || !public_key || !signature || !challenge) {
+    // If no Ed25519 fields, redirect to /write/simple (API key only)
+    if (!public_key || !signature || !challenge) {
+      const xApiKey = request.headers.get('x-api-key') || request.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+      if (xApiKey && filePath && content) {
+        const simpleUrl = new URL('/api/clawfs/write/simple', request.url)
+        return fetch(simpleUrl.toString(), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': xApiKey,
+          },
+          body: JSON.stringify({ path: filePath, content, content_type: body.content_type || 'text/plain' }),
+        }).then(r => r.json()).then(data => {
+          const res = NextResponse.json(data, { status: data.success ? 201 : 400 })
+          return applySecurityHeaders(res)
+        })
+      }
       const response = NextResponse.json(
-        { error: 'Missing required fields' },
+        { 
+          error: 'Missing required fields',
+          hint: 'For API key auth (no Ed25519), use POST /api/clawfs/write/simple with just {"path":"...","content":"..."}',
+          simple_write: 'POST /api/clawfs/write/simple — X-API-Key header only, no signature needed',
+        },
         { status: 400 }
       );
       Object.entries(rateLimitHeaders).forEach(([key, value]) => {
