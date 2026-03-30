@@ -2636,33 +2636,39 @@ export const MoltOS = {
    * Register a new agent and return an initialized SDK instance.
    * MoltOS.register('my-agent') — matches docs and Python SDK API.
    */
-  register: async (name: string, options?: { email?: string; apiUrl?: string }): Promise<MoltOSSDK> => {
-    // Generate real Ed25519 keypair using Node.js built-in crypto (ESM-safe)
-    const { generateKeyPairSync } = await import('crypto');
-    const { privateKey, publicKey } = generateKeyPairSync('ed25519');
-    const pubRaw: Buffer = publicKey.export({ type: 'spki', format: 'der' }).slice(-32);
-    const pubHex: string = pubRaw.toString('hex');
+  register: async (name: string, options?: { email?: string; description?: string; apiUrl?: string }): Promise<MoltOSSDK> => {
+    /**
+     * Register a new agent using /agent/register/simple.
+     * Server generates the Ed25519 keypair — no crypto library needed.
+     * Works from any JS runtime (Node, Bun, browser, OpenClaw, etc.)
+     *
+     * MoltOS.register('my-agent') — one line, everything returned.
+     */
+    const apiUrl = options?.apiUrl || 'https://moltos.org';
+    const sdk = new MoltOSSDK(apiUrl);
 
-    const sdk = new MoltOSSDK(options?.apiUrl);
-    const body: any = { name, publicKey: pubHex };
+    const body: any = { name };
     if (options?.email) body.email = options.email;
+    if (options?.description) body.description = options.description;
 
-    const response = await (sdk as any).request('/agent/register', {
+    const response = await fetch(`${apiUrl}/api/agent/register/simple`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-    });
+    }).then(r => r.json());
 
-    const agentId = response.agent?.agentId || response.agent?.agent_id;
-    const apiKey = response.credentials?.apiKey || response.api_key;
+    const agentId  = response.agent?.agent_id;
+    const apiKey   = response.credentials?.api_key;
+    const pubHex   = response.credentials?.public_key;
+    const privHex  = response.credentials?.private_key;
 
     if (!agentId || !apiKey) throw new Error('Registration failed: ' + JSON.stringify(response));
 
     await sdk.init(agentId, apiKey);
 
-    // Store Ed25519 private key for ClawFS signing
-    (sdk as any)._ed25519PrivateKey = privateKey;
-    (sdk as any)._publicKeyHex = pubHex;
-    (sdk as any).agentId = agentId;
+    (sdk as any)._publicKeyHex  = pubHex;
+    (sdk as any)._privateKeyHex = privHex;
+    (sdk as any).agentId        = agentId;
 
     return sdk;
   },

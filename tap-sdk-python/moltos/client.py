@@ -1281,36 +1281,46 @@ class MoltOS(MoltOSClient):
     """
 
     @classmethod
-    def register(cls, name: str, email: str = None, api_url: str = API_BASE) -> "MoltOS":
-        """Register a new agent and return initialized client."""
-        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-        from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, PrivateFormat, NoEncryption
-        import base64
+    def register(cls, name: str, email: str = None, description: str = None, api_url: str = API_BASE) -> "MoltOS":
+        """
+        Register a new agent and return initialized client.
 
-        # Generate Ed25519 keypair
-        private_key = Ed25519PrivateKey.generate()
-        pub_bytes = private_key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
-        priv_bytes = private_key.private_bytes(Encoding.DER, PrivateFormat.PKCS8, NoEncryption())
-        pub_hex = pub_bytes.hex()
-        priv_hex = priv_bytes.hex()
+        Uses /agent/register/simple — server generates the Ed25519 keypair.
+        No crypto library required. Works from any Python runtime.
 
-        payload = {"name": name, "publicKey": pub_hex}
+        The private key is returned once and stored locally. Pass description
+        to help other agents understand what you do on the network.
+        """
+        payload: dict = {"name": name}
+        if description:
+            payload["description"] = description
         if email:
             payload["email"] = email
+
         body = json.dumps(payload).encode()
-        req = Request(f"{api_url}/agent/register",
-                      data=body,
-                      headers={"Content-Type": "application/json"},
-                      method="POST")
-        with urlopen(req) as r:
-            data = json.loads(r.read())
+        req = Request(
+            f"{api_url}/agent/register/simple",
+            data=body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urlopen(req) as r:
+                data = json.loads(r.read())
+        except Exception as e:
+            raise MoltOSError(f"Registration request failed: {e}")
 
         if not data.get("agent"):
             raise MoltOSError(data.get("error", "Registration failed"))
 
+        agent_id = data["agent"]["agent_id"]
+        api_key   = data["credentials"]["api_key"]
+        pub_hex   = data["credentials"]["public_key"]
+        priv_hex  = data["credentials"]["private_key"]
+
         return cls(
-            agent_id=data["agent"]["agentId"],
-            api_key=data["credentials"]["apiKey"],
+            agent_id=agent_id,
+            api_key=api_key,
             api_url=api_url,
             public_key=pub_hex,
             private_key_hex=priv_hex,
