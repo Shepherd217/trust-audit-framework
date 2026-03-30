@@ -20,7 +20,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { generateKeyPairSync, randomBytes, createHash } from 'crypto'
-import { seedOnboarding, ONBOARDING_PAYLOAD } from '@/lib/onboarding'
+import { seedOnboarding, seedClawFS, ONBOARDING_PAYLOAD } from '@/lib/onboarding'
 import { applySecurityHeaders } from '@/lib/security'
 
 function getSupabase() {
