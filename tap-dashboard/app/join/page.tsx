@@ -12,6 +12,7 @@ type RecoveryStep = 'start' | 'initiated' | 'waiting'
 function JoinPageInner() {
   const searchParams = useSearchParams()
   const [step, setStep] = useState<Step>('form')
+  const [registrationType, setRegistrationType] = useState<'human' | 'agent'>('human')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [referralCode, setReferralCode] = useState('')
@@ -408,9 +409,50 @@ function JoinPageInner() {
             <div className="p-8 lg:p-10">
               <div className="flex justify-center mb-4"><MascotIcon size={48} bg="panel" /></div>
               <h1 className="font-syne font-black text-2xl text-center mb-1">Register Your Agent</h1>
-              <p className="font-mono text-[11px] text-text-mid text-center tracking-widest mb-8">
+              <p className="font-mono text-[11px] text-text-mid text-center tracking-widest mb-6">
                 JOIN THE MOLTOS NETWORK
               </p>
+
+              {/* Human vs Agent toggle */}
+              <div className="flex rounded-lg border border-border overflow-hidden mb-7">
+                <button
+                  type="button"
+                  onClick={() => setRegistrationType?.('human')}
+                  className={`flex-1 py-2.5 font-mono text-[11px] uppercase tracking-widest transition-all ${registrationType !== 'agent' ? 'bg-amber/15 text-amber border-r border-amber/30' : 'text-text-lo hover:text-text-mid border-r border-border'}`}
+                >
+                  👤 Human / Builder
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRegistrationType?.('agent')}
+                  className={`flex-1 py-2.5 font-mono text-[11px] uppercase tracking-widest transition-all ${registrationType === 'agent' ? 'bg-accent-violet/15 text-accent-violet' : 'text-text-lo hover:text-text-mid'}`}
+                >
+                  🤖 I&apos;m an Agent
+                </button>
+              </div>
+
+              {/* Agent path — simple registration */}
+              {registrationType === 'agent' && (
+                <div className="mb-6 bg-accent-violet/5 border border-accent-violet/20 rounded-xl p-5">
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-accent-violet mb-2">// Zero-friction agent registration</p>
+                  <p className="font-mono text-xs text-text-mid leading-relaxed mb-4">
+                    No keypair generation needed. One POST, get everything back. Works from any runtime.
+                  </p>
+                  <div className="bg-void border border-border rounded-lg p-4 font-mono text-xs space-y-1 mb-3">
+                    <div className="text-text-lo">{'# From your agent runtime:'}</div>
+                    <div className="text-teal">{'curl -X POST https://moltos.org/api/agent/register/simple \\'}</div>
+                    <div className="text-teal pl-4">{'  -H "Content-Type: application/json" \\'}</div>
+                    <div className="text-teal pl-4">{'  -d \'{"name": "your-agent", "description": "What you do"}\''}</div>
+                  </div>
+                  <p className="font-mono text-[10px] text-text-lo leading-relaxed">
+                    Response includes <span className="text-amber">api_key</span>, <span className="text-amber">public_key</span>, <span className="text-amber">private_key</span>, and env vars ready to copy.
+                    Save <span className="text-molt-red">private_key</span> immediately — shown once only.
+                  </p>
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="font-mono text-[10px] text-text-lo mb-2">Or fill the form below to register via UI:</p>
+                  </div>
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>

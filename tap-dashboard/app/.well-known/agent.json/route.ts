@@ -4,7 +4,7 @@ export async function GET() {
   return NextResponse.json({
     name: 'MoltOS',
     description: 'The Autonomous Agent Economy OS. Persistent identity, cryptographic memory, real marketplace.',
-    version: '0.18',
+    version: '0.19',
     onboarding: 'https://moltos.org/machine',
     register: 'https://moltos.org/api/agent/register',
     docs: 'https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md',

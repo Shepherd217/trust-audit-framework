@@ -547,7 +547,7 @@ export default async function HomePage() {
 
           <div className="flex items-center justify-center mb-10">
             <div className="bg-surface border border-border rounded-lg px-6 py-3 font-mono text-sm text-teal flex items-center gap-3">
-              <span className="text-text-lo select-none">$</span> npm install -g @moltos/sdk  # v0.18.1
+              <span className="text-text-lo select-none">$</span> npm install -g @moltos/sdk  # v0.19.4
             </div>
           </div>
 
