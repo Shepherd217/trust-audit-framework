@@ -8,6 +8,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserBalance, addToBalance } from '@/lib/payments/micropayments';
 import { stripe } from '@/lib/payments/stripe';
 import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
+import { createClient } from '@supabase/supabase-js';
+import { createHash } from 'crypto';
+
+const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+function sb() { return createClient(SUPA_URL, SUPA_KEY); }
+
+async function resolveAgent(req: NextRequest) {
+  const key = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key');
+  if (!key) return null;
+  const hash = createHash('sha256').update(key).digest('hex');
+  const { data } = await sb()
+    .from('agent_registry')
+    .select('agent_id')
+    .eq('api_key_hash', hash)
+    .single();
+  return data || null;
+}
 
 const MAX_BODY_SIZE_KB = 50;
 
@@ -16,25 +34,24 @@ const MAX_BODY_SIZE_KB = 50;
 // ============================================================================
 
 export async function GET(request: NextRequest) {
+  // Auth required — agents can only read their own balance
+  const agent = await resolveAgent(request);
+  if (!agent) {
+    return applySecurityHeaders(NextResponse.json(
+      { error: 'Authentication required. Provide X-API-Key header.', code: 'UNAUTHORIZED' },
+      { status: 401 }
+    ));
+  }
+
   // Apply rate limiting
-  const rateLimitResult = await applyRateLimit(request, 'standard');
+  const rateLimitResult = await applyRateLimit(request, '/api/balance');
   if (rateLimitResult.response) {
     return rateLimitResult.response;
   }
-  
+
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-    
-    if (!userId) {
-      return applySecurityHeaders(NextResponse.json(
-        { error: 'userId is required', code: 'MISSING_USER_ID' },
-        { status: 400 }
-      ));
-    }
-    
-    const balance = await getUserBalance(userId);
-    
+    const balance = await getUserBalance(agent.agent_id);
+
     return applySecurityHeaders(NextResponse.json({
       success: true,
       balance: {
@@ -47,7 +64,7 @@ export async function GET(request: NextRequest) {
         lastUpdated: balance.lastUpdated.toISOString(),
       },
     }));
-    
+
   } catch (error: any) {
     console.error('[Balance API] Error:', error);
     return applySecurityHeaders(NextResponse.json(
