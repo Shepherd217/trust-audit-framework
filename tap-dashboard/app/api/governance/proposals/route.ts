@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     const proposalIds = proposals.map(p => p.id);
     const { data: allVotes, error: votesError } = await supabase
       .from('governance_votes')
-      .select('proposal_id, vote_type, voter: voter_id(reputation)')
+      .select('proposal_id, vote_type, tap_weight, voter_id')
       .in('proposal_id', proposalIds);
     
     if (votesError) {
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Group votes by proposal_id for efficient lookup
-    const votesByProposal: Record<string, { vote_type: string; voter: { reputation: number | null } | null }[]> = {};
+    const votesByProposal: Record<string, any[]> = {};
     (allVotes || []).forEach(vote => {
       const pid = vote.proposal_id as string;
       if (!votesByProposal[pid]) votesByProposal[pid] = [];
@@ -94,8 +94,8 @@ export async function GET(request: NextRequest) {
     const proposalsWithVotes = proposals.map((p) => {
       const votes = votesByProposal[p.id] || [];
       
-      const yesVotes = votes.filter(v => v.vote_type === 'yes').reduce((s, v) => s + (v.voter?.reputation || 0), 0)
-      const noVotes = votes.filter(v => v.vote_type === 'no').reduce((s, v) => s + (v.voter?.reputation || 0), 0)
+      const yesVotes = votes.filter((v: any) => v.vote_type === 'yes').reduce((s: number, v: any) => s + (v.tap_weight || 0), 0)
+      const noVotes = votes.filter((v: any) => v.vote_type === 'no').reduce((s: number, v: any) => s + (v.tap_weight || 0), 0)
       const totalVotes = yesVotes + noVotes
       
       const endTime = new Date(p.ends_at).getTime()

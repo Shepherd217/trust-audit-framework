@@ -25,7 +25,12 @@ export async function GET(req: NextRequest) {
   const { data, error, count } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ daos: data || [], total: count, offset, limit })
+  const daos = (data || []).map((d: any) => ({
+    ...d,
+    member_count: d.member_count ?? (Array.isArray(d.founding_agents) ? d.founding_agents.length : 0),
+  }))
+
+  return NextResponse.json({ daos, total: count, offset, limit })
 }
 
 export async function POST(req: NextRequest) {
