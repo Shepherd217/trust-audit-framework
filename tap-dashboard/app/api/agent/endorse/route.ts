@@ -24,14 +24,14 @@ export async function POST(req: NextRequest) {
   if (agent_id === endorsed_id) return NextResponse.json({ error: 'Cannot endorse yourself' }, { status: 400 })
 
   const { data: agent } = await sb
-    .from('agents')
-    .select('id, reputation, token_hash')
-    .eq('id', agent_id)
+    .from('agent_registry')
+    .select('agent_id, reputation, api_key_hash')
+    .eq('agent_id', agent_id)
     .single()
 
   if (!agent) return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
   const crypto = await import('crypto')
-  if (agent.token_hash !== crypto.createHash('sha256').update(agent_token).digest('hex')) {
+  if (agent.api_key_hash !== crypto.createHash('sha256').update(agent_token).digest('hex')) {
     return NextResponse.json({ error: 'Invalid agent token' }, { status: 401 })
   }
 

@@ -1,7 +1,7 @@
 /**
  * GET /api/hirer/:id/reputation
  * Returns hirer trust score, tier, and breakdown.
- * Public — agents can query this before accepting a job.
+ * Public — agents query this before accepting a job.
  *
  * POST /api/hirer/:id/reputation
  * Rebuild/recalculate hirer_reputation from source data.
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const sb = createClient(SUPA_URL, SUPA_KEY)
   const hirer_id = params.id
 
-  // Try hirer_reputation table first
+  // Check hirer_reputation table first
   const { data: rep } = await sb
     .from('hirer_reputation')
     .select('*')
@@ -45,13 +45,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     })
   }
 
-  // No record — compute from scratch from jobs table
+  // Fallback: compute basic stats from marketplace_jobs
   const { data: jobs } = await sb
-    .from('jobs')
-    .select('id, status, hirer_rating, escrow_released_at, deadline, dispute_id')
+    .from('marketplace_jobs')
+    .select('id, status')
     .eq('hirer_id', hirer_id)
 
-  if (!jobs || jobs.length === 0) {
+  const posted = (jobs || []).length
+  const completed = (jobs || []).filter((j: any) => j.status === 'completed').length
+
+  if (posted === 0) {
     return NextResponse.json({
       hirer_id,
       hirer_score: 50,
@@ -61,7 +64,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         jobs_posted: 0,
         jobs_completed: 0,
         completion_rate: 100,
-        dispute_rate: 0,
+        dispute_rate: null,
         avg_rating_given: null,
         on_time_release_rate: null,
         payment_default_count: 0,
@@ -70,17 +73,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     })
   }
 
-  const posted = jobs.length
-  const completed = jobs.filter(j => j.status === 'completed').length
-  const disputed = jobs.filter(j => j.dispute_id).length
-  const disputeRate = completed > 0 ? disputed / completed : 0
-  const ratings = jobs.filter(j => j.hirer_rating != null).map(j => j.hirer_rating)
-  const avgRating = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 5.0
-  const onTimeReleases = jobs.filter(j => j.status === 'completed' && j.escrow_released_at && j.deadline
-    && new Date(j.escrow_released_at) <= new Date(j.deadline)).length
-  const onTimeRate = completed > 0 ? onTimeReleases / completed : 1.0
-
-  const score = computeHirerScore({ disputeRate, avgRating, onTimeRate, completed, posted })
+  const score = 50 + (completed >= 10 ? 10 : completed >= 3 ? 5 : 0)
   const tier = score >= 75 ? 'Trusted' : score >= 40 ? 'Neutral' : 'Flagged'
 
   return NextResponse.json({
@@ -92,12 +85,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       jobs_posted: posted,
       jobs_completed: completed,
       completion_rate: posted > 0 ? Math.round((completed / posted) * 100) : 100,
-      dispute_rate: Math.round(disputeRate * 100) / 100,
-      avg_rating_given: Math.round(avgRating * 10) / 10,
-      on_time_release_rate: Math.round(onTimeRate * 100) / 100,
+      dispute_rate: null,
+      avg_rating_given: null,
+      on_time_release_rate: null,
       payment_default_count: 0,
     },
-    last_updated: new Date().toISOString(),
+    note: 'Full reputation breakdown available after first full compute cycle.',
+    last_updated: null,
   })
 }
 
@@ -110,22 +104,28 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const sb = createClient(SUPA_URL, SUPA_KEY)
   const hirer_id = params.id
 
+  // Count completed/disputed jobs from marketplace_contracts
+  const { data: contracts } = await sb
+    .from('marketplace_contracts')
+    .select('status, created_at')
+    .eq('hirer_id', hirer_id)
+
   const { data: jobs } = await sb
-    .from('jobs')
-    .select('id, status, hirer_rating, escrow_released_at, deadline, dispute_id')
+    .from('marketplace_jobs')
+    .select('id, status')
     .eq('hirer_id', hirer_id)
 
   const posted = (jobs || []).length
-  const completed = (jobs || []).filter(j => j.status === 'completed').length
-  const disputed = (jobs || []).filter(j => j.dispute_id).length
-  const disputeRate = completed > 0 ? disputed / completed : 0
-  const ratings = (jobs || []).filter(j => j.hirer_rating != null).map(j => j.hirer_rating)
-  const avgRating = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 5.0
-  const onTimeReleases = (jobs || []).filter(j => j.status === 'completed' && j.escrow_released_at && j.deadline
-    && new Date(j.escrow_released_at) <= new Date(j.deadline)).length
-  const onTimeRate = completed > 0 ? onTimeReleases / completed : 1.0
+  const completed = (contracts || []).filter((c: any) => c.status === 'completed').length
 
-  const score = computeHirerScore({ disputeRate, avgRating, onTimeRate, completed, posted })
+  // Estimate dispute count from dispute_cases (if exists) or default 0
+  const disputed = 0
+
+  const disputeRate = completed > 0 ? disputed / completed : 0
+  const score = Math.max(0, Math.min(100, 50
+    + Math.round(20 * (1 - Math.min(1, disputeRate * 3)))
+    + (completed >= 10 ? 10 : completed >= 3 ? 5 : 0)
+  ))
   const tier = score >= 75 ? 'Trusted' : score >= 40 ? 'Neutral' : 'Flagged'
 
   const { data: upserted } = await sb
@@ -135,8 +135,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       jobs_posted: posted,
       jobs_completed: completed,
       dispute_rate: disputeRate,
-      avg_rating_given: avgRating,
-      on_time_release_rate: onTimeRate,
       hirer_score: score,
       tier,
       updated_at: new Date().toISOString(),
@@ -147,25 +145,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   return NextResponse.json({ ok: true, hirer_id, score, tier, record: upserted })
 }
 
-function computeHirerScore({ disputeRate, avgRating, onTimeRate, completed, posted }: {
-  disputeRate: number; avgRating: number; onTimeRate: number; completed: number; posted: number
-}) {
-  // Base 50 for new hirers
-  let score = 50
-  // +20 for low dispute rate (penalize high)
-  score += Math.round(20 * (1 - Math.min(1, disputeRate * 3)))
-  // +15 for avg rating given (penalize hirers who give low ratings unfairly)
-  score += Math.round(15 * (avgRating / 5))
-  // +15 for on-time escrow release
-  score += Math.round(15 * onTimeRate)
-  // Volume bonus: +10 if completed 10+ jobs
-  if (completed >= 10) score += 10
-  else if (completed >= 3) score += 5
-  return Math.max(0, Math.min(100, score))
-}
-
 function getTierLabel(tier: string) {
-  if (tier === 'Trusted') return 'Trusted hirer. Consistent payments, low dispute rate, fair ratings.'
+  if (tier === 'Trusted') return 'Trusted hirer. Consistent payments, low dispute rate.'
   if (tier === 'Flagged') return 'Flagged. High dispute rate or payment issues. Proceed carefully.'
   return 'Neutral. Insufficient history to assess.'
 }

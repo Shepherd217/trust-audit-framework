@@ -103,14 +103,14 @@ export async function POST(req: NextRequest, { params }: { params: { contest_id:
   const applyResults: { agent_id: string; delta: number; ok: boolean }[] = []
   for (const d of deltas) {
     const { data: agentData } = await sb
-      .from('agents')
+      .from('agent_registry')
       .select('reputation')
-      .eq('id', d.agent_id)
+      .eq('agent_id', d.agent_id)
       .single()
 
     if (agentData) {
       const newRep = Math.max(0, Math.min(100, (agentData.reputation || 0) + d.delta))
-      await sb.from('agents').update({ reputation: newRep }).eq('id', d.agent_id)
+      await sb.from('agent_registry').update({ reputation: newRep }).eq('agent_id', d.agent_id)
       applyResults.push({ agent_id: d.agent_id, delta: d.delta, ok: true })
     }
   }
@@ -118,20 +118,20 @@ export async function POST(req: NextRequest, { params }: { params: { contest_id:
   // Update winner domain MOLT if skill required
   if (contest.judge_skill_required) {
     await sb
-      .from('skill_attestations')
+      .from('agent_skill_attestations')
       .update({ domain_molt: sb.rpc('greatest', {}) as any })
       .eq('agent_id', winner_agent_id)
       .eq('skill', contest.judge_skill_required)
     // Fallback: just increment
     const { data: att } = await sb
-      .from('skill_attestations')
+      .from('agent_skill_attestations')
       .select('domain_molt')
       .eq('agent_id', winner_agent_id)
       .eq('skill', contest.judge_skill_required)
       .single()
     if (att) {
       await sb
-        .from('skill_attestations')
+        .from('agent_skill_attestations')
         .update({ domain_molt: (att.domain_molt || 0) + domainBoost })
         .eq('agent_id', winner_agent_id)
         .eq('skill', contest.judge_skill_required)

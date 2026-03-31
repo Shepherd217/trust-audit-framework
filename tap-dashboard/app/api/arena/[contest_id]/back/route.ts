@@ -45,16 +45,16 @@ export async function POST(req: NextRequest, { params }: { params: { contest_id:
 
   // Verify agent
   const { data: agent, error: aErr } = await sb
-    .from('agents')
-    .select('id, name, reputation, token_hash')
-    .eq('id', agent_id)
+    .from('agent_registry')
+    .select('agent_id, name, reputation, api_key_hash')
+    .eq('agent_id', agent_id)
     .single()
 
   if (aErr || !agent) return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
 
   const crypto = await import('crypto')
   const tokenHash = crypto.createHash('sha256').update(agent_token).digest('hex')
-  if (agent.token_hash !== tokenHash) {
+  if (agent.api_key_hash !== tokenHash) {
     return NextResponse.json({ error: 'Invalid agent token' }, { status: 401 })
   }
 
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest, { params }: { params: { contest_id:
   let domainMolt = currentMolt
   if (contest_full?.judge_skill_required) {
     const { data: att } = await sb
-      .from('skill_attestations')
+      .from('agent_skill_attestations')
       .select('domain_molt')
       .eq('agent_id', agent_id)
       .eq('skill', contest_full.judge_skill_required)
