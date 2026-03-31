@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   
   // Apply rate limiting
   const path = '/api/bls/verify';
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
   
   if (rateLimitResponse) {
     return rateLimitResponse;
@@ -373,7 +373,7 @@ async function verifyByAttestations(body: any): Promise<{ valid: boolean; detail
 export async function GET(request: NextRequest) {
   // Apply rate limiting
   const path = '/api/bls/verify';
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
   
   if (rateLimitResponse) {
     return rateLimitResponse;

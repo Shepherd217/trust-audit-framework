@@ -36,7 +36,7 @@ async function resolveAgentByApiKey(req: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const { response: rl, headers: rlh } = applyRateLimit(request, '/api/governance/vote')
+  const { response: rl, headers: rlh } = await applyRateLimit(request, '/api/governance/vote')
   if (rl) return rl
 
   const reply = (body: object, status = 200) => {

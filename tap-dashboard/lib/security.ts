@@ -9,9 +9,40 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
-// In-memory rate limit store (use Redis in production)
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+// Upstash Redis — real distributed rate limiting
+let _redis: Redis | null = null
+let _limiters: Map<string, Ratelimit> = new Map()
+
+function getRedis(): Redis | null {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return null
+  if (!_redis) {
+    _redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+  }
+  return _redis
+}
+
+function getLimiter(key: string, requests: number, windowSec: number): Ratelimit | null {
+  const redis = getRedis()
+  if (!redis) return null
+  const mapKey = `${requests}:${windowSec}`
+  if (!_limiters.has(mapKey)) {
+    _limiters.set(mapKey, new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(requests, `${windowSec} s`),
+      prefix: `rl:${key}`,
+    }))
+  }
+  return _limiters.get(mapKey)!
+}
+
+// Fallback in-memory store for local dev (no Upstash configured)
+const _memStore = new Map<string, { count: number; resetTime: number }>();
 
 interface RateLimitConfig {
   requests: number;    // Max requests
@@ -61,60 +92,54 @@ function getClientIP(request: NextRequest): string {
 }
 
 /**
- * Check rate limit for a key
+ * Check rate limit for a key — uses Upstash Redis if configured, falls back to in-memory
  */
-function checkRateLimit(key: string, config: RateLimitConfig): { allowed: boolean; remaining: number; resetTime: number } {
+async function checkRateLimit(key: string, config: RateLimitConfig): Promise<{ allowed: boolean; remaining: number; resetTime: number }> {
+  const windowSec = Math.ceil(config.windowMs / 1000);
+  const limiter = getLimiter(key, config.requests, windowSec);
+
+  if (limiter) {
+    // Upstash path
+    const { success, remaining, reset } = await limiter.limit(key);
+    return { allowed: success, remaining, resetTime: reset };
+  }
+
+  // In-memory fallback (local dev — no Upstash configured)
   const now = Date.now();
-  const record = rateLimitStore.get(key);
-  
+  const record = _memStore.get(key);
+
   if (!record || now > record.resetTime) {
-    // New window
-    rateLimitStore.set(key, {
-      count: 1,
-      resetTime: now + config.windowMs,
-    });
-    return {
-      allowed: true,
-      remaining: config.requests - 1,
-      resetTime: now + config.windowMs,
-    };
+    _memStore.set(key, { count: 1, resetTime: now + config.windowMs });
+    return { allowed: true, remaining: config.requests - 1, resetTime: now + config.windowMs };
   }
-  
+
   if (record.count >= config.requests) {
-    return {
-      allowed: false,
-      remaining: 0,
-      resetTime: record.resetTime,
-    };
+    return { allowed: false, remaining: 0, resetTime: record.resetTime };
   }
-  
+
   record.count++;
-  return {
-    allowed: true,
-    remaining: config.requests - record.count,
-    resetTime: record.resetTime,
-  };
+  return { allowed: true, remaining: config.requests - record.count, resetTime: record.resetTime };
 }
 
 /**
  * Apply rate limiting to a request
  */
-export function applyRateLimit(
+export async function applyRateLimit(
   request: NextRequest,
   path: string
-): { response?: NextResponse; headers: Record<string, string> } {
+): Promise<{ response?: NextResponse; headers: Record<string, string> }> {
   const ip = getClientIP(request);
   const config = RATE_LIMITS[path] || RATE_LIMITS.default;
   const key = `${ip}:${path}`;
-  
-  const result = checkRateLimit(key, config);
-  
+
+  const result = await checkRateLimit(key, config);
+
   const headers: Record<string, string> = {
     'X-RateLimit-Limit': config.requests.toString(),
     'X-RateLimit-Remaining': Math.max(0, result.remaining).toString(),
     'X-RateLimit-Reset': Math.ceil(result.resetTime / 1000).toString(),
   };
-  
+
   if (!result.allowed) {
     const response = NextResponse.json(
       {
@@ -124,15 +149,11 @@ export function applyRateLimit(
       },
       { status: 429 }
     );
-    
-    // Add headers to response
-    Object.entries(headers).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
+
+    Object.entries(headers).forEach(([k, v]) => response.headers.set(k, v));
     return { response, headers };
   }
-  
+
   return { headers };
 }
 

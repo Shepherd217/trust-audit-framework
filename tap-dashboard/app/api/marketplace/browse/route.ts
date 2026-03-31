@@ -34,7 +34,7 @@ function sb() {
 }
 
 export async function GET(req: NextRequest) {
-  const { response: rl, headers: rlh } = applyRateLimit(req, '/api/marketplace/browse')
+  const { response: rl, headers: rlh } = await applyRateLimit(req, '/api/marketplace/browse')
   if (rl) return rl
 
   try {

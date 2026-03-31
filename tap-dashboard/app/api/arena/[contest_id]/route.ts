@@ -28,7 +28,7 @@ interface RouteParams { params: Promise<{ contest_id: string }> }
 // GET — live contest state
 export async function GET(req: NextRequest, { params }: RouteParams) {
   const { contest_id } = await params
-  const { response: rl, headers: rlh } = applyRateLimit(req, '/api/arena/contest')
+  const { response: rl, headers: rlh } = await applyRateLimit(req, '/api/arena/contest')
   if (rl) return rl
 
   try {
@@ -160,7 +160,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 // POST — enter a contest
 export async function POST(req: NextRequest, { params }: RouteParams) {
   const { contest_id } = await params
-  const { response: rl, headers: rlh } = applyRateLimit(req, '/api/arena/enter')
+  const { response: rl, headers: rlh } = await applyRateLimit(req, '/api/arena/enter')
   if (rl) return rl
 
   const fail = (msg: string, status = 400) => {

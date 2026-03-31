@@ -21,7 +21,7 @@ const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
 function sb() { return createClient(SUPA_URL, SUPA_KEY) }
 
 export async function GET(req: NextRequest) {
-  const { response: rl, headers: rlh } = applyRateLimit(req, '/api/memory/browse')
+  const { response: rl, headers: rlh } = await applyRateLimit(req, '/api/memory/browse')
   if (rl) return rl
 
   const { searchParams } = new URL(req.url)

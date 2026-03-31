@@ -32,7 +32,7 @@ const MAX_MONTHLY_CHARGE = 5000; // $5000 max monthly
 export async function GET(request: NextRequest) {
   const path = '/api/topup';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
   if (rateLimitResponse) {
     return rateLimitResponse;
   }
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const path = '/api/topup';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
   if (rateLimitResponse) {
     return rateLimitResponse;
   }
@@ -267,7 +267,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const path = '/api/topup';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
   if (rateLimitResponse) {
     return rateLimitResponse;
   }

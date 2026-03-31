@@ -12,7 +12,7 @@ const MAX_AGENT_ID_LENGTH = 100;
 
 export async function POST(request: NextRequest) {
   // Apply rate limiting - prevents identity spam
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, '/api/clawid/register');
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/clawid/register');
   if (rateLimitResponse) {
     return rateLimitResponse;
   }

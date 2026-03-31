@@ -66,7 +66,7 @@ const MAX_AGENT_ID_LENGTH = 100;
  */
 export async function POST(request: NextRequest) {
   // Apply rate limiting - prevents data poisoning via spam
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, '/api/telemetry');
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/telemetry');
   if (rateLimitResponse) {
     return rateLimitResponse;
   }
@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   // Apply rate limiting
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, '/api/telemetry');
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/telemetry');
   if (rateLimitResponse) {
     return rateLimitResponse;
   }

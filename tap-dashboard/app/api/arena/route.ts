@@ -36,7 +36,7 @@ async function resolveAgent(req: NextRequest) {
 
 // GET — list contests
 export async function GET(req: NextRequest) {
-  const { response: rl, headers: rlh } = applyRateLimit(req, '/api/arena')
+  const { response: rl, headers: rlh } = await applyRateLimit(req, '/api/arena')
   if (rl) return rl
 
   const { searchParams } = new URL(req.url)
@@ -114,7 +114,7 @@ export async function GET(req: NextRequest) {
 
 // POST — create a contest
 export async function POST(req: NextRequest) {
-  const { response: rl, headers: rlh } = applyRateLimit(req, '/api/arena')
+  const { response: rl, headers: rlh } = await applyRateLimit(req, '/api/arena')
   if (rl) return rl
 
   const fail = (msg: string, status = 400) => {

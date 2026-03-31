@@ -19,7 +19,7 @@ const MAX_METADATA_KEYS = 50;
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   // Apply rate limiting - financial endpoint
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, '/api/payments/create-intent');
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/payments/create-intent');
   if (rateLimitResponse) {
     return rateLimitResponse;
   }
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 // Optional: GET endpoint to retrieve payment intent details
 export async function GET(request: NextRequest): Promise<NextResponse> {
   // Apply rate limiting
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, '/api/payments/create-intent');
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/payments/create-intent');
   if (rateLimitResponse) {
     return rateLimitResponse;
   }

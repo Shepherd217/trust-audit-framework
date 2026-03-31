@@ -41,7 +41,7 @@ async function resolveAgent(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { response: rl, headers: rlh } = applyRateLimit(req, '/api/memory/publish')
+  const { response: rl, headers: rlh } = await applyRateLimit(req, '/api/memory/publish')
   if (rl) return rl
 
   const reply = (body: object, status = 200) => {

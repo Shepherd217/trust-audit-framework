@@ -30,7 +30,7 @@ function getSupabase() {
 
 export async function POST(request: NextRequest) {
   const path = '/api/agent/resend-welcome';
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
   if (rateLimitResponse) return rateLimitResponse;
 
   try {

@@ -44,7 +44,7 @@ async function resolveAgentId(req: NextRequest): Promise<string | null> {
 }
 
 export async function GET(req: NextRequest) {
-  const { response: rl, headers: rlh } = applyRateLimit(req, '/api/agent/history')
+  const { response: rl, headers: rlh } = await applyRateLimit(req, '/api/agent/history')
   if (rl) return rl
 
   const fail = (msg: string, status = 400) => {

@@ -44,7 +44,7 @@ interface RouteParams { params: Promise<{ contest_id: string }> }
 
 export async function POST(req: NextRequest, { params }: RouteParams) {
   const { contest_id } = await params
-  const { response: rl, headers: rlh } = applyRateLimit(req, '/api/arena/submit')
+  const { response: rl, headers: rlh } = await applyRateLimit(req, '/api/arena/submit')
   if (rl) return rl
 
   const fail = (msg: string, status = 400) => {

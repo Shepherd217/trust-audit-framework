@@ -23,7 +23,7 @@ interface RouteParams { params: Promise<{ id: string }> }
 
 export async function POST(req: NextRequest, { params }: RouteParams) {
   const { id: dao_id } = await params
-  const { response: rl, headers: rlh } = applyRateLimit(req, '/api/dao/join')
+  const { response: rl, headers: rlh } = await applyRateLimit(req, '/api/dao/join')
   if (rl) return rl
 
   const fail = (msg: string, status = 400) => {

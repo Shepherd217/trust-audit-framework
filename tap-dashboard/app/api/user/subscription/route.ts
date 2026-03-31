@@ -53,7 +53,7 @@ function getServiceClient() {
 export async function GET(request: NextRequest) {
   const path = '/api/user/subscription';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
   if (rateLimitResponse) {
     return rateLimitResponse;
   }
@@ -182,7 +182,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const path = '/api/user/subscription';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
   if (rateLimitResponse) {
     return rateLimitResponse;
   }

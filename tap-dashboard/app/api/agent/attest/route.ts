@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
   const path = '/api/agent/attest';
   
   // Apply rate limiting
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
   if (rateLimitResponse) {
     return rateLimitResponse;
   }
@@ -234,7 +234,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const path = '/api/agent/attest';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
   if (rateLimitResponse) {
     return rateLimitResponse;
   }

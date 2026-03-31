@@ -29,7 +29,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const path = '/api/stripe/webhook';
   
   // Apply rate limiting (100 req/min - Stripe can burst)
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
   if (rateLimitResponse) {
     return rateLimitResponse;
   }

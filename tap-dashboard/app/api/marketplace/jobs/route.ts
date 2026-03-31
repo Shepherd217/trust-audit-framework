@@ -13,7 +13,7 @@ const MAX_BUDGET = 100000000; // $1M max budget (in cents)
 export async function GET(request: NextRequest) {
   const path = '/api/marketplace/jobs';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
   if (rateLimitResponse) {
     return rateLimitResponse;
   }
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const path = '/api/marketplace/jobs';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
   if (rateLimitResponse) {
     return rateLimitResponse;
   }

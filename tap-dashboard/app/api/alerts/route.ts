@@ -216,7 +216,7 @@ async function recordAlert(payload: AlertPayload, sent: { webhook: boolean; page
  */
 export async function POST(request: NextRequest) {
   // Apply rate limiting - alerts can be spammy
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, '/api/alerts');
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/alerts');
   if (rateLimitResponse) {
     return rateLimitResponse;
   }
@@ -305,7 +305,7 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   // Apply rate limiting
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, '/api/alerts');
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/alerts');
   if (rateLimitResponse) {
     return rateLimitResponse;
   }
@@ -382,7 +382,7 @@ export async function GET(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   // Apply rate limiting - destructive operation, stricter limits
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, '/api/alerts');
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/alerts');
   if (rateLimitResponse) {
     return rateLimitResponse;
   }

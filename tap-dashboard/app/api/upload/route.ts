@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   const path = '/api/upload';
   
   // Apply rate limiting
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
   if (rateLimitResponse) {
     return rateLimitResponse;
   }

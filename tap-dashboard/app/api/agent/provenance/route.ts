@@ -45,7 +45,7 @@ async function resolveAgent(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const { response: rl, headers: rlh } = applyRateLimit(req, '/api/agent/provenance')
+  const { response: rl, headers: rlh } = await applyRateLimit(req, '/api/agent/provenance')
   if (rl) return rl
 
   const fail = (msg: string, status = 400) => {

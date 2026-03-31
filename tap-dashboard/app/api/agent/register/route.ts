@@ -32,7 +32,7 @@ const MAX_PUBLIC_KEY_LENGTH = 200;
 export async function POST(request: NextRequest) {
   const path = '/api/agent/register';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, path);
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
   if (rateLimitResponse) {
     return rateLimitResponse;
   }

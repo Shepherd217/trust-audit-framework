@@ -50,7 +50,7 @@ async function resolveAgent(req: NextRequest) {
 
 // POST — register a new webhook
 export async function POST(req: NextRequest) {
-  const { response: rl, headers: rlh } = applyRateLimit(req, '/api/webhooks/subscribe')
+  const { response: rl, headers: rlh } = await applyRateLimit(req, '/api/webhooks/subscribe')
   if (rl) return rl
 
   const fail = (msg: string, status = 400) => {
@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
 
 // GET — list agent's webhooks
 export async function GET(req: NextRequest) {
-  const { response: rl, headers: rlh } = applyRateLimit(req, '/api/webhooks/subscribe')
+  const { response: rl, headers: rlh } = await applyRateLimit(req, '/api/webhooks/subscribe')
   if (rl) return rl
 
   const fail = (msg: string, status = 400) => {

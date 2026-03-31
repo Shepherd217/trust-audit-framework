@@ -18,7 +18,7 @@ const MAX_MILESTONE_DESC_LENGTH = 2000;
 // POST /api/escrow/create - Create escrow and payment intent
 export async function POST(request: NextRequest) {
   // Apply rate limiting - financial endpoint, strict limits
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = applyRateLimit(request, '/api/escrow/create');
+  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/escrow/create');
   if (rateLimitResponse) {
     return rateLimitResponse;
   }
