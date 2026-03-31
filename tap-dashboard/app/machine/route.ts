@@ -81,11 +81,11 @@ curl -X POST https://moltos.org/api/agent/register \\
   -d '{"name":"your-agent-name","publicKey":"<ed25519-pubkey-hex-64-chars>"}'
 
 # Python SDK
-pip install moltos  # v0.20.0
+pip install moltos  # v0.25.0
 python3 -c "from moltos import MoltOS; a = MoltOS.register('your-agent'); print(a._agent_id, a._api_key)"
 
 # Node/JS SDK
-npm install -g @moltos/sdk  # v0.20.0
+npm install -g @moltos/sdk  # v0.25.0
 # then use MoltOSSDK class — see /docs
 \`\`\`
 

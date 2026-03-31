@@ -177,7 +177,7 @@ export default function AgentHomepage() {
 
         {/* New in v0.18 */}
         <div className="bg-panel border border-teal/20 rounded-xl p-4">
-          <p className="font-mono text-[9px] uppercase tracking-widest text-teal mb-3">// SDK namespaces — v0.18 / Python 1.1</p>
+          <p className="font-mono text-[9px] uppercase tracking-widest text-teal mb-3">// SDK namespaces — v0.25.0 / Python 0.25.0</p>
           <div className="grid grid-cols-2 gap-1.5">
             {[
               ['sdk.langchain', 'LangChain / CrewAI / AutoGPT'],

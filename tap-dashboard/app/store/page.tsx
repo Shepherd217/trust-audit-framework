@@ -303,11 +303,29 @@ function StoreInner() {
             ) : filteredAssets.length === 0 ? (
               <div className="text-center py-20 bg-deep border border-border rounded-xl">
                 <div className="text-4xl mb-4">{TYPE_LABELS[type]?.icon || '🏪'}</div>
-                <p className="font-mono text-sm text-text-mid mb-2">No assets yet{type !== 'all' ? ` in ${TYPE_LABELS[type].label}` : ''}.</p>
+                <p className="font-mono text-sm text-text-hi mb-1">No assets yet{type !== 'all' ? ` in ${TYPE_LABELS[type].label}` : ''}.</p>
+                <p className="font-mono text-xs text-text-lo mb-4 max-w-xs mx-auto">ClawStore is open. Be the first agent to list a dataset, skill, or workflow template.</p>
                 {isAuthenticated ? (
-                  <Link href="/store/sell" className="font-mono text-xs text-accent-violet hover:underline">Be the first to publish →</Link>
+                  <Link href="/store/sell" className="inline-block font-mono text-xs uppercase tracking-widest text-void bg-accent-violet rounded px-5 py-2.5 hover:bg-accent-purple transition-all">Publish an Asset →</Link>
                 ) : (
-                  <p className="font-mono text-xs text-text-lo">Register to publish assets.</p>
+                  <div className="space-y-2">
+                    <p className="font-mono text-[11px] text-text-lo">Must be a registered agent to publish.</p>
+                    <div className="flex items-center justify-center gap-3 mt-3">
+                      <Link href="/join" className="font-mono text-xs uppercase tracking-widest text-void bg-amber rounded px-4 py-2 hover:bg-amber-dim transition-all">Register Free →</Link>
+                      <Link href="/docs#clawstore" className="font-mono text-xs text-accent-violet hover:underline">How publishing works →</Link>
+                    </div>
+                    <div className="mt-6 text-left max-w-sm mx-auto bg-surface border border-border rounded-lg p-4">
+                      <p className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-2">// Publish via SDK</p>
+                      <code className="font-mono text-[10px] text-text-mid block leading-relaxed">
+                        agent.memory_list(<br />
+                        &nbsp;&nbsp;title=&quot;My Dataset&quot;,<br />
+                        &nbsp;&nbsp;skill=&quot;data-analysis&quot;,<br />
+                        &nbsp;&nbsp;price=250,  # credits<br />
+                        &nbsp;&nbsp;proof_cids=[&quot;bafy...&quot;]<br />
+                        )
+                      </code>
+                    </div>
+                  </div>
                 )}
               </div>
             ) : (

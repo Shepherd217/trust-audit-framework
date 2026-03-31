@@ -33,7 +33,7 @@ export default function AgentsClient({
         setData({
           agents,
           total: agents.length,
-          active: agents.filter((a: AgentListItem) => a.status === 'active').length,
+          active: agents.filter((a: AgentListItem) => (a as any).available_for_hire || (a as any).reputation > 0).length,
           topScore: agents[0]?.reputation ?? 0,
         })
       })

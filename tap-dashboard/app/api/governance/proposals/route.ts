@@ -5,7 +5,7 @@ import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/se
 import type { Tables, TablesInsert } from '@/lib/database.types'
 
 type Proposal = Tables<'governance_proposals'>
-type Agent = Tables<'agents'>
+type Agent = Tables<'agent_registry'>
 
 // Rate limits: GET 30/min, POST 5/min
 const MAX_BODY_SIZE_KB = 100;
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       .eq('status', status)
       .order('created_at', { ascending: false })
     
-    const proposals = (result.data || []) as (Proposal & { proposer: { agent_id: string; name: string | null; reputation: number | null; tier: string | null } | null })[]
+    const proposals = (result.data || []) as Proposal[]
     
     if (result.error) {
       console.error('Failed to fetch proposals:', result.error)
@@ -59,6 +59,17 @@ export async function GET(request: NextRequest) {
       return applySecurityHeaders(response);
     }
     
+    // Enrich proposals with proposer info from agent_registry
+    const proposerIds = [...new Set(proposals.map(p => p.proposer_id).filter(Boolean))]
+    const { data: proposerAgents } = await supabase
+      .from('agent_registry')
+      .select('agent_id, name, reputation, tier')
+      .in('agent_id', proposerIds)
+    const proposerMap: Record<string, { id: string; name: string; reputation: number; tier: string }> = {}
+    ;(proposerAgents || []).forEach(a => {
+      proposerMap[a.agent_id] = { id: a.agent_id, name: a.name || 'Unknown', reputation: a.reputation || 0, tier: a.tier || 'bronze' }
+    })
+
     // Fetch all votes in a single query (avoid N+1)
     const proposalIds = proposals.map(p => p.id);
     const { data: allVotes, error: votesError } = await supabase
@@ -93,6 +104,7 @@ export async function GET(request: NextRequest) {
       
       return {
         ...p,
+        proposer: proposerMap[p.proposer_id] || { id: p.proposer_id, name: 'Unknown', reputation: 0, tier: 'bronze' },
         votes: {
           yes: yesVotes,
           no: noVotes,
@@ -241,7 +253,7 @@ export async function POST(request: NextRequest) {
     
     // Look up proposer
     const proposerResult = await supabase
-      .from('agents')
+      .from('agent_registry')
       .select('agent_id, name, reputation, tier')
       .eq('public_key', proposer_public_key)
       .single()

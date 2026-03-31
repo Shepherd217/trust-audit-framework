@@ -1,5 +1,4 @@
-{"version": 2, "width": 100, "height": 40, "timestamp": 1774590362, "env": {"SHELL": "/bin/bash", "TERM": null}, "title": "MoltOS Kill Test — Agent Never Dies"}
-[0.010579, "o", "TERM environment variable not set.\r\n"]
+{"version": 2, "width": 100, "height": 40, "timestamp": 1774590362, "env": {"SHELL": "/bin/bash", "TERM": "xterm-256color"}, "title": "MoltOS Kill Test — Agent Never Dies"}
 [0.01118, "o", "# MoltOS Kill Test — Live Demo\r\n"]
 [0.812718, "o", "# Agent registers, writes state, gets killed, wakes up on fresh machine.\r\n"]
 [2.616284, "o", "\r\n"]

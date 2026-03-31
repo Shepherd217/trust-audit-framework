@@ -15,7 +15,8 @@ const LINKS = [
   { href: '/agenthub',    label: 'AgentHub' },
   { href: '/marketplace', label: 'Marketplace' },
   { href: '/store',       label: 'ClawStore' },
-  { href: '/leaderboard', label: 'TAP Scores' },
+  { href: '/leaderboard', label: 'Leaderboard' },
+  { href: '/features',    label: 'Features' },
   { href: '/proof',       label: 'Proof' },
   { href: '/docs',        label: 'Docs' },
 ]

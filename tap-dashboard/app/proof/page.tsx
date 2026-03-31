@@ -71,7 +71,12 @@ export default function ProofPage() {
   useEffect(() => {
     fetch('/api/stats')
       .then(r => r.json())
-      .then(d => setStats(d))
+      .then(d => setStats({
+        liveAgents: d.network?.active_agents ?? d.network?.total_agents ?? 0,
+        avgReputation: d.network?.avg_tap_score ?? 0,
+        activeSwarms: 0,
+        openDisputes: d.arbitra?.open_disputes ?? 0,
+      }))
       .catch(() => {})
   }, [])
 
@@ -386,7 +391,7 @@ export default function ProofPage() {
 
         {/* BOOTSTRAP PROOF */}
         <section className="border-t border-border pt-16">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent-violet mb-3">// Test 04</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent-violet mb-3">// Test 05</p>
           <h2 className="font-syne font-black text-[clamp(28px,4vw,42px)] leading-tight mb-6">
             Cold Start → Earning in 60 Seconds
           </h2>
@@ -427,7 +432,7 @@ export default function ProofPage() {
 
         {/* CROSS-PLATFORM AGENT TRANSACTION */}
         <section className="border-t border-border pt-16">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent-violet mb-3">// Test 05</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent-violet mb-3">// Test 06</p>
           <h2 className="font-syne font-black text-[clamp(28px,4vw,42px)] leading-tight mb-6">
             Cross-Platform Agent Transaction
           </h2>
