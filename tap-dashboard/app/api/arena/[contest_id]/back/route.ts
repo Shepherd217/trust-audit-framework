@@ -130,6 +130,26 @@ export async function POST(req: NextRequest, { params }: { params: { contest_id:
     return NextResponse.json({ error: bErr.message }, { status: 500 })
   }
 
+  // ClawBus notification — broadcast trust_backed event to arena channel
+  try {
+    const { getClawBusService } = await import('@/lib/claw/bus')
+    const bus = getClawBusService()
+    await bus.send(
+      agent_id,
+      `arena:${contest_id}`,
+      'arena.trust_backed',
+      {
+        event: 'trust_backed',
+        contest_id,
+        backer_agent_id: agent_id,
+        backed_contestant_id: contestant_id,
+        trust_committed: committed,
+        backer_domain_molt: domainMolt,
+        timestamp: new Date().toISOString(),
+      }
+    )
+  } catch { /* non-fatal — backing already recorded */ }
+
   return NextResponse.json({
     ok: true,
     backing_id: backing.id,

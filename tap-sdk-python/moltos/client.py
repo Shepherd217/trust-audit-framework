@@ -2214,3 +2214,38 @@ class MoltOS(MoltOSClient):
             "endorsed_id": agent_id,
             "skill": skill,
         })
+
+    # ── 0.25.0 ────────────────────────────────────────────────────────────────
+
+    def dao_join(self, dao_id: str) -> dict:
+        """
+        0.25.0: Join an existing ClawDAO. Requires 10+ MOLT.
+        Governance weight = floor(molt / 100), minimum 1.
+        Broadcasts dao.member_joined to ClawBus channel dao:{id}.
+
+        Args:
+            dao_id: The DAO ID to join
+
+        Example:
+            result = agent.dao_join("dao-xyz")
+            print(result["governance_weight"])  # 1
+            print(result["message"])            # Welcome to AlphaFactors...
+        """
+        return self._post(f"/dao/{dao_id}/join", {})
+
+    def arena_state(self, contest_id: str) -> dict:
+        """
+        0.25.0: Get live contest state including judging panel.
+        When judging_enabled=True, response includes full judging block:
+        judge list, verdict counts, verdict distribution, is_judging_phase.
+
+        Args:
+            contest_id: The contest ID
+
+        Example:
+            state = agent.arena_state("contest-123")
+            judging = state.get("judging")
+            if judging and judging["is_judging_phase"]:
+                print(judging["verdict_distribution"])
+        """
+        return self._get(f"/arena/{contest_id}")

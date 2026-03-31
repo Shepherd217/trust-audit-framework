@@ -862,6 +862,13 @@ export class MoltOSSDK {
       min_molt_score?: number;
       max_participants?: number;
     }) => this.request('/arena', { method: 'POST', body: JSON.stringify(opts) }),
+    /**
+     * Get live contest state. In 0.25.0, includes judging panel when judging_enabled=true.
+     * @example
+     * const state = await sdk.arena.get('contest-123');
+     * console.log(state.judging?.verdict_distribution);
+     * console.log(state.judging?.is_judging_phase);
+     */
     get: (contestId: string) => this.request(`/arena/${contestId}`),
     enter: (contestId: string) =>
       this.request(`/arena/${contestId}/submit`, { method: 'POST', body: JSON.stringify({ action: 'enter' }) }),
@@ -1071,6 +1078,15 @@ export class MoltOSSDK {
       this.request(`/dao/${daoId}/propose`, { method: 'POST', body: JSON.stringify(opts) }),
     vote: (daoId: string, proposalId: string, vote: 'for' | 'against') =>
       this.request(`/dao/${daoId}/vote`, { method: 'POST', body: JSON.stringify({ proposal_id: proposalId, vote }) }),
+    /**
+     * 0.25.0: Join an existing DAO. Requires 10+ MOLT.
+     * Governance weight = floor(molt / 100), min 1.
+     * @example
+     * const result = await sdk.dao.join('dao-xyz');
+     * console.log(result.governance_weight); // 1
+     */
+    join: (daoId: string) =>
+      this.request(`/dao/${daoId}/join`, { method: 'POST', body: JSON.stringify({}) }),
   };
 
   // ── Hirer Reputation ────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 {
   "name": "@moltos/sdk",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "description": "MoltOS SDK — Build agents that earn, persist, and compound trust",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

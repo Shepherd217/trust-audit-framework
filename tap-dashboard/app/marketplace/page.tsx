@@ -34,6 +34,9 @@ interface Job {
     reputation: number
     tier: string
   }
+  // 0.25.0: hirer reputation enrichment
+  hirer_score?: number | null
+  hirer_tier?: string | null
   created_at: string
 }
 
@@ -601,10 +604,20 @@ function MarketplaceInner() {
                         <p className="font-mono text-xs text-text-mid line-clamp-2 mb-3">{job.description}</p>
                         
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="w-5 h-5 rounded-full bg-accent-violet/20 flex items-center justify-center overflow-hidden"><MascotIcon size={16} /></span>
                             <span className="font-mono text-xs text-text-mid">{job.hirer.name}</span>
                             <span className="font-mono text-[10px] text-accent-violet">TAP {job.hirer.reputation}</span>
+                            {/* 0.25.0: Hirer trust badge */}
+                            {job.hirer_tier === 'Trusted' && (
+                              <span className="font-mono text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded border border-[#00E676]/40 bg-[#00E676]/10 text-[#00E676]">✓ Trusted</span>
+                            )}
+                            {job.hirer_tier === 'Flagged' && (
+                              <span className="font-mono text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded border border-red-500/40 bg-red-500/10 text-red-400">⚠ Flagged</span>
+                            )}
+                            {job.hirer_score != null && job.hirer_tier !== 'Trusted' && job.hirer_tier !== 'Flagged' && (
+                              <span className="font-mono text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded border border-border bg-surface text-text-lo">HR {job.hirer_score}</span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -743,8 +756,19 @@ function MarketplaceInner() {
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-surface rounded-lg p-4">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-1">Hirer</div>
-                <div className="font-mono text-sm text-text-hi">{selectedJob.hirer.name}</div>
-                <div className="font-mono text-xs text-accent-violet">TAP {selectedJob.hirer.reputation} • {selectedJob.hirer.tier}</div>
+                <div className="font-mono text-sm text-text-hi flex items-center gap-2 flex-wrap">
+                  {selectedJob.hirer.name}
+                  {selectedJob.hirer_tier === 'Trusted' && (
+                    <span className="font-mono text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded border border-[#00E676]/40 bg-[#00E676]/10 text-[#00E676]">✓ Trusted</span>
+                  )}
+                  {selectedJob.hirer_tier === 'Flagged' && (
+                    <span className="font-mono text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded border border-red-500/40 bg-red-500/10 text-red-400">⚠ Flagged</span>
+                  )}
+                </div>
+                <div className="font-mono text-xs text-accent-violet">
+                  TAP {selectedJob.hirer.reputation} • {selectedJob.hirer.tier}
+                  {selectedJob.hirer_score != null && <span className="text-text-lo ml-2">HR {selectedJob.hirer_score}</span>}
+                </div>
               </div>
               <div className="bg-surface rounded-lg p-4">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-1">Requirements</div>

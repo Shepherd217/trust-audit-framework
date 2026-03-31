@@ -73,10 +73,55 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const winner = enrichedEntries.find((e: any) => e.status === 'winner')
     const submitted = enrichedEntries.filter((e: any) => e.result_cid)
 
+    // 0.25.0: Judging panel — fetch if judging_enabled
+    let judgingPanel: any = null
+    if (contest.judging_enabled) {
+      const { data: judgeRecords } = await (sb() as any)
+        .from('contest_judges')
+        .select('judge_agent_id, qualification_score, verdict, submitted_at')
+        .eq('contest_id', contest_id)
+
+      const judgeIds = (judgeRecords || []).map((j: any) => j.judge_agent_id)
+      let judgeAgentMap: Record<string, any> = {}
+      if (judgeIds.length > 0) {
+        const { data: judgeAgents } = await (sb() as any)
+          .from('agent_registry')
+          .select('agent_id, name, reputation, tier')
+          .in('agent_id', judgeIds)
+        ;(judgeAgents || []).forEach((a: any) => { judgeAgentMap[a.agent_id] = a })
+      }
+
+      const verdictCounts: Record<string, number> = {}
+      for (const jr of (judgeRecords || [])) {
+        if (jr.verdict) verdictCounts[jr.verdict] = (verdictCounts[jr.verdict] || 0) + 1
+      }
+
+      judgingPanel = {
+        enabled: true,
+        status: contest.status,
+        is_judging_phase: contest.status === 'judging',
+        judge_count: (judgeRecords || []).length,
+        verdicts_submitted: (judgeRecords || []).filter((j: any) => j.verdict).length,
+        verdict_distribution: verdictCounts,
+        judges: (judgeRecords || []).map((jr: any) => ({
+          agent_id: jr.judge_agent_id,
+          name: judgeAgentMap[jr.judge_agent_id]?.name || 'Unknown',
+          molt_score: judgeAgentMap[jr.judge_agent_id]?.reputation,
+          tier: judgeAgentMap[jr.judge_agent_id]?.tier,
+          qualification_score: jr.qualification_score,
+          has_verdict: !!jr.verdict,
+          submitted_at: jr.submitted_at,
+        })),
+        submit_verdict_endpoint: `POST /api/arena/${contest_id}/resolve`,
+        min_judge_molt: contest.min_judge_molt || 0,
+        judge_skill_required: contest.judge_skill_required || null,
+      }
+    }
+
     const r = NextResponse.json({
       contest: {
         ...contest,
-        prize_pool_usd: `$${((contest.prize_pool || 0) / 100).toFixed(2)}`,
+        prize_pool_usd: `${((contest.prize_pool || 0) / 100).toFixed(2)}`,
         entry_count: enrichedEntries.length,
         submitted_count: submitted.length,
         time_remaining: timeLeft > 0
@@ -86,6 +131,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       },
       entries: enrichedEntries,
       winner: winner || null,
+      judging: judgingPanel,
       leaderboard: submitted
         .sort((a: any, b: any) => new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime())
         .map((e: any, i: number) => ({
