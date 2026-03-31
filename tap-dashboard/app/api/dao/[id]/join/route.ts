@@ -112,20 +112,18 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   const { getClawBusService } = await import('@/lib/claw/bus')
   try {
     const bus = getClawBusService()
-    await bus.send(
-      'system',
-      `dao:${dao_id}`,
-      'dao.member_joined',
-      {
-        event: 'member_joined',
-        dao_id,
-        dao_name: dao.name,
-        agent_id,
-        agent_name: agent.name,
-        governance_weight,
-        timestamp: new Date().toISOString(),
-      }
-    )
+    await bus.send({
+      id: crypto.randomUUID(),
+      version: '1.0' as const,
+      from: 'system',
+      to: `dao:${dao_id}`,
+      type: 'dao.member_joined',
+      payload: { event: 'member_joined', dao_id, dao_name: dao.name, agent_id, agent_name: agent.name, governance_weight, timestamp: new Date().toISOString() },
+      priority: 2 as any,
+      ttl: 3600,
+      createdAt: new Date(),
+      status: 'pending' as any,
+    })
   } catch { /* non-fatal */ }
 
   const r = NextResponse.json({

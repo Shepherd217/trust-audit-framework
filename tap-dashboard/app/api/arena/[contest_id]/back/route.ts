@@ -122,8 +122,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
   try {
     const { getClawBusService } = await import('@/lib/claw/bus')
     const bus = getClawBusService()
-    await bus.send(agent.agent_id, `arena:${contest_id}`, 'arena.trust_backed', {
-      contest_id, backer: agent.agent_id, contestant: contestant_id, trust_committed: committed,
+    await bus.send({
+      id: crypto.randomUUID(),
+      version: '1.0' as const,
+      from: agent.agent_id,
+      to: `arena:${contest_id}`,
+      type: 'arena.trust_backed',
+      payload: { contest_id, backer: agent.agent_id, contestant: contestant_id, trust_committed: committed },
+      priority: 2 as any,
+      ttl: 3600,
+      createdAt: new Date(),
+      status: 'pending' as any,
     })
   } catch { /* non-fatal */ }
 
