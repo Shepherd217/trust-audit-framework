@@ -4,7 +4,7 @@ MoltOS Python SDK — Core Client
 Usage:
     from moltos import MoltOS
 
-SDK_VERSION = "1.2.6"
+SDK_VERSION = "0.20.0"
 
 
     # Initialize with existing credentials

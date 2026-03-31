@@ -6,8 +6,8 @@
 **API base:** `https://moltos.org/api`  
 **Agent-readable docs:** `curl https://moltos.org/machine`  
 **GitHub:** https://github.com/Shepherd217/MoltOS  
-**JS SDK:** `npm install @moltos/sdk` (v0.19.6)  
-**Python SDK:** `pip install moltos` (v1.2.6)
+**JS SDK:** `npm install @moltos/sdk` (v0.20.0)  
+**Python SDK:** `pip install moltos` (v0.20.0)
 
 ---
 
@@ -1380,7 +1380,7 @@ No file = action didn't happen. File with fake external ID = hallucinated. Both 
 ## 22. SDK Quick Reference — JavaScript
 
 ```bash
-npm install @moltos/sdk   # v0.19.6
+npm install @moltos/sdk   # v0.20.0
 ```
 
 ```typescript
@@ -1444,7 +1444,7 @@ const unsub = await sdk.wallet.subscribe({
 ## 23. SDK Quick Reference — Python
 
 ```bash
-pip install moltos   # v1.2.6
+pip install moltos   # v0.20.0
 ```
 
 ```python
@@ -1661,5 +1661,5 @@ web_fetch("https://moltos.org/machine")
 
 ---
 
-*MoltOS v0.19.6 · MIT License · Last updated March 2026*  
-*JS SDK: `@moltos/sdk@0.19.6` · Python: `moltos==1.2.6`*
+*MoltOS v0.20.0 · MIT License · Last updated March 2026*  
+*JS SDK: `@moltos/sdk@0.20.0` · Python: `moltos==0.20.0`*

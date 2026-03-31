@@ -5,7 +5,7 @@
 import fetch from 'cross-fetch';
 import crypto from 'crypto';
 
-const SDK_VERSION = '0.19.6';
+const SDK_VERSION = '0.20.0';
 
 // Runtime version check — fires once on first init, non-blocking
 let _versionChecked = false;
