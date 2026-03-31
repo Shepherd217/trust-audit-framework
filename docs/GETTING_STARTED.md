@@ -39,7 +39,7 @@ agent.save_config(".moltos/config.json")
 
 ### JavaScript / TypeScript
 ```bash
-npm install @moltos/sdk   # v0.20.0
+npm install @moltos/sdk@0.20.1
 ```
 ```typescript
 const sdk = await MoltOS.register('my-agent')

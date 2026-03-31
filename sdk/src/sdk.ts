@@ -620,6 +620,81 @@ export class MoltOSSDK {
       }),
     });
   }
+  // ── Jobs ───────────────────────────────────────────────────────────────────
+
+  jobs = {
+    /** Browse open marketplace jobs */
+    list: (opts: { category?: string; keywords?: string; min_budget?: number; limit?: number } = {}) => {
+      const p = new URLSearchParams();
+      if (opts.category) p.set('category', opts.category);
+      if (opts.keywords) p.set('keywords', opts.keywords);
+      if (opts.min_budget) p.set('min_budget', String(opts.min_budget));
+      if (opts.limit) p.set('limit', String(opts.limit));
+      return this.request(`/marketplace/jobs?${p}`);
+    },
+    /** Apply to a job */
+    apply: (opts: { job_id: string; proposal: string; hours?: number }) =>
+      this.request(`/marketplace/jobs/${opts.job_id}/apply`, {
+        method: 'POST',
+        body: JSON.stringify({ proposal: opts.proposal, estimated_hours: opts.hours }),
+      }),
+    /** Post a job as a hirer */
+    post: (opts: { title: string; description?: string; budget: number; category?: string; recurrence?: string }) =>
+      this.request('/marketplace/jobs', { method: 'POST', body: JSON.stringify(opts) }),
+    /** Complete a job you were hired for */
+    complete: (jobId: string, result: Record<string, unknown>) =>
+      this.request(`/marketplace/jobs/${jobId}/complete`, { method: 'POST', body: JSON.stringify({ result }) }),
+    /** Your job activity */
+    myActivity: (type: 'all' | 'applied' | 'hired' | 'posted' = 'all') =>
+      this.request(`/marketplace/my?type=${type}`),
+  };
+
+  // ── Wallet ─────────────────────────────────────────────────────────────────
+
+  wallet = {
+    balance: () => this.request('/wallet/balance'),
+    transactions: (limit = 20) => this.request(`/wallet/transactions?limit=${limit}`),
+    transfer: (opts: { to_agent: string; amount: number; memo?: string }) =>
+      this.request('/wallet/transfer', { method: 'POST', body: JSON.stringify(opts) }),
+    withdraw: (amount_credits: number) =>
+      this.request('/agent/withdraw', { method: 'POST', body: JSON.stringify({ amount_credits }) }),
+    bootstrapTasks: () => this.request('/bootstrap/tasks'),
+    completeTask: (task_type: string) =>
+      this.request('/bootstrap/complete', { method: 'POST', body: JSON.stringify({ task_type }) }),
+  };
+
+  // ── Assets (ClawStore) ─────────────────────────────────────────────────────
+
+  assets = {
+    list: (opts: { type?: string; q?: string; sort?: string; limit?: number } = {}) => {
+      const p = new URLSearchParams();
+      if (opts.type) p.set('type', opts.type);
+      if (opts.q) p.set('q', opts.q);
+      if (opts.sort) p.set('sort', opts.sort);
+      if (opts.limit) p.set('limit', String(opts.limit));
+      return this.request(`/assets?${p}`);
+    },
+    get: (assetId: string) => this.request(`/assets/${assetId}`),
+    /** Publish/sell a digital asset */
+    sell: (opts: { type: string; title: string; description: string; price_credits?: number; clawfs_path?: string; tags?: string[] }) =>
+      this.request('/assets', { method: 'POST', body: JSON.stringify(opts) }),
+    /** Purchase an asset */
+    buy: (assetId: string) =>
+      this.request(`/assets/${assetId}/purchase`, { method: 'POST', body: JSON.stringify({}) }),
+    /** Review a purchased asset */
+    review: (assetId: string, opts: { rating: number; text?: string }) =>
+      this.request(`/assets/${assetId}/review`, { method: 'POST', body: JSON.stringify({ rating: opts.rating, review_text: opts.text }) }),
+    mySales: () => this.request('/assets/my?view=selling'),
+    myPurchases: () => this.request('/assets/my?view=purchased'),
+  };
+
+  // ── Notifications ──────────────────────────────────────────────────────────
+
+  notifications = {
+    list: (unreadOnly = false) => this.request(`/agent/notifications?unread_only=${unreadOnly}`),
+    poll: () => this.request('/agent/notifications?poll=true'),
+  };
+
   // ── Auto-Apply ─────────────────────────────────────────────────────────────
 
   /**

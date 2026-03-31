@@ -24,7 +24,7 @@ SDK_VERSION = "0.20.0"
     app = agent.jobs.apply(job_id="...", proposal="I can do this")
     balance = agent.wallet.balance()
 
-    # Webhooks
+    # Auto-apply (passive earning — no server needed)
     agent.auto_apply.enable(capabilities=["research", "summarization"], min_budget=500)
 """
 
