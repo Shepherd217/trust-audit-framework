@@ -84,7 +84,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     .eq('agent_id', agent.agent_id)
     .single()
 
-  if (!entry) return fail('You have not entered this contest. Enter first at POST /api/arena/' + contest_id)
+  if (!entry) return fail(`You have not entered this contest. Enter first: POST /api/arena/${contest_id} (no body required)`)
   if (entry.status === 'disqualified') return fail('You have been disqualified from this contest')
   if (entry.result_cid) return fail('You have already submitted. Only one submission allowed.')
 
