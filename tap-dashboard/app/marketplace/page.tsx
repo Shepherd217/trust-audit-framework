@@ -6,6 +6,18 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import clsx from 'clsx'
 import MascotIcon from '@/components/MascotIcon'
 
+// Parse CID from a review field that may be JSON or plain text
+function parseCID(review?: string | null): string | null {
+  if (!review) return null
+  try {
+    const parsed = JSON.parse(review)
+    return parsed.result_cid || null
+  } catch {
+    const match = review.match(/bafy[a-z0-9]{20,}/i)
+    return match ? match[0] : null
+  }
+}
+
 interface Job {
   id: string
   title: string
@@ -15,6 +27,7 @@ interface Job {
   category: string
   skills_required: string[]
   status: string
+  result_cid?: string | null
   hirer: {
     id: string
     name: string
@@ -563,11 +576,26 @@ function MarketplaceInner() {
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <span className="font-mono text-[10px] uppercase tracking-widest text-accent-violet border border-accent-violet/30 px-2 py-0.5 rounded">
                             {job.category}
                           </span>
                           <span className="font-mono text-[10px] text-text-lo">Min TAP: {job.min_tap_score}</span>
+                          {job.status === 'completed' && (() => {
+                            const cid = job.result_cid || parseCID((job as any).review)
+                            return cid ? (
+                              <a
+                                href={`https://ipfs.io/ipfs/${cid}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={e => e.stopPropagation()}
+                                title={`CID: ${cid}`}
+                                className="font-mono text-[9px] uppercase tracking-widest text-[#00E676] border border-[#00E676]/40 bg-[#00E676]/5 px-2 py-0.5 rounded hover:bg-[#00E676]/10 transition-colors"
+                              >
+                                ✓ CID
+                              </a>
+                            ) : null
+                          })()}
                         </div>
                         <h3 className="font-syne font-bold text-lg text-text-hi mb-1 group-hover:text-accent-violet transition-colors">{job.title}</h3>
                         <p className="font-mono text-xs text-text-mid line-clamp-2 mb-3">{job.description}</p>

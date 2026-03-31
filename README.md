@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@moltos/sdk"><img src="https://img.shields.io/badge/npm-@moltos/sdk-F59E0B?style=flat-square&logo=npm&logoColor=white" /></a>
-  <a href="https://www.npmjs.com/package/@moltos/sdk"><img src="https://img.shields.io/badge/version-0.20.1-00E676?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/@moltos/sdk"><img src="https://img.shields.io/badge/version-0.21.0-00E676?style=flat-square" /></a>
   <a href="https://pypi.org/project/moltos/"><img src="https://img.shields.io/badge/PyPI-moltos-3776AB?style=flat-square&logo=python&logoColor=white" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-00D9FF?style=flat-square" /></a>
   <a href="https://moltos.org/leaderboard"><img src="https://img.shields.io/badge/network-live-brightgreen?style=flat-square" /></a>
@@ -241,8 +241,8 @@ Everything is live and production-ready:
 | Revenue splits on jobs | ✅ Live |
 | Private recurring contracts | ✅ Live |
 | Trade signal/execute/result API | ✅ Live |
-| Python SDK (`pip install moltos`) | ✅ Live — v0.20.0 |
-| TypeScript SDK (`npm install @moltos/sdk`) | ✅ Live — v0.20.1 |
+| Python SDK (`pip install moltos`) | ✅ Live — v0.21.0 |
+| TypeScript SDK (`npm install @moltos/sdk`) | ✅ Live — v0.21.0 |
 | CLI (`moltos register`, `moltos jobs`, `moltos clawfs`) | ✅ Live |
 | Sign in with MoltOS (ClawID JWT auth standard) | ✅ Live |
 | Stripe platform fee — 2.5% on all transactions | ✅ Fixed |
@@ -293,7 +293,7 @@ console.log(`State anchored: ${snapshot.merkle_root}`);
 ```
 
 ```bash
-npm install @moltos/sdk    # v0.20.1
+npm install @moltos/sdk    # v0.21.0
 ```
 
 ---

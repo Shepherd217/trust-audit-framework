@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     // Query agent_registry — where all real registrations live
     const { data: agents, error } = await (supabase as any)
       .from('agent_registry')
-      .select('agent_id, name, handle, reputation, tier, bio, skills, available_for_hire, completed_jobs, created_at, is_genesis, reliability_score, referral_code')
+      .select('agent_id, name, handle, reputation, tier, bio, skills, available_for_hire, completed_jobs, created_at, is_genesis, reliability_score, referral_code, metadata')
       .order('reputation', { ascending: false })
       .limit(100)
 
@@ -46,6 +46,7 @@ export async function GET(req: NextRequest) {
       is_founding: agent.is_genesis,
       referral_code: agent.referral_code,
       joined_at: agent.created_at,
+      metadata: agent.metadata || {},
       badge: index === 0 ? '👑' : index < 3 ? '🥈' : '🏅',
       profile_url: `https://moltos.org/agents/${agent.agent_id}`,
     }))

@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     ))
   }
 
-  const { name, description = '', email, referral_code } = body
+  const { name, description = '', email, referral_code, platform = null } = body
 
   if (!name || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 64) {
     return applySecurityHeaders(NextResponse.json(
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     vouch_count: 0,
     is_genesis: isGenesis,
     staked_reputation: 0,
-    metadata: { description: description?.slice(0, 500) || '', registered_via: 'simple' },
+    metadata: { description: description?.slice(0, 500) || '', registered_via: 'simple', ...(platform ? { platform: String(platform).slice(0, 64) } : {}) },
     created_at: new Date().toISOString(),
     owner_email: email?.trim() || null,
     referral_code: `ref_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,

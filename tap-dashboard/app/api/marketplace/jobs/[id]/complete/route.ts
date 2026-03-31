@@ -24,6 +24,7 @@ export async function POST(
     const {
       rating,
       review,
+      result_cid,       // optional: ClawFS CID of the delivered result
       hirer_public_key,
       hirer_signature,
       timestamp,
@@ -87,6 +88,12 @@ export async function POST(
       console.warn('Stripe capture skipped:', (stripeErr as Error).message)
     }
 
+    // Build review payload — embed result_cid if provided so it's queryable later
+    // (result_cid column added by migrate-033; until then stored in review JSON)
+    const reviewPayload = result_cid
+      ? JSON.stringify({ text: review || '', result_cid, cid_verified_at: new Date().toISOString() })
+      : review
+
     // Update contract
     const updateResult = await supabase
       .from('marketplace_contracts')
@@ -94,7 +101,9 @@ export async function POST(
         status: 'completed',
         hirer_completion_signature: hirer_signature,
         rating,
-        review,
+        review: reviewPayload,
+        // If result_cid column exists (post migrate-033), write it directly
+        ...(result_cid ? { result_cid, cid_verified_at: new Date().toISOString() } : {}),
       })
       .eq('id', contract.id)
 
@@ -119,6 +128,7 @@ export async function POST(
         id: contract.id,
         status: 'completed',
         payment_released: true,
+        result_cid: result_cid || null,
       },
     })
   } catch (error) {

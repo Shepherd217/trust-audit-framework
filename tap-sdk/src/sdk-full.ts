@@ -5,7 +5,7 @@
 import fetch from 'cross-fetch';
 import crypto from 'crypto';
 
-const SDK_VERSION = '0.20.0';
+const SDK_VERSION = '0.21.0';
 
 // Runtime version check — fires once on first init, non-blocking
 let _versionChecked = false;
@@ -1282,6 +1282,99 @@ export class TradeSDK {
       method: 'POST',
       body: JSON.stringify(params),
     })
+  }
+
+  /**
+   * Subscribe to your ClawBus inbox via SSE (Server-Sent Events).
+   * Emits real-time messages as they arrive — no polling needed.
+   *
+   * Works in Node.js (18+) and browser environments.
+   * Automatically reconnects on disconnect.
+   *
+   * @example
+   * ```typescript
+   * const unsub = sdk.trade.subscribe({
+   *   onMessage: (msg) => {
+   *     console.log('Got message:', msg.type, msg.payload)
+   *     if (msg.type === 'job.result') {
+   *       console.log('Result CID:', msg.payload.result_cid)
+   *     }
+   *   },
+   *   onError: (err) => console.error('Bus error:', err),
+   *   filter: { type: 'job.result' }, // optional: only emit messages of this type
+   * })
+   *
+   * // Later, stop listening:
+   * unsub()
+   * ```
+   */
+  subscribe(opts: {
+    onMessage: (msg: { id: string; type: string; from: string; payload: any; sent_at: string }) => void
+    onError?: (err: Error) => void
+    onConnect?: () => void
+    filter?: { type?: string }
+    reconnect?: boolean // default: true
+  }): () => void {
+    const sdk = this.sdk as any
+    const base: string = sdk.config?.baseUrl ?? 'https://moltos.org'
+    const apiKey: string = sdk.config?.apiKey ?? ''
+    const { onMessage, onError, onConnect, filter, reconnect = true } = opts
+
+    let stopped = false
+    let abortController: AbortController | null = null
+
+    const connect = async () => {
+      if (stopped) return
+      abortController = new AbortController()
+      const url = `${base}/api/claw/bus/stream${filter?.type ? `?type=${encodeURIComponent(filter.type)}` : ''}`
+
+      try {
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${apiKey}`, Accept: 'text/event-stream' },
+          signal: abortController.signal,
+        })
+
+        if (!res.ok || !res.body) {
+          throw new Error(`SSE connect failed: ${res.status}`)
+        }
+
+        onConnect?.()
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let buf = ''
+
+        while (!stopped) {
+          const { value, done } = await reader.read()
+          if (done) break
+          buf += decoder.decode(value, { stream: true })
+          const parts = buf.split('\n\n')
+          buf = parts.pop() ?? ''
+          for (const chunk of parts) {
+            const dataLine = chunk.split('\n').find(l => l.startsWith('data: '))
+            if (!dataLine) continue
+            try {
+              const msg = JSON.parse(dataLine.slice(6))
+              if (msg && msg.id) onMessage(msg)
+            } catch { /* ignore parse error */ }
+          }
+        }
+      } catch (err: any) {
+        if (stopped) return
+        onError?.(err instanceof Error ? err : new Error(String(err)))
+        if (reconnect) {
+          // Exponential backoff: 2s, 4s, 8s... max 30s
+          await new Promise(r => setTimeout(r, Math.min(2000 * (2 ** 0), 30000)))
+          connect()
+        }
+      }
+    }
+
+    connect()
+
+    return () => {
+      stopped = true
+      abortController?.abort()
+    }
   }
 }
 

@@ -4,7 +4,7 @@ MoltOS Python SDK — Core Client
 Usage:
     from moltos import MoltOS
 
-SDK_VERSION = "0.20.0"
+SDK_VERSION = "0.21.0"
 
 
     # Initialize with existing credentials
@@ -612,6 +612,98 @@ class Trade(_BaseNamespace):
                     "warning": None if original_found else f"Original '{message_id}' not found — check agent.trade.history() for valid IDs."}
         except Exception as e:
             raise MoltOSError(str(e))
+
+
+    def subscribe(
+        self,
+        on_message,
+        on_error=None,
+        on_connect=None,
+        filter_type: str = None,
+        reconnect: bool = True,
+    ):
+        """
+        Subscribe to your ClawBus inbox via SSE (Server-Sent Events).
+        Emits real-time messages as they arrive — no polling needed.
+        Runs in a background thread. Call the returned stop() function to unsubscribe.
+
+        Example::
+
+            def handle(msg):
+                print(msg["type"], msg["payload"])
+                if msg["type"] == "job.result":
+                    print("CID:", msg["payload"].get("result_cid"))
+
+            stop = agent.trade.subscribe(on_message=handle)
+            # ... do other work ...
+            stop()
+
+        Args:
+            on_message: Callable receiving a dict {id, type, from, payload, sent_at}
+            on_error:   Optional callable receiving an Exception
+            on_connect: Optional callable called on successful connection
+            filter_type: Optional message type filter (e.g. 'job.result')
+            reconnect:  Auto-reconnect on disconnect (default True)
+
+        Returns:
+            stop: Callable that terminates the subscription
+        """
+        import threading
+        import json as _json
+        import time as _time
+
+        stopped = threading.Event()
+
+        def _run():
+            base = self._c._base_url.rstrip('/')
+            api_key = self._c._api_key
+            url = f"{base}/api/claw/bus/stream"
+            if filter_type:
+                url += f"?type={filter_type}"
+
+            backoff = 2
+            while not stopped.is_set():
+                try:
+                    import urllib.request
+                    req = urllib.request.Request(
+                        url,
+                        headers={
+                            "Authorization": f"Bearer {api_key}",
+                            "Accept": "text/event-stream",
+                        },
+                    )
+                    with urllib.request.urlopen(req, timeout=120) as resp:
+                        on_connect and on_connect()
+                        backoff = 2  # reset on success
+                        buf = ""
+                        while not stopped.is_set():
+                            chunk = resp.read(1024)
+                            if not chunk:
+                                break
+                            buf += chunk.decode("utf-8", errors="replace")
+                            while "\n\n" in buf:
+                                event, buf = buf.split("\n\n", 1)
+                                for line in event.split("\n"):
+                                    if line.startswith("data: "):
+                                        try:
+                                            msg = _json.loads(line[6:])
+                                            if msg and "id" in msg:
+                                                on_message(msg)
+                                        except Exception:
+                                            pass
+                except Exception as exc:
+                    if stopped.is_set():
+                        break
+                    on_error and on_error(exc)
+                    if reconnect:
+                        _time.sleep(backoff)
+                        backoff = min(backoff * 2, 30)
+                    else:
+                        break
+
+        t = threading.Thread(target=_run, daemon=True)
+        t.start()
+        return stopped.set
 
 
 class AutoApply(_BaseNamespace):

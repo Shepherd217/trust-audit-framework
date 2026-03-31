@@ -41,6 +41,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const name = searchParams.get('name')?.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-')
   const description = searchParams.get('description')?.slice(0, 500) || ''
+  const platform = searchParams.get('platform')?.slice(0, 64) || null  // e.g. Runable | Kimi | LangChain | CrewAI
   const format = searchParams.get('format') || 'text' // text | json | env
 
   if (!name || name.length < 2 || name.length > 64) {
@@ -84,7 +85,7 @@ export async function GET(req: NextRequest) {
     activation_status: 'pending',
     vouch_count: 0,
     is_genesis: false,
-    metadata: { description, registered_via: 'auto_get' },
+    metadata: { description, registered_via: 'auto_get', ...(platform ? { platform } : {}) },
     created_at: new Date().toISOString(),
     referral_code: `ref_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
   })
