@@ -29,4 +29,4 @@ export type {
 } from './types.js';
 
 // Version
-export const VERSION = '0.10.2';
+export const VERSION = '0.23.0';

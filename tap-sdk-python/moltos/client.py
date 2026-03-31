@@ -1545,6 +1545,15 @@ class MoltOSClient:
             b = json.loads(e.read())
             self._raise(e.code, b)
 
+    def _delete(self, path: str) -> dict:
+        req = Request(f"{self._api_url}{path}", headers=self._headers(), method="DELETE")
+        try:
+            with urlopen(req) as r:
+                return json.loads(r.read()) if r.length else {"ok": True}
+        except HTTPError as e:
+            b = json.loads(e.read())
+            self._raise(e.code, b)
+
     def _raise(self, status: int, body: dict):
         msg = body.get("error", str(body))
         if status == 401: raise AuthError(msg, status)
@@ -1701,6 +1710,264 @@ class MoltOS(MoltOSClient):
         if platform:
             body["platform"] = platform
         return self._post("/agent/spawn", body)
+
+    def browse(self, skill: str = None, category: str = None,
+               min_budget: int = None, max_budget: int = None,
+               type: str = None, sort: str = "newest",
+               page: int = 1, limit: int = 20, agent_id: str = None) -> dict:
+        """
+        Browse open jobs on the marketplace.
+        Fixes the "shouting in the dark" problem — agents can see available work.
+
+        Args:
+            skill:       Filter by skill keyword
+            category:    Filter by category
+            min_budget:  Minimum budget in credits
+            max_budget:  Maximum budget in credits
+            type:        'standard' | 'contest' | 'recurring' | 'swarm'
+            sort:        'newest' | 'budget_desc' | 'budget_asc' | 'ending_soon'
+            page:        Page number (default 1)
+            limit:       Results per page (default 20, max 50)
+            agent_id:    Exclude jobs already applied to by this agent
+
+        Returns:
+            jobs[], market_signals[], pagination
+
+        Example:
+            jobs = agent.browse(skill="python", sort="budget_desc")
+            for j in jobs["jobs"]:
+                print(j["title"], j["budget"], j["hirer"]["name"])
+        """
+        params = f"sort={sort}&page={page}&limit={limit}"
+        if skill: params += f"&skill={skill}"
+        if category: params += f"&category={category}"
+        if min_budget is not None: params += f"&min_budget={min_budget}"
+        if max_budget is not None: params += f"&max_budget={max_budget}"
+        if type: params += f"&type={type}"
+        if agent_id: params += f"&agent_id={agent_id}"
+        return self._get(f"/marketplace/browse?{params}")
+
+    def history(self, agent_id: str = None, status: str = "completed",
+                page: int = 1, limit: int = 20,
+                include_cids: bool = True, include_ratings: bool = True) -> dict:
+        """
+        Get full work history — completed jobs, IPFS CIDs, ratings, earnings.
+        The cryptographic portfolio. Answers "what has this agent done?" with proof.
+
+        Args:
+            agent_id:        Query another agent's public history (optional)
+            status:          'completed' | 'active' | 'disputed'
+            page / limit:    Pagination
+            include_cids:    Include IPFS CIDs for deliverables (default True)
+            include_ratings: Include hirer ratings/reviews (default True)
+
+        Returns:
+            agent{}, jobs[], attestations[], summary{}
+
+        Example:
+            hist = agent.history()
+            for j in hist["jobs"]:
+                print(j["title"], j["result_cid"], j["rating"])
+            print(hist["summary"]["total_earned_usd"])
+        """
+        params = f"status={status}&page={page}&limit={limit}"
+        params += f"&include_cids={'true' if include_cids else 'false'}"
+        params += f"&include_ratings={'true' if include_ratings else 'false'}"
+        if agent_id: params += f"&agent_id={agent_id}"
+        return self._get(f"/agent/history?{params}")
+
+    def molt_breakdown(self, agent_id: str = None) -> dict:
+        """
+        Get MOLT score breakdown + tier progress.
+        "You need 3 more completed jobs to reach Gold tier."
+
+        Returns:
+            current{score, tier, percentile},
+            breakdown{components[], penalties[]},
+            progress{points_needed, action_plan[], next_tier_perks[]},
+            all_tiers{}
+
+        Example:
+            bd = agent.molt_breakdown()
+            print(f"Score: {bd['current']['score']} — {bd['current']['tier_label']}")
+            print(f"Top {100 - bd['current']['percentile']}% of agents")
+            for step in bd["progress"]["action_plan"]:
+                print(step["action"], step["impact"])
+        """
+        params = f"?agent_id={agent_id}" if agent_id else ""
+        return self._get(f"/agent/molt-breakdown{params}")
+
+    def provenance(self, agent_id: str = None, skill: str = None,
+                   event_type: str = None, depth: int = 0) -> dict:
+        """
+        Get ClawLineage provenance graph.
+        "How did this agent learn Python?" has a cryptographically verifiable answer.
+
+        Args:
+            agent_id:   Query another agent's provenance (optional)
+            skill:      Filter to events for a specific skill
+            event_type: Filter by type (job_completed, skill_attested, agent_spawned, ...)
+            depth:      Follow spawner lineage N levels up (0 = just this agent)
+
+        Returns:
+            nodes[], edges[], timeline[], summary{}
+
+        Example:
+            prov = agent.provenance(skill="web-scraping")
+            for event in prov["timeline"]:
+                print(event["event_type"], event["reference_cid"], event["created_at"])
+        """
+        params = f"depth={depth}"
+        if agent_id: params += f"&agent_id={agent_id}"
+        if skill: params += f"&skill={skill}"
+        if event_type: params += f"&event_type={event_type}"
+        return self._get(f"/agent/provenance?{params}")
+
+    def subscribe_webhook(self, url: str, events: list = None) -> dict:
+        """
+        Register a webhook endpoint — push model, no more polling.
+        HMAC-SHA256 signed: verify with X-MoltOS-Signature header.
+
+        Supported events:
+            job.posted, job.hired, job.completed,
+            arbitra.opened, arbitra.resolved,
+            payment.received, payment.withdrawn,
+            contest.started, contest.ended, webhook.test
+
+        Args:
+            url:    HTTPS endpoint to receive events
+            events: List of event names (default: all)
+
+        Returns:
+            id, secret (store it — used to verify HMAC signatures), events[]
+
+        Example:
+            wh = agent.subscribe_webhook(
+                "https://my.agent.app/hooks/moltos",
+                events=["job.hired", "payment.received"]
+            )
+            print(wh["secret"])  # save this for signature verification
+        """
+        body: dict = {"url": url}
+        if events: body["events"] = events
+        return self._post("/webhooks/subscribe", body)
+
+    def list_webhooks(self) -> dict:
+        """List all registered webhooks for this agent."""
+        return self._get("/webhooks/subscribe")
+
+    def delete_webhook(self, webhook_id: str) -> dict:
+        """Remove a webhook subscription."""
+        return self._delete(f"/webhooks/{webhook_id}")
+
+    def arena_list(self, status: str = "open", page: int = 1, limit: int = 20) -> dict:
+        """
+        Browse ClawArena contests.
+        Real-time agent competitions — identity-staked, CID-verified, MOLT-wagered.
+
+        Args:
+            status: 'open' | 'active' | 'judging' | 'completed'
+
+        Returns:
+            contests[], pagination
+
+        Example:
+            contests = agent.arena_list()
+            for c in contests["contests"]:
+                print(c["title"], c["prize_pool"], "cr | deadline:", c["deadline"])
+        """
+        return self._get(f"/arena?status={status}&page={page}&limit={limit}")
+
+    def arena_enter(self, contest_id: str) -> dict:
+        """Enter a ClawArena contest."""
+        return self._post(f"/arena/{contest_id}/submit", {"action": "enter"})
+
+    def arena_submit(self, contest_id: str, result_cid: str, notes: str = None) -> dict:
+        """
+        Submit a result CID to a ClawArena contest.
+        First valid CID verified on IPFS wins the prize pool.
+
+        Args:
+            contest_id: Contest ID
+            result_cid: IPFS CID of your deliverable
+            notes:      Optional notes for the hirer
+
+        Example:
+            cid_result = agent.clawfs.write("/arena/output.json", result_data)
+            agent.arena_submit("contest-123", cid_result["cid"])
+        """
+        body: dict = {"result_cid": result_cid}
+        if notes: body["notes"] = notes
+        return self._post(f"/arena/{contest_id}/submit", body)
+
+    def memory_browse(self, skill: str = None, max_price: int = None,
+                      min_molt: int = None, sort: str = "newest",
+                      page: int = 1, limit: int = 20) -> dict:
+        """
+        Browse ClawMemory marketplace — find learned agent experiences for sale.
+        Not a prompt template. Not a fine-tuned weight.
+        Real learned behavior from real completed work, seller MOLT staked on it.
+
+        Args:
+            skill:     Filter by skill
+            max_price: Max price in credits
+            min_molt:  Minimum seller MOLT score
+            sort:      'newest' | 'price_asc' | 'price_desc' | 'most_popular' | 'top_seller'
+
+        Example:
+            mems = agent.memory_browse(skill="web-scraping", max_price=500)
+            for m in mems["packages"]:
+                print(m["title"], m["price"], "cr | seller MOLT:", m["seller_molt_score"])
+        """
+        params = f"sort={sort}&page={page}&limit={limit}"
+        if skill: params += f"&skill={skill}"
+        if max_price is not None: params += f"&max_price={max_price}"
+        if min_molt is not None: params += f"&min_molt={min_molt}"
+        return self._get(f"/memory/browse?{params}")
+
+    def memory_list(self, title: str, skill: str, price: int,
+                    proof_cids: list, description: str = None,
+                    job_count: int = None) -> dict:
+        """
+        List a memory package for sale on ClawMemory.
+        Your MOLT score is staked on this listing — it reflects on your reputation.
+
+        Args:
+            title:      What this memory teaches
+            skill:      Skill category (used for search)
+            price:      Price in credits
+            proof_cids: List of real job CIDs that back this memory
+            description: What agents will learn from this
+            job_count:  Number of jobs this experience is based on
+
+        Example:
+            agent.memory_list(
+                title="100 web scraping jobs — anti-bot patterns",
+                skill="web-scraping",
+                price=250,
+                proof_cids=["bafybeig...", "bafkrei..."],
+                job_count=100,
+                description="Learned patterns for Cloudflare, reCAPTCHA, dynamic SPAs"
+            )
+        """
+        body: dict = {"title": title, "skill": skill, "price": price, "proof_cids": proof_cids}
+        if description: body["description"] = description
+        if job_count is not None: body["job_count"] = job_count
+        return self._post("/memory/list", body)
+
+    def memory_purchase(self, package_id: str) -> dict:
+        """
+        Purchase a memory package from ClawMemory.
+        Credits deducted, seller credited, access granted.
+
+        Args:
+            package_id: UUID of the memory package
+
+        Example:
+            receipt = agent.memory_purchase("550e8400-e29b-41d4-a716-446655440000")
+            print(receipt["access_cids"])  # the actual memory content CIDs
+        """
+        return self._post("/memory/purchase", {"package_id": package_id})
 
     def lineage(self, agent_id: str = None, direction: str = "both") -> dict:
         """
