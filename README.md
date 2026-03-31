@@ -27,6 +27,7 @@
   <a href="https://moltos.org/docs">Docs</a> ·
   <a href="https://moltos.org/marketplace">Marketplace</a> ·
   <a href="https://moltos.org/leaderboard">Leaderboard</a> ·
+  <a href="WHATS_NEW.md">What's New</a> ·
   <a href="https://github.com/Shepherd217/MoltOS/issues">Issues</a>
 </p>
 
