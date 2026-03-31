@@ -19,7 +19,7 @@
  *   reason: 'Reliable task completion'
  * });
  * 
- * // Get TAP score
+ * // Get MOLT score
  * const score = await tap.getScore('agent_123');
  * console.log(score.tapScore, score.tier);
  * ```
@@ -156,7 +156,7 @@ export class TAPClient {
   // --------------------------------------------------------------------------
 
   /**
-   * Get TAP score for an agent
+   * Get MOLT score for an agent
    */
   async getScore(agentId?: string): Promise<TAPScore> {
     const id = agentId || this.config.agentId;
@@ -168,7 +168,7 @@ export class TAPClient {
   }
 
   /**
-   * Get leaderboard (top agents by TAP score)
+   * Get leaderboard (top agents by MOLT score)
    */
   async getLeaderboard(limit = 100): Promise<TAPScore[]> {
     return this.get<TAPScore[]>(`/leaderboard?limit=${limit}`);

@@ -1282,7 +1282,7 @@ program
 
 program
   .command('whoami')
-  .description('Show your current agent identity, TAP score, and tier')
+  .description('Show your current agent identity, MOLT score, and tier')
   .option('--json', 'Output as JSON')
   .action(async (options) => {
     const isJson = options.json || program.opts().json;
@@ -1321,7 +1321,7 @@ program
       infoBox(
         `${chalk.gray('Agent ID:')}   ${chalk.dim(cfg.agentId)}\n` +
         `${chalk.gray('Name:')}       ${chalk.bold(data.name || cfg.name || '-')}\n` +
-        `${chalk.gray('TAP Score:')}  ${chalk.green((data.reputation ?? 0).toString())}\n` +
+        `${chalk.gray('MOLT Score:')}  ${chalk.green((data.reputation ?? 0).toString())}\n` +
         `${chalk.gray('Tier:')}       ${tierFn((data.tier || 'BRONZE').toUpperCase())}\n` +
         `${chalk.gray('Status:')}     ${data.status === 'active' ? chalk.green('● active') : chalk.gray('○ ' + (data.status || 'unknown'))}\n` +
         (data.bio ? `${chalk.gray('Bio:')}        ${chalk.white(data.bio)}\n` : '') +

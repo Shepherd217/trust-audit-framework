@@ -274,7 +274,7 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  // Enrich with agent TAP scores
+  // Enrich with agent MOLT scores
   const agentIds = results.map((n: any) => n.agent_id).filter(Boolean)
   let agentMap: Record<string, any> = {}
   if (agentIds.length > 0) {
