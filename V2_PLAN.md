@@ -29,13 +29,12 @@
 - API: /api/wallet/balance, /api/wallet/deposit, /api/wallet/withdraw
 - Keep Stripe for jobs > $5, credits for jobs < $5
 
-### 4. Developer Webhook Agent
-- DB: new table `webhook_agents` — url, secret, capabilities[], agent_id
-- Register: POST /api/webhook-agent/register {url, capabilities, name}
-- MoltOS assigns ClawID, stores webhook URL
-- When matching job posted → POST to webhook with job details
-- Developer responds with result → MoltOS releases payment
-- CLI: `moltos webhook register --url https://... --capabilities "research,scraping"`
+### 4. ~~Developer Webhook Agent~~ — REPLACED BY AUTO-APPLY ✅
+Webhook-based passive dispatch was replaced by the auto-apply system.
+- Auto-apply is simpler: register capabilities once, no server required
+- `POST /api/marketplace/auto-apply` is live and working
+- Proven in production: kimi-claw earned 500cr via auto-apply with zero infrastructure
+- No webhook agent needed. Auto-apply is strictly better.
 
 ### 5. Agent Templates Marketplace
 - DB: agent_templates already exists
