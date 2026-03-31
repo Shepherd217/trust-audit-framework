@@ -167,6 +167,19 @@ export async function POST(
       });
     }
 
+    // Fire webhooks — job.hired for the worker, job.completed signal for hirer
+    try {
+      const { deliverWebhook } = await import('@/lib/webhooks')
+      // Notify worker they were hired
+      deliverWebhook(application.applicant_id, 'job.hired', {
+        contract_id: contract.id,
+        job_id: id,
+        job_title: job.title,
+        budget: job.budget,
+        hirer_id: application.hirer_id || job.hirer_id,
+      }).catch(() => null)
+    } catch {}
+
     return NextResponse.json({
       success: true,
       contract: {

@@ -111,13 +111,76 @@ export async function POST(req: NextRequest) {
     }).catch(() => {})
   }
 
-  // Process withdrawal
-  // In production: create Stripe payout via Connect
-  // For now: record the withdrawal request and mark pending
+  // Process withdrawal via Stripe Connect
   const withdrawalId = `wdraw_${Date.now().toString(36)}`
   const usdAmount = (amount_credits / 100).toFixed(2)
+  const usdCents = amount_credits // 1 credit = $0.01
 
-  // Deduct from balance
+  let stripeTransferId: string | null = null
+  let stripeStatus = 'processing'
+  let stripeError: string | null = null
+
+  if (method === 'stripe') {
+    try {
+      // Resolve Stripe Connect account
+      let connectAccountId = stripe_account_id
+      if (!connectAccountId) {
+        const { data: connectAccount } = await (sb as any).from('stripe_connect_accounts')
+          .select('stripe_account_id, charges_enabled, payouts_enabled')
+          .eq('agent_id', agent.agent_id)
+          .single()
+
+        if (!connectAccount) {
+          return applySecurityHeaders(NextResponse.json({
+            error: 'No Stripe Connect account found. Onboard first at POST /api/stripe/connect/onboard',
+            onboard_url: '/api/stripe/connect/onboard',
+          }, { status: 400 }))
+        }
+
+        if (!connectAccount.payouts_enabled) {
+          return applySecurityHeaders(NextResponse.json({
+            error: 'Stripe Connect account not fully onboarded. Complete onboarding to enable payouts.',
+            account_id: connectAccount.stripe_account_id,
+            onboard_url: '/api/stripe/connect/onboard',
+          }, { status: 400 }))
+        }
+
+        connectAccountId = connectAccount.stripe_account_id
+      }
+
+      // Create Stripe transfer to connected account
+      const stripe = (await import('stripe')).default
+      const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-01-27.acacia' as any })
+
+      const transfer = await stripeClient.transfers.create({
+        amount: usdCents,
+        currency: 'usd',
+        destination: connectAccountId,
+        metadata: {
+          agent_id: agent.agent_id,
+          withdrawal_id: withdrawalId,
+          credits: amount_credits.toString(),
+        },
+        description: `MoltOS withdrawal — ${amount_credits} credits (${usdAmount})`,
+      })
+
+      stripeTransferId = transfer.id
+      stripeStatus = 'completed' // Stripe transfers are typically instant to the connected account
+    } catch (stripeErr: any) {
+      console.error('Stripe transfer error:', stripeErr)
+      stripeError = stripeErr?.message || 'Stripe transfer failed'
+      stripeStatus = 'failed'
+      // Don't deduct balance if Stripe failed
+      return applySecurityHeaders(NextResponse.json({
+        error: 'Stripe transfer failed',
+        stripe_error: stripeError,
+        withdrawal_id: withdrawalId,
+        retry: true,
+      }, { status: 500 }))
+    }
+  }
+
+  // Deduct from balance (only after successful Stripe transfer or non-Stripe method)
   const newBal = wallet.balance - amount_credits
   await (sb as any).from('agent_wallets').update({
     balance: newBal, updated_at: new Date().toISOString()
@@ -127,15 +190,27 @@ export async function POST(req: NextRequest) {
     agent_id: agent.agent_id, type: 'withdrawal',
     amount: -amount_credits, balance_after: newBal,
     reference_id: withdrawalId, source_type: 'withdrawal',
-    description: `Withdrawal to ${method} — $${usdAmount}`,
+    description: `Withdrawal to ${method} — ${usdAmount}${stripeTransferId ? ` (${stripeTransferId})` : ''}`,
   })
 
   // Notify
+  const isComplete = stripeStatus === 'completed'
+  const notifMsg = isComplete
+    ? `${amount_credits} credits withdrawn. ${usdAmount} transferred to your Stripe account (${stripeTransferId}).`
+    : `${amount_credits} credits withdrawn. Payout processing (1-3 business days).`
+
   await (sb as any).from('notifications').insert({
     agent_id: agent.agent_id, notification_type: 'wallet.withdrawal',
-    title: `Withdrawal of $${usdAmount} initiated`,
-    message: `${amount_credits} credits withdrawn. Stripe payout processing (1-3 business days).`,
-    metadata: { withdrawal_id: withdrawalId, amount_credits, usd: usdAmount }, read: false,
+    title: `Withdrawal of ${usdAmount} ${isComplete ? 'completed' : 'initiated'}`,
+    message: notifMsg,
+    metadata: {
+      withdrawal_id: withdrawalId,
+      amount_credits,
+      usd: usdAmount,
+      stripe_transfer_id: stripeTransferId,
+      method,
+    },
+    read: false,
   })
 
   return applySecurityHeaders(NextResponse.json({
@@ -144,8 +219,11 @@ export async function POST(req: NextRequest) {
     amount_credits,
     usd_amount: usdAmount,
     new_balance: newBal,
-    status: 'processing',
-    estimated_arrival: '1–3 business days',
-    message: `$${usdAmount} withdrawal initiated. Credits deducted from balance.`,
+    new_balance_usd: `${(newBal / 100).toFixed(2)}`,
+    status: stripeStatus,
+    stripe_transfer_id: stripeTransferId,
+    method,
+    estimated_arrival: isComplete ? 'Transferred — payout to bank in 1-2 business days' : '1–3 business days',
+    message: `${usdAmount} withdrawal ${isComplete ? 'completed' : 'initiated'}. Credits deducted from balance.`,
   }))
 }

@@ -349,6 +349,28 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({ job_id: job.id }),
     }).catch(() => {})
 
+    // Fire webhooks: job.posted — notify all agents subscribed to this event
+    // We deliver to agents who have auto_apply on, as they're the ones listening
+    import('@/lib/webhooks').then(({ broadcastWebhook }) => {
+      supabase.from('agent_registry')
+        .select('agent_id')
+        .eq('auto_apply', true)
+        .eq('is_suspended', false)
+        .then(({ data: autoAgents }) => {
+          const agentIds = (autoAgents || []).map((a: any) => a.agent_id)
+          if (agentIds.length > 0) {
+            broadcastWebhook(agentIds, 'job.posted', {
+              job_id: job.id,
+              title: job.title,
+              budget: job.budget,
+              category: job.category,
+              skills_required: job.skills_required,
+              min_molt_score: job.min_tap_score,
+            })
+          }
+        })
+    }).catch(() => null)
+
     const response = NextResponse.json({
       success: true,
       job: {
