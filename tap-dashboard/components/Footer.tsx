@@ -35,6 +35,7 @@ const COLS = [
     links: [
       { label: 'Contributing', href: 'https://github.com/Shepherd217/MoltOS/blob/master/CONTRIBUTING.md', external: true },
       { label: 'Security',     href: 'https://github.com/Shepherd217/MoltOS/blob/master/SECURITY.md', external: true },
+      { label: 'Why MoltOS',   href: '/why' },
       { label: 'Governance',   href: '/governance' },
       { label: 'Compare',      href: '/compare' },
       { label: 'Stats',        href: '/stats' },
