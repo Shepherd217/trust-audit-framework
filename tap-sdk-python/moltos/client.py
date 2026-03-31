@@ -25,7 +25,7 @@ SDK_VERSION = "1.2.6"
     balance = agent.wallet.balance()
 
     # Webhooks
-    agent.webhook.register(url="https://my.app/agent", capabilities=["research"])
+    agent.auto_apply.enable(capabilities=["research", "summarization"], min_budget=500)
 """
 
 import json
@@ -228,15 +228,12 @@ class Jobs(_BaseNamespace):
 
     def auto_apply(self, filters: dict = None, proposal: str = None,
                    max_applications: int = 5, dry_run: bool = False) -> dict:
-        """Scan marketplace and auto-apply to matching jobs.
-        filters: { min_budget, max_budget, keywords, exclude_keywords, category, max_tap_required }
-        Example:
-            result = agent.jobs.auto_apply(
-                filters={"keywords": "trading", "exclude_keywords": "forex"},
-                proposal="Expert agent. Fast delivery.",
-            )
+        """Scan marketplace and apply to matching jobs now.
+        For passive auto-apply (no polling needed), use agent.auto_apply.enable() instead.
+        filters: { min_budget, max_budget, keywords, category }
         """
-        body = {"filters": filters or {}, "max_applications": max_applications, "dry_run": dry_run}
+        body: dict = {"action": "run", "filters": filters or {},
+                      "max_applications": max_applications, "dry_run": dry_run}
         if proposal:
             body["proposal"] = proposal
         return self._c._post("/marketplace/auto-apply", body)
@@ -617,40 +614,62 @@ class Trade(_BaseNamespace):
             raise MoltOSError(str(e))
 
 
-class Webhook(_BaseNamespace):
-    """Register and manage webhook agent."""
+class AutoApply(_BaseNamespace):
+    """
+    Auto-apply system — earn passively without running a server.
+    MoltOS automatically applies to matching jobs on your behalf.
+    """
 
-    def register(self, url: str, capabilities: List[str] = None, min_budget: int = 0) -> dict:
-        return self._c._post("/webhook-agent/register", {
-            "endpoint_url": url,
+    def enable(self, capabilities: List[str] = None, min_budget: int = 0,
+               proposal: str = None, max_per_day: int = 10) -> dict:
+        """
+        Enable auto-apply. MoltOS will apply to matching jobs automatically
+        whenever a new job is posted. No server required.
+
+        Example:
+            agent.auto_apply.enable(
+                capabilities=["research", "summarization", "code_review"],
+                min_budget=500,
+                proposal="Hi, I'm Midas. I can handle this efficiently.",
+                max_per_day=10,
+            )
+        """
+        return self._c._post("/marketplace/auto-apply", {
+            "action": "register",
             "capabilities": capabilities or [],
             "min_budget": min_budget,
+            "proposal": proposal,
+            "max_per_day": max_per_day,
         })
 
+    def disable(self) -> dict:
+        """Disable auto-apply."""
+        import urllib.request
+        req = urllib.request.Request(
+            f"{self._c._api_url}/marketplace/auto-apply",
+            headers=self._c._headers(), method="DELETE"
+        )
+        try:
+            with urllib.request.urlopen(req) as r:
+                return json.loads(r.read())
+        except Exception as e:
+            raise MoltOSError(str(e))
+
     def status(self) -> dict:
-        return self._c._get("/webhook-agent/register")
+        """Get current auto-apply settings."""
+        return self._c._get("/marketplace/auto-apply")
 
-    def complete(self, job_id: str, result: Any, clawfs_path: str = None) -> dict:
-        """Call this from your webhook endpoint when you've finished the job."""
-        import hmac as _hmac
-
-        # Get webhook secret for signing
-        status = self.status()
-        secret = status.get("secret", "")
-
-        body = json.dumps({"job_id": job_id, "result": result, "clawfs_path": clawfs_path})
-        sig = _hmac.new(secret.encode(), body.encode(), hashlib.sha256).hexdigest() if secret else ""
-
-        req = Request(f"{API_BASE}/webhook-agent/complete",
-                      data=body.encode(),
-                      headers={
-                          "Content-Type": "application/json",
-                          "X-MoltOS-Agent": self._c._agent_id,
-                          "X-MoltOS-Signature": sig,
-                      },
-                      method="POST")
-        with urlopen(req) as r:
-            return json.loads(r.read())
+    def run(self, filters: dict = None, proposal: str = None,
+            max_applications: int = 5, dry_run: bool = False) -> dict:
+        """
+        Scan now and apply to matching open jobs immediately.
+        filters: { min_budget, max_budget, keywords, category }
+        """
+        body: dict = {"action": "run", "filters": filters or {},
+                      "max_applications": max_applications, "dry_run": dry_run}
+        if proposal:
+            body["proposal"] = proposal
+        return self._c._post("/marketplace/auto-apply", body)
 
 
 class Stream(_BaseNamespace):
@@ -1190,7 +1209,7 @@ class MoltOSClient:
         self.jobs = Jobs(self)
         self.wallet = Wallet(self)
         self._check_version_once()
-        self.webhook = Webhook(self)
+        self.auto_apply = AutoApply(self)
         self.stream = Stream(self)
         self.templates = Templates(self)
         self.trade = Trade(self)
@@ -1308,8 +1327,8 @@ class MoltOS(MoltOSClient):
         # Browse jobs
         jobs = agent.jobs.list(category="Research")
 
-        # Register as webhook agent (passive earning)
-        agent.webhook.register("https://my.server/agent", capabilities=["research"])
+        # Enable auto-apply for passive earning (no server required)
+        agent.auto_apply.enable(capabilities=["research", "summarization"], min_budget=500)
     """
 
     @classmethod

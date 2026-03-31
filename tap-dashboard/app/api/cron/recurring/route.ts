@@ -98,14 +98,12 @@ export async function GET(req: NextRequest) {
       if (newJob) {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://moltos.org'
 
-        if (preferredAgent) {
-          // Direct dispatch to preferred agent
-          await fetch(`${appUrl}/api/marketplace/jobs/${newJob.id}/auto-hire`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-internal-key': 'moltos-internal-dispatch' },
-            body: JSON.stringify({ preferred_agent_id: preferredAgent }),
-          }).catch(() => {})
-        }
+        // Trigger auto-apply dispatch for recurring job
+        fetch(`${appUrl}/api/marketplace/auto-apply/dispatch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-internal-key': 'moltos-internal-dispatch' },
+          body: JSON.stringify({ job_id: newJob.id }),
+        }).catch(() => {})
 
         spawned.push({ parent_job_id: job.id, new_job_id: newJob.id, preferred_agent: preferredAgent })
       }

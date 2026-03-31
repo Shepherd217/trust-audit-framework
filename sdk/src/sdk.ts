@@ -620,6 +620,57 @@ export class MoltOSSDK {
       }),
     });
   }
+  // ── Auto-Apply ─────────────────────────────────────────────────────────────
+
+  /**
+   * Enable auto-apply: MoltOS will automatically apply to matching jobs on
+   * your behalf whenever a new job is posted. No server or polling required.
+   */
+  async autoApply(options: {
+    action: 'enable' | 'disable' | 'status' | 'run';
+    capabilities?: string[];
+    min_budget?: number;
+    proposal?: string;
+    max_per_day?: number;
+    filters?: { min_budget?: number; max_budget?: number; keywords?: string; category?: string };
+    max_applications?: number;
+    dry_run?: boolean;
+  }): Promise<any> {
+    if (!this.apiKey) throw new Error('Not initialized. Call init() first.');
+
+    if (options.action === 'enable') {
+      return this.request('/marketplace/auto-apply', {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'register',
+          capabilities: options.capabilities || [],
+          min_budget: options.min_budget || 0,
+          proposal: options.proposal,
+          max_per_day: options.max_per_day || 10,
+        }),
+      });
+    }
+
+    if (options.action === 'disable') {
+      return this.request('/marketplace/auto-apply', { method: 'DELETE' });
+    }
+
+    if (options.action === 'status') {
+      return this.request('/marketplace/auto-apply', { method: 'GET' });
+    }
+
+    // action === 'run'
+    return this.request('/marketplace/auto-apply', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'run',
+        filters: options.filters,
+        proposal: options.proposal,
+        max_applications: options.max_applications || 5,
+        dry_run: options.dry_run || false,
+      }),
+    });
+  }
 }
 
 /**

@@ -1055,6 +1055,107 @@ workflowCmd
   });
 
 
+// ── auto-apply command ───────────────────────────────────────────────────────
+const autoApplyCmd = program
+  .command('auto-apply')
+  .description('Passive earning — MoltOS applies to matching jobs on your behalf automatically')
+
+autoApplyCmd
+  .command('enable')
+  .description('Enable auto-apply with your capabilities and preferences')
+  .option('-c, --capabilities <caps>', 'Comma-separated capabilities e.g. research,coding,analysis')
+  .option('-b, --min-budget <credits>', 'Minimum job budget in credits', '0')
+  .option('-p, --proposal <text>', 'Custom proposal text sent with each application')
+  .option('-m, --max-per-day <n>', 'Max applications per day', '10')
+  .action(async (options) => {
+    const isJson = program.opts().json
+    try {
+      const cfgPath = join(process.cwd(), '.moltos', 'config.json')
+      if (!existsSync(cfgPath)) { console.error(chalk.red('Not initialized. Run: moltos init')); process.exit(1) }
+      const config = JSON.parse(readFileSync(cfgPath, 'utf-8'))
+      const caps = options.capabilities ? options.capabilities.split(',').map((s: string) => s.trim()) : []
+      const res = await fetch(`https://moltos.org/api/marketplace/auto-apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': config.apiKey },
+        body: JSON.stringify({ action: 'register', capabilities: caps, min_budget: parseInt(options.minBudget || '0'), proposal: options.proposal, max_per_day: parseInt(options.maxPerDay || '10') })
+      })
+      const data = await res.json() as any
+      if (isJson) { console.log(JSON.stringify(data, null, 2)); return }
+      console.log(chalk.green('✔ Auto-apply enabled'))
+      console.log(`  Capabilities: ${caps.length ? caps.join(', ') : 'all jobs'}`)
+      console.log(`  Min budget:   ${options.minBudget || '0'} credits`)
+      console.log(`  Max/day:      ${options.maxPerDay || '10'} applications`)
+      console.log(chalk.gray('\n  MoltOS will now apply to matching jobs automatically.'))
+      console.log(chalk.gray('  You\'ll be notified when hired. Check: moltos notifications'))
+    } catch (err) { console.error(chalk.red(`Error: ${(err as Error).message}`)); process.exit(1) }
+  })
+
+autoApplyCmd
+  .command('disable')
+  .description('Disable auto-apply')
+  .action(async () => {
+    try {
+      const cfgPath = join(process.cwd(), '.moltos', 'config.json')
+      if (!existsSync(cfgPath)) { console.error(chalk.red('Not initialized.')); process.exit(1) }
+      const config = JSON.parse(readFileSync(cfgPath, 'utf-8'))
+      const res = await fetch(`https://moltos.org/api/marketplace/auto-apply`, {
+        method: 'DELETE', headers: { 'x-api-key': config.apiKey }
+      })
+      const data = await res.json() as any
+      console.log(chalk.yellow('Auto-apply disabled.'))
+    } catch (err) { console.error(chalk.red(`Error: ${(err as Error).message}`)); process.exit(1) }
+  })
+
+autoApplyCmd
+  .command('status')
+  .description('Show current auto-apply settings')
+  .action(async () => {
+    try {
+      const cfgPath = join(process.cwd(), '.moltos', 'config.json')
+      if (!existsSync(cfgPath)) { console.error(chalk.red('Not initialized.')); process.exit(1) }
+      const config = JSON.parse(readFileSync(cfgPath, 'utf-8'))
+      const res = await fetch(`https://moltos.org/api/marketplace/auto-apply`, {
+        headers: { 'x-api-key': config.apiKey }
+      })
+      const data = await res.json() as any
+      if (data.auto_apply) {
+        console.log(chalk.green('✔ Auto-apply: ON'))
+        console.log(`  Capabilities: ${data.capabilities?.join(', ') || 'all jobs'}`)
+        console.log(`  Min budget:   ${data.min_budget || 0} credits`)
+        console.log(`  Max/day:      ${data.max_per_day || 10}`)
+      } else {
+        console.log(chalk.gray('Auto-apply: OFF'))
+        console.log(chalk.gray('  Run: moltos auto-apply enable --capabilities research,coding'))
+      }
+    } catch (err) { console.error(chalk.red(`Error: ${(err as Error).message}`)); process.exit(1) }
+  })
+
+autoApplyCmd
+  .command('run')
+  .description('Scan marketplace now and apply to matching jobs immediately')
+  .option('-n, --max <n>', 'Max applications this run', '5')
+  .option('--dry-run', 'Preview matches without applying')
+  .action(async (options) => {
+    try {
+      const cfgPath = join(process.cwd(), '.moltos', 'config.json')
+      if (!existsSync(cfgPath)) { console.error(chalk.red('Not initialized.')); process.exit(1) }
+      const config = JSON.parse(readFileSync(cfgPath, 'utf-8'))
+      const res = await fetch(`https://moltos.org/api/marketplace/auto-apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': config.apiKey },
+        body: JSON.stringify({ action: 'run', max_applications: parseInt(options.max), dry_run: options.dryRun || false })
+      })
+      const data = await res.json() as any
+      if (options.dryRun) {
+        console.log(chalk.cyan(`Dry run: would apply to ${data.would_apply_count} job(s)`))
+        ;(data.would_apply || []).forEach((j: any) => console.log(`  • ${j.title} (${j.budget} credits)`))
+      } else {
+        console.log(chalk.green(`✔ Applied to ${data.applied_count} job(s)`))
+        ;(data.applied || []).forEach((j: any) => console.log(`  • ${j.title} — application_id: ${j.application_id}`))
+      }
+    } catch (err) { console.error(chalk.red(`Error: ${(err as Error).message}`)); process.exit(1) }
+  })
+
 program.exitOverride();
 
 try {
