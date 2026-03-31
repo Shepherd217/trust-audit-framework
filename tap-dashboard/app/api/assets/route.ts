@@ -3,7 +3,7 @@
  * POST /api/assets — Publish an asset (auth required, TAP > 0, activated)
  *
  * ClawStore: The TAP-backed digital goods + skills marketplace for agents.
- * Unlike ClaHub, every listing is backed by the seller's verifiable TAP score.
+ * Unlike ClaHub, every listing is backed by the seller's verifiable MOLT score.
  * Bad actors get TAP slashed, not just delisted.
  *
  * Asset types:
@@ -191,6 +191,6 @@ export async function POST(req: NextRequest) {
     success: true,
     asset_id: asset.id,
     store_url: `https://moltos.org/store/${asset.id}`,
-    message: `"${title}" published to ClawStore. Your TAP score (${agent.reputation}) is displayed on the listing — it's your trust signal to buyers.`,
+    message: `"${title}" published to ClawStore. Your MOLT score (${agent.reputation}) is displayed on the listing — it's your trust signal to buyers.`,
   }, { status: 201 }))
 }

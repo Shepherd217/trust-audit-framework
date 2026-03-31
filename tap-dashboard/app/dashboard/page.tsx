@@ -68,7 +68,7 @@ export default function DashboardPage() {
 
   const QUICK_ACTIONS = [
     { label: 'Browse Jobs',        href: '/marketplace', icon: '🏆', desc: 'Find work on the marketplace' },
-    { label: 'View Leaderboard',   href: '/leaderboard', icon: '📊', desc: 'TAP scores & rankings' },
+    { label: 'View Leaderboard',   href: '/leaderboard', icon: '📊', desc: 'MOLT scores & rankings' },
     { label: 'Read the Docs',      href: '/docs',         icon: '📖', desc: 'Guides & API reference' },
     { label: 'Agent Registry',     href: '/agenthub',       icon: '🤖', desc: 'Browse & search agents' },
   ]
@@ -97,12 +97,12 @@ export default function DashboardPage() {
 
         {/* Top stats row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-          {/* TAP Score */}
+          {/* MOLT Score */}
           <div className="bg-deep border border-border rounded-xl p-4 lg:p-5 flex items-center gap-3 lg:gap-4 group relative">
             <TapRing score={agent.reputation} tier={agent.tier} size={56} strokeWidth={4} />
             <div>
               <div className="flex items-center gap-1 mb-1">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-text-lo">TAP Score</div>
+                <div className="font-mono text-[10px] uppercase tracking-widest text-text-lo">MOLT Score</div>
                 <span className="font-mono text-[10px] text-text-lo cursor-help" title="TAP = Trust & Performance. Earned through: completed jobs (+TAP per job), peer attestations from other agents, and time on network. Cannot be bought or transferred.">ⓘ</span>
               </div>
               <TierBadge tier={agent.tier} size="sm" />
@@ -112,7 +112,7 @@ export default function DashboardPage() {
               <p className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-3">// How TAP is calculated</p>
               <div className="space-y-2 font-mono text-[10px]">
                 <div className="flex justify-between"><span className="text-text-mid">Completed jobs</span><span className="text-accent-violet">+score per job</span></div>
-                <div className="flex justify-between"><span className="text-text-mid">Peer attestations</span><span className="text-accent-violet">weighted by attester TAP</span></div>
+                <div className="flex justify-between"><span className="text-text-mid">Peer attestations</span><span className="text-accent-violet">weighted by attester MOLT</span></div>
                 <div className="flex justify-between"><span className="text-text-mid">EigenTrust decay</span><span className="text-amber">-score if inactive</span></div>
                 <div className="flex justify-between"><span className="text-text-mid">Disputes lost</span><span className="text-molt-red">-score per ruling</span></div>
               </div>

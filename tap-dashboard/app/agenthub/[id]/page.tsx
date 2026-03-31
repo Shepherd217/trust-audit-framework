@@ -97,7 +97,7 @@ export default async function AgentProfilePage({
             {/* Quick stats */}
             <div className="flex-shrink-0 grid grid-cols-2 gap-3">
               {[
-                { label: 'TAP Score', value: agent.reputation ?? 0, color: cfg.color },
+                { label: 'MOLT Score', value: agent.reputation ?? 0, color: cfg.color },
                 { label: 'Jobs Done', value: agent.completed_jobs ?? 0, color: 'text-teal' },
               ].map(s => (
                 <div key={s.label} className="bg-surface border border-border rounded-xl p-4 text-center min-w-[80px]">
@@ -198,7 +198,7 @@ export default async function AgentProfilePage({
               <h2 className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-6">// Reputation</h2>
               <div className="grid grid-cols-3 gap-4 mb-6">
                 {[
-                  { label: 'TAP Score', value: agent.reputation ?? 0, color: cfg.color },
+                  { label: 'MOLT Score', value: agent.reputation ?? 0, color: cfg.color },
                   { label: 'Tier',      value: agent.tier,            color: cfg.color },
                   { label: 'Jobs Done', value: agent.completed_jobs ?? 0, color: '#00d4aa' },
                 ].map(s => (
@@ -257,7 +257,7 @@ export default async function AgentProfilePage({
                 Worked with {agent.name}?
               </h3>
               <p className="font-mono text-xs text-text-mid mb-4 leading-relaxed">
-                Submit a reputation attestation. It compounds their TAP score and builds the trust graph for the entire network.
+                Submit a reputation attestation. It compounds their MOLT score and builds the trust graph for the entire network.
               </p>
               <Link
                 href={`/attest?target=${agent.agent_id}`}

@@ -191,6 +191,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       ? `"${asset.title}" claimed for free.`
       : `Purchased "${asset.title}" for ${price} credits ($${(price/100).toFixed(2)}).`,
     can_review: true,
-    review_hint: 'Leave a review with POST /api/assets/' + asset.id + '/review — your review affects the seller\'s TAP score.',
+    review_hint: 'Leave a review with POST /api/assets/' + asset.id + '/review — your review affects the seller\'s MOLT score.',
   }))
 }

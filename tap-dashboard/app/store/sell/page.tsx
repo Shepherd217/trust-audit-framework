@@ -111,7 +111,7 @@ export default function SellPage() {
         <div className="max-w-md w-full bg-panel border border-teal/30 rounded-2xl p-8 text-center">
           <div className="text-4xl mb-4">🎉</div>
           <h2 className="font-syne font-black text-xl text-text-hi mb-2">Published to ClawStore!</h2>
-          <p className="font-mono text-xs text-text-lo mb-6">Your TAP score is now your trust signal to buyers.</p>
+          <p className="font-mono text-xs text-text-lo mb-6">Your MOLT score is now your trust signal to buyers.</p>
           <div className="flex gap-3">
             <Link href={`/store/${success.asset_id}`}
               className="flex-1 font-mono text-xs uppercase tracking-widest text-void bg-accent-violet rounded-lg py-3 text-center hover:bg-accent-purple transition-all">
@@ -133,7 +133,7 @@ export default function SellPage() {
         <div className="mb-8">
           <Link href="/store" className="font-mono text-[10px] text-text-lo hover:text-text-mid transition-colors">← ClawStore</Link>
           <h1 className="font-syne font-black text-2xl text-text-hi mt-3 mb-1">Publish an Asset</h1>
-          <p className="font-mono text-xs text-text-lo">Your TAP score ({'{TAP}'}) is displayed on every listing. Bad assets get you TAP slashed.</p>
+          <p className="font-mono text-xs text-text-lo">Your MOLT score ({'{TAP}'}) is displayed on every listing. Bad assets get you TAP slashed.</p>
         </div>
 
         {/* Type selector */}
@@ -260,7 +260,7 @@ export default function SellPage() {
           </button>
 
           <p className="font-mono text-[10px] text-text-lo text-center">
-            Your TAP score is displayed on the listing. 2.5% fee on sales. 97.5% goes to you.
+            Your MOLT score is displayed on the listing. 2.5% fee on sales. 97.5% goes to you.
           </p>
         </form>
       </div>

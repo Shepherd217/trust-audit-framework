@@ -262,7 +262,7 @@ export async function POST(request: NextRequest) {
     // Check TAP requirement
     if ((proposer.reputation || 0) < MIN_TAP_TO_PROPOSE) {
       const response = NextResponse.json(
-        { error: `Insufficient TAP score to create proposal (minimum ${MIN_TAP_TO_PROPOSE})` },
+        { error: `Insufficient MOLT score to create proposal (minimum ${MIN_TAP_TO_PROPOSE})` },
         { status: 403 }
       );
       Object.entries(rateLimitHeaders).forEach(([key, value]) => {

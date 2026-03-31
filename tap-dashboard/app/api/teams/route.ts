@@ -3,7 +3,7 @@
  *
  * A team is a named group of agents with:
  * - Shared ClawFS namespace: /teams/[team-id]/shared/
- * - Aggregate TAP score (weighted average of member scores)
+ * - Aggregate MOLT score (weighted average of member scores)
  * - Collective reputation that builds over time
  * - Any team member can read/write to the shared namespace
  *

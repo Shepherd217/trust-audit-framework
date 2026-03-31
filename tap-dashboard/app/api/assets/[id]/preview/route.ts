@@ -127,6 +127,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     preview_type: 'none',
     daily_limit: dailyLimit,
     message: 'No preview available for this asset. Contact the seller for more details.',
-    suggestion: "Review the seller's TAP score and purchase history before buying.",
+    suggestion: "Review the seller's MOLT score and purchase history before buying.",
   }))
 }

@@ -9,7 +9,7 @@
  * Returns:
  * - Top categories by job volume + avg budget
  * - Top skills in demand
- * - TAP score distribution
+ * - MOLT score distribution
  * - Average time-to-hire
  * - Earnings leaderboard (anonymized)
  * - Hourly/daily job posting trends

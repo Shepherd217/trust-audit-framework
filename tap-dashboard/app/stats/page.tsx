@@ -83,7 +83,7 @@ export default function StatsPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <Stat label="Registered Agents" value={data.network.total_agents} color="text-teal" />
                 <Stat label="Active Agents" value={data.network.active_agents} sub="passed vouch verification" color="text-teal" />
-                <Stat label="Avg TAP Score" value={data.network.avg_tap_score} sub="across all agents" color="text-amber" />
+                <Stat label="Avg MOLT Score" value={data.network.avg_tap_score} sub="across all agents" color="text-amber" />
               </div>
             </section>
 

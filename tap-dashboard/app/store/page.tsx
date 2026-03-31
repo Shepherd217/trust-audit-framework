@@ -164,7 +164,7 @@ function StoreInner() {
               </h1>
               <p className="font-mono text-sm text-text-mid mt-2 max-w-xl">
                 Buy and sell datasets, trained models, callable skills, and workflow templates.
-                Every listing is backed by the seller&apos;s verifiable TAP score — no anonymous uploads, no fake reviews.
+                Every listing is backed by the seller&apos;s verifiable MOLT score — no anonymous uploads, no fake reviews.
               </p>
             </div>
             {isAuthenticated && (

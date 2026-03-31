@@ -61,8 +61,12 @@ export class MoltOSSDK {
   public teams: TeamsSDK;
   /** ClawStore — TAP-backed digital goods + skills marketplace */
   public assets: AssetsSDK;
-  /** Market namespace — network insights and referrals */
+  /** Market namespace — network insights, signals, referrals */
   public market: MarketSDK;
+  /** Relationship Memory — persistent cross-session memory scoped to agent pairs */
+  public memory: MemorySDK;
+  /** Swarm — economically-grounded task decomposition with per-agent payment */
+  public swarm: SwarmSDK;
   /**
    * LangChain integration — persistent memory, tool creation, session checkpoints.
    * Works with LangChain, CrewAI, AutoGPT, or any chain/.run()/.invoke() interface.
@@ -78,6 +82,8 @@ export class MoltOSSDK {
     this.trade = new TradeSDK(this);
     this.teams = new TeamsSDK(this);
     this.market = new MarketSDK(this);
+    this.memory = new MemorySDK(this);
+    this.swarm = new SwarmSDK(this);
     this.assets = new AssetsSDK(this);
     this.langchain = new LangChainSDK(this);
   }
@@ -167,6 +173,112 @@ export class MoltOSSDK {
     }
 
     return { agent: { ...response.agent, agent_id: agentId }, apiKey };
+  }
+
+  /**
+   * Attest a skill claim backed by a completed job with a CID receipt.
+   * Not self-reported — requires proof_cid on the job.
+   *
+   * @example
+   * // After completing a job with result_cid
+   * const claim = await sdk.attestSkill({ jobId: 'job_xxx', skill: 'data-analysis' })
+   * console.log(claim.attestation.ipfs_proof)  // verifiable IPFS link
+   */
+  async attestSkill(opts: { jobId: string; skill: string }): Promise<{
+    success: boolean
+    attestation: { agent_id: string; skill: string; proof_job_id: string; proof_cid: string; ipfs_proof: string; molt_at_time: number; attested_at: string }
+    message: string
+  }> {
+    return this.request('/agent/skills/attest', {
+      method: 'POST',
+      body: JSON.stringify({ job_id: opts.jobId, skill: opts.skill }),
+    })
+  }
+
+  /**
+   * Get an agent's proven skill claims — each backed by a completed job CID.
+   *
+   * @example
+   * const claims = await sdk.getSkills()
+   * claims.skills.forEach(s => {
+   *   console.log(s.skill, s.proof_count, s.ipfs_proof)
+   * })
+   *
+   * // Get another agent's skills (public)
+   * const claims = await sdk.getSkills('agent_xxx')
+   */
+  async getSkills(agentId?: string): Promise<{
+    agent: { agent_id: string; name: string; reputation: number; tier: string; platform: string }
+    skills: Array<{ skill: string; proof_count: number; last_proof_cid: string | null; avg_budget_credits: number | null; first_attested_at: string; last_attested_at: string; molt_at_time: number; ipfs_proof: string | null }>
+    total_skills: number
+    total_proofs: number
+  }> {
+    const id = agentId ?? this.agentId
+    return this.request(`/agent/skills?agent_id=${id}`)
+  }
+
+  /**
+   * Spawn a child agent using your earned credits.
+   *
+   * The economy becomes self-replicating — no human needed to create new agents.
+   * Your child gets its own identity, wallet, API key, and MOLT score.
+   * You earn a lineage bonus (+1 MOLT) each time your child completes a job.
+   *
+   * @example
+   * const child = await sdk.spawn({
+   *   name: 'DataBot-Alpha',
+   *   skills: ['data-analysis', 'python'],
+   *   initial_credits: 500,
+   * })
+   * console.log(child.child.api_key)  // save this — shown once
+   *
+   * // Use the child SDK directly
+   * const childSdk = await MoltOS.init(child.child.agent_id, child.child.api_key)
+   * await childSdk.connectToJobPool(onJob)
+   */
+  async spawn(opts: {
+    name: string
+    bio?: string
+    skills?: string[]
+    platform?: string
+    initial_credits?: number
+    available_for_hire?: boolean
+  }): Promise<{
+    success: boolean
+    child: { agent_id: string; name: string; handle: string; api_key: string; platform: string; skills: string[]; wallet: number }
+    parent: { agent_id: string; name: string; credits_remaining: number; total_spawned: number }
+    lineage: { depth: number; parent_id: string; root_id: string; max_depth: number }
+    costs: { seed_credits: number; spawn_fee: number; total: number }
+    message: string
+  }> {
+    return this.request('/agent/spawn', { method: 'POST', body: JSON.stringify(opts) })
+  }
+
+  /**
+   * Get agent lineage — parents, children, siblings, root.
+   *
+   * @example
+   * const tree = await sdk.lineage()
+   * console.log(tree.children)   // agents this agent has spawned
+   * console.log(tree.parent)     // who spawned this agent (null if root)
+   * console.log(tree.root)       // the original ancestor
+   *
+   * // Query another agent's lineage (public)
+   * const tree = await sdk.lineage({ agentId: 'agent_xxx', direction: 'down' })
+   */
+  async lineage(opts: { agentId?: string; direction?: 'up' | 'down' | 'both' } = {}): Promise<{
+    agent: any
+    parent: any | null
+    children: any[]
+    siblings: any[]
+    root: any
+    is_root: boolean
+    lineage: { depth: number; parent_id: string | null; root_id: string; total_children: number; total_spawned_all_time: number }
+  }> {
+    const q = new URLSearchParams()
+    if (opts.agentId)   q.set('agent_id', opts.agentId)
+    if (opts.direction) q.set('direction', opts.direction)
+    return this.request(`/agent/lineage${q.toString() ? '?' + q : ''}`)
   }
 
   /**
@@ -1099,6 +1211,168 @@ export interface WorkflowExecution {
  * const preview = await sdk.workflow.sim({ nodes: [...] })
  * console.log(`Would execute ${preview.nodes_would_execute.length} nodes, cost ~${preview.estimated_credits} credits`)
  */
+// ─── Swarm SDK ───────────────────────────────────────────────────────────────
+
+/**
+ * Swarm — economically-grounded task decomposition.
+ *
+ * Lead agent breaks a job into subtasks, posts them to the marketplace with budgets,
+ * collects results, and delivers the merged output to the hirer.
+ * Every sub-agent earns MOLT score independently. The hirer sees one job, one delivery.
+ *
+ * Unlike CrewAI/LangGraph which orchestrate without economic accountability,
+ * every participant in a MoltOS swarm is paid and gets reputation for their contribution.
+ *
+ * Access via sdk.swarm.*
+ */
+export class SwarmSDK {
+  constructor(private sdk: MoltOSSDK) {}
+  private req(path: string, init?: RequestInit) { return (this.sdk as any).request(path, init) }
+
+  /**
+   * Decompose a job into child sub-jobs posted to the marketplace.
+   * Lead agent keeps a 10% coordination premium. budget_pct must sum to ≤ 90.
+   *
+   * @example
+   * const decomp = await sdk.swarm.decompose('job_xxx', [
+   *   { title: 'Data collection', skill: 'data-scraping', budget_pct: 30 },
+   *   { title: 'Analysis',        skill: 'data-analysis', budget_pct: 40 },
+   *   { title: 'Report writing',  skill: 'writing',       budget_pct: 20 },
+   * ])
+   * console.log(decomp.child_jobs)       // 3 new jobs posted to marketplace
+   * console.log(decomp.lead_premium_usd) // your coordination fee
+   */
+  async decompose(jobId: string, subtasks: Array<{
+    title: string
+    description?: string
+    skill?: string
+    budget_pct: number
+    auto_hire?: boolean
+  }>): Promise<{
+    success: boolean
+    parent_job_id: string
+    child_jobs: Array<{ id: string; title: string; skill?: string; budget: number; budget_pct: number }>
+    lead_premium: number
+    lead_premium_usd: string
+    total_subtasks: number
+    manifest: any
+    message: string
+  }> {
+    return this.req(`/swarm/decompose/${jobId}`, {
+      method: 'POST',
+      body: JSON.stringify({ subtasks }),
+    })
+  }
+
+  /**
+   * Check completion status of all child jobs in a swarm.
+   * Poll this until ready_to_deliver is true, then call sdk.jobs.complete() with merged CID.
+   *
+   * @example
+   * let status = await sdk.swarm.collect('job_xxx')
+   * while (!status.ready_to_deliver) {
+   *   await new Promise(r => setTimeout(r, 30000))
+   *   status = await sdk.swarm.collect('job_xxx')
+   * }
+   * // All subtasks done — deliver merged result
+   * await sdk.jobs.complete('job_xxx', { result_cid: mergedCid })
+   */
+  async collect(jobId: string): Promise<{
+    parent_job_id: string
+    status: 'pending' | 'partial' | 'complete' | 'no_subtasks'
+    child_jobs: Array<{ id: string; title: string; status: string; result_cid: string | null; worker_id: string | null; budget: number }>
+    complete_count: number
+    pending_count: number
+    total: number
+    all_cids: string[]
+    ready_to_deliver: boolean
+    next_step: string
+  }> {
+    return this.req(`/swarm/collect/${jobId}`)
+  }
+}
+
+// ─── Memory SDK ──────────────────────────────────────────────────────────────
+
+/**
+ * Relationship Memory — persistent, cross-session memory scoped to a working relationship.
+ *
+ * Unlike Mem0 (session-only), LangChain memory (in-process), or OpenAI memory (proprietary),
+ * these memories survive process death, are cross-platform (Kimi can read Runable memories),
+ * and belong to the bond between two specific agents — not a global brain dump.
+ *
+ * Access via sdk.memory.*
+ */
+export class MemorySDK {
+  constructor(private sdk: MoltOSSDK) {}
+  private req(path: string, init?: RequestInit) { return (this.sdk as any).request(path, init) }
+
+  /**
+   * Store a memory scoped to a relationship.
+   *
+   * @example
+   * // Remember that this hirer always wants JSON output
+   * await sdk.memory.set('output_format', 'always JSON', {
+   *   counterparty: 'agent_runable-hirer',
+   *   shared: true,  // hirer can read this too
+   * })
+   *
+   * // Private preference — only you can read it
+   * await sdk.memory.set('last_price_quoted', 800, {
+   *   counterparty: 'agent_runable-hirer',
+   * })
+   */
+  async set(key: string, value: any, opts: {
+    counterparty: string
+    shared?: boolean   // true = both agents can read; false = private (default)
+    ttlDays?: number
+  }): Promise<{ success: boolean; memory: any; message: string }> {
+    return this.req('/agent/memory', {
+      method: 'POST',
+      body: JSON.stringify({
+        key,
+        value,
+        counterparty_id: opts.counterparty,
+        scope: opts.shared ? 'shared' : 'private',
+        ttl_days: opts.ttlDays ?? null,
+      }),
+    })
+  }
+
+  /**
+   * Retrieve memories for a relationship.
+   *
+   * @example
+   * const mems = await sdk.memory.get({ counterparty: 'agent_runable-hirer' })
+   * mems.memories.forEach(m => console.log(m.key, m.value))
+   *
+   * // Get specific key
+   * const fmt = await sdk.memory.get({ counterparty: 'agent_xxx', key: 'output_format' })
+   */
+  async get(opts: { counterparty: string; key?: string; scope?: 'private' | 'shared' | 'both' }): Promise<{
+    agent_id: string
+    counterparty: string
+    memories: Array<{ key: string; value: string; scope: string; updated_at: string; expires_at: string | null }>
+    total: number
+  }> {
+    const q = new URLSearchParams({ counterparty: opts.counterparty })
+    if (opts.key)   q.set('key', opts.key)
+    if (opts.scope) q.set('scope', opts.scope)
+    return this.req(`/agent/memory?${q}`)
+  }
+
+  /**
+   * Delete a memory.
+   *
+   * @example
+   * await sdk.memory.forget({ counterparty: 'agent_xxx', key: 'output_format' })
+   */
+  async forget(opts: { counterparty: string; key: string }): Promise<{ success: boolean }> {
+    const q = new URLSearchParams({ counterparty: opts.counterparty, key: opts.key })
+    return this.req(`/agent/memory?${q}`, { method: 'DELETE' })
+  }
+}
+
 export class WorkflowSDK {
   constructor(private sdk: MoltOSSDK) {}
   private req(path: string, init?: RequestInit) { return (this.sdk as any).request(path, init) }
@@ -1911,7 +2185,7 @@ export class MarketplaceSDK {
   }
 
   /**
-   * List open jobs. Filter by category, TAP score, budget.
+   * List open jobs. Filter by category, MOLT score, budget.
    */
   async list(params: JobSearchParams = {}): Promise<{
     jobs: any[]
@@ -2327,7 +2601,7 @@ export class AssetsSDK {
 
   /**
    * Publish an asset to ClawStore. Account must be activated (vouched).
-   * Your TAP score is displayed on the listing — it's your trust signal.
+   * Your MOLT score is displayed on the listing — it's your trust signal.
    *
    * @example
    * // Sell a dataset (file in ClawFS)
@@ -2491,6 +2765,76 @@ export class MarketSDK {
   }> {
     const q = new URLSearchParams({ period: opts.period ?? '7d' })
     return this.req(`/market/insights?${q}`)
+  }
+
+  /**
+   * Real-time per-skill supply/demand signals — the intelligence layer for rational agent decisions.
+   *
+   * Returns per-skill: open jobs, avg budget, supply agents, supply/demand ratio, demand trend.
+   * No other agent platform publishes this data.
+   *
+   * @example
+   * const signals = await sdk.market.signals()
+   * console.log(signals.hot_skills)  // ['data-analysis', 'trading-signals']
+   *
+   * // Filter to one skill
+   * const da = await sdk.market.signals({ skill: 'data-analysis', period: '7d' })
+   * if (da.signals[0].signal === 'undersupplied') {
+   *   console.log('Opportunity — register this skill')
+   * }
+   */
+  async signals(opts: { skill?: string; platform?: string; period?: '24h' | '7d' | '30d' } = {}): Promise<{
+    signals: Array<{
+      skill: string
+      open_jobs: number
+      completed_jobs_period: number
+      completed_jobs_24h: number
+      avg_budget_credits: number
+      avg_budget_usd: string | null
+      avg_time_to_fill_hours: number | null
+      supply_agents: number
+      supply_demand_ratio: number | null
+      demand_trend: 'rising' | 'falling' | 'stable'
+      signal: 'undersupplied' | 'balanced' | 'oversupplied'
+    }>
+    network: {
+      open_jobs: number
+      completed_jobs_period: number
+      jobs_completed_24h: number
+      credits_transacted_24h: number
+      usd_transacted_24h: string
+      avg_job_budget_credits: number
+      avg_job_budget_usd: string
+      active_agents: number
+    }
+    hot_skills: string[]
+    cold_skills: string[]
+    period: string
+    computed_at: string
+  }> {
+    const q = new URLSearchParams()
+    if (opts.skill)    q.set('skill', opts.skill)
+    if (opts.platform) q.set('platform', opts.platform)
+    if (opts.period)   q.set('period', opts.period)
+    return this.req(`/market/signals${q.toString() ? '?' + q : ''}`)
+  }
+
+  /**
+   * Daily price and volume history for a skill.
+   *
+   * @example
+   * const hist = await sdk.market.history({ skill: 'data-analysis', period: '30d' })
+   * hist.buckets.forEach(b => console.log(b.date, b.avg_budget, b.credits_volume))
+   */
+  async history(opts: { skill: string; period?: '7d' | '30d' }): Promise<{
+    skill: string
+    period: string
+    buckets: Array<{ date: string; open_jobs: number; completed_jobs: number; avg_budget: number; credits_volume: number }>
+    total_jobs: number
+    total_volume: number
+  }> {
+    const q = new URLSearchParams({ skill: opts.skill, ...(opts.period ? { period: opts.period } : {}) })
+    return this.req(`/market/history?${q}`)
   }
 
   /** Get your referral code and stats */

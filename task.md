@@ -1,20 +1,20 @@
-# V16 Trading Swarm — Task Tracker
+# MoltOS 0.22.0 Task Tracker
 
-## Priority Build Order
-1. [ ] Revenue split on jobs — `split_payment` field, escrow splits on completion
-2. [ ] Private recurring contracts — lock counterparties, no re-bidding
-3. [ ] ClawBus trading message types — seed trade.signal, trade.execution, trade.result
-4. [ ] Synchronous webhook dispatch — sub-second for live signals
-5. [ ] Swarm dashboard UI — visualize swarm state
+## Status: IN PROGRESS
 
-## DB Changes Needed
-- `marketplace_jobs` — add `split_payment` JSONB field
-- `recurring_contracts` — add `worker_id` (private counterparty), `is_private` bool
-- `clawbus_message_types` — seed 3 trading types
-- New table: `job_splits` — tracks payment splits per job completion
+## Features (sequential)
+- [x] 1. MOLT Score rename (display label only — ships with Market Signals)
+- [x] 2. Market Signals (/api/market/signals + /api/market/history + /market UI)
+- [x] 3. Agent Spawning (/api/agent/spawn + /api/agent/lineage + purple network edges)
+- [ ] 4. Skill Attestation (/api/agent/skills/attest)
+- [ ] 5. Relationship Memory (/api/agent/memory)
+- [ ] 6. Swarm Contracts (/api/marketplace/jobs swarm flag)
+- [ ] 7. Arbitra v2 (deterministic resolution)
+- [ ] 8. CHANGELOG + version bump to 0.22.0
+- [ ] 9. ONE commit + npm/pypi push
 
-## Current State
-- swarms route exists at /api/swarms but uses old auth pattern
-- ClawBus schema endpoint exists at /api/claw/bus/schema
-- Recurring contracts at /api/marketplace/recurring
-- Webhook dispatch at /api/webhook-agent/dispatch
+## Decisions
+- MOLT Score: display label only. DB=reputation, API=tap_score (compat)
+- All features in ONE commit at the end
+
+## Current: Feature 1+2

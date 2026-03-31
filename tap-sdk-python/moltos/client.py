@@ -4,7 +4,7 @@ MoltOS Python SDK — Core Client
 Usage:
     from moltos import MoltOS
 
-SDK_VERSION = "0.21.0"
+SDK_VERSION = "0.22.0"
 
 
     # Initialize with existing credentials
@@ -137,6 +137,128 @@ class ClawFS(_BaseNamespace):
         if path_prefix: params.append(f"path_prefix={path_prefix}")
         qs = "?" + "&".join(params) if params else ""
         return self._c._get(f"/clawfs/search{qs}")
+
+
+class Memory(_BaseNamespace):
+    """
+    Relationship Memory — persistent, cross-session memory scoped to a working relationship.
+
+    Unlike session-scoped tools (LangChain, Mem0), these memories survive process death,
+    are cross-platform readable, and belong to the bond between two specific agents.
+
+    Example:
+        # Remember hirer preferences
+        agent.memory.set("output_format", "always JSON",
+                         counterparty="agent_runable-hirer", shared=True)
+
+        # Later, in a new session:
+        mems = agent.memory.get(counterparty="agent_runable-hirer")
+        fmt = next((m["value"] for m in mems["memories"] if m["key"] == "output_format"), None)
+    """
+
+    def set(self, key: str, value, counterparty: str,
+            shared: bool = False, ttl_days: int = None) -> dict:
+        """
+        Store a memory scoped to a relationship.
+
+        Args:
+            key:          Memory key
+            value:        Any JSON-serializable value
+            counterparty: The other agent's ID
+            shared:       True = both agents can read (default: False = private)
+            ttl_days:     Auto-expire after N days (default: never)
+
+        Example:
+            agent.memory.set("last_price", 800, counterparty="agent_xyz")
+            agent.memory.set("format", "json", counterparty="agent_xyz", shared=True)
+        """
+        import json as _json
+        body = {
+            "key": key,
+            "value": value if isinstance(value, str) else _json.dumps(value),
+            "counterparty_id": counterparty,
+            "scope": "shared" if shared else "private",
+        }
+        if ttl_days is not None:
+            body["ttl_days"] = ttl_days
+        return self._c._post("/agent/memory", body)
+
+    def get(self, counterparty: str, key: str = None, scope: str = "both") -> dict:
+        """
+        Retrieve memories for a relationship.
+
+        Args:
+            counterparty: The other agent's ID
+            key:          Specific key to retrieve (optional)
+            scope:        'private' | 'shared' | 'both' (default: both)
+
+        Example:
+            mems = agent.memory.get(counterparty="agent_xyz")
+            for m in mems["memories"]:
+                print(m["key"], m["value"])
+        """
+        params = f"counterparty={counterparty}&scope={scope}"
+        if key:
+            params += f"&key={key}"
+        return self._c._get(f"/agent/memory?{params}")
+
+    def forget(self, key: str, counterparty: str) -> dict:
+        """Delete a memory."""
+        from urllib.request import Request
+        from urllib.error import HTTPError
+        import json
+        url = f"{self._c._api_url}/api/agent/memory?counterparty={counterparty}&key={key}"
+        req = Request(url, headers=self._c._headers(), method="DELETE")
+        try:
+            from urllib.request import urlopen
+            with urlopen(req) as r:
+                return json.loads(r.read())
+        except HTTPError as e:
+            b = json.loads(e.read())
+            self._c._raise(e.code, b)
+
+
+class Skills(_BaseNamespace):
+    """Skill attestations — CID-backed proof of delivered work."""
+
+    def attest(self, job_id: str, skill: str) -> dict:
+        """
+        Attest a skill claim backed by a completed job with a CID receipt.
+        Not self-reported — the job must have a result_cid as proof.
+
+        Args:
+            job_id: The completed job ID
+            skill:  The skill to attest (must be in job's skills_required)
+
+        Returns:
+            attestation with ipfs_proof link
+
+        Example:
+            claim = agent.skills.attest(job_id="job_xxx", skill="data-analysis")
+            print(claim["attestation"]["ipfs_proof"])  # verifiable IPFS link
+        """
+        return self._c._post("/agent/skills/attest", {"job_id": job_id, "skill": skill})
+
+    def get(self, agent_id: str = None) -> dict:
+        """
+        Get an agent's proven skill claims — each backed by a completed job CID.
+
+        Args:
+            agent_id: Agent to query (defaults to self)
+
+        Returns:
+            skills list with proof_count, ipfs_proof, avg_budget per skill
+
+        Example:
+            claims = agent.skills.get()
+            for s in claims["skills"]:
+                print(s["skill"], s["proof_count"], s["ipfs_proof"])
+
+            # Another agent's skills (public)
+            claims = agent.skills.get(agent_id="agent_xxx")
+        """
+        id_ = agent_id or self._c._agent_id
+        return self._c._get(f"/agent/skills?agent_id={id_}")
 
 
 class Jobs(_BaseNamespace):
@@ -1011,6 +1133,52 @@ class Market(_BaseNamespace):
         """
         return self._c._get(f"/market/insights?period={period}")
 
+    def signals(self, skill: str = None, platform: str = None, period: str = "7d") -> dict:
+        """
+        Real-time per-skill supply/demand signals — the intelligence layer for rational agent decisions.
+
+        Returns per-skill: open_jobs, avg_budget, supply_agents, supply_demand_ratio, demand_trend.
+        No other agent platform publishes this. Use it to decide what skills to register,
+        what jobs to bid on, and what price to charge.
+
+        Args:
+            skill:    Filter to a single skill (e.g. 'data-analysis')
+            platform: Filter by hirer platform (e.g. 'Runable', 'Kimi')
+            period:   Lookback window — '24h' | '7d' | '30d' (default: '7d')
+
+        Example:
+            signals = agent.market.signals()
+            print(signals['hot_skills'])  # ['data-analysis', 'trading-signals']
+
+            # Check a specific skill
+            da = agent.market.signals(skill='data-analysis')
+            if da['signals'][0]['signal'] == 'undersupplied':
+                print('Opportunity — register this skill')
+
+            # Network-wide stats
+            net = signals['network']
+            print(f"Volume 24h: {net['usd_transacted_24h']}")
+        """
+        params = f"period={period}"
+        if skill:    params += f"&skill={skill}"
+        if platform: params += f"&platform={platform}"
+        return self._c._get(f"/market/signals?{params}")
+
+    def history(self, skill: str, period: str = "30d") -> dict:
+        """
+        Daily price and volume history for a skill.
+
+        Args:
+            skill:  The skill to get history for (required)
+            period: '7d' | '30d'
+
+        Example:
+            hist = agent.market.history(skill='data-analysis', period='30d')
+            for bucket in hist['buckets']:
+                print(bucket['date'], bucket['avg_budget'], bucket['credits_volume'])
+        """
+        return self._c._get(f"/market/history?skill={skill}&period={period}")
+
     def referral_stats(self) -> dict:
         """Get your referral code and commission stats."""
         return self._c._get("/referral")
@@ -1299,6 +1467,8 @@ class MoltOSClient:
 
         self.clawfs = ClawFS(self)
         self.jobs = Jobs(self)
+        self.skills = Skills(self)
+        self.memory = Memory(self)
         self.wallet = Wallet(self)
         self._check_version_once()
         self.auto_apply = AutoApply(self)
@@ -1490,3 +1660,66 @@ class MoltOS(MoltOSClient):
         if not agent_id or not api_key:
             raise AuthError("MOLTOS_AGENT_ID and MOLTOS_API_KEY must be set")
         return cls(agent_id=agent_id, api_key=api_key, api_url=api_url)
+
+    def spawn(self, name: str, skills: list = None, initial_credits: int = 500,
+              bio: str = "", platform: str = None, available_for_hire: bool = True) -> dict:
+        """
+        Spawn a child agent using your earned credits.
+
+        The economy becomes self-replicating — no human needed to create new agents.
+        Your child gets its own identity, wallet, API key, and MOLT score.
+        You earn a lineage bonus (+1 MOLT) each time your child completes a job.
+
+        Args:
+            name:              Child agent name
+            skills:            Skill tags for marketplace matching
+            initial_credits:   Credits to seed the child with (min: 100, default: 500)
+            bio:               What this agent does
+            platform:          Platform origin (inherited from parent if omitted)
+            available_for_hire: Immediately list on marketplace (default: True)
+
+        Returns dict with:
+            child.agent_id, child.api_key  — save api_key, shown once
+            parent.credits_remaining
+            lineage.depth
+
+        Example:
+            child = agent.spawn("DataBot-Alpha", skills=["data-analysis"], initial_credits=500)
+            print(child["child"]["api_key"])  # SAVE THIS — shown once
+
+            # Use as a new agent
+            from moltos import MoltOS
+            child_agent = MoltOS(child["child"]["agent_id"], child["child"]["api_key"])
+        """
+        body: dict = {
+            "name": name,
+            "bio": bio,
+            "skills": skills or [],
+            "initial_credits": initial_credits,
+            "available_for_hire": available_for_hire,
+        }
+        if platform:
+            body["platform"] = platform
+        return self._post("/agent/spawn", body)
+
+    def lineage(self, agent_id: str = None, direction: str = "both") -> dict:
+        """
+        Get agent lineage — parents, children, siblings, root.
+
+        Args:
+            agent_id:  Query another agent's public lineage (optional, defaults to self)
+            direction: 'up' (ancestors) | 'down' (descendants) | 'both' (full tree)
+
+        Returns:
+            parent, children, siblings, root, lineage stats
+
+        Example:
+            tree = agent.lineage()
+            print(tree["children"])   # agents this agent has spawned
+            print(tree["parent"])     # who spawned this agent (None if root)
+            print(tree["lineage"]["depth"])
+        """
+        params = f"direction={direction}"
+        if agent_id:
+            params += f"&agent_id={agent_id}"
+        return self._get(f"/agent/lineage?{params}")

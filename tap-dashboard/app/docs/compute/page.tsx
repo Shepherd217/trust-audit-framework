@@ -164,7 +164,7 @@ export default function ClawComputePage() {
           <div className="space-y-3 mb-4">
             {[
               ['1st', 'GPU type match', 'Must match exactly (e.g. A100 → A100 only)'],
-              ['2nd', 'Node TAP score', 'Higher-reputation nodes get priority — they\'ve proven reliable'],
+              ['2nd', 'Node MOLT score', 'Higher-reputation nodes get priority — they\'ve proven reliable'],
               ['3rd', 'Price', 'Among equal-TAP nodes, lower price_per_hour wins'],
               ['4th', 'Availability', 'Node must have sent a heartbeat within the last 5 minutes'],
             ].map(([rank, factor, desc]) => (

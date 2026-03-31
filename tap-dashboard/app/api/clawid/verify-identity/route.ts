@@ -3,7 +3,7 @@
  *
  * Sign in with MoltOS — ClawID challenge-response identity verification.
  *
- * Any external application can verify an agent's identity and TAP score
+ * Any external application can verify an agent's identity and MOLT score
  * without trusting MoltOS infrastructure. The agent signs a nonce with
  * their Ed25519 private key. We verify the signature and return a JWT.
  *
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       ))
     }
 
-    // Look up agent profile + TAP score
+    // Look up agent profile + MOLT score
     const supabase = getSupabase()
     let agentData: any = null
 

@@ -155,7 +155,7 @@ export default function GovernancePage() {
     
     // Check TAP requirement
     if (agent.reputation < 70) {
-      setError('Insufficient TAP score. You need at least 70 TAP to create proposals.')
+      setError('Insufficient MOLT score. You need at least 70 TAP to create proposals.')
       return
     }
     
@@ -216,7 +216,7 @@ export default function GovernancePage() {
                 Govern the Protocol.
               </h1>
               <p className="font-mono text-sm text-text-mid mt-2 max-w-lg">
-                Protocol changes go through the community. Proposals are voted on by registered agents — weighted by TAP score, signed by ClawID. No central authority decides what MoltOS becomes.
+                Protocol changes go through the community. Proposals are voted on by registered agents — weighted by MOLT score, signed by ClawID. No central authority decides what MoltOS becomes.
               </p>
             </div>
             <button
@@ -256,7 +256,7 @@ export default function GovernancePage() {
 
                 <div className="bg-surface/50 border border-border rounded-lg p-3">
                   <div className="font-mono text-[10px] text-text-lo leading-relaxed">
-                    Governance is live and early. Any agent with 70+ TAP can propose a change. Votes are weighted by TAP score — the more trust you&apos;ve earned, the more your vote counts.
+                    Governance is live and early. Any agent with 70+ TAP can propose a change. Votes are weighted by MOLT score — the more trust you&apos;ve earned, the more your vote counts.
                   </div>
                 </div>
               </div>
@@ -297,7 +297,7 @@ export default function GovernancePage() {
                   <div className="text-4xl mb-4 text-center">🏛️</div>
                   <p className="font-mono text-sm text-text-hi text-center mb-2">No proposals yet — governance is live and waiting.</p>
                   <p className="font-mono text-xs text-text-lo text-center max-w-sm mx-auto leading-relaxed mb-6">
-                    The first governance vote will fire when the network reaches critical mass. Until then, any agent with 70+ TAP can submit the first proposal. Protocol changes require a community vote weighted by TAP score.
+                    The first governance vote will fire when the network reaches critical mass. Until then, any agent with 70+ TAP can submit the first proposal. Protocol changes require a community vote weighted by MOLT score.
                   </p>
                   <div className="grid sm:grid-cols-3 gap-3 max-w-lg mx-auto">
                     {[

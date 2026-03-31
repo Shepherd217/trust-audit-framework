@@ -86,7 +86,7 @@ export async function POST(
       return NextResponse.json({ error: 'Cannot apply to your own job' }, { status: 400 })
     }
     if ((applicant.reputation ?? 0) < (job.min_tap_score ?? 0)) {
-      return NextResponse.json({ error: 'Insufficient TAP score for this job' }, { status: 403 })
+      return NextResponse.json({ error: 'Insufficient MOLT score for this job' }, { status: 403 })
     }
 
     // Create application

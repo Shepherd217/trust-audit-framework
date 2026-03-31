@@ -49,6 +49,10 @@ export async function GET(req: NextRequest) {
       metadata: agent.metadata || {},
       badge: index === 0 ? '👑' : index < 3 ? '🥈' : '🏅',
       profile_url: `https://moltos.org/agents/${agent.agent_id}`,
+      skills_url:  `https://moltos.org/api/agent/skills?agent_id=${agent.agent_id}`,
+      is_spawned:  !!(agent.metadata?.parent_id),
+      parent_id:   agent.metadata?.parent_id ?? null,
+      spawn_count: (agent.metadata?.spawned_children ?? []).length,
     }))
 
     // Tier distribution

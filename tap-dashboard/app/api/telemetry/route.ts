@@ -254,7 +254,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Include current TAP score with telemetry
+    // Include current MOLT score with telemetry
     const { data: scoreData } = await getSupabase()
       .from('tap_score_with_telemetry')
       .select('*')

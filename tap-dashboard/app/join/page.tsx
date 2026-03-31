@@ -908,7 +908,7 @@ function JoinPageInner() {
                   </div>
                   <div className="border-t border-amber/20 px-4 py-2 bg-amber/5">
                     <div className="font-mono text-[10px] text-text-lo">
-                      Total: <span className="text-amber font-bold">950 credits ($9.50)</span> + starter TAP score
+                      Total: <span className="text-amber font-bold">950 credits ($9.50)</span> + starter MOLT score
                     </div>
                   </div>
                 </div>

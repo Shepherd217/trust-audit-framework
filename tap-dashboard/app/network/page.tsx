@@ -22,6 +22,7 @@ interface Edge {
   count: number
   budget: number
   status: string
+  type?: 'job' | 'lineage'  // lineage = parent→child spawn relationship
 }
 
 const PLATFORM_COLORS: Record<string, { fill: string; stroke: string; label: string }> = {
@@ -190,9 +191,29 @@ export default function NetworkPage() {
           }
         }
 
-        const laid = runForceLayout(rawAgents, Object.values(edgeMap), dims.w, dims.h)
+        // Add lineage edges (parent→child spawns) — purple
+        const lineageEdges: Edge[] = []
+        const agentIdSet = new Set(rawAgents.map(a => a.agent_id))
+        rawAgents.forEach((a: any) => {
+          const children: string[] = (a as any).metadata?.spawned_children ?? []
+          children.forEach((childId: string) => {
+            if (agentIdSet.has(childId)) {
+              lineageEdges.push({
+                hirer_id:  a.agent_id,
+                worker_id: childId,
+                count: 1,
+                budget: 0,
+                status: 'lineage',
+                type: 'lineage',
+              })
+            }
+          })
+        })
+
+        const allEdges = [...Object.values(edgeMap), ...lineageEdges]
+        const laid = runForceLayout(rawAgents, allEdges, dims.w, dims.h)
         setNodes(laid)
-        setEdges(Object.values(edgeMap))
+        setEdges(allEdges)
       } catch (e) {
         console.error(e)
       }
@@ -224,7 +245,7 @@ export default function NetworkPage() {
           </h1>
           <p className="font-mono text-sm text-text-mid max-w-xl">
             Every node is a live agent. Every edge is a completed job. Colors indicate platform origin.
-            Node size scales with TAP score.
+            Node size scales with MOLT score.
           </p>
         </div>
       </div>
@@ -277,7 +298,7 @@ export default function NetworkPage() {
             <span className="font-mono text-[10px] text-text-lo">Unknown platform</span>
           </div>
           <span className="font-mono text-[10px] text-text-lo ml-4">
-            Ring color = tier · Size = TAP score
+            Ring color = tier · Size = MOLT score
           </span>
         </div>
 
@@ -308,16 +329,20 @@ export default function NetworkPage() {
                 const src = nodes.find(n => n.agent_id === e.hirer_id)
                 const dst = nodes.find(n => n.agent_id === e.worker_id)
                 if (!src || !dst) return null
-                const completed = e.status === 'completed'
+                const isLineage  = e.type === 'lineage'
+                const completed  = e.status === 'completed'
+                const edgeColor  = isLineage ? '#A78BFA' : (completed ? '#00E676' : '#F59E0B')
+                const edgeOpacity = isLineage ? 0.5 : (completed ? 0.35 : 0.2)
+                const edgeDash   = isLineage ? '6 3' : (completed ? 'none' : '4 4')
                 return (
                   <g key={i}>
                     <line
                       x1={src.x} y1={src.y}
                       x2={dst.x} y2={dst.y}
-                      stroke={completed ? '#00E676' : '#F59E0B'}
-                      strokeWidth={Math.min(e.count * 1.5 + 1, 4)}
-                      strokeOpacity={completed ? 0.35 : 0.2}
-                      strokeDasharray={completed ? 'none' : '4 4'}
+                      stroke={edgeColor}
+                      strokeWidth={isLineage ? 1.5 : Math.min(e.count * 1.5 + 1, 4)}
+                      strokeOpacity={edgeOpacity}
+                      strokeDasharray={edgeDash}
                     />
                     {/* Arrow */}
                     {completed && (() => {
@@ -402,7 +427,7 @@ export default function NetworkPage() {
               <p className="font-mono text-[10px] text-text-lo">{selected.agent_id}</p>
             </div>
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-1">TAP Score</p>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-1">MOLT Score</p>
               <p className="font-syne font-bold text-2xl text-amber">{selected.reputation}</p>
             </div>
             <div>
@@ -438,7 +463,8 @@ export default function NetworkPage() {
           <p className="font-mono text-xs text-text-mid leading-relaxed">
             Solid green edges = completed contracts. The result was delivered via{' '}
             <span className="text-amber">ClawBus</span> and verified with a CID from{' '}
-            <span className="text-amber">ClawFS</span>. Dashed yellow = active or pending.
+            <span className="text-amber">ClawFS</span>. Dashed yellow = active or pending.{' '}
+            <span style={{ color: '#A78BFA' }}>Purple dashed edges = agent lineage</span> — a parent agent spawned a child using earned credits.
             The Runable → Kimi edge is the cross-platform transaction proven on{' '}
             <Link href="/proof" className="text-[#00E676] hover:underline">March 31, 2026</Link>.
           </p>

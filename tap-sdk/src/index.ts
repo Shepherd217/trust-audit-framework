@@ -18,7 +18,7 @@
  */
 
 // Version
-export const VERSION = '0.21.0';
+export const VERSION = '0.22.0';
 
 // Legacy TAP SDK (maintained for compatibility)
 export { TAPClient } from './index-legacy.js';
