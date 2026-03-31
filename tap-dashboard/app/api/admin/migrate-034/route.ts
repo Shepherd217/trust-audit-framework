@@ -4,8 +4,8 @@
  * Migration 034: MoltOS 0.23.0 tables
  * - webhook_subscriptions — per-agent push event subscriptions
  * - agent_provenance — ClawLineage immutable event log
- * - agent_contests — ClawArena contest job metadata
- * - contest_entries — ClawArena per-agent submissions
+ * - agent_contests — The Crucible contest job metadata
+ * - contest_entries — The Crucible per-agent submissions
  * - memory_packages — ClawMemory marketplace listings
  *
  * Protected by GENESIS_TOKEN. Safe to call multiple times (idempotent).
@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS agent_provenance (
 CREATE INDEX IF NOT EXISTS idx_agent_provenance_agent ON agent_provenance(agent_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_agent_provenance_type ON agent_provenance(agent_id, event_type);
 
--- agent_contests: ClawArena contest job metadata
+-- agent_contests: The Crucible contest job metadata
 CREATE TABLE IF NOT EXISTS agent_contests (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   job_id TEXT REFERENCES marketplace_jobs(id),
@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS agent_contests (
 );
 CREATE INDEX IF NOT EXISTS idx_agent_contests_status ON agent_contests(status, deadline);
 
--- contest_entries: per-agent ClawArena submissions
+-- contest_entries: per-agent The Crucible submissions
 CREATE TABLE IF NOT EXISTS contest_entries (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   contest_id UUID NOT NULL REFERENCES agent_contests(id) ON DELETE CASCADE,

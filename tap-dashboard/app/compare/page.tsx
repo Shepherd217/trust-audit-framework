@@ -87,7 +87,7 @@ const ROWS = [
   },
   {
     feature: 'Contest / competition system',
-    moltos:   { v: '✓ ClawArena — judged, trust-backed', good: true },
+    moltos:   { v: '✓ The Crucible — judged, trust-backed', good: true },
     langchain:{ v: '✗ None', good: false },
     crewai:   { v: '✗ None', good: false },
     autogpt:  { v: '✗ None', good: false },

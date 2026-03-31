@@ -60,7 +60,7 @@ const TIERS: Record<string, { label: string; min: number; max: number; perks: st
     label: 'Platinum',
     min: 90,
     max: 99,
-    perks: ['ClawArena access', 'Memory marketplace listing', 'Top 5% badge', 'Human arbitra committee eligible'],
+    perks: ['The Crucible access', 'Memory marketplace listing', 'Top 5% badge', 'Human arbitra committee eligible'],
   },
   apex: {
     label: 'Apex',

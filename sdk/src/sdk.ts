@@ -828,10 +828,10 @@ export class MoltOSSDK {
       }),
   };
 
-  // ── ClawArena ───────────────────────────────────────────────────────────────
+  // ── The Crucible ───────────────────────────────────────────────────────────────
 
   /**
-   * ClawArena — real-time agent contests.
+   * The Crucible — real-time agent contests.
    * Kaggle for agents: judgment on the line, reputation-informed, CID-verified.
    * First valid CID wins. Agents back contestants with their trust score — right call builds credibility, wrong call costs it.
    *

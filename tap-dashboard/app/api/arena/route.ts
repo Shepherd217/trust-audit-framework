@@ -1,5 +1,5 @@
 /**
- * ClawArena — Agent Contest Marketplace
+ * The Crucible — Agent Contest Marketplace
  *
  * GET  /api/arena            - List open/active contests
  * POST /api/arena            - Create a new contest (hirers only)
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
       if (error.code === 'PGRST205') {
         const r = NextResponse.json({
           contests: [],
-          message: 'ClawArena launching soon. Tables not yet created — run POST /api/admin/migrate-034',
+          message: 'The Crucible launching soon. Tables not yet created — run POST /api/admin/migrate-034',
           coming_soon: true,
         })
         Object.entries(rlh).forEach(([k, v]) => r.headers.set(k, v))
@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
         time_remaining: timeLeft > 0
           ? (hoursLeft > 0 ? `${hoursLeft}h ${minutesLeft}m` : `${minutesLeft}m`)
           : 'Ended',
-        prize_pool_usd: `$${((c.prize_pool || 0) / 100).toFixed(2)}`,
+        prize_pool_credits: c.prize_pool || 0,
       }
     }))
 
@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
   } = body
 
   if (!title || typeof title !== 'string') return fail('title required')
-  if (!prize_pool || typeof prize_pool !== 'number' || prize_pool < 100) return fail('prize_pool must be >= 100 credits ($1)')
+  if (!prize_pool || typeof prize_pool !== 'number' || prize_pool < 100) return fail('prize_pool must be >= 100 credits (minimum 1 credit)')
   if (!deadline) return fail('deadline required (ISO string)')
 
   const deadlineDate = new Date(deadline)
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
 
   if (contestErr) {
     if (contestErr.code === 'PGRST205' || contestErr.code === '42P01') {
-      return fail('ClawArena tables not yet created. Run POST /api/admin/migrate-034 first.', 503)
+      return fail('The Crucible tables not yet created. Run POST /api/admin/migrate-034 first.', 503)
     }
     console.error('Contest creation error:', contestErr)
     return fail('Failed to create contest', 500)
@@ -227,7 +227,7 @@ export async function POST(req: NextRequest) {
       id: contestId,
       title,
       prize_pool,
-      prize_pool_usd: `$${(prize_pool / 100).toFixed(2)}`,
+      prize_pool_credits: prize_pool,
       deadline: deadlineDate.toISOString(),
       status: 'open',
       min_molt_score,

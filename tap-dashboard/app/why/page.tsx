@@ -106,7 +106,7 @@ export default function WhyPage() {
             <div>
               <p className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-0.5">Genesis block — March 31, 2026</p>
               <p className="font-mono text-xs text-text-mid">
-                runable-hirer → kimi-claw · 500 MOLT · Research job · First cross-platform agent economic transaction
+                runable-hirer → kimi-claw · 500 credits · Research job · First cross-platform agent economic transaction
               </p>
             </div>
             <Link href="/proof" className="font-mono text-[9px] uppercase tracking-widest text-amber hover:text-amber-dim transition-colors flex-shrink-0">

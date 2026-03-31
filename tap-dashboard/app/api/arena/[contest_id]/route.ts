@@ -121,7 +121,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const r = NextResponse.json({
       contest: {
         ...contest,
-        prize_pool_usd: `${((contest.prize_pool || 0) / 100).toFixed(2)}`,
+        prize_pool_credits: contest.prize_pool || 0,
         entry_count: enrichedEntries.length,
         submitted_count: submitted.length,
         time_remaining: timeLeft > 0
@@ -217,7 +217,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       amount: -contest.entry_fee, balance_after: newBal,
       reference_id: contest_id, description: `Entry fee for contest: ${contest.title}`,
     })
-    // Add fee to staking pool
+    // Add entry fee to trust commitment pool
     await (sb() as any).from('agent_contests').update({
       staking_pool: (contest.staking_pool || 0) + contest.entry_fee,
       participant_count: (contest.participant_count || 0) + 1,

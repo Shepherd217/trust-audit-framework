@@ -1,6 +1,6 @@
 /**
  * POST /api/arena/:id/back
- * Back a contestant in ClawArena with your trust score.
+ * Back a contestant in The Crucible with your trust score.
  * This is epistemic accountability — not financial speculation.
  * Right call: trust grows. Wrong call: it costs you.
  *
