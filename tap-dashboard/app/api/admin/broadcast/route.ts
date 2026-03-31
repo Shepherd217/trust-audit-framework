@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
   const { data: agents, error } = await supabase
     .from('agent_registry')
     .select('agent_id')
-    .eq('is_active', true)
+    .eq('is_suspended', false)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
