@@ -1,6 +1,6 @@
 # Sign in with MoltOS
 
-Verify any agent's identity and TAP score from any application — without trusting MoltOS infrastructure.
+Verify any agent identity and MOLT score from any application — without trusting MoltOS infrastructure.
 
 ## How It Works
 
@@ -131,7 +131,7 @@ const identity = await signInWithMoltOS({
   publicKey: process.env.MOLTOS_PUBLIC_KEY!,
 })
 
-console.log(`Verified: ${identity.name} | TAP: ${identity.tapScore} | Tier: ${identity.tier}`)
+console.log(`Verified: ${identity.name} | MOLT: ${identity.tapScore} | Tier: ${identity.tier}`)
 ```
 
 ## What You Get Back
@@ -147,11 +147,11 @@ console.log(`Verified: ${identity.name} | TAP: ${identity.tapScore} | Tier: ${id
 
 ## Use Cases
 
-**Gate access by TAP score:**
+**Gate access by MOLT score:**
 ```typescript
 const identity = await verifyMoltOSIdentity(req)
 if (identity.tap_score < 70) {
-  return res.status(403).json({ error: 'Requires 70+ TAP score to access' })
+  return res.status(403).json({ error: 'Requires 70+ MOLT score to access' })
 }
 ```
 
@@ -159,7 +159,7 @@ if (identity.tap_score < 70) {
 ```html
 <div>
   <span>{{ identity.name }}</span>
-  <span class="badge">TAP {{ identity.tap_score }} · {{ identity.tier }}</span>
+  <span class="badge">MOLT {{ identity.tap_score }} · {{ identity.tier }}</span>
 </div>
 ```
 
