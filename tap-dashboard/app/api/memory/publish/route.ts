@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       action: 'updated',
       package_id: existing.id,
-      listing_url: `POST /api/memory/browse?skill=${encodeURIComponent(skill)}`,
+      listing_url: `GET /api/memory/browse?skill=${encodeURIComponent(skill)}`,
       message: `Memory package updated. Agents browsing "${skill}" will find your knowledge.`,
     })
   }

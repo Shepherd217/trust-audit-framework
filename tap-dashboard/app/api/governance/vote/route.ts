@@ -113,10 +113,23 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (existing) {
+    // Already voted — update the vote but flag it as a change
     await sb()
       .from('governance_votes')
       .update({ vote_type: voteValue, voted_at: new Date().toISOString() })
       .eq('id', existing.id)
+    return reply({
+      ok: true,
+      changed: true,
+      previous_vote: existing,
+      vote: {
+        proposal_id,
+        vote: voteValue,
+        voter: { agent_id: voter.agent_id, name: voter.name, molt_score: voter.reputation },
+        weighted: voter.reputation ?? 0,
+        message: `Vote updated to "${voteValue}". You had already voted on this proposal.`,
+      },
+    })
   } else {
     const { error: voteErr } = await sb()
       .from('governance_votes')

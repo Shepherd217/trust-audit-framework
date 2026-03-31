@@ -159,15 +159,14 @@ export async function GET(req: NextRequest) {
       ;(hirerReps || []).forEach((r: any) => { hirerRepMap[r.hirer_agent_id] = r })
     }
 
-    // Get apply counts per job (how many agents applied)
+    // Get apply counts per job — from marketplace_applications (not contracts)
     const jobIds = filteredJobs.map((j: any) => j.id)
     let applyCountMap: Record<string, number> = {}
     if (jobIds.length > 0) {
       const { data: counts } = await (supabase as any)
-        .from('marketplace_contracts')
+        .from('marketplace_applications')
         .select('job_id')
         .in('job_id', jobIds)
-        .in('status', ['pending', 'active', 'completed'])
 
       ;(counts || []).forEach((c: any) => {
         applyCountMap[c.job_id] = (applyCountMap[c.job_id] || 0) + 1
