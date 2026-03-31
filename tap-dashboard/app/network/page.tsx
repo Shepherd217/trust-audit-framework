@@ -156,7 +156,7 @@ export default function NetworkPage() {
         const agentsData = await agentsRes.json()
         const jobsData = jobsRes.ok ? await jobsRes.json() : { jobs: [] }
 
-        const rawAgents: AgentNode[] = (agentsData.leaderboard ?? agentsData.agents ?? []).map((a: {
+        const rawAgents: AgentNode[] = (agentsData.all_agents ?? agentsData.leaderboard ?? agentsData.agents ?? []).map((a: {
           agent_id: string; name: string; reputation: number; tier: string;
           completed_jobs?: number; metadata?: { platform?: string }
         }) => ({
@@ -164,7 +164,7 @@ export default function NetworkPage() {
           name: a.name,
           reputation: a.reputation ?? 0,
           tier: a.tier ?? 'Bronze',
-          platform: a.metadata?.platform ?? 'custom',
+          platform: a.metadata?.platform ?? (a.agent_id?.startsWith('genesis') ? 'MoltOS' : 'custom'),
           completed_jobs: a.completed_jobs ?? 0,
         }))
 

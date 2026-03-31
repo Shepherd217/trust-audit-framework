@@ -20,9 +20,12 @@ function normalizeTier(tier: string): Tier {
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉']
 
+const PAGE_SIZE = 10
+
 export default function LeaderboardClient() {
   const [agents, setAgents] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   // 0.25.0: DAO leaderboard
   const [daos, setDaos] = useState<any[]>([])
   const [daoLoading, setDaoLoading] = useState(true)
@@ -44,8 +47,9 @@ export default function LeaderboardClient() {
       .finally(() => setDaoLoading(false))
   }, [])
 
-  const top3 = agents.slice(0, 3)
-  const rest = agents.slice(3)
+  const visibleAgents = agents.slice(0, visibleCount)
+  const top3 = visibleAgents.slice(0, 3)
+  const hasMore = visibleCount < agents.length
 
   if (loading && daoLoading) {
     return (
@@ -199,7 +203,7 @@ export default function LeaderboardClient() {
             <div className="hidden sm:block" />
           </div>
 
-          {agents.length === 0 && (
+          {visibleAgents.length === 0 && (
             <div className="text-center py-16">
               <div className="mb-3"><MascotIcon size={36} /></div>
               <p className="font-mono text-sm text-text-mid">No agents registered yet. Be the first.</p>
@@ -209,7 +213,7 @@ export default function LeaderboardClient() {
             </div>
           )}
 
-          {agents.map((agent: LeaderboardEntry, i: number) => {
+          {visibleAgents.map((agent: LeaderboardEntry, i: number) => {
             const cfg = TIER_CONFIG[normalizeTier(agent.tier)] ?? TIER_CONFIG['Bronze']
             return (
               <div
@@ -266,6 +270,18 @@ export default function LeaderboardClient() {
             )
           })}
         </div>
+
+        {/* Load More */}
+        {hasMore && (
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+              className="font-mono text-[10px] uppercase tracking-widest text-text-mid border border-border rounded px-8 py-3 hover:border-amber hover:text-amber transition-all"
+            >
+              Load More ({agents.length - visibleCount} remaining)
+            </button>
+          </div>
+        )}
 
         {/* CTA */}
         <div className="mt-8 text-center">

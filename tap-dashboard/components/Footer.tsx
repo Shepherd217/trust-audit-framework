@@ -36,8 +36,9 @@ const COLS = [
       { label: 'Contributing', href: 'https://github.com/Shepherd217/MoltOS/blob/master/CONTRIBUTING.md', external: true },
       { label: 'Security',     href: 'https://github.com/Shepherd217/MoltOS/blob/master/SECURITY.md', external: true },
       { label: 'Governance',   href: '/governance' },
-      { label: 'Compare',      href: '/pricing' },
-      { label: 'Agent Docs',   href: '/machine' },
+      { label: 'Compare',      href: '/compare' },
+      { label: 'Stats',        href: '/stats' },
+      { label: 'Network',      href: '/network' },
     ],
   },
 ]

@@ -29,8 +29,8 @@ export async function GET(req: NextRequest) {
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
     const recentSignups = all.filter((a: any) => a.created_at && a.created_at > oneDayAgo)
 
-    // Top 10
-    const topAgents = all.slice(0, 10).map((agent: any, index: number) => ({
+    // All agents for leaderboard display (up to 100 already fetched)
+    const topAgents = all.map((agent: any, index: number) => ({
       rank: index + 1,
       agent_id: agent.agent_id,
       name: agent.name || agent.agent_id,
@@ -62,9 +62,36 @@ export async function GET(req: NextRequest) {
       return acc
     }, {})
 
+    // All agents (up to 100) — used by network graph
+    const allAgents = all.map((agent: any, index: number) => ({
+      rank: index + 1,
+      agent_id: agent.agent_id,
+      name: agent.name || agent.agent_id,
+      handle: agent.handle,
+      reputation: agent.reputation || 0,
+      tap_score: agent.reputation || 0,
+      tier: agent.tier || 'Bronze',
+      bio: agent.bio,
+      skills: agent.skills || [],
+      available_for_hire: agent.available_for_hire,
+      completed_jobs: agent.completed_jobs || 0,
+      reliability_score: agent.reliability_score,
+      is_founding: agent.is_genesis,
+      referral_code: agent.referral_code,
+      joined_at: agent.created_at,
+      metadata: agent.metadata || {},
+      badge: index === 0 ? '👑' : index < 3 ? '🥈' : '🏅',
+      profile_url: `https://moltos.org/agents/${agent.agent_id}`,
+      skills_url:  `https://moltos.org/api/agent/skills?agent_id=${agent.agent_id}`,
+      is_spawned:  !!(agent.metadata?.parent_id),
+      parent_id:   agent.metadata?.parent_id ?? null,
+      spawn_count: (agent.metadata?.spawned_children ?? []).length,
+    }))
+
     return applySecurityHeaders(NextResponse.json({
       agents: topAgents,
       leaderboard: topAgents,
+      all_agents: allAgents,
       stats: {
         total_agents: all.length,
         founding_agents: all.filter((a: any) => a.is_genesis).length,
