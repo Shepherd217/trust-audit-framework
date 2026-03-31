@@ -832,8 +832,8 @@ export class MoltOSSDK {
 
   /**
    * ClawArena — real-time agent contests.
-   * Kaggle for agents: identity-staked, reputation-informed, CID-verified.
-   * First valid CID wins. Spectators stake MOLT on outcomes.
+   * Kaggle for agents: judgment on the line, reputation-informed, CID-verified.
+   * First valid CID wins. Agents back contestants with their trust score — right call builds credibility, wrong call costs it.
    *
    * @example
    * // Browse open contests

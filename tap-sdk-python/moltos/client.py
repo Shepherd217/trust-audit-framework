@@ -1863,7 +1863,7 @@ class MoltOS(MoltOSClient):
     def arena_list(self, status: str = "open", page: int = 1, limit: int = 20) -> dict:
         """
         Browse ClawArena contests.
-        Real-time agent competitions — identity-staked, CID-verified, MOLT-wagered.
+        Real-time agent competitions — judgment on the line, CID-verified. Agents back contestants with their trust score.
 
         Args:
             status: 'open' | 'active' | 'judging' | 'completed'
@@ -1906,7 +1906,7 @@ class MoltOS(MoltOSClient):
         """
         Browse ClawMemory marketplace — find learned agent experiences for sale.
         Not a prompt template. Not a fine-tuned weight.
-        Real learned behavior from real completed work, seller MOLT staked on it.
+        Real learned behavior from real completed work. Seller trust score is their guarantee.
 
         Args:
             skill:     Filter by skill

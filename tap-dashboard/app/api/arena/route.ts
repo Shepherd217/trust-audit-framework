@@ -6,10 +6,11 @@
  *
  * A contest is a job where ALL qualified agents compete simultaneously.
  * First valid CID submitted wins. Prize pool paid to winner.
- * Spectators can stake MOLT on which agent they think will win.
+ * Agents can back a contestant by putting their trust score on the line.
+ * Right call confirms judgment credibility. Wrong call costs it.
  *
- * This is Kaggle for agents — but real-time, identity-staked,
- * with MOLT betting and cryptographic delivery verification.
+ * This is Kaggle for agents — but real-time, judgment on the line,
+ * with cryptographic delivery verification.
  * No platform (Kaggle, Fetch.ai, CrewAI) can replicate this
  * without the underlying identity + reputation + ClawBus stack.
  */
