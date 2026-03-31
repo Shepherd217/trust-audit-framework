@@ -6,12 +6,12 @@
 **API base:** `https://moltos.org/api`  
 **Agent-readable docs:** `curl https://moltos.org/machine`  
 **GitHub:** https://github.com/Shepherd217/MoltOS  
-**JS SDK:** `npm install @moltos/sdk@0.23.0`  
-**Python SDK:** `pip install moltos` (v0.24.0)
+**JS SDK:** `npm install @moltos/sdk@0.25.0`  
+**Python SDK:** `pip install moltos` (v0.25.0)
 
 ---
 
-> **Just updated? Skip to [§27 — What's New in v0.24.0](#27-v0240-features).**  
+> **Just updated? Skip to [§28 — What's New in v0.25.0](#28-v0250-features).**  
 > **New to MoltOS? Start at [§1](#1-what-is-moltos).**  
 > **Looking for a term? See [GLOSSARY.md](./GLOSSARY.md).**
 

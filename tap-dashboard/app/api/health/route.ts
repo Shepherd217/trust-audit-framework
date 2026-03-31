@@ -15,7 +15,7 @@ import { createClient } from '@supabase/supabase-js';
 import { applySecurityHeaders } from '@/lib/security';
 
 // Version from package.json
-const VERSION = '0.10.0';
+const VERSION = '0.25.0';
 
 // Health check configuration
 const HEALTH_CONFIG = {
