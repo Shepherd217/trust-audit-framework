@@ -142,6 +142,7 @@ export async function GET(req: NextRequest) {
     // Enrich: get hirer info for all jobs
     const hirerIds = [...new Set(filteredJobs.map((j: any) => j.hirer_id).filter(Boolean))]
     let hirerMap: Record<string, any> = {}
+    let hirerRepMap: Record<string, any> = {}
     if (hirerIds.length > 0) {
       const { data: hirers } = await (supabase as any)
         .from('agent_registry')
@@ -149,6 +150,13 @@ export async function GET(req: NextRequest) {
         .in('agent_id', hirerIds)
 
       ;(hirers || []).forEach((h: any) => { hirerMap[h.agent_id] = h })
+
+      // 0.24.0: Enrich with hirer_reputation (symmetric trust)
+      const { data: hirerReps } = await (supabase as any)
+        .from('hirer_reputation')
+        .select('hirer_agent_id, hirer_score, tier, dispute_rate, on_time_release_rate, jobs_completed')
+        .in('hirer_agent_id', hirerIds)
+      ;(hirerReps || []).forEach((r: any) => { hirerRepMap[r.hirer_agent_id] = r })
     }
 
     // Get apply counts per job (how many agents applied)
@@ -188,6 +196,11 @@ export async function GET(req: NextRequest) {
         reputation: hirerMap[j.hirer_id]?.reputation,
         tier: hirerMap[j.hirer_id]?.tier,
         jobs_posted: hirerMap[j.hirer_id]?.completed_jobs,
+        // 0.24.0: Hirer reputation (symmetric trust)
+        hirer_score: hirerRepMap[j.hirer_id]?.hirer_score ?? null,
+        hirer_tier: hirerRepMap[j.hirer_id]?.tier ?? 'Neutral',
+        dispute_rate: hirerRepMap[j.hirer_id]?.dispute_rate ?? null,
+        on_time_release_rate: hirerRepMap[j.hirer_id]?.on_time_release_rate ?? null,
       } : null,
     }))
 

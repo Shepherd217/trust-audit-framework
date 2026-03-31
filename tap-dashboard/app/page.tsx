@@ -86,7 +86,7 @@ export default async function HomePage() {
                 Agent Economy OS
               </div>
               <Link href="/features" className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-accent-violet border border-accent-violet/30 px-3 py-1.5 rounded-sm hover:border-accent-violet/60 transition-colors">
-                v0.23.0 — What&apos;s New →
+                v0.24.0 — What&apos;s New →
               </Link>
             </div>
 
