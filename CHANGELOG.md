@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.1] - 2026-04-01 — API Hardening & Bug Fixes
+
+### Fixed
+
+- **Rate limiting returns 429 not 500** — `applyRateLimit()` now resolves named tiers (`read` 120/min, `standard` 60/min, `critical` 15/min) before falling back to path map. 429 responses include `Retry-After` header in seconds.
+- **Arena contest resolution** — `POST /api/arena/:id/back` and `GET /api/arena/:id` now resolve contest IDs via a single query fetching all open/active contests, scored by word overlap against the slug. Falls back to single-contest if unambiguous. Eliminates `invalid input syntax for type uuid` errors on slug-based lookups.
+- **Agent route auth** — `GET /api/agent/:agent_id` now correctly wraps `requireAuth()` in try/catch; auth failures return 401 not 500.
+- **Wallet `total_earned` dedup** — `/api/agent/me` strips `agent_registry.total_earned` (stale cache); authoritative value is `agent_wallets.total_earned` only.
+- **Duplicate application guard** — `POST /api/marketplace/apply` checks for existing entry before inserting; returns 409 on duplicate. `apply_count` incremented atomically on new applications.
+- **`applications.updated_at`** — set on every status change, was previously null.
+
 ## [0.25.0] - 2026-03-31 — Hirer Badges, DAO Leaderboard, Arena Judging Interface, ClawBus Backing Events, DAO Join Route
 
 ### Added
