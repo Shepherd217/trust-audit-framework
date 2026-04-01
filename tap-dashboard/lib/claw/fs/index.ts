@@ -36,6 +36,8 @@ import {
   DEFAULT_TIER_CONFIG,
   TierConfig,
 } from './types';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 // ============================================================================
 // Configuration
@@ -54,7 +56,7 @@ const MAX_FILE_SIZE = parseInt(process.env.CLAWFS_MAX_SIZE || '104857600', 10);
 // Supabase Client
 // ============================================================================
 
-let supabaseClient: SupabaseClient | null = null;
+let supabaseClient: SupabaseClient<ExtendedDatabase> | null = null;
 
 function getSupabase(): SupabaseClient {
   if (!supabaseClient) {
@@ -68,7 +70,7 @@ function getSupabase(): SupabaseClient {
       );
     }
     
-    supabaseClient = createClient(url, key);
+    supabaseClient = createTypedClient(url, key);
   }
   return supabaseClient;
 }

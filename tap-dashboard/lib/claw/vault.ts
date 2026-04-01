@@ -621,7 +621,7 @@ export class ClawVault {
         p_auth_method: this.authMethod || 'api_key',
         p_details: details,
         p_failure_reason: failureReason || null,
-      });
+      } as any);
     } catch (error) {
       // Log to console but don't throw - audit failure shouldn't block operations
       console.error('[ClawVault] Failed to write audit log:', error);

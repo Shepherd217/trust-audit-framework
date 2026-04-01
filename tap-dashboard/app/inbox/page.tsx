@@ -11,7 +11,7 @@ interface ClawBusMessage {
   from_tier?: string
   from_platform?: string
   message_type: string
-  payload: Record<string, unknown>
+  payload: Record<string, any>
   priority: string
   status: string
   created_at: string

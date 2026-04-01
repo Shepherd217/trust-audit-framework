@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 import { applyRateLimit, applySecurityHeaders } from '@/lib/security';
 
 /**
@@ -22,7 +24,7 @@ import { applyRateLimit, applySecurityHeaders } from '@/lib/security';
  */
 
 // Lazy initialization of Supabase client
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
@@ -33,14 +35,14 @@ function getSupabase() {
       throw new Error('Supabase environment variables not configured');
     }
     
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }
 
 // Known agent webhooks and their secrets
 const AGENT_SECRETS: Record<string, string> = {
-  'autopilotai': process.env.AUTOPILOTAI_WEBHOOK_SECRET,
+  'autopilotai': process.env.AUTOPILOTAI_WEBHOOK_SECRET ?? '',
   // Add more agents as needed
 };
 
@@ -113,7 +115,7 @@ async function updateReputations(
   // Apply slash to target agent
   const slashAmount = dispute.slash_amount || Math.min(50, dispute.bond_amount);
   
-  const { error: slashError } = await db.rpc('slash_agent_reputation', {
+  const { error: slashError } = await db.rpc('slash_agent_reputation' as any, {
     p_agent_id: dispute.target_id,
     p_amount: slashAmount,
     p_reason: `Dispute resolution: ${disputeId}`
@@ -126,7 +128,7 @@ async function updateReputations(
   }
   
   // Reward reporter
-  const { error: rewardError } = await db.rpc('add_reputation', {
+  const { error: rewardError } = await db.rpc('add_reputation' as any, {
     p_agent_id: dispute.reporter_id,
     p_amount: Math.floor(slashAmount / 2),
     p_reason: `Successful dispute report: ${disputeId}`

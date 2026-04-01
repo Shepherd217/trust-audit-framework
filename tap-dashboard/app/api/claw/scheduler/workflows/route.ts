@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createWorkflow, listWorkflows } from '@/lib/claw/scheduler';
+import { createTypedClient } from '@/lib/database.extensions'
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
     if (apiKey) {
       const { createHash } = require('crypto')
       const { createClient } = require('@supabase/supabase-js')
-      const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+      const sb = createTypedClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
       const hash = createHash('sha256').update(apiKey).digest('hex')
       const { data } = await sb.from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
       ownerId = data?.agent_id

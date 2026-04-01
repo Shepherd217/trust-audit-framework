@@ -5,9 +5,11 @@ import {
   applySecurityHeaders,
   validateBodySize
 } from '@/lib/security';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 // Lazy initialization of Supabase client
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
@@ -18,7 +20,7 @@ function getSupabase() {
       throw new Error('Supabase environment variables not configured');
     }
     
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }

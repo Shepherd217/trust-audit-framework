@@ -42,6 +42,7 @@ export interface RegisterBody {
   name: string
   publicKey: string
   email?: string
+  referral_code?: string
   metadata?: Record<string, unknown>
 }
 

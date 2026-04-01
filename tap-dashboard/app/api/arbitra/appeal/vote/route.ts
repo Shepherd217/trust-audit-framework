@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions';
 
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) throw new Error('Supabase not configured');
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }
@@ -45,11 +47,11 @@ export async function POST(request: NextRequest) {
 
     // Call the vote function
     const { data: success, error } = await getSupabase()
-      .rpc('cast_appeal_vote', {
+      .rpc('cast_appeal_vote' as any, {
         p_appeal_id: appeal_id,
         p_voter_id: voter_id,
         p_vote_type: vote_type
-      });
+      } as any);
 
     if (error || !success) {
       return NextResponse.json({

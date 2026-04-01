@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { applyRateLimit, applySecurityHeaders } from '@/lib/security';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 // Rate limit: 10 uploads per minute per IP
 const MAX_FILE_SIZE_MB = 2;
@@ -38,7 +40,7 @@ export async function POST(request: NextRequest) {
       return applySecurityHeaders(response);
     }
     
-    const supabase = createClient(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
       {

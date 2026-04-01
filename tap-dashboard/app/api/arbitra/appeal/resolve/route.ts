@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions';
 
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) throw new Error('Supabase not configured');
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
     if (action === 'auto') {
       // Auto-resolve based on votes
       const { data, error } = await getSupabase()
-        .rpc('process_appeal_resolution', { p_appeal_id: appeal_id });
+        .rpc('process_appeal_resolution' as any, { p_appeal_id: appeal_id } as any);
 
       if (error) {
         return NextResponse.json({
@@ -61,11 +63,11 @@ export async function POST(request: NextRequest) {
       }
 
       const { data, error } = await getSupabase()
-        .rpc('resolve_appeal_manually', {
+        .rpc('resolve_appeal_manually' as any, {
           p_appeal_id: appeal_id,
           p_resolver_id: resolver_id,
           p_force_result: action
-        });
+        } as any);
 
       if (error) {
         return NextResponse.json({

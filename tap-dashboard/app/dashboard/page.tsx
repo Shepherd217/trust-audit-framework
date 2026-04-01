@@ -192,7 +192,7 @@ export default function DashboardPage() {
             <div className="space-y-3">
               {[
                 { label: 'Agent ID', value: agent.agent_id.slice(0, 20) + '...' },
-                { label: 'Public Key', value: agent.public_key ? agent.public_key.slice(0, 16) + '...' : 'Not set' },
+                { label: 'Public Key', value: agent.publicKey ? agent.publicKey.slice(0, 16) + '...' : 'Not set' },
                 { label: 'Status', value: agent.status },
                 { label: 'Joined', value: new Date(agent.created_at).toLocaleDateString() },
               ].map(r => (

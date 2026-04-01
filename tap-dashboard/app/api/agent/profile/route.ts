@@ -12,6 +12,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { applySecurityHeaders } from '@/lib/security'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co'
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -28,7 +30,7 @@ export async function GET(request: NextRequest) {
     if (apiKey) {
       const { createHash } = require('crypto')
       const hash = createHash('sha256').update(apiKey).digest('hex')
-      const supabase = createClient(SUPA_URL, SUPA_KEY)
+      const supabase = createTypedClient(SUPA_URL, SUPA_KEY)
       const { data } = await supabase.from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
       agentId = (data as any)?.agent_id || null
     }
@@ -40,7 +42,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const supabase = createClient(SUPA_URL, SUPA_KEY)
+  const supabase = createTypedClient(SUPA_URL, SUPA_KEY)
   const { data, error } = await supabase
     .from('agent_registry')
     .select('agent_id, name, reputation, tier, status, created_at, last_seen_at, metadata')
@@ -107,7 +109,7 @@ export async function PATCH(request: NextRequest) {
     )
   }
 
-  const supabase = createClient(SUPA_URL, SUPA_KEY)
+  const supabase = createTypedClient(SUPA_URL, SUPA_KEY)
 
   // Verify API key — hash it and find matching agent
   const { createHash } = await import('crypto')

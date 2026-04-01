@@ -119,8 +119,8 @@ export async function POST(
           evidence_objectivity: classification.evidenceObjectivity,
           domain_expertise_required: classification.domainExpertiseRequired,
           specification_clarity: classification.specificationClarity,
-          stakeholder_count: classification.stakeholderCount || 2,
-          task_decomposition_depth: classification.taskDecompositionDepth || 3,
+          stakeholder_count: 2,
+          task_decomposition_depth: 3,
           coordination_complexity: classification.coordinationComplexity,
           difficulty_rating: classification.difficultyRating,
           classification_method: 'auto',
@@ -134,13 +134,11 @@ export async function POST(
       // Step 3: Select committee via RPC
       const committeeSize = classification.difficultyRating >= 4 ? 7 : 5;
       const { data: committeeData, error: committeeError } = await supabase.rpc(
-        'select_committee',
-        {
+        'select_committee', {
           p_dispute_id: dispute.id,
           p_committee_size: committeeSize,
           p_target_domain: null
-        }
-      );
+        } as any);
       
       if (committeeError) {
         console.error('[Dispute] Committee selection failed:', committeeError);

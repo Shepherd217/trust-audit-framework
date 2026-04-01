@@ -226,7 +226,7 @@ async function main() {
     publicKeyHex = result.publicKeyHex
 
     // Test 2: DB write
-    await testDatabaseWrite(agentId)
+    await testDatabaseWrite(agentId!)
 
     // Test 3: regression guard — snake_case should still 400
     await testFieldMismatchCatch()

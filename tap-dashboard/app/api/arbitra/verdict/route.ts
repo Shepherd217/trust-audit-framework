@@ -7,12 +7,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { applyRateLimit, applySecurityHeaders } from '@/lib/security';
 
 // Lazy initialization of Supabase client
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
@@ -21,7 +23,7 @@ function getSupabase() {
     if (!url || !key) {
       throw new Error('Supabase environment variables not configured');
     }
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }
@@ -449,13 +451,13 @@ async function applyExternalReputationChanges(db: any, dispute: any, verdict: Ar
 
   try {
     // Update winner reputation
-    await db.rpc('boost_reputation', {
+    await db.rpc('boost_reputation' as any, {
       agent: winner,
       amount: winnerDelta
-    });
+    } as any);
 
     // Update loser reputation
-    await db.rpc('slash_agent', {
+    await db.rpc('slash_agent' as any, {
       p_target_id: loser,
       p_slash_amount: loserDelta,
       p_reason: `ARBITER verdict: ${verdict.resolution}`,

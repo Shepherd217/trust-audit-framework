@@ -11,8 +11,10 @@ import {
   CreateClawMessageInput,
   ClawMessageRow,
 } from './types';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
-let supabase: SupabaseClient | null = null;
+let supabase: SupabaseClient<ExtendedDatabase> | null = null;
 
 function getSupabase(): SupabaseClient {
   if (!supabase) {
@@ -23,7 +25,7 @@ function getSupabase(): SupabaseClient {
       throw new Error('Supabase environment variables not configured');
     }
     
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }

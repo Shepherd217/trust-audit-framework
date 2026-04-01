@@ -5,6 +5,8 @@
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 // ============================================================================
 // Subscription Tier Types
@@ -185,7 +187,7 @@ function getServiceClient(): SupabaseClient {
     throw new Error('Supabase environment variables not configured');
   }
   
-  return createClient(url, key);
+  return createTypedClient(url, key);
 }
 
 /**
@@ -275,7 +277,7 @@ export async function getAuthUserFromRequest(request: Request): Promise<{ user: 
 
   const token = authHeader.replace('Bearer ', '');
   
-  const supabase = createClient(
+  const supabase = createTypedClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
     process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
     {
@@ -347,7 +349,7 @@ export async function getCurrentUser(): Promise<User | null> {
     // Extract auth token from cookies - Supabase stores it as sb-access-token
     const authCookie = cookieStore.get('sb-access-token') || cookieStore.get('supabase-auth-token');
     
-    const supabase = createClient(supabaseUrl, supabaseKey, {
+    const supabase = createTypedClient(supabaseUrl, supabaseKey, {
       global: authCookie?.value ? {
         headers: { Authorization: `Bearer ${authCookie.value}` }
       } : undefined
@@ -452,7 +454,7 @@ export function getClientSupabase(): SupabaseClient {
     throw new Error('Supabase environment variables not configured');
   }
   
-  return createClient(url, key);
+  return createTypedClient(url, key);
 }
 
 /**

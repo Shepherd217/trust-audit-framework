@@ -1,5 +1,6 @@
 import type { taskCategory, coordinationType } from '@/types/committee-intelligence';
 import { createClient } from '@supabase/supabase-js';
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 /**
  * Auto-classifies disputes by complexity using keyword matching + evidence analysis.
@@ -294,7 +295,7 @@ export function classifyDispute(input: ClassificationInput): ClassificationResul
  * Save classification to database
  */
 export async function saveClassification(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   disputeId: string,
   classification: ClassificationResult,
   classifiedBy: string | null = null
@@ -327,7 +328,7 @@ export async function saveClassification(
  * Batch classify pending disputes without complexity scores
  */
 export async function batchClassifyPendingDisputes(
-  supabase: ReturnType<typeof createClient>
+  supabase: any
 ): Promise<number> {
   // Get disputes without classification
   const { data: disputes, error } = await supabase

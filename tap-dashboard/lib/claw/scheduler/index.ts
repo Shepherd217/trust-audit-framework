@@ -4,7 +4,7 @@
  */
 
 import { getSupabaseClient } from '@/lib/supabase';
-import type { Database } from '@/lib/database.types';
+import type { ExtendedDatabase as Database } from '@/lib/database.extensions';
 import { v4 as uuidv4 } from 'uuid';
 import {
   Workflow,

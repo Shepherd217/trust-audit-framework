@@ -1,7 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
-const supabase = createClient(
+const supabase = createTypedClient(
   'https://pgeddexhbqoghdytjvex.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnZWRkZXhoYnFvZ2hkeXRqdmV4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjgyNTU2OSwiZXhwIjoyMDg4NDAxNTY5fQ.Eh8eX8JxN3iHghJIB279ygf75F9tY5RzEQYeEXL-4Mo'
 );
@@ -108,7 +110,7 @@ async function verifyReadiness() {
       console.log(`      Response: ${text.substring(0, 100)}`);
       passed++; // Still counts as endpoint live
     }
-  } catch (err) {
+  } catch (err: any) {
     console.log(`   ❌ Endpoint error: ${err.message}`);
     failed++;
   }
@@ -156,7 +158,7 @@ async function verifyReadiness() {
       console.log('   ⚠️  Committee function returned empty');
       passed++;
     }
-  } catch (err) {
+  } catch (err: any) {
     console.log(`   ⚠️  Committee function: ${err.message}`);
     passed++;
   }

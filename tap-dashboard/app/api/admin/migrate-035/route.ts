@@ -11,6 +11,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const GENESIS_TOKEN = process.env.GENESIS_TOKEN || ''
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -202,7 +204,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const sb = createClient(SUPA_URL, SUPA_KEY)
+  const sb = createTypedClient(SUPA_URL, SUPA_KEY)
 
   // Check table state before
   const tables = [
@@ -219,7 +221,7 @@ export async function POST(req: NextRequest) {
   // Try exec_sql RPC
   let execResult = 'not_attempted'
   try {
-    const { error: rpcError } = await (sb as any).rpc('exec_sql', { sql: MIGRATION_SQL })
+    const { error: rpcError } = await (sb as any).rpc('exec_sql', { sql: MIGRATION_SQL } as any)
     execResult = rpcError ? `rpc_error: ${rpcError.message}` : 'executed'
   } catch (e: any) {
     execResult = `exception: ${e.message}`

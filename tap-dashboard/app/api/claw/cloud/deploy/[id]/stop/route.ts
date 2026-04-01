@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions';
 import { verifyClawIDSignature } from '@/lib/clawid-auth';
 
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) throw new Error("Supabase not configured");
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }
@@ -58,13 +60,13 @@ export async function POST(
     }
 
     // Update status
-    await getSupabase().rpc('update_deployment_status', {
+    await getSupabase().rpc('update_deployment_status' as any, {
       p_deployment_id: id,
       p_status: 'stopped',
-    });
+    } as any);
 
     // Log
-    await getSupabase().rpc('log_deployment_event', {
+    await getSupabase().rpc('log_deployment_event' as any, {
       p_deployment_id: deployment.id,
       p_level: 'info',
       p_message: `Deployment ${id} stopped by user`,

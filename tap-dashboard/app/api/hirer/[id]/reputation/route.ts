@@ -10,13 +10,15 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const GENESIS_TOKEN = process.env.GENESIS_TOKEN || ''
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const sb = createClient(SUPA_URL, SUPA_KEY)
+  const sb = createTypedClient(SUPA_URL, SUPA_KEY)
   const hirer_id = params.id
 
   // Check hirer_reputation table first
@@ -101,7 +103,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const sb = createClient(SUPA_URL, SUPA_KEY)
+  const sb = createTypedClient(SUPA_URL, SUPA_KEY)
   const hirer_id = params.id
 
   // Count completed/disputed jobs from marketplace_contracts

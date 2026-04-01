@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/lib/database.types';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase as Database } from '@/lib/database.extensions';
 import { applyRateLimit, applySecurityHeaders } from '@/lib/security';
 
 const MAX_TEMPLATES_LIMIT = 100;
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const limit = Math.min(MAX_TEMPLATES_LIMIT, Math.max(1, parseInt(searchParams.get('limit') || '50')));
 
-    const supabase = createClient<Database>(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.SUPABASE_SERVICE_ROLE_KEY || ''
     );

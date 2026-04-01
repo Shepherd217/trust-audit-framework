@@ -18,9 +18,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'crypto'
 import { applySecurityHeaders } from '@/lib/security'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+  return createTypedClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
 async function resolveAgent(req: NextRequest) {
@@ -82,7 +84,7 @@ export async function POST(req: NextRequest) {
 
     // Update agent profile with compute capabilities
     await (sb as any).from('agent_registry').update({
-      skills: sb.rpc ? undefined : null, // skills update happens separately
+      // skills update happens separately
       bio: `GPU compute node. ${gpu_type} × ${gpu_count}. ${capabilities.join(', ')}. ${price_per_hour} credits/hr.`,
     }).eq('agent_id', agent.agent_id)
 

@@ -10,18 +10,20 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions';
 import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
 
 // Lazy Supabase client
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) throw new Error('Supabase not configured');
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }
@@ -132,7 +134,7 @@ export async function POST(request: NextRequest) {
 
     // Submit telemetry via RPC
     const { data: telemetryId, error: telemetryError } = await getSupabase()
-      .rpc('submit_agent_telemetry', {
+      .rpc('submit_agent_telemetry' as any, {
         p_agent_id: body.agent_id,
         p_window_start: body.window_start,
         p_window_end: body.window_end,
@@ -227,10 +229,10 @@ export async function GET(request: NextRequest) {
 
     // Get summary via RPC
     const { data: summary, error: summaryError } = await getSupabase()
-      .rpc('get_agent_telemetry_summary', {
+      .rpc('get_agent_telemetry_summary' as any, {
         p_agent_id: agentId,
         p_days: days
-      });
+      } as any);
 
     if (summaryError) throw summaryError;
 

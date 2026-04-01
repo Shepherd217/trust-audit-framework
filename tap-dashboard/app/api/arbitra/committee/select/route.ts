@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 /**
  * POST /api/arbitra/committee/select
@@ -21,7 +23,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { dispute_id, committee_size, target_domain } = selectSchema.parse(body);
     
-    const supabase = createClient(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
@@ -43,7 +45,7 @@ export async function POST(request: NextRequest) {
       p_dispute_id: dispute_id,
       p_committee_size: finalSize,
       p_target_domain: target_domain || null
-    });
+    } as any);
     
     if (error) {
       console.error('[Committee] RPC error:', error);
@@ -104,7 +106,7 @@ export async function POST(request: NextRequest) {
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid input', details: error.errors },
+        { error: 'Invalid input', details: error.issues },
         { status: 400 }
       );
     }
@@ -127,7 +129,7 @@ export async function GET(request: NextRequest) {
     const tier = searchParams.get('tier') as any;
     const minExpertise = parseFloat(searchParams.get('min_expertise') || '0.5');
     
-    const supabase = createClient(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );

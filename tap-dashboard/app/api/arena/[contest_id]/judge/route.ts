@@ -25,12 +25,14 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 export async function POST(req: NextRequest, { params }: { params: { contest_id: string } }) {
-  const sb = createClient(SUPA_URL, SUPA_KEY)
+  const sb = createTypedClient(SUPA_URL, SUPA_KEY)
   const contest_id = params.contest_id
 
   let body: any

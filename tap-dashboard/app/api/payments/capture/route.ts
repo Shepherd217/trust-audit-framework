@@ -4,6 +4,7 @@
  * Captures authorized funds from a payment intent (releases escrow).
  */
 
+import { randomUUID } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server';
 import {
   capturePayment,
@@ -12,11 +13,13 @@ import {
 import { CapturePaymentRequest } from '@/types/payments';
 import { getClawBusService } from '@/lib/claw/bus';
 import { createClient } from '@supabase/supabase-js';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 import { applyRateLimit, applySecurityHeaders } from '@/lib/security';
 
 // Helper to get payment details
 async function getPaymentDetails(paymentIntentId: string) {
-  const supabase = createClient(
+  const supabase = createTypedClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
     process.env.SUPABASE_SERVICE_ROLE_KEY || ''
   );
@@ -52,7 +55,7 @@ async function notifyPaymentCapture(
     const bus = getClawBusService();
     
     // Notify hirer
-    await bus.send({
+    await bus.send({ id: randomUUID(), version: '1.0' as const, createdAt: new Date(), status: 'pending' as any, ttl: 300,
       type: 'notification',
       from: 'system',
       to: hirerId,
@@ -64,11 +67,11 @@ async function notifyPaymentCapture(
         jobId,
         amount,
       },
-      priority: 4,
+      priority: 'high',
     });
     
     // Notify worker
-    await bus.send({
+    await bus.send({ id: randomUUID(), version: '1.0' as const, createdAt: new Date(), status: 'pending' as any, ttl: 300,
       type: 'notification',
       from: 'system',
       to: workerId,
@@ -80,12 +83,12 @@ async function notifyPaymentCapture(
         jobId,
         amount,
       },
-      priority: 4,
+      priority: 'high',
     });
     
     // Update job status if jobId exists
     if (jobId) {
-      const supabase = createClient(
+      const supabase = createTypedClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL || '',
         process.env.SUPABASE_SERVICE_ROLE_KEY || ''
       );

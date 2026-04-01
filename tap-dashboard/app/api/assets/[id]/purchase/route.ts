@@ -13,11 +13,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createHash, randomBytes } from 'crypto'
 import { applySecurityHeaders } from '@/lib/security'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const PLATFORM_FEE = 0.025
 
 function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+  return createTypedClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
 async function resolveAgent(req: NextRequest) {
@@ -102,7 +104,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       downloads: (sb as any).rpc ? undefined : undefined,
       revenue_total: 0, // will be updated below
     }).eq('id', asset.id)
-    await sb.rpc('increment_asset_stats' as any, { asset_id: asset.id, revenue: sellerCut }).catch(() => {
+    await (sb.rpc('increment_asset_stats' as any, { asset_id: asset.id, revenue: sellerCut } as any) as any).catch(() => {
       // Fallback if RPC doesn't exist
       sb.from('agent_assets' as any).select('downloads, revenue_total').eq('id', asset.id).single().then(({ data }: any) => {
         if (data) sb.from('agent_assets' as any).update({

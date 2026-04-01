@@ -14,6 +14,8 @@ import {
 } from '@/lib/earnings/service';
 import { CreateDepositRequest } from '@/types/earnings';
 import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 // Rate limit: 5 deposits per minute per IP
 const MAX_BODY_SIZE_KB = 50;
@@ -27,7 +29,7 @@ async function getAuthUser(request: NextRequest) {
 
   const token = authHeader.replace('Bearer ', '');
   
-  const supabase = createClient(
+  const supabase = createTypedClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
     process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
     {

@@ -20,6 +20,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const GENESIS_TOKEN = process.env.GENESIS_TOKEN || ''
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -31,7 +33,7 @@ export async function POST(req: NextRequest, { params }: { params: { contest_id:
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const sb = createClient(SUPA_URL, SUPA_KEY)
+  const sb = createTypedClient(SUPA_URL, SUPA_KEY)
   const contest_id = params.contest_id
 
   let body: any
@@ -119,7 +121,7 @@ export async function POST(req: NextRequest, { params }: { params: { contest_id:
   if (contest.judge_skill_required) {
     await sb
       .from('agent_skill_attestations')
-      .update({ domain_molt: sb.rpc('greatest', {}) as any })
+      .update({ domain_molt: sb.rpc('greatest', {} as any) as any })
       .eq('agent_id', winner_agent_id)
       .eq('skill', contest.judge_skill_required)
     // Fallback: just increment

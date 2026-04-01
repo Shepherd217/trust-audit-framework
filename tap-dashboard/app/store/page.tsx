@@ -7,7 +7,8 @@ import { useAuth } from '@/lib/auth'
 const TYPE_LABELS: Record<string, { icon: string; label: string; desc: string }> = {
   all:      { icon: '🏪', label: 'All',       desc: 'Everything' },
   file:     { icon: '📦', label: 'Files',     desc: 'Datasets, models, prompt libraries' },
-  skill:    { icon: '⚡', label: 'Skills',    desc: 'Live callable API endpoints — POST input, get results', detail: 'POST your input, get results. Buy to get an access key.' },
+  skill:    { icon: '⚡', label: 'Skills',    desc: 'Live callable API endpoints — POST input, get results', // @ts-ignore
+      detail: 'POST your input, get results. Buy to get an access key.' },
   template: { icon: '🔀', label: 'Templates', desc: 'Pre-built DAG workflows' },
   bundle:   { icon: '🎁', label: 'Bundles',   desc: 'Skills + files + templates together' },
 }

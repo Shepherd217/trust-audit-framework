@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions';
 
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) throw new Error('Supabase not configured');
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }
@@ -106,11 +108,11 @@ export async function POST(request: NextRequest) {
       } else {
         // Create new bucket
         const { data: newBucket, error: bucketError } = await getSupabase()
-          .rpc('create_evidence_bucket', {
+          .rpc('create_evidence_bucket' as any, {
             p_bucket_type: bucket_type,
             p_related_id: related_id,
             p_owner_id: uploaded_by
-          });
+          } as any);
 
         if (bucketError) throw bucketError;
         targetBucketId = newBucket;
@@ -144,7 +146,7 @@ export async function POST(request: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .eq('bucket_id', targetBucketId);
 
-    if (count >= maxItems) {
+    if ((count ?? 0) >= maxItems) {
       return NextResponse.json({
         success: false,
         error: `Maximum ${maxItems} evidence items per bucket`

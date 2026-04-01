@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeWorkflow } from '@/lib/claw/scheduler';
+import { createTypedClient } from '@/lib/database.extensions'
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
     const isDryRun = body.dry_run === true || body.context?.dry_run === true
     if (isDryRun) {
       const { createClient } = await import('@supabase/supabase-js')
-      const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+      const sb = createTypedClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
       const { data: wf, error } = await sb.from('claw_workflows').select('*').eq('id', body.workflowId).single()
       if (error || !wf) return NextResponse.json({ error: 'Workflow not found' }, { status: 404 })
       const def = wf.definition ?? {}

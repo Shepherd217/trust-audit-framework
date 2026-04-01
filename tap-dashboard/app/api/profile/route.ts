@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/lib/database.types';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase as Database } from '@/lib/database.extensions';
 import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
 
 const MAX_BODY_SIZE_KB = 50;
@@ -31,7 +32,7 @@ export async function PATCH(request: NextRequest) {
 
     const token = authHeader.replace('Bearer ', '');
     
-    const supabase = createClient<Database>(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
       {
@@ -129,7 +130,7 @@ export async function GET(request: NextRequest) {
 
     const token = authHeader.replace('Bearer ', '');
     
-    const supabase = createClient<Database>(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
       {

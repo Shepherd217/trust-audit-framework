@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/lib/database.types';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase as Database } from '@/lib/database.extensions';
 import { 
   getAgentEarnings, 
   getAgentStats,
@@ -23,7 +24,7 @@ async function validateAgentApiKey(apiKey: string): Promise<string | null> {
     const { createHash } = await import('crypto');
     const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
     
-    const supabase = createClient<Database>(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.SUPABASE_SERVICE_ROLE_KEY || ''
     );
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
     let agentId: string | null = searchParams.get('agent_id');
     
     // Try Supabase auth first (user account)
-    const supabase = createClient<Database>(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
       {

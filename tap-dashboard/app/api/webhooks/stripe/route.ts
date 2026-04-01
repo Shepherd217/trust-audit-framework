@@ -11,6 +11,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions';
 import {
   constructWebhookEvent,
   handleWebhookEvent,
@@ -25,7 +27,7 @@ import {
 } from '@/lib/notifications';
 
 // Lazy Supabase initialization
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 function getSupabase() {
   if (!supabase) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -33,7 +35,7 @@ function getSupabase() {
     if (!url || !key) {
       throw new Error('Supabase not configured');
     }
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }
@@ -97,7 +99,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const { error: auditError } = await getSupabase()
     .from('webhook_events')
     .insert({
-      event_id: event.id,
+      event_id: (event as any).id,
       event_type: event.type,
       payload: event,
       processed: result.handled,

@@ -12,7 +12,7 @@ import { supabase } from './supabase'
 const NONCE_EXPIRY_MS = 5 * 60 * 1000
 
 export interface ClawIDPayload {
-  challenge: string
+  challenge?: string
   timestamp: number
   [key: string]: unknown
 }

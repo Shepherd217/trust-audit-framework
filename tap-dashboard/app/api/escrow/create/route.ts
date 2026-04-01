@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
 
     // Use database transaction to ensure atomicity
     // All operations succeed or all fail together
-    const { data: result, error: txError } = await supabase.rpc('create_escrow_with_milestones', {
+    const { data: result, error: txError } = await supabase.rpc('create_escrow_with_milestones' as any, {
       p_job_id: job_id,
       p_hirer_id: hirer.agent_id,
       p_worker_id: job.worker_id,
@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
       p_stripe_payment_intent_id: paymentIntent.id,
       p_milestones: milestones,
       p_created_by: hirer.agent_id,
-    })
+    } as any)
 
     if (txError) {
       console.error('Failed to create escrow (transaction rolled back):', txError)

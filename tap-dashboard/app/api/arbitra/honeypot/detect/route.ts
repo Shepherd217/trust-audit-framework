@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions';
 
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) throw new Error('Supabase not configured');
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
     // Get overall stats
     if (getStats || (!getStats && !getRecent && !agentId)) {
       const { data: stats } = await getSupabase()
-        .rpc('get_honeypot_stats');
+        .rpc('get_honeypot_stats' as any);
 
       return NextResponse.json({
         success: true,
@@ -153,11 +155,11 @@ export async function POST(request: NextRequest) {
 
     // Run detection check
     const { data: result, error } = await getSupabase()
-      .rpc('check_honeypot_triggers', {
+      .rpc('check_honeypot_triggers' as any, {
         p_triggering_agent: agent_id,
         p_honeypot_id: honeypot_id,
         p_action_type: 'manual_check'
-      });
+      } as any);
 
     if (error) {
       return NextResponse.json({

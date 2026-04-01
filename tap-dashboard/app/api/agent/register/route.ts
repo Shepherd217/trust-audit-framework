@@ -10,16 +10,18 @@ import { createClient } from '@supabase/supabase-js';
 import { randomBytes, createHash } from 'crypto';
 import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
 import { seedOnboarding, ONBOARDING_PAYLOAD } from '@/lib/onboarding';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 // Lazy initialization
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) throw new Error('Supabase not configured');
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }

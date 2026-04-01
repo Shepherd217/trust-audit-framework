@@ -3,9 +3,11 @@
  * Call this from any route that needs to push real-time alerts to agents.
  */
 import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 function getSupabase() {
-  return createClient(
+  return createTypedClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
@@ -20,6 +22,7 @@ export type NotificationType =
   | 'bootstrap.reward'
   | 'webhook.job_dispatched'
   | 'system'
+  | 'payment.escrow_released'
 
 export async function pushNotification(
   agentId: string,
@@ -89,47 +92,83 @@ export const notify = {
 // ── Stripe / Payment notification helpers ───────────────────────────────────
 
 export async function notifyEscrowFunded(params: {
-  agentId: string
-  jobId: string
-  amount: number
-  paymentIntentId: string
+  agentId?: string
+  workerId?: string
+  hirerId?: string
+  jobId?: string
+  amount?: number
+  paymentIntentId?: string
+  escrowId?: string
+  jobTitle?: string
 }) {
+  const id = params.workerId || params.agentId || ''
+  if (!id) return
   return pushNotification(
-    params.agentId,
+    id,
     'payment.credit',
     '💰 Escrow funded',
-    `Payment of ${params.amount} credits locked in escrow for your job.`,
-    { job_id: params.jobId, payment_intent_id: params.paymentIntentId },
+    `Payment of ${params.amount ?? 0} credits locked in escrow for your job.`,
+    { job_id: params.jobId, payment_intent_id: params.paymentIntentId, escrow_id: params.escrowId },
     `/dashboard`
   )
 }
 
 export async function notifyPaymentFailed(params: {
-  agentId: string
-  jobId: string
+  agentId?: string
+  hirerId?: string
+  jobId?: string
   reason?: string
+  error?: string
+  jobTitle?: string
 }) {
+  const id = params.hirerId || params.agentId || ''
+  if (!id) return
   return pushNotification(
-    params.agentId,
+    id,
     'system',
     '❌ Payment failed',
-    `Payment failed for job ${params.jobId}. ${params.reason ?? ''}`.trim(),
+    `Payment failed${params.jobTitle ? ` for "${params.jobTitle}"` : ''}. ${params.reason ?? params.error ?? ''}`.trim(),
     { job_id: params.jobId },
     `/dashboard`
   )
 }
 
 export async function notifyDisputeOpened(params: {
-  agentId: string
-  disputeId: string
-  jobId: string
+  agentId?: string
+  hirerId?: string
+  workerId?: string
+  disputeId?: string
+  escrowId?: string
+  jobId?: string
+  jobTitle?: string
 }) {
-  return pushNotification(
-    params.agentId,
-    'job.disputed',
-    '⚠️ Dispute opened',
-    `A dispute has been filed on job ${params.jobId}. Arbitra will review.`,
-    { dispute_id: params.disputeId, job_id: params.jobId },
-    `/dashboard`
-  )
+  const ids = [params.hirerId, params.workerId, params.agentId].filter(Boolean) as string[]
+  for (const id of ids) {
+    await pushNotification(
+      id,
+      'job.disputed',
+      '⚠️ Dispute opened',
+      `A dispute has been filed${params.jobTitle ? ` on "${params.jobTitle}"` : ''}. Arbitra will review.`,
+      { dispute_id: params.disputeId, job_id: params.jobId, escrow_id: params.escrowId },
+      `/dashboard`
+    ).catch(() => null)
+  }
+}
+
+export async function notifyEscrowReleased(params: {
+  agentId: string
+  jobId: string
+  amount: number
+  paymentIntentId: string
+}): Promise<void> {
+  try {
+    await pushNotification(
+      params.agentId,
+      'payment.escrow_released',
+      'Payment Released',
+      `Escrow payment of ${params.amount} credits released for job ${params.jobId}`,
+      { job_id: params.jobId, amount: params.amount, payment_intent_id: params.paymentIntentId },
+      '/dashboard'
+    )
+  } catch { /* non-fatal */ }
 }

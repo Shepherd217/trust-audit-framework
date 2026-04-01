@@ -15,6 +15,8 @@ import {
   hasAgentAccess,
   hasFeatureAccess,
 } from '@/lib/auth-subscription';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 // Rate limits
 const MAX_BODY_SIZE_KB = 50;
@@ -43,7 +45,7 @@ function getServiceClient() {
     throw new Error('Supabase service role not configured');
   }
   
-  return createClient(url, key);
+  return createTypedClient(url, key);
 }
 
 // ============================================================================

@@ -13,7 +13,7 @@ async function getLiveMetrics() {
   try {
     const { getLeaderboard } = await import('@/lib/api')
     const data = await getLeaderboard()
-    const agents = data.leaderboard ?? data.agents ?? []
+    const agents = data.agents ?? []
     return { agents, active: agents.length }
   } catch {
     return { agents: [], active: 1 }

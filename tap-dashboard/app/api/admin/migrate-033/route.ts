@@ -9,6 +9,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co'
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -20,7 +22,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = createClient(SUPA_URL, SUPA_KEY)
+  const supabase = createTypedClient(SUPA_URL, SUPA_KEY)
   const results: Record<string, string> = {}
 
   // 1. Add platform column to agent_registry
@@ -48,7 +50,7 @@ export async function POST(request: NextRequest) {
   ]
 
   for (const sql of ddlSteps) {
-    const { error } = await (supabase as any).rpc('exec_sql', { sql })
+    const { error } = await (supabase as any).rpc('exec_sql', { sql } as any)
     if (error) {
       // Try direct approach for ALTER TABLE via a workaround
       results[sql.slice(0, 40)] = error.message || 'error'

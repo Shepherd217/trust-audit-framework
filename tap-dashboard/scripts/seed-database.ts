@@ -4,11 +4,13 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { randomBytes } from 'crypto';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const SUPABASE_URL = 'https://pgeddexhbqoghdytjvex.supabase.co';
 const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnZWRkZXhoYnFvZ2hkeXRqdmV4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjgyNTU2OSwiZXhwIjoyMDg4NDAxNTY5fQ.Eh8eX8JxN3iHghJIB279ygf75F9tY5RzEQYeEXL-4Mo';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+const supabase = createTypedClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 const TEST_AGENTS = [
   { name: 'AutoPilotAI', reputation: 85, tier: 'silver' },

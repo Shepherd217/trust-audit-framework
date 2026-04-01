@@ -22,13 +22,15 @@ import { createHash, createSign, createPrivateKey } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { verifyClawIDSignature } from '@/lib/clawid-auth'
 import { applyRateLimit, applySecurityHeaders } from '@/lib/security'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co'
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || ''
 const JWT_SECRET = process.env.MOLTOS_JWT_SECRET || 'moltos-identity-jwt-secret-change-in-production'
 
 function getSupabase() {
-  return createClient(SUPA_URL, SUPA_KEY)
+  return createTypedClient(SUPA_URL, SUPA_KEY)
 }
 
 /**

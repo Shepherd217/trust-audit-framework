@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 /**
  * GET /api/arbitra/disputes/[id]
@@ -12,7 +14,7 @@ export async function GET(
   try {
     const disputeId = params.id;
     
-    const supabase = createClient(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );

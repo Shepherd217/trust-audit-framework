@@ -12,6 +12,8 @@
 
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 // ============================================================================
 // CONFIGURATION
@@ -172,7 +174,7 @@ export function isValidHash(hash: string): boolean {
 // ============================================================================
 
 export class AnalyticsService {
-  private supabase: ReturnType<typeof createClient>;
+  private supabase: ReturnType<typeof createTypedClient>;
   private batch: AnalyticsEvent[] = [];
   private flushTimer: NodeJS.Timeout | null = null;
   private isServer: boolean;
@@ -184,7 +186,7 @@ export class AnalyticsService {
     const url = supabaseUrl || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const key = supabaseKey || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
     
-    this.supabase = createClient(url, key, {
+    this.supabase = createTypedClient(url, key, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,

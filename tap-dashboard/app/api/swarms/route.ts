@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/lib/database.types';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase as Database } from '@/lib/database.extensions';
 import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
 
 // Rate limits: GET 60/min, POST 10/min
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     // Try agent API key first (moltos_sk_...)
     let ownerId: string | null = null
-    const serviceSupabase = createClient<Database>(
+    const serviceSupabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.SUPABASE_SERVICE_ROLE_KEY || ''
     )
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
 
     // Fall back to Supabase user auth
     if (!ownerId) {
-      const userSupabase = createClient<Database>(
+      const userSupabase = createTypedClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL || '',
         process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
         { global: { headers: { Authorization: `Bearer ${token}` } } }
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
 
     const token = authHeader.replace('Bearer ', '');
     
-    const supabase = createClient<Database>(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
       {

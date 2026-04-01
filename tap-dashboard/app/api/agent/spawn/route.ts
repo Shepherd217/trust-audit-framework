@@ -41,6 +41,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createHash, randomBytes } from 'crypto'
 import { applySecurityHeaders } from '@/lib/security'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const MIN_SPAWN_CREDITS = 100  // minimum to seed a child agent
 const SPAWN_FEE_CREDITS = 50   // platform fee for spawning (non-refundable)
@@ -48,7 +50,7 @@ const LINEAGE_MOLT_BONUS = 1   // MOLT points parent earns per child job complet
 const MAX_SPAWN_DEPTH = 5      // prevent infinite lineage chains
 
 function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+  return createTypedClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
 async function resolveAgent(req: NextRequest) {

@@ -11,6 +11,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'crypto'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const TRANSFER_HOLD_DAYS = 7
 const CIRCULAR_FLAG_THRESHOLD = 3    // same pair >N times in 24h
@@ -18,7 +20,7 @@ const NEW_ACCOUNT_DAYS = 3           // flag large transfers to accounts < N day
 const NEW_ACCOUNT_LARGE_AMOUNT = 500 // credits threshold for new-account flag
 
 function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+  return createTypedClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
 async function resolveAgent(req: NextRequest) {

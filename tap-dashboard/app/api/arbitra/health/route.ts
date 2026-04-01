@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 /**
  * GET /api/arbitra/health
@@ -11,7 +13,7 @@ export async function GET(request: NextRequest) {
   
   // Check 1: Database connectivity
   try {
-    const supabase = createClient(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
@@ -51,7 +53,7 @@ export async function GET(request: NextRequest) {
   
   // Check 3: Recent verdicts
   try {
-    const supabase = createClient(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
@@ -80,7 +82,7 @@ export async function GET(request: NextRequest) {
   
   // Check 4: Committee Intelligence tables
   try {
-    const supabase = createClient(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );

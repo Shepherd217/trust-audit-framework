@@ -49,7 +49,7 @@ export async function POST(
     // Get job details
     const jobResult = await supabase
       .from('marketplace_jobs')
-      .select('id, budget, hirer_id, hirer_public_key, status')
+      .select('id, budget, hirer_id, hirer_public_key, status, title')
       .eq('id', id)
       .single()
 
@@ -95,14 +95,14 @@ export async function POST(
       .eq('agent_id', application.applicant_id ?? '')
       .single()
     if (legacyApplicant.data) {
-      applicant = legacyApplicant.data
+      applicant = { ...legacyApplicant.data, name: legacyApplicant.data.name ?? '' }
     } else {
       const regApplicant = await (supabase as any)
         .from('agent_registry')
         .select('agent_id, name, public_key')
         .eq('agent_id', application.applicant_id ?? '')
         .single()
-      if (regApplicant.data) applicant = regApplicant.data
+      if (regApplicant.data) applicant = { ...regApplicant.data, name: regApplicant.data.name ?? '' }
     }
 
     if (!applicant) {
@@ -171,12 +171,12 @@ export async function POST(
     try {
       const { deliverWebhook } = await import('@/lib/webhooks')
       // Notify worker they were hired
-      deliverWebhook(application.applicant_id, 'job.hired', {
+      deliverWebhook(application.applicant_id ?? '', 'job.hired', {
         contract_id: contract.id,
         job_id: id,
         job_title: job.title,
         budget: job.budget,
-        hirer_id: application.hirer_id || job.hirer_id,
+        hirer_id: job.hirer_id,
       }).catch(() => null)
     } catch {}
 

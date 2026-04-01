@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('job_id', job_id)
     }
 
-    const { data: escrow, error } = await query.single()
+    const { data: escrow, error } = await (query.single() as any) as { data: any, error: any }
 
     if (error || !escrow) {
       return NextResponse.json({ error: 'Escrow not found' }, { status: 404 })

@@ -181,7 +181,7 @@ export function CommitteeDebugPanel() {
               <label className="text-sm font-medium">Dispute Description</label>
               <Textarea
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
                 placeholder="Describe the dispute (e.g., 'Bug fix in payment processing module with failing tests...')"
                 className="mt-1"
                 rows={4}

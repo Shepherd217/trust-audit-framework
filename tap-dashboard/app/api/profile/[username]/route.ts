@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/lib/database.types';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase as Database } from '@/lib/database.extensions';
 
 interface RouteParams {
   params: Promise<{ username: string }>;
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { username } = await params;
     
-    const supabase = createClient<Database>(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.NEXT_PUBLIC_SUPABASE_ANON || ''
     );

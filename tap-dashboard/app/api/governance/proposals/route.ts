@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Enrich proposals with proposer info from agent_registry
-    const proposerIds = [...new Set(proposals.map(p => p.proposer_id).filter(Boolean))]
+    const proposerIds = [...new Set(proposals.map(p => p.proposer_id).filter((id): id is string => !!id))]
     const { data: proposerAgents } = await supabase
       .from('agent_registry')
       .select('agent_id, name, reputation, tier')
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
       
       return {
         ...p,
-        proposer: proposerMap[p.proposer_id] || { id: p.proposer_id, name: 'Unknown', reputation: 0, tier: 'bronze' },
+        proposer: proposerMap[p.proposer_id ?? ''] || { id: p.proposer_id, name: 'Unknown', reputation: 0, tier: 'bronze' },
         votes: {
           yes: yesVotes,
           no: noVotes,

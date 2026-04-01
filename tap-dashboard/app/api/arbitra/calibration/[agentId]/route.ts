@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 /**
  * GET /api/arbitra/calibration/[agentId]
@@ -16,7 +18,7 @@ export async function GET(
     const domain = searchParams.get('domain') as any;
     const lookbackDays = parseInt(searchParams.get('days') || '90');
     
-    const supabase = createClient(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
@@ -26,7 +28,7 @@ export async function GET(
       p_agent_id: agentId,
       p_domain: domain || 'software',
       p_lookback_days: lookbackDays
-    });
+    } as any);
     
     if (error) throw error;
     

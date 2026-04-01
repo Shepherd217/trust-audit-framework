@@ -8,6 +8,7 @@ export interface ClawIDKeypair {
   privateKey: string // base64 encoded
   agentId: string    // UUID derived from public key
   createdAt: string
+  apiKey?: string    // optional agent API key
 }
 
 export interface ClawIDChallenge {

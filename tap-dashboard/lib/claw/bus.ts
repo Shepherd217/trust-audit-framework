@@ -438,8 +438,8 @@ export class ClawBus {
       }, timeoutMs);
 
       // Store callback for when reply arrives
-      const checkReply = setInterval(() => {
-        const replies = this.poll(envelope.from, {
+      const checkReply = setInterval(async () => {
+        const replies = await this.poll(envelope.from, {
           replyTo: envelope.id,
           limit: 1,
         });

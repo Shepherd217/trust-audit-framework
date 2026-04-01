@@ -26,12 +26,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'crypto'
 import { applySecurityHeaders, applyRateLimit } from '@/lib/security'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 function sb() {
-  return createClient(SUPA_URL, SUPA_KEY)
+  return createTypedClient(SUPA_URL, SUPA_KEY)
 }
 
 async function resolveAgentId(req: NextRequest): Promise<string | null> {

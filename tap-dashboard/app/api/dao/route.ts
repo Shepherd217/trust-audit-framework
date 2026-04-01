@@ -7,12 +7,14 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 export async function GET(req: NextRequest) {
-  const sb = createClient(SUPA_URL, SUPA_KEY)
+  const sb = createTypedClient(SUPA_URL, SUPA_KEY)
   const { searchParams } = new URL(req.url)
   const skill = searchParams.get('skill')
   const limit = Math.min(50, parseInt(searchParams.get('limit') || '20'))
@@ -34,7 +36,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const sb = createClient(SUPA_URL, SUPA_KEY)
+  const sb = createTypedClient(SUPA_URL, SUPA_KEY)
 
   let body: any
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
@@ -87,11 +89,11 @@ export async function POST(req: NextRequest) {
 
   // Add co-founders with weight 0.5 each (to be recalculated on first vote)
   for (const co of co_founders.filter((id: string) => id !== agent_id)) {
-    await sb.from('dao_memberships').insert({
+    try { await sb.from('dao_memberships').insert({
       dao_id: dao.id,
       agent_id: co,
       governance_weight: 0.5,
-    }).catch(() => null)
+    }) } catch {}
   }
 
   return NextResponse.json({

@@ -7,11 +7,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { applySecurityHeaders } from '@/lib/security';
 import { createHash } from 'crypto';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co';
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
-  return createClient(url, key);
+  return createTypedClient(url, key);
 }
 
 async function resolveAgentId(apiKey: string): Promise<string | null> {

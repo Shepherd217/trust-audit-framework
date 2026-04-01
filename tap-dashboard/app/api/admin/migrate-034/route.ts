@@ -13,6 +13,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co'
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -20,7 +22,7 @@ const GENESIS_TOKEN = process.env.GENESIS_TOKEN || ''
 
 async function runSQL(supabase: any, sql: string): Promise<{ ok: boolean; error?: string }> {
   try {
-    const { error } = await supabase.rpc('exec_sql', { sql }).catch(() => ({ error: null }))
+    const { error } = await supabase.rpc('exec_sql', { sql } as any).catch(() => ({ error: null }))
     // If exec_sql doesn't exist, try direct insert approach
     return { ok: true }
   } catch (e: any) {
@@ -34,7 +36,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const sb = createClient(SUPA_URL, SUPA_KEY)
+  const sb = createTypedClient(SUPA_URL, SUPA_KEY)
   const results: Record<string, string> = {}
 
   // 1. webhook_subscriptions

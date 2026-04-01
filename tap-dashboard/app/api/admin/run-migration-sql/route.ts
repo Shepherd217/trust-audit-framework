@@ -7,6 +7,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const GENESIS_TOKEN = process.env.GENESIS_TOKEN || ''
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -18,7 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const sb = createClient(SUPA_URL, SUPA_KEY)
+  const sb = createTypedClient(SUPA_URL, SUPA_KEY)
   const results: Record<string, any> = {}
 
   // Check current table state
@@ -155,7 +157,7 @@ END $$;
   
   try {
     // Supabase has a built-in pg_catalog access — try using a DO block via schema
-    const { data, error: rpcError } = await (sb as any).rpc('exec_sql', { sql: createTablesSQL })
+    const { data, error: rpcError } = await (sb as any).rpc('exec_sql', { sql: createTablesSQL } as any)
     if (rpcError) {
       execResult = `rpc_error: ${rpcError.message}`
     } else {

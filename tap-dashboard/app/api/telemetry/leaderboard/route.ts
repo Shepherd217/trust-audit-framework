@@ -7,16 +7,18 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions';
 
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) throw new Error('Supabase not configured');
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }
@@ -59,10 +61,10 @@ export async function GET(request: NextRequest) {
     
     // Use RPC for top performers
     const { data: topPerformers, error: performersError } = await getSupabase()
-      .rpc('get_top_performers_by_telemetry', {
+      .rpc('get_top_performers_by_telemetry' as any, {
         p_limit: limit,
         p_min_tasks: minTasks
-      });
+      } as any);
     
     if (performersError) throw performersError;
     

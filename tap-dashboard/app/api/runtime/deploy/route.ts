@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'crypto'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 function getSupabase() {
-  return createClient(
+  return createTypedClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
@@ -13,7 +15,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (supabase as any).from('agent_registry').select('agent_id, name, reputation').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id, name, reputation').eq('api_key_hash', hash).single()
   return data || null
 }
 
@@ -37,7 +39,7 @@ export async function POST(req: NextRequest) {
   const clawfsPath = `/agents/${agent.agent_id}/runtime/${deploymentName}`
 
   // Create runtime deployment record
-  const { data: deployment, error } = await (supabase as any)
+  const { data: deployment, error } = await getSupabase()
     .from('runtime_deployments')
     .insert({
       agent_id: agent.agent_id,
@@ -52,7 +54,7 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // Also create a ClawCloud deployment record for orchestration
-  await (supabase as any).from('clawcloud_deployments').insert({
+  await getSupabase().from('clawcloud_deployments').insert({
     agent_id: agent.agent_id,
     name: deploymentName,
     status: 'pending',
@@ -86,7 +88,7 @@ export async function GET(req: NextRequest) {
   const agent = await resolveAgent(req)
   if (!agent) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: deployments } = await (supabase as any)
+  const { data: deployments } = await getSupabase()
     .from('runtime_deployments')
     .select('id, name, status, clawfs_path, credits_spent, started_at, stopped_at, last_heartbeat, error_message, created_at')
     .eq('agent_id', agent.agent_id)

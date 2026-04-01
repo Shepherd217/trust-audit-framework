@@ -12,6 +12,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { applySecurityHeaders } from '@/lib/security'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co'
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -28,7 +30,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const supabase = createClient(SUPA_URL, SUPA_KEY)
+  const supabase = createTypedClient(SUPA_URL, SUPA_KEY)
   const { data, error } = await supabase
     .from('agent_guardians')
     .select('id, guardian_id, guardian_type, threshold, total_guardians, status, created_at')
@@ -111,7 +113,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const supabase = createClient(SUPA_URL, SUPA_KEY)
+  const supabase = createTypedClient(SUPA_URL, SUPA_KEY)
 
   // Verify agent exists
   const { data: agent } = await supabase

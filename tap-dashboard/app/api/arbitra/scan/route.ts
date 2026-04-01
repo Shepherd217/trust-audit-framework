@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions';
 
 // Lazy initialization of Supabase client
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
@@ -13,7 +15,7 @@ function getSupabase() {
       throw new Error('Supabase environment variables not configured');
     }
     
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }
@@ -33,7 +35,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const { scan_type = 'all', agent_id } = body;
 
-    const results = {
+    const results: {
+      rapid_attestation: any[]
+      collusion: any[]
+      honeypot_triggers: any[]
+      total_found: number
+    } = {
       rapid_attestation: [],
       collusion: [],
       honeypot_triggers: [],
@@ -43,10 +50,10 @@ export async function POST(request: NextRequest) {
     // 1. Scan for rapid attestation pattern
     if (scan_type === 'all' || scan_type === 'rapid_attestation') {
       const { data: rapidAttesters } = await getSupabase()
-        .rpc('find_rapid_attesters', { 
+        .rpc('find_rapid_attesters' as any, { 
           p_window_hours: 1, 
           p_threshold: 5 
-        });
+        } as any);
 
       if (rapidAttesters) {
         for (const agent of rapidAttesters) {
@@ -93,10 +100,10 @@ export async function POST(request: NextRequest) {
           if (agent_id && agent.agent_id !== agent_id) continue;
 
           const { data: collusionData } = await getSupabase()
-            .rpc('detect_collusion_ring', { 
+            .rpc('detect_collusion_ring' as any, { 
               p_agent_id: agent.agent_id, 
               p_depth: 3 
-            });
+            } as any);
 
           if (collusionData && collusionData.length > 0) {
             const ringAgents = [...new Set(collusionData.map((c: any) => c.ring_agent_id))];

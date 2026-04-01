@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { classifyDispute, saveClassification } from '@/lib/classification';
 import { taskCategory, expertiseDomain, committeeTier } from '@/types/committee-intelligence';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 /**
  * POST /api/arbitra/disputes/[id]/classify
@@ -35,7 +37,7 @@ export async function POST(
     const input = classifySchema.parse(body);
     
     // Initialize Supabase
-    const supabase = createClient(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
@@ -53,20 +55,18 @@ export async function POST(
     
     // Step 2: Save classification
     await saveClassification(supabase, disputeId, classification);
-    console.log(`[Classify] Dispute ${disputeId}: classified as ${classification.primaryCategory}, difficulty ${classification.difficulty_rating}/5`);
+    console.log(`[Classify] Dispute ${disputeId}: classified as ${classification.primaryCategory}, difficulty ${classification.difficultyRating}/5`);
     
     // Step 3: Select committee based on complexity
     console.log(`[Classify] Dispute ${disputeId}: selecting committee...`);
-    const committeeSize = classification.difficulty_rating >= 4 ? 7 : 5; // Complex = larger committee
+    const committeeSize = classification.difficultyRating >= 4 ? 7 : 5; // Complex = larger committee
     
     const { data: committee, error: committeeError } = await supabase.rpc(
-      'select_committee',
-      {
+      'select_committee', {
         p_dispute_id: disputeId,
         p_committee_size: committeeSize,
         p_target_domain: null // Auto-detect from classification
-      }
-    );
+      } as any);
     
     if (committeeError) {
       console.error('[Classify] Committee selection failed:', committeeError);
@@ -109,9 +109,9 @@ export async function POST(
       classification,
       committee: committee || [],
       summary: {
-        difficulty: `${classification.difficulty_rating}/5`,
+        difficulty: `${classification.difficultyRating}/5`,
         category: classification.primaryCategory,
-        evidence_objectivity: `${Math.round(classification.evidence_objectivity * 100)}%`,
+        evidence_objectivity: `${Math.round(classification.evidenceObjectivity * 100)}%`,
         committee_size: committee?.length || 0,
         selection_method: 'RBTS-weighted expertise matching'
       }
@@ -122,7 +122,7 @@ export async function POST(
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid input', details: error.errors },
+        { error: 'Invalid input', details: error.issues },
         { status: 400 }
       );
     }
@@ -145,7 +145,7 @@ export async function GET(
   try {
     const disputeId = params.id;
     
-    const supabase = createClient(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );

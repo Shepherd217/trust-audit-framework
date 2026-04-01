@@ -2,13 +2,14 @@ import { cn } from '@/lib/utils';
 import { ButtonHTMLAttributes, forwardRef } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'default';
   size?: 'sm' | 'md' | 'lg';
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', ...props }, ref) => {
-    const variants = {
+  ({ className, variant = 'primary' as any, size = 'md', ...props }, ref) => {
+    const variants: Record<string, string> = {
+      default: 'bg-emerald-500 text-slate-950 hover:bg-emerald-400',
       primary: 'bg-emerald-500 text-slate-950 hover:bg-emerald-400',
       secondary: 'bg-slate-800 text-white hover:bg-slate-700',
       outline: 'border border-slate-700 text-white hover:bg-slate-800',

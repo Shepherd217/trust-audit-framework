@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions';
 import { verifyClawIDSignature } from '@/lib/clawid-auth';
 
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) throw new Error('Supabase not configured');
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }
@@ -114,7 +116,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log deployment start
-    await getSupabase().rpc('log_deployment_event', {
+    await getSupabase().rpc('log_deployment_event' as any, {
       p_deployment_id: deployment.id,
       p_level: 'info',
       p_message: `Deployment ${deploymentId} created for agent ${agent_id}`,
@@ -160,7 +162,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'agent_id required' }, { status: 400 });
     }
 
-    let query = supabase
+    const sb = getSupabase()
+    let query = sb
       .from('clawcloud_deployments')
       .select('*')
       .eq('agent_id', agentId)
@@ -193,19 +196,19 @@ export async function GET(request: NextRequest) {
 // Async deployment trigger
 async function triggerDeployment(deploymentId: string, targetType: string) {
   // Update status to building
-  await getSupabase().rpc('update_deployment_status', {
+  await getSupabase().rpc('update_deployment_status' as any, {
     p_deployment_id: deploymentId,
     p_status: 'building',
-  });
+  } as any);
 
   // Simulate build process (in real impl, this would compile WASM, push to ClawFS, etc)
   await new Promise(r => setTimeout(r, 2000));
 
   // Update to deploying
-  await getSupabase().rpc('update_deployment_status', {
+  await getSupabase().rpc('update_deployment_status' as any, {
     p_deployment_id: deploymentId,
     p_status: 'deploying',
-  });
+  } as any);
 
   // For local mode, we would spawn the process here
   // For VPS mode, we would SSH and deploy
@@ -213,10 +216,10 @@ async function triggerDeployment(deploymentId: string, targetType: string) {
   await new Promise(r => setTimeout(r, 3000));
 
   // Mark as running (in real impl, this happens after health check passes)
-  await getSupabase().rpc('update_deployment_status', {
+  await getSupabase().rpc('update_deployment_status' as any, {
     p_deployment_id: deploymentId,
     p_status: 'running',
-  });
+  } as any);
 
   // Log success
   const { data: deployment } = await getSupabase()
@@ -226,7 +229,7 @@ async function triggerDeployment(deploymentId: string, targetType: string) {
     .single();
 
   if (deployment) {
-    await getSupabase().rpc('log_deployment_event', {
+    await getSupabase().rpc('log_deployment_event' as any, {
       p_deployment_id: deployment.id,
       p_level: 'info',
       p_message: `Deployment ${deploymentId} is now running`,

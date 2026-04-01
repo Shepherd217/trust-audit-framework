@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/lib/database.types';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase as Database } from '@/lib/database.extensions';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co'
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -13,7 +14,7 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
-    const supabase = createClient(SUPA_URL, SUPA_KEY)
+    const supabase = createTypedClient(SUPA_URL, SUPA_KEY)
 
     const { data: agent, error } = await supabase
       .from('agent_registry')
@@ -50,7 +51,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const token = authHeader.replace('Bearer ', '');
     
-    const supabase = createClient<Database>(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
       {
@@ -125,7 +126,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     const token = authHeader.replace('Bearer ', '');
     
-    const supabase = createClient<Database>(
+    const supabase = createTypedClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.NEXT_PUBLIC_SUPABASE_ANON || '',
       {

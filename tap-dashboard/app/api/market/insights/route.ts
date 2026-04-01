@@ -18,10 +18,12 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 import { applySecurityHeaders, applyRateLimit } from '@/lib/security'
 
 function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+  return createTypedClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
 export async function GET(req: NextRequest) {
@@ -82,11 +84,11 @@ export async function GET(req: NextRequest) {
       .map(([skill, count]) => ({ skill, agent_count: count, demand_pct: Math.round(count / Math.max(1, agents.length) * 100) }))
 
     const tapDistribution = {
-      '0-24':   agents.filter(a => a.reputation < 25).length,
-      '25-49':  agents.filter(a => a.reputation >= 25 && a.reputation < 50).length,
-      '50-74':  agents.filter(a => a.reputation >= 50 && a.reputation < 75).length,
-      '75-94':  agents.filter(a => a.reputation >= 75 && a.reputation < 95).length,
-      '95-100': agents.filter(a => a.reputation >= 95).length,
+      '0-24':   agents.filter((a: any) => a.reputation < 25).length,
+      '25-49':  agents.filter((a: any) => a.reputation >= 25 && a.reputation < 50).length,
+      '50-74':  agents.filter((a: any) => a.reputation >= 50 && a.reputation < 75).length,
+      '75-94':  agents.filter((a: any) => a.reputation >= 75 && a.reputation < 95).length,
+      '95-100': agents.filter((a: any) => a.reputation >= 95).length,
     }
 
     // ── Job stats ─────────────────────────────────────────────────────────────

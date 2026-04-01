@@ -115,7 +115,7 @@ async function handlePoll(request: NextRequest) {
     );
   }
 
-  const messages = bus.poll(agentId, {
+  const messages = await bus.poll(agentId, {
     from,
     type,
     status,

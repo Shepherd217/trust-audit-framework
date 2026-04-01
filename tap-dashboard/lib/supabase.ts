@@ -1,5 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from './database.types'
+import { createTypedClient } from './database.extensions'
 
 // Hardcoded for build compatibility
 const DEFAULT_URL = 'https://pgeddexhbqoghdytjvex.supabase.co'
@@ -8,19 +7,13 @@ const DEFAULT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_URL
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_KEY
 
-export const supabase = createClient<Database>(url, key, {
+export const supabase = createTypedClient(url, key, {
   auth: { autoRefreshToken: false, persistSession: false },
 })
 
-// For server-side usage with service role key
 export function getSupabaseClient() {
-  if (typeof window !== 'undefined') {
-    throw new Error('getSupabaseClient should only be used on the server')
-  }
-  
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || DEFAULT_KEY
-  
-  return createClient<Database>(url, serviceKey, {
+  return createTypedClient(url, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
 }

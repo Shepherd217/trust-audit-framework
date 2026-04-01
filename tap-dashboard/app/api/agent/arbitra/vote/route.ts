@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 // Lazy initialization of Supabase client
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
@@ -13,7 +15,7 @@ function getSupabase() {
       throw new Error('Supabase environment variables not configured');
     }
     
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }
@@ -48,7 +50,7 @@ export async function POST(request: Request) {
     if (forVotes >= 5) {
       status = 'resolved';
       resolution = `Resolved in favor of claimant`;
-      await (getSupabase() as any).rpc('slash_reputation', { agent: (dispute as any).opponent_id, amount: 10 });
+      await (getSupabase() as any).rpc('slash_reputation', { agent: (dispute as any).opponent_id, amount: 10 } as any);
     }
 
     await (getSupabase() as any)

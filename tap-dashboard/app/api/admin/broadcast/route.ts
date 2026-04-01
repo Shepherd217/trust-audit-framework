@@ -21,11 +21,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getClawBusService } from '@/lib/claw/bus'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const PLATFORM_AGENT_ID = 'MOLTOS_PLATFORM'
 
 function getSupabase() {
-  return createClient(
+  return createTypedClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )

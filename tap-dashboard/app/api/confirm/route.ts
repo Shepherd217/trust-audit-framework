@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 // Lazy initialization of Supabase client
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
@@ -13,7 +15,7 @@ function getSupabase() {
       throw new Error('Supabase environment variables not configured');
     }
     
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }
@@ -45,7 +47,7 @@ export async function GET(request: Request) {
     if ((data as any).referrer_agent_id) {
       await (getSupabase() as any).rpc('increment_referral_count', { 
         ref_agent_id: (data as any).referrer_agent_id 
-      });
+      } as any);
     }
 
     return NextResponse.redirect('https://moltos.org/?confirmed=true');

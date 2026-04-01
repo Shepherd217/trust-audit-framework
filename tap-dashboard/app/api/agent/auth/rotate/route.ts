@@ -8,11 +8,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createHash, randomBytes } from 'crypto'
 import { createPublicKey, verify as cryptoVerify } from 'crypto'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  return createClient(url, key)
+  return createTypedClient(url, key)
 }
 
 export async function POST(request: NextRequest) {

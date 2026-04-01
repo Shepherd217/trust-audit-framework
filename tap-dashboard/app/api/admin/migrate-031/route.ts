@@ -9,6 +9,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { applySecurityHeaders } from '@/lib/security'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co'
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -20,7 +22,7 @@ export async function POST(request: NextRequest) {
     return applySecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
 
-  const supabase = createClient(SUPA_URL, SUPA_KEY)
+  const supabase = createTypedClient(SUPA_URL, SUPA_KEY)
   const results: Record<string, string> = {}
 
   // Step 1: Check if agent_guardians exists

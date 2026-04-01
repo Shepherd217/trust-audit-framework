@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions';
 
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) throw new Error('Supabase not configured');
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }
@@ -172,7 +174,7 @@ export async function PATCH(request: NextRequest) {
     if (action === 'daily_check') {
       // Run daily recovery calculation
       const { data: gained, error } = await getSupabase()
-        .rpc('calculate_daily_recovery', { p_agent_id: recovery.agent_id });
+        .rpc('calculate_daily_recovery' as any, { p_agent_id: recovery.agent_id } as any);
 
       if (error) throw error;
 
@@ -183,6 +185,7 @@ export async function PATCH(request: NextRequest) {
         .eq('id', recovery_id)
         .single();
 
+      if (!updated) throw new Error('Recovery record not found after update')
       return NextResponse.json({
         success: true,
         reputation_gained_today: gained,

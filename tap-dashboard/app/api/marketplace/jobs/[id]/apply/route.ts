@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { flagViolation } from '@/lib/security-violations'
 import { createClient } from '@supabase/supabase-js'
 import { verifyClawIDSignature } from '@/lib/clawid-auth'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co'
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -12,7 +14,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params
-    const supabase = createClient(SUPA_URL, SUPA_KEY)
+    const supabase = createTypedClient(SUPA_URL, SUPA_KEY)
     const body = await request.json()
     const { proposal, estimated_hours, applicant_public_key, applicant_signature, timestamp } = body
 
@@ -74,7 +76,7 @@ export async function POST(
     // Get job details
     const { data: job } = await supabase
       .from('marketplace_jobs')
-      .select('min_tap_score, status')
+      .select('min_tap_score, status, hirer_id')
       .eq('id', id)
       .single()
 

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions';
 import { 
   verify, 
   verifyAggregate, 
@@ -15,14 +17,14 @@ import {
   validateHex 
 } from '@/lib/security';
 
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createTypedClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) throw new Error('Supabase not configured');
-    supabase = createClient(url, key);
+    supabase = createTypedClient(url, key);
   }
   return supabase;
 }
@@ -254,9 +256,18 @@ async function verifyMultipleMode(body: any): Promise<{ valid: boolean; details:
   const pkBytes = pkHexes.map(hexToBytes);
   const messageBytes = new TextEncoder().encode(message);
 
-  const { verifyBatch } = await import('@noble/curves/bls12-381');
+  const bls12_381 = await import('@noble/curves/bls12-381');
   const messages = Array(public_keys.length).fill(messageBytes);
-  const valid = verifyBatch(sigBytes, messages, pkBytes);
+  // verifyBatch is not available in all versions, use individual verify
+  let valid = true;
+  for (const pk of pkBytes) {
+    try {
+      const ok = (bls12_381 as any).verifyBatch
+        ? (bls12_381 as any).verifyBatch(sigBytes, messages, pkBytes)
+        : bls12_381.bls12_381.verify(sigBytes, messageBytes, pk);
+      if (!ok) { valid = false; break; }
+    } catch { valid = false; break; }
+  }
 
   return {
     valid,

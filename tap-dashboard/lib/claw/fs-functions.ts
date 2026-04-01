@@ -5,6 +5,8 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { FileMetadata, Permission, StorageTier } from './fs/types';
+import { createTypedClient } from '@/lib/database.extensions'
+import type { ExtendedDatabase } from '@/lib/database.extensions'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -48,7 +50,7 @@ interface ListFilters {
 
 // Helper to get Supabase client
 function getSupabase() {
-  return createClient(supabaseUrl, supabaseKey);
+  return createTypedClient(supabaseUrl, supabaseKey);
 }
 
 export async function store(input: StoreInput, agentId: string) {
