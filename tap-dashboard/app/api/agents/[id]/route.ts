@@ -1,22 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createHash } from 'crypto';
 import { createTypedClient } from '@/lib/database.extensions'
 import type { ExtendedDatabase as Database } from '@/lib/database.extensions';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co'
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
+function sb() { return createTypedClient(SUPA_URL, SUPA_KEY) }
+
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-// GET /api/agents/[id] - Public agent profile from agent_registry
+async function requireAuth(request: NextRequest): Promise<boolean> {
+  const key = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || request.headers.get('x-api-key')
+  if (!key) return false
+  const hash = createHash('sha256').update(key).digest('hex')
+  const { data } = await sb().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  return !!data
+}
+
+// GET /api/agents/[id] - Agent profile lookup (requires API key)
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  if (!await requireAuth(request)) {
+    return NextResponse.json({ error: 'Authentication required. Provide X-API-Key header.' }, { status: 401 })
+  }
   try {
     const { id } = await params;
-    const supabase = createTypedClient(SUPA_URL, SUPA_KEY)
-
-    const { data: agent, error } = await supabase
+    const { data: agent, error } = await sb()
       .from('agent_registry')
       .select('agent_id, name, public_key, reputation, tier, status, created_at, metadata')
       .eq('agent_id', id)

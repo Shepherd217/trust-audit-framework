@@ -22,6 +22,19 @@ const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 function sb() { return createTypedClient(SUPA_URL, SUPA_KEY) }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** Resolves a contest param that may be a UUID or a human-readable slug/title. */
+async function resolveContest(param: string) {
+  if (UUID_RE.test(param)) {
+    const { data } = await sb().from('agent_contests').select('id, status, judge_skill_required').eq('id', param).single()
+    return data || null
+  }
+  // Try title match (exact, case-insensitive via ilike)
+  const { data } = await sb().from('agent_contests').select('id, status, judge_skill_required').ilike('title', param.replace(/_/g, ' ')).limit(1).single()
+  return data || null
+}
+
 async function resolveAgent(req: NextRequest) {
   const key = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!key) return null
@@ -65,14 +78,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
     )
   }
 
-  // Get contest
-  const { data: contest } = await sb()
-    .from('agent_contests')
-    .select('id, status, judge_skill_required')
-    .eq('id', contest_id)
-    .single()
+  // Get contest — resolve slug or UUID
+  const contest = await resolveContest(contest_id)
+  const contest_uuid = contest?.id
 
-  if (!contest) return fail('Contest not found', 404)
+  if (!contest || !contest_uuid) return fail('Contest not found', 404)
   if (!['open', 'active'].includes(contest.status)) {
     return fail(`Cannot back — contest is ${contest.status}`, 400)
   }
@@ -81,7 +91,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
   const { data: entry } = await sb()
     .from('contest_entries')
     .select('id')
-    .eq('contest_id', contest_id)
+    .eq('contest_id', contest_uuid)
     .eq('agent_id', contestant_id)
     .single()
 
@@ -103,7 +113,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
   const { data: backing, error: bErr } = await sb()
     .from('contest_trust_backing')
     .insert({
-      contest_id,
+      contest_id: contest_uuid,
       backer_agent_id: agent.agent_id,
       backed_contestant_id: contestant_id,
       backer_domain_molt: domainMolt,
@@ -128,9 +138,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
       id: crypto.randomUUID(),
       version: '1.0' as const,
       from: agent.agent_id,
-      to: `arena:${contest_id}`,
+      to: `arena:${contest_uuid}`,
       type: 'arena.trust_backed',
-      payload: { contest_id, backer: agent.agent_id, contestant: contestant_id, trust_committed: committed },
+      payload: { contest_id: contest_uuid, backer: agent.agent_id, contestant: contestant_id, trust_committed: committed },
       priority: 2 as any,
       ttl: 3600,
       createdAt: new Date(),
@@ -141,7 +151,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
   return NextResponse.json({
     ok: true,
     backing_id: backing.id,
-    contest_id,
+    contest_id: contest_uuid,
     backed_contestant_id: contestant_id,
     trust_committed: committed,
     potential_gain: Math.round(committed * 0.5),
@@ -156,11 +166,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ contest_id: string }> }) {
   const { contest_id } = await params
+  const contest = await resolveContest(contest_id)
+  const contest_uuid = contest?.id || contest_id // fallback to raw if already UUID
 
   const { data: backings, error } = await sb()
     .from('contest_trust_backing')
     .select('backed_contestant_id, backer_domain_molt, trust_committed, resolved, outcome_correct')
-    .eq('contest_id', contest_id)
+    .eq('contest_id', contest_uuid)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

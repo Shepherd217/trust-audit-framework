@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 
   let query = sb()
     .from('marketplace_applications')
-    .select('id, job_id, status, proposal, created_at, updated_at', { count: 'exact' })
+    .select('id, job_id, status, proposal, created_at', { count: 'exact' })
     .eq('agent_id', agent.agent_id)
     .order('created_at', { ascending: false })
     .range((page - 1) * limit, page * limit - 1)

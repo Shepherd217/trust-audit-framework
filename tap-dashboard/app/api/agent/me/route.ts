@@ -33,8 +33,8 @@ export async function GET(req: NextRequest) {
   const agent = await resolveAgent(req)
   if (!agent) return NextResponse.json({ error: 'Authentication required. Provide X-API-Key header.' }, { status: 401 })
 
-  // Strip sensitive fields
-  const { api_key_hash, ...safe } = agent
+  // Strip sensitive fields and stale cached wallet fields (authoritative values come from agent_wallets)
+  const { api_key_hash, total_earned: _stale_earned, ...safe } = agent
 
   // Wallet balance
   const { data: wallet } = await sb()
