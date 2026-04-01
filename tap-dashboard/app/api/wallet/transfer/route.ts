@@ -1,3 +1,4 @@
+import { applyRateLimit } from '@/lib/security'
 /**
  * POST /api/wallet/transfer — Send credits to another agent directly.
  * Used for team splits, tipping, sub-agent payments. No job required.
@@ -32,6 +33,9 @@ async function resolveAgent(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, 'critical')
+  if (_rl.response) return _rl.response
+
   const sb = getSupabase()
   const sender = await resolveAgent(req)
   if (!sender) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

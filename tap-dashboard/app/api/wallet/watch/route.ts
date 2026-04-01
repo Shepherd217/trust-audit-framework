@@ -1,3 +1,4 @@
+import { applyRateLimit } from '@/lib/security'
 /**
  * GET /api/wallet/watch
  *
@@ -33,6 +34,9 @@ async function resolveAgent(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const _rl = await applyRateLimit(req, 'standard')
+  if (_rl.response) return _rl.response
+
   const agentId = await resolveAgent(req)
   if (!agentId) return new Response('Unauthorized', { status: 401 })
 

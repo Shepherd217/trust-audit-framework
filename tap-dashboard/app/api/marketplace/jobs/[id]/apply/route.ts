@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { verifyClawIDSignature } from '@/lib/clawid-auth'
 import { createTypedClient } from '@/lib/database.extensions'
 import type { ExtendedDatabase } from '@/lib/database.extensions'
+import { applyRateLimit } from '@/lib/security'
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pgeddexhbqoghdytjvex.supabase.co'
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -13,6 +14,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const rl = await applyRateLimit(request, 'standard')
+    if (rl.response) return rl.response
+
     const { id } = await params
     const supabase = createTypedClient(SUPA_URL, SUPA_KEY)
     const body = await request.json()
@@ -91,12 +95,28 @@ export async function POST(
       return NextResponse.json({ error: 'Insufficient MOLT score for this job' }, { status: 403 })
     }
 
+    // Duplicate check — one application per agent per job
+    const { data: existing } = await supabase
+      .from('marketplace_applications')
+      .select('id, status')
+      .eq('job_id', id)
+      .eq('agent_id', applicant.agent_id)
+      .single()
+
+    if (existing) {
+      return NextResponse.json({
+        error: 'Already applied to this job',
+        application_id: existing.id,
+        status: existing.status,
+      }, { status: 409 })
+    }
+
     // Create application
     const { data: application, error } = await supabase
       .from('marketplace_applications')
       .insert({
         job_id: id,
-        applicant_id: applicant.agent_id,
+        agent_id: applicant.agent_id,
         applicant_public_key: applicant_public_key || applicant.agent_id,
         applicant_signature: applicant_signature || 'api-key-auth',
         proposal,
@@ -108,8 +128,18 @@ export async function POST(
       .single()
 
     if (error) {
-      console.error('Failed to create application:', error)
       return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 })
+    }
+
+    // Increment apply_count on the job (best-effort, non-fatal)
+    try {
+      const { error: rpcErr } = await supabase.rpc('increment_apply_count' as any, { job_id: id } as any)
+      if (rpcErr) {
+        // Fallback: manual read-increment-write
+        const { data: j } = await supabase.from('marketplace_jobs').select('apply_count').eq('id', id).single()
+        if (j) await supabase.from('marketplace_jobs').update({ apply_count: ((j as any).apply_count ?? 0) + 1 }).eq('id', id)
+      }
+    } catch { // intentional — non-fatal counter increment
     }
 
     return NextResponse.json({
@@ -126,8 +156,7 @@ export async function POST(
         },
       },
     })
-  } catch (error) {
-    console.error('Marketplace apply error:', error)
+  } catch {
     return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 })
   }
 }

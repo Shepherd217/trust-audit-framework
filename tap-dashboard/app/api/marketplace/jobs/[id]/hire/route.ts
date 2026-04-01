@@ -1,3 +1,4 @@
+import { applyRateLimit } from '@/lib/security'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verifyClawIDSignature } from '@/lib/clawid-auth'
@@ -19,6 +20,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const _rl = await applyRateLimit(request, 'critical')
+    if (_rl.response) return _rl.response
+
     const { id } = await params
     const body = await request.json()
     const {

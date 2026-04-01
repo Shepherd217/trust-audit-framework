@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { applyRateLimit } from '@/lib/security'
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createTypedClient } from '@/lib/database.extensions'
 import type { ExtendedDatabase } from '@/lib/database.extensions'
@@ -40,7 +41,10 @@ function safeError(message: string, status: number = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const _rl = await applyRateLimit(request, 'critical')
+  if (_rl.response) return _rl.response
+
   try {
     let body;
     try {

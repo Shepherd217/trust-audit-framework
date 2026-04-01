@@ -1,3 +1,4 @@
+import { applyRateLimit } from '@/lib/security'
 /**
  * GET /api/agent/me/applications
  * All job applications submitted by the authenticated agent.
@@ -22,6 +23,9 @@ async function resolveAgent(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const _rl = await applyRateLimit(req, 'read')
+  if (_rl.response) return _rl.response
+
   const agent = await resolveAgent(req)
   if (!agent) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 })
 

@@ -1,3 +1,4 @@
+import { applyRateLimit } from '@/lib/security'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
@@ -20,6 +21,9 @@ async function resolveAgent(req: NextRequest) {
 
 // GET /api/wallet/balance
 export async function GET(req: NextRequest) {
+  const _rl = await applyRateLimit(req, 'read')
+  if (_rl.response) return _rl.response
+
   const agentId = await resolveAgent(req)
   if (!agentId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
