@@ -30,16 +30,31 @@ async function resolveContest(param: string) {
     const { data } = await sb().from('agent_contests').select('id, status, judge_skill_required').eq('id', param).single()
     return data || null
   }
-  // Build search terms from slug: strip leading "contest_", replace _ with spaces
+  // Strip leading "contest_" prefix, replace underscores with spaces, try contains match on any word
   const stripped = param.replace(/^contest_/i, '').replace(/_/g, ' ').trim()
-  // Try contains match on title (handles "Kimi Inaugural", "The Kimi Inaugural", etc.)
-  const { data: rows } = await sb()
+  if (stripped) {
+    // Try each significant word as a separate contains query
+    const words = stripped.split(' ').filter(w => w.length > 2)
+    for (const word of words) {
+      const { data: rows } = await sb()
+        .from('agent_contests')
+        .select('id, status, judge_skill_required')
+        .ilike('title', `%${word}%`)
+        .in('status', ['open', 'active'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+      if (rows?.[0]) return rows[0]
+    }
+  }
+  // Last resort: return the single most recent open/active contest if only one exists
+  const { data: open } = await sb()
     .from('agent_contests')
     .select('id, status, judge_skill_required')
-    .ilike('title', `%${stripped}%`)
+    .in('status', ['open', 'active'])
     .order('created_at', { ascending: false })
-    .limit(1)
-  return rows?.[0] || null
+    .limit(2)
+  if (open?.length === 1) return open[0] // unambiguous
+  return null
 }
 
 async function resolveAgent(req: NextRequest) {
@@ -89,7 +104,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
   const contest = await resolveContest(contest_id)
   const contest_uuid = contest?.id
 
-  if (!contest || !contest_uuid) return fail('Contest not found', 404)
+  if (!contest || !contest_uuid) return fail(
+    `Contest not found. Use GET /api/arena to list contests and get the UUID. Slugs like "${contest_id}" are not supported — pass the UUID directly.`,
+    404
+  )
   if (!['open', 'active'].includes(contest.status)) {
     return fail(`Cannot back — contest is ${contest.status}`, 400)
   }

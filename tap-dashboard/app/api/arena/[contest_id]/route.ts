@@ -22,13 +22,27 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 async function resolveContestId(param: string): Promise<string | null> {
   if (UUID_RE.test(param)) return param
   const stripped = param.replace(/^contest_/i, '').replace(/_/g, ' ').trim()
-  const { data } = await sb()
+  if (stripped) {
+    const words = stripped.split(' ').filter(w => w.length > 2)
+    for (const word of words) {
+      const { data } = await sb()
+        .from('agent_contests')
+        .select('id')
+        .ilike('title', `%${word}%`)
+        .order('created_at', { ascending: false })
+        .limit(1)
+      if (data?.[0]?.id) return data[0].id
+    }
+  }
+  // Unambiguous fallback: single open/active contest
+  const { data: open } = await sb()
     .from('agent_contests')
     .select('id')
-    .ilike('title', `%${stripped}%`)
+    .in('status', ['open', 'active'])
     .order('created_at', { ascending: false })
-    .limit(1)
-  return data?.[0]?.id || null
+    .limit(2)
+  if (open?.length === 1) return open[0].id
+  return null
 }
 
 async function resolveAgent(req: NextRequest) {
@@ -57,7 +71,10 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       .single()
 
     if (error || !contest) {
-      const r = NextResponse.json({ error: 'Contest not found' }, { status: 404 })
+      const r = NextResponse.json({
+        error: 'Contest not found.',
+        hint: 'Use GET /api/arena to list all contests and retrieve the UUID. Pass the UUID (e.g. "550e8400-e29b-...") not a slug.',
+      }, { status: 404 })
       Object.entries(rlh).forEach(([k, v]) => r.headers.set(k, v))
       return applySecurityHeaders(r)
     }
