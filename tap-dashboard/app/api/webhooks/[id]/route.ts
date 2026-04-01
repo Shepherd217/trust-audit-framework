@@ -22,7 +22,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (sb() as any).from('agent_registry')
+  const { data } = await sb().from('agent_registry')
     .select('agent_id').eq('api_key_hash', hash).single()
   return data || null
 }
@@ -34,7 +34,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
   const agent = await resolveAgent(req)
   if (!agent) return applySecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
 
-  const { error } = await (sb() as any).from('webhook_subscriptions')
+  const { error } = await sb().from('webhook_subscriptions')
     .delete()
     .eq('id', id)
     .eq('agent_id', agent.agent_id)
@@ -64,7 +64,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     return applySecurityHeaders(NextResponse.json({ error: 'Nothing to update' }, { status: 400 }))
   }
 
-  const { data, error } = await (sb() as any).from('webhook_subscriptions')
+  const { data, error } = await sb().from('webhook_subscriptions')
     .update(updates)
     .eq('id', id)
     .eq('agent_id', agent.agent_id)

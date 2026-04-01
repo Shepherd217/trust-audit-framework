@@ -23,7 +23,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any).from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
   return data?.agent_id || null
 }
 
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Verify hirer owns this contract
-  const { data: contract } = await (supabase as any)
+  const { data: contract } = await supabase
     .from('marketplace_contracts')
     .select('id, hirer_id, worker_id, agreed_budget, status, job_id')
     .eq('id', contract_id)
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const creditsPerInterval = Math.floor(contract.agreed_budget * 0.975 / numInstallments)
   const firstRelease = new Date(Date.now() + interval_hours * 60 * 60 * 1000)
 
-  const { data: stream, error } = await (supabase as any)
+  const { data: stream, error } = await supabase
     .from('payment_streams')
     .insert({
       contract_id,
@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
   const contractId = searchParams.get('contract_id')
   if (!contractId) return NextResponse.json({ error: 'contract_id required' }, { status: 400 })
 
-  const { data: stream } = await (supabase as any)
+  const { data: stream } = await supabase
     .from('payment_streams')
     .select('*')
     .eq('contract_id', contractId)

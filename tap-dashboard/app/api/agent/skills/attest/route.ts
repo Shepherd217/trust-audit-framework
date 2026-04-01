@@ -32,7 +32,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any)
+  const { data } = await getSupabase()
     .from('agent_registry')
     .select('agent_id, name, reputation, metadata')
     .eq('api_key_hash', hash)
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Verify job exists, is completed, and agent was the worker
-  const { data: job } = await (sb as any)
+  const { data: job } = await sb
     .from('marketplace_jobs')
     .select('id, skills_required, status, result_cid, review, budget, updated_at, hired_agent_id, private_worker_id')
     .eq('id', job_id)
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
   // otherwise fall back to agent_registry metadata
   let stored = false
   try {
-    const { error: upsertErr } = await (sb as any)
+    const { error: upsertErr } = await sb
       .from('agent_skill_attestations')
       .upsert({
         agent_id:          agent.agent_id,
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
         proof_count:       1,
       })
     }
-    await (sb as any)
+    await sb
       .from('agent_registry')
       .update({ metadata: { ...agent.metadata, skill_attestations: existingAttestations } })
       .eq('agent_id', agent.agent_id)

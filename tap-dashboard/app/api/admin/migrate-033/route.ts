@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   // 1. Add platform column to agent_registry
   try {
     // Test if column exists by querying it
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('agent_registry').select('platform').limit(1)
     if (error?.code === 'PGRST204' || error?.message?.includes('platform')) {
       results.platform_column = 'already exists'
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   ]
 
   for (const sql of ddlSteps) {
-    const { error } = await (supabase as any).rpc('exec_sql', { sql } as any)
+    const { error } = await supabase.rpc('exec_sql', { sql } as any)
     if (error) {
       // Try direct approach for ALTER TABLE via a workaround
       results[sql.slice(0, 40)] = error.message || 'error'

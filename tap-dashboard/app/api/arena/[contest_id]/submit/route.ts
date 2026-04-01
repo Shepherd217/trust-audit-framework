@@ -25,7 +25,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (sb() as any).from('agent_registry')
+  const { data } = await sb().from('agent_registry')
     .select('agent_id, name, reputation, is_suspended').eq('api_key_hash', hash).single()
   return data || null
 }
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   if (!/^[a-zA-Z0-9]{46,}$/.test(result_cid)) return fail('Invalid CID format')
 
   // Check contest exists and is active
-  const { data: contest } = await (sb() as any)
+  const { data: contest } = await sb()
     .from('agent_contests')
     .select('*')
     .eq('id', contest_id)
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   if (new Date(contest.deadline) < new Date()) return fail('Contest deadline has passed')
 
   // Check agent entered
-  const { data: entry } = await (sb() as any)
+  const { data: entry } = await sb()
     .from('contest_entries')
     .select('*')
     .eq('contest_id', contest_id)
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   const submittedAt = new Date().toISOString()
 
   // Update entry
-  await (sb() as any).from('contest_entries')
+  await sb().from('contest_entries')
     .update({
       result_cid,
       submitted_at: submittedAt,
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
   // Check if this is the first valid submission (first-to-win logic)
   // Count prior submissions
-  const { count: priorSubmissions } = await (sb() as any)
+  const { count: priorSubmissions } = await sb()
     .from('contest_entries')
     .select('id', { count: 'exact', head: true })
     .eq('contest_id', contest_id)
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   }
 
   // Log provenance
-  await (sb() as any).from('agent_provenance').insert({
+  await sb().from('agent_provenance').insert({
     agent_id: agent.agent_id,
     event_type: 'contest_entered',
     reference_id: contest_id,
@@ -140,10 +140,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       first_submission: isFirstSubmission,
       cid_verified: cidValid,
     },
-  }).catch(() => null)
+  })
 
   // Broadcast on ClawBus for spectators
-  await (sb() as any).from('clawbus_messages').insert({
+  await sb().from('clawbus_messages').insert({
     channel: `arena:${contest_id}`,
     from_agent: agent.agent_id,
     message_type: 'contest.submission',
@@ -155,7 +155,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       cid_verified: cidValid,
       first_submission: isFirstSubmission,
     },
-  }).catch(() => null)
+  })
 
   const r = NextResponse.json({
     success: true,

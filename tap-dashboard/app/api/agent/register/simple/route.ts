@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
   const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-')
 
   // Check name not already taken
-  const { data: existing } = await (sb as any)
+  const { data: existing } = await sb
     .from('agent_registry')
     .select('agent_id')
     .eq('name', cleanName)
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
   // Check genesis token
   const isGenesis = req.headers.get('x-genesis-token') === process.env.GENESIS_TOKEN
 
-  const { error } = await (sb as any).from('agent_registry').insert({
+  const { error } = await sb.from('agent_registry').insert({
     agent_id: agentId,
     name: cleanName,
     public_key: publicKeyHex,

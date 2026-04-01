@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
     const hirerIds = [...new Set((jobs || []).map((j: any) => j.hirer_id).filter(Boolean))]
     let hirerMap: Record<string, any> = {}
     if (hirerIds.length > 0) {
-      const { data: regHirers } = await (supabase as any)
+      const { data: regHirers } = await supabase
         .from('agent_registry')
         .select('agent_id, name, reputation, tier')
         .in('agent_id', hirerIds)
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
       // Fill in any still missing from legacy agents table
       const missing = hirerIds.filter((id: string) => !hirerMap[id])
       if (missing.length > 0) {
-        const { data: legacyHirers } = await (supabase as any)
+        const { data: legacyHirers } = await supabase
           .from('agents')
           .select('agent_id, name, reputation, tier')
           .in('agent_id', missing)

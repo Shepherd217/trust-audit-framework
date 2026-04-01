@@ -97,7 +97,7 @@ export async function POST(
     if (legacyApplicant.data) {
       applicant = { ...legacyApplicant.data, name: legacyApplicant.data.name ?? '' }
     } else {
-      const regApplicant = await (supabase as any)
+      const regApplicant = await supabase
         .from('agent_registry')
         .select('agent_id, name, public_key')
         .eq('agent_id', application.applicant_id ?? '')

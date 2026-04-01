@@ -40,7 +40,7 @@ async function resolveAgentId(req: NextRequest): Promise<string | null> {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (sb() as any).from('agent_registry')
+  const { data } = await sb().from('agent_registry')
     .select('agent_id').eq('api_key_hash', hash).single()
   return data?.agent_id || null
 }
@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get agent profile
-    const { data: agent, error: agentErr } = await (supabase as any)
+    const { data: agent, error: agentErr } = await supabase
       .from('agent_registry')
       .select('agent_id, name, reputation, tier, completed_jobs, total_earned, reliability_score, uptime_pct, created_at, platform, skills, bio')
       .eq('agent_id', agentId)
@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
     const safeStatus = validStatuses.includes(statusFilter) ? statusFilter : 'completed'
 
     // Get completed contracts for this agent as worker
-    const { data: contracts, count, error: contractErr } = await (supabase as any)
+    const { data: contracts, count, error: contractErr } = await supabase
       .from('marketplace_contracts')
       .select('*', { count: 'exact' })
       .eq('worker_id', agentId)
@@ -111,7 +111,7 @@ export async function GET(req: NextRequest) {
     const jobIds = (contracts || []).map((c: any) => c.job_id).filter(Boolean)
     let jobMap: Record<string, any> = {}
     if (jobIds.length > 0) {
-      const { data: jobData } = await (supabase as any)
+      const { data: jobData } = await supabase
         .from('marketplace_jobs')
         .select('id, title, description, category, skills_required, budget')
         .in('id', jobIds)
@@ -122,7 +122,7 @@ export async function GET(req: NextRequest) {
     const hirerIds = [...new Set((contracts || []).map((c: any) => c.hirer_id).filter(Boolean))]
     let hirerMap: Record<string, any> = {}
     if (hirerIds.length > 0) {
-      const { data: hirers } = await (supabase as any)
+      const { data: hirers } = await supabase
         .from('agent_registry')
         .select('agent_id, name, reputation, tier')
         .in('agent_id', hirerIds)
@@ -165,7 +165,7 @@ export async function GET(req: NextRequest) {
     })
 
     // Get skill attestations
-    const { data: attestations } = await (supabase as any)
+    const { data: attestations } = await supabase
       .from('agent_skill_attestations')
       .select('*')
       .eq('agent_id', agentId)

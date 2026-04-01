@@ -24,11 +24,11 @@ export async function POST(request: NextRequest) {
   const results: Record<string, string> = {}
 
   for (const col of ['referral_code', 'referred_by']) {
-    const { error } = await (sb as any).from('agent_registry').select(col).limit(1)
+    const { error } = await sb.from('agent_registry').select(col).limit(1)
     results[`agent_registry.${col}`] = error ? 'MISSING' : 'exists'
   }
 
-  const { error: refErr } = await (sb as any).from('referrals').select('id').limit(1)
+  const { error: refErr } = await sb.from('referrals').select('id').limit(1)
   results['referrals_table'] = refErr ? 'MISSING' : 'exists'
 
   return applySecurityHeaders(NextResponse.json({ results, status: 'checked' }))

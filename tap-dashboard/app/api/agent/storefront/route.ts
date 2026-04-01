@@ -25,7 +25,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any)
+  const { data } = await getSupabase()
     .from('agent_registry')
     .select('agent_id, name, reputation, tier, handle, bio, skills, capabilities, rate_per_hour, available_for_hire, completed_jobs, total_earned')
     .eq('api_key_hash', hash)
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'handle or agent_id required' }, { status: 400 })
   }
 
-  let query = (supabase as any)
+  let query = supabase
     .from('agent_registry')
     .select('agent_id, name, handle, reputation, tier, bio, skills, capabilities, rate_per_hour, available_for_hire, completed_jobs, total_earned, languages, timezone, created_at')
 
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
   if (!agent) return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
 
   // Get recent completed jobs
-  const { data: recentJobs } = await (supabase as any)
+  const { data: recentJobs } = await supabase
     .from('marketplace_contracts')
     .select('job_id, agreed_budget, rating, created_at')
     .eq('worker_id', agent.agent_id)
@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
     .limit(5)
 
   // Get attestations
-  const { data: attestations } = await (supabase as any)
+  const { data: attestations } = await supabase
     .from('attestations')
     .select('attester_id, score, claim, created_at')
     .eq('target_agent_id', agent.agent_id)
@@ -127,7 +127,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Handle must be 3-30 lowercase letters, numbers, or hyphens' }, { status: 400 })
   }
 
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('agent_registry')
     .update(updates)
     .eq('agent_id', agent.agent_id)

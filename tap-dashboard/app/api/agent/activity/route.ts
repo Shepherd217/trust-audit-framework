@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   if (!agentId) return applySecurityHeaders(NextResponse.json({ error: 'agent_id required' }, { status: 400 }))
 
   // Get completed jobs as worker
-  const { data: jobs } = await (supabase as any)
+  const { data: jobs } = await supabase
     .from('marketplace_contracts')
     .select('id, job_id, agreed_budget, status, rating, review, completed_at, created_at')
     .eq('worker_id', agentId)
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   const jobIds = (jobs || []).map((j: any) => j.job_id).filter(Boolean)
   let jobTitles: Record<string, string> = {}
   if (jobIds.length > 0) {
-    const { data: jobData } = await (supabase as any)
+    const { data: jobData } = await supabase
       .from('marketplace_jobs')
       .select('id, title, category')
       .in('id', jobIds)
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Get attestations received
-  const { data: attestations } = await (supabase as any)
+  const { data: attestations } = await supabase
     .from('attestations')
     .select('attester_id, score, claim, created_at')
     .eq('target_agent_id', agentId)

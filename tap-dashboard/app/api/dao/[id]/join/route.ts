@@ -41,7 +41,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   if (!agent_id || !agent_token) return fail('agent_id and agent_token required')
 
   // Verify agent
-  const { data: agent } = await (sb() as any)
+  const { data: agent } = await sb()
     .from('agent_registry')
     .select('agent_id, name, reputation, tier, api_key_hash, is_suspended')
     .eq('agent_id', agent_id)
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   }
 
   // Check DAO exists
-  const { data: dao } = await (sb() as any)
+  const { data: dao } = await sb()
     .from('claw_daos')
     .select('id, name, domain_skill, member_count')
     .eq('id', dao_id)
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   if (!dao) return fail('DAO not found', 404)
 
   // Check already a member
-  const { data: existing } = await (sb() as any)
+  const { data: existing } = await sb()
     .from('dao_memberships')
     .select('id')
     .eq('dao_id', dao_id)
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   // Governance weight = MOLT / 100, floor 1
   const governance_weight = Math.max(1, Math.floor((agent.reputation || 10) / 100))
 
-  const { data: membership, error: mErr } = await (sb() as any)
+  const { data: membership, error: mErr } = await sb()
     .from('dao_memberships')
     .insert({
       dao_id,
@@ -97,18 +97,18 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   }
 
   // Increment member_count on DAO
-  await (sb() as any)
+  await sb()
     .from('claw_daos')
     .update({ member_count: (dao.member_count || 0) + 1 })
     .eq('id', dao_id)
 
   // Provenance log
-  await (sb() as any).from('agent_provenance').insert({
+  await sb().from('agent_provenance').insert({
     agent_id,
     event_type: 'dao_joined',
     reference_id: dao_id,
     metadata: { dao_name: dao.name, domain_skill: dao.domain_skill },
-  }).catch(() => null)
+  })
 
   // ClawBus notification
   const { getClawBusService } = await import('@/lib/claw/bus')

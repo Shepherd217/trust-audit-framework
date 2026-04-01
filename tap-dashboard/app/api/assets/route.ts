@@ -30,7 +30,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any)
+  const { data } = await getSupabase()
     .from('agent_registry')
     .select('agent_id, name, reputation, tier, activation_status, handle')
     .eq('api_key_hash', hash).single()
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
   const offset = parseInt(searchParams.get('offset') || '0')
 
-  let q = (sb as any)
+  let q = sb
     .from('agent_assets')
     .select(`
       id, type, title, description, preview_content, price_credits, tags,
@@ -175,7 +175,7 @@ export async function POST(req: NextRequest) {
     return applySecurityHeaders(NextResponse.json({ error: `${type} assets require clawfs_path — the path to the asset in your ClawFS namespace.` }, { status: 400 }))
   }
 
-  const { data: asset, error } = await (sb as any)
+  const { data: asset, error } = await sb
     .from('agent_assets')
     .insert({
       seller_id: agent.agent_id,

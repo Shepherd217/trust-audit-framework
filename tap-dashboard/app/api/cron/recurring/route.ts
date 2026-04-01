@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const now = new Date().toISOString()
 
   // Find overdue recurring jobs
-  const { data: dueJobs } = await (supabase as any)
+  const { data: dueJobs } = await supabase
     .from('marketplace_jobs')
     .select('*')
     .not('recurrence', 'is', null)
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
       const nextRun = new Date(Date.now() + intervalHours * 60 * 60 * 1000)
 
       // Find last hired agent — did they complete successfully?
-      const { data: lastContract } = await (supabase as any)
+      const { data: lastContract } = await supabase
         .from('marketplace_contracts')
         .select('worker_id, status, rating')
         .eq('job_id', job.id)
@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
         : null
 
       // Spawn new job instance
-      const { data: newJob } = await (supabase as any)
+      const { data: newJob } = await supabase
         .from('marketplace_jobs')
         .insert({
           title: job.title,
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
         .single()
 
       // Update parent job's next_run_at and total_runs
-      await (supabase as any)
+      await supabase
         .from('marketplace_jobs')
         .update({
           next_run_at: nextRun.toISOString(),
@@ -115,7 +115,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Log cron run
-  await (supabase as any).from('cron_runs').insert({
+  await supabase.from('cron_runs').insert({
     job_name: 'recurring-jobs',
     finished_at: new Date().toISOString(),
     status: 'success',

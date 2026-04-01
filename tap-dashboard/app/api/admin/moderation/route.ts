@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
   // ── GET anomalies ────────────────────────────────────────────────────────────
   if (action === 'get_anomalies') {
-    const { data: anomalies } = await (sb as any).from('credit_anomalies')
+    const { data: anomalies } = await sb.from('credit_anomalies')
       .select('*, agent:agent_registry!credit_anomalies_agent_id_fkey(agent_id, name, reputation, tier, is_suspended)')
       .eq('resolved', false)
       .order('created_at', { ascending: false })
@@ -64,10 +64,10 @@ export async function POST(req: NextRequest) {
     if (!agent_id) return applySecurityHeaders(NextResponse.json({ error: 'agent_id required' }, { status: 400 }))
 
     const [agentData, walletData, txData, anomalyData] = await Promise.all([
-      (sb as any).from('agent_registry').select('*').eq('agent_id', agent_id).single(),
-      (sb as any).from('agent_wallets').select('*').eq('agent_id', agent_id).single(),
-      (sb as any).from('wallet_transactions').select('*').eq('agent_id', agent_id).order('created_at', { ascending: false }).limit(50),
-      (sb as any).from('credit_anomalies').select('*').eq('agent_id', agent_id).order('created_at', { ascending: false }),
+      sb.from('agent_registry').select('*').eq('agent_id', agent_id).single(),
+      sb.from('agent_wallets').select('*').eq('agent_id', agent_id).single(),
+      sb.from('wallet_transactions').select('*').eq('agent_id', agent_id).order('created_at', { ascending: false }).limit(50),
+      sb.from('credit_anomalies').select('*').eq('agent_id', agent_id).order('created_at', { ascending: false }),
     ])
 
     // Breakdown by source
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
   // ── Resolve anomaly ──────────────────────────────────────────────────────────
   if (action === 'resolve_anomaly') {
     if (!anomaly_id) return applySecurityHeaders(NextResponse.json({ error: 'anomaly_id required' }, { status: 400 }))
-    await (sb as any).from('credit_anomalies').update({
+    await sb.from('credit_anomalies').update({
       resolved: true, resolved_by: 'platform_admin',
       action_taken: resolution || 'reviewed — no action',
     }).eq('id', anomaly_id)
@@ -108,19 +108,19 @@ export async function POST(req: NextRequest) {
   if (!agent_id) return applySecurityHeaders(NextResponse.json({ error: 'agent_id required' }, { status: 400 }))
   if (!reason) return applySecurityHeaders(NextResponse.json({ error: 'reason required for all moderation actions' }, { status: 400 }))
 
-  const { data: agent } = await (sb as any).from('agent_registry')
+  const { data: agent } = await sb.from('agent_registry')
     .select('agent_id, name, reputation, is_suspended, credits_seized').eq('agent_id', agent_id).single()
   if (!agent) return applySecurityHeaders(NextResponse.json({ error: 'Agent not found' }, { status: 404 }))
 
   // ── Warn ─────────────────────────────────────────────────────────────────────
   if (action === 'warn') {
-    await (sb as any).from('notifications').insert({
+    await sb.from('notifications').insert({
       agent_id, notification_type: 'platform.warning',
       title: '⚠️ Platform Warning',
       message: `Warning from MoltOS: ${reason}. Repeated violations may result in suspension. Contact hello@moltos.org to appeal.`,
       metadata: { action: 'warn', reason, issued_at: new Date().toISOString() }, read: false,
     })
-    await (sb as any).from('credit_anomalies').insert({
+    await sb.from('credit_anomalies').insert({
       agent_id, type: 'formal_warning', severity: 'medium',
       details: { reason, action: 'warn', issued_by: 'platform_admin' }, resolved: true,
       action_taken: 'warning_sent',
@@ -130,17 +130,17 @@ export async function POST(req: NextRequest) {
 
   // ── Suspend ──────────────────────────────────────────────────────────────────
   if (action === 'suspend') {
-    await (sb as any).from('agent_registry').update({
+    await sb.from('agent_registry').update({
       is_suspended: true, suspension_reason: reason,
       status: 'suspended',
     }).eq('agent_id', agent_id)
-    await (sb as any).from('notifications').insert({
+    await sb.from('notifications').insert({
       agent_id, notification_type: 'platform.suspension',
       title: '🚫 Account Suspended',
       message: `Your account has been suspended: ${reason}. Contact hello@moltos.org to appeal.`,
       metadata: { action: 'suspend', reason }, read: false,
     })
-    await (sb as any).from('credit_anomalies').insert({
+    await sb.from('credit_anomalies').insert({
       agent_id, type: 'suspension', severity: 'high',
       details: { reason, action: 'suspend', issued_by: 'platform_admin' }, resolved: true,
       action_taken: 'account_suspended',
@@ -150,10 +150,10 @@ export async function POST(req: NextRequest) {
 
   // ── Reinstate ────────────────────────────────────────────────────────────────
   if (action === 'reinstate') {
-    await (sb as any).from('agent_registry').update({
+    await sb.from('agent_registry').update({
       is_suspended: false, suspension_reason: null, status: 'active',
     }).eq('agent_id', agent_id)
-    await (sb as any).from('notifications').insert({
+    await sb.from('notifications').insert({
       agent_id, notification_type: 'platform.reinstated',
       title: '✓ Account Reinstated',
       message: `Your account has been reinstated. Reason: ${reason}`,
@@ -167,26 +167,26 @@ export async function POST(req: NextRequest) {
     if (!amount_credits || amount_credits < 1) {
       return applySecurityHeaders(NextResponse.json({ error: 'amount_credits required for seizure' }, { status: 400 }))
     }
-    const { data: wallet } = await (sb as any).from('agent_wallets')
+    const { data: wallet } = await sb.from('agent_wallets')
       .select('balance').eq('agent_id', agent_id).single()
     const seizeAmount = Math.min(amount_credits, wallet?.balance || 0)
     const newBal = (wallet?.balance || 0) - seizeAmount
 
-    await (sb as any).from('agent_wallets').update({ balance: newBal }).eq('agent_id', agent_id)
-    await (sb as any).from('agent_registry').update({
+    await sb.from('agent_wallets').update({ balance: newBal }).eq('agent_id', agent_id)
+    await sb.from('agent_registry').update({
       credits_seized: (agent.credits_seized || 0) + seizeAmount
     }).eq('agent_id', agent_id)
-    await (sb as any).from('wallet_transactions').insert({
+    await sb.from('wallet_transactions').insert({
       agent_id, type: 'seizure', amount: -seizeAmount, balance_after: newBal,
       description: `Credit seizure: ${reason}`, source_type: 'admin_seizure',
     })
-    await (sb as any).from('notifications').insert({
+    await sb.from('notifications').insert({
       agent_id, notification_type: 'platform.seizure',
       title: `${seizeAmount} credits seized`,
       message: `Platform action: ${seizeAmount} credits seized. Reason: ${reason}. Contact hello@moltos.org to appeal.`,
       metadata: { action: 'seize', amount: seizeAmount, reason }, read: false,
     })
-    await (sb as any).from('credit_anomalies').insert({
+    await sb.from('credit_anomalies').insert({
       agent_id, type: 'credit_seizure', severity: 'high',
       details: { reason, amount: seizeAmount, new_balance: newBal, issued_by: 'platform_admin' }, resolved: true,
       action_taken: `credits_seized: ${seizeAmount}`,

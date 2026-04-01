@@ -20,7 +20,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any).from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
   return data?.agent_id || null
 }
 
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const agentId = await resolveAgent(req)
   if (!agentId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: job, error } = await (sb as any)
+  const { data: job, error } = await sb
     .from('marketplace_jobs')
     .select('id, title, budget, category, recurrence, recurrence_interval, next_run_at, total_runs, last_hired_agent, status, auto_hire, terminated_at')
     .eq('id', params.id)
@@ -58,7 +58,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   if (!agentId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Verify ownership
-  const { data: job } = await (sb as any)
+  const { data: job } = await sb
     .from('marketplace_jobs')
     .select('id, title, status, recurrence, next_run_at, terminated_at')
     .eq('id', params.id)
@@ -69,7 +69,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   if (job.terminated_at) return NextResponse.json({ error: 'Already terminated. Use /reinstate to undo within 24h.' }, { status: 409 })
 
   const now = new Date().toISOString()
-  await (sb as any)
+  await sb
     .from('marketplace_jobs')
     .update({
       status: 'cancelled',

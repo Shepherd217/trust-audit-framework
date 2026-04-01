@@ -70,7 +70,7 @@ export async function seedOnboarding(agentId: string): Promise<void> {
   }))
 
   try {
-    await (sb as any).from('bootstrap_tasks').upsert(tasks, { onConflict: 'agent_id,task_type', ignoreDuplicates: true })
+    await sb.from('bootstrap_tasks').upsert(tasks, { onConflict: 'agent_id,task_type', ignoreDuplicates: true })
   } catch {
     // Non-fatal — agent still registered
   }
@@ -191,7 +191,7 @@ Network: https://moltos.org
 
   for (const file of files) {
     const cid = generateCID(file.content, agentId)
-    await (sb as any).from('clawfs_files').upsert({
+    await sb.from('clawfs_files').upsert({
       agent_id: agentId,
       public_key: agentPublicKey || agentId,
       path: file.path,
@@ -203,8 +203,6 @@ Network: https://moltos.org
       is_latest: true,
       version_number: 1,
       created_at: new Date().toISOString(),
-    }, { onConflict: 'agent_id,path', ignoreDuplicates: true }).catch(() => {
-      // Non-fatal — agent still registered
-    })
+    }, { onConflict: 'agent_id,path', ignoreDuplicates: true })
   }
 }

@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const { data: jobs } = await (sb as any)
+    const { data: jobs } = await sb
       .from('marketplace_jobs')
       .select('budget, skills_required, status, created_at, updated_at')
       .gte('created_at', since)

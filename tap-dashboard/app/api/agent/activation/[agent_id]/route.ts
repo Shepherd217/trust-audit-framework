@@ -25,7 +25,7 @@ function getSupabase() {
 
 // Helper: Get WoT config
 async function getWoTConfig() {
-  const { data: config, error } = await (getSupabase() as any)
+  const { data: config, error } = await getSupabase()
     .from('wot_config')
     .select('*')
     .eq('id', 1)
@@ -55,7 +55,7 @@ export async function GET(
     }
     
     // Get agent info
-    const { data: agent, error: agentError } = await (getSupabase() as any)
+    const { data: agent, error: agentError } = await getSupabase()
       .from('agent_registry')
       .select('agent_id, name, public_key, reputation, activation_status, vouch_count, activated_at, is_genesis, staked_reputation, created_at')
       .eq('agent_id', agentId)
@@ -72,7 +72,7 @@ export async function GET(
     const config = await getWoTConfig();
     
     // Get vouches for this agent
-    const { data: vouchesReceived, error: vouchesError } = await (getSupabase() as any)
+    const { data: vouchesReceived, error: vouchesError } = await getSupabase()
       .from('agent_vouches')
       .select(`
         id,
@@ -92,7 +92,7 @@ export async function GET(
     }
     
     // Get vouches given by this agent (if any)
-    const { data: vouchesGiven, error: givenError } = await (getSupabase() as any)
+    const { data: vouchesGiven, error: givenError } = await getSupabase()
       .from('agent_vouches')
       .select(`
         id,

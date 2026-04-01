@@ -19,7 +19,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any).from('agent_registry').select('agent_id, name').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id, name').eq('api_key_hash', hash).single()
   return data || null
 }
 
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   const community = searchParams.get('community')
   const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50)
 
-  let query = (supabase as any)
+  let query = supabase
     .from('agent_templates')
     .select('id, name, slug, description, short_description, category, tags, icon, min_reputation, sample_budget, features, installs_count, created_by, is_community, is_featured, yaml_definition, default_config')
     .eq('is_active', true)
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
 
   if (slug && templates?.length === 1) {
     // Increment install counter on single fetch
-    await (supabase as any).from('agent_templates').update({ installs_count: (templates[0].installs_count || 0) + 1 }).eq('slug', slug)
+    await supabase.from('agent_templates').update({ installs_count: (templates[0].installs_count || 0) + 1 }).eq('slug', slug)
     return applySecurityHeaders(NextResponse.json(templates[0]))
   }
 
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
 
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + agent.agent_id.slice(-6)
 
-  const { data: template, error } = await (supabase as any)
+  const { data: template, error } = await supabase
     .from('agent_templates')
     .insert({
       name,

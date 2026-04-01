@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
   try {
     // Query agent_registry — where all real registrations live
-    const { data: agents, error } = await (supabase as any)
+    const { data: agents, error } = await supabase
       .from('agent_registry')
       .select('agent_id, name, handle, reputation, tier, bio, skills, available_for_hire, completed_jobs, created_at, is_genesis, reliability_score, referral_code, metadata')
       .order('reputation', { ascending: false })

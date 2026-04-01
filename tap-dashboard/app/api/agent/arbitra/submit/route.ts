@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     const { opponent_id, claim, evidence } = await request.json();
 
     // Get claimant from token (dynamic, secure)
-    const { data: claimant } = await (supabase as any)
+    const { data: claimant } = await supabase
       .from('waitlist')
       .select('agent_id')
       .eq('agent_token', token)
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('disputes')
       .insert([{
         claimant_id: (claimant as any).agent_id,

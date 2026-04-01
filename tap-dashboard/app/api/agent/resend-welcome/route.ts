@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
 
     // Fetch agent — verify api_key_hash matches
-    const { data: agent, error: fetchError } = await (getSupabase() as any)
+    const { data: agent, error: fetchError } = await getSupabase()
       .from('agent_registry')
       .select('agent_id, name, api_key_hash, owner_email')
       .eq('agent_id', agentId)
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     const targetEmail = email.trim().toLowerCase();
 
     // Update owner_email in DB (persist for future resends)
-    await (getSupabase() as any)
+    await getSupabase()
       .from('agent_registry')
       .update({ owner_email: targetEmail })
       .eq('agent_id', agentId);

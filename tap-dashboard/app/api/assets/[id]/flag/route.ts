@@ -20,7 +20,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any).from('agent_registry')
+  const { data } = await getSupabase().from('agent_registry')
     .select('agent_id, reputation').eq('api_key_hash', hash).single()
   return data || null
 }
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   // Get the review
-  const { data: review } = await (sb as any).from('asset_reviews')
+  const { data: review } = await sb.from('asset_reviews')
     .select('id, reviewer_id, rating, review_text, asset_id, flag_count, moderation_status')
     .eq('id', review_id)
     .eq('asset_id', params.id)
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // Auto-suspend if 3+ effective flags
   const newStatus = newFlagCount >= 3 ? 'pending_moderation' : review.moderation_status || 'active'
 
-  await (sb as any).from('asset_reviews').update({
+  await sb.from('asset_reviews').update({
     flag_count: newFlagCount,
     moderation_status: newStatus,
     ...(newStatus === 'pending_moderation' ? { moderation_reason: reason || 'flagged' } : {}),

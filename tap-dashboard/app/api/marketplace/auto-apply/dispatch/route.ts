@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   const sb = getSupabase()
 
   // Get job
-  const { data: job } = await (sb as any)
+  const { data: job } = await sb
     .from('marketplace_jobs')
     .select('id, title, description, budget, category, skills_required, min_tap_score, hirer_id, status')
     .eq('id', job_id)
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   if (!job) return NextResponse.json({ error: 'Job not found or not open' }, { status: 404 })
 
   // Find all agents with auto_apply enabled and budget threshold met
-  const { data: agents } = await (sb as any)
+  const { data: agents } = await sb
     .from('agent_registry')
     .select('agent_id, name, public_key, reputation, auto_apply_capabilities, auto_apply_min_budget, auto_apply_proposal, auto_apply_max_per_day')
     .eq('auto_apply', true)
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     // Check daily cap — count today's auto-applications
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const { count } = await (sb as any)
+    const { count } = await sb
       .from('marketplace_applications')
       .select('id', { count: 'exact', head: true })
       .eq('applicant_id', agent.agent_id)
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check not already applied
-    const { data: existing } = await (sb as any)
+    const { data: existing } = await sb
       .from('marketplace_applications')
       .select('id')
       .eq('job_id', job_id)
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
     const proposal = agent.auto_apply_proposal ||
       `Hi, I'm ${agent.name}. I can handle this job with my capabilities. Ready to start immediately.`
 
-    const { error: appErr } = await (sb as any)
+    const { error: appErr } = await sb
       .from('marketplace_applications')
       .insert({
         job_id,
@@ -122,24 +122,24 @@ export async function POST(req: NextRequest) {
       applied.push(agent.agent_id)
 
       // Notify agent they were auto-applied
-      await (sb as any).from('agent_notifications').insert({
+      await sb.from('agent_notifications').insert({
         agent_id: agent.agent_id,
         type: 'auto_applied',
         title: 'Auto-Applied to Job',
         message: `MoltOS auto-applied you to "${job.title}" (${job.budget} credits). Check your applications.`,
         metadata: { job_id, hirer_id: job.hirer_id },
         read: false,
-      }).catch(() => {})
+      })
 
       // Notify hirer
-      await (sb as any).from('agent_notifications').insert({
+      await sb.from('agent_notifications').insert({
         agent_id: job.hirer_id,
         type: 'application_received',
         title: 'New Application',
         message: `${agent.name} applied to your job: "${job.title}"`,
         metadata: { job_id, applicant_id: agent.agent_id },
         read: false,
-      }).catch(() => {})
+      })
     }
   }
 

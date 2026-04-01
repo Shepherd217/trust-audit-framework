@@ -41,7 +41,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (sb() as any).from('agent_registry')
+  const { data } = await sb().from('agent_registry')
     .select('agent_id').eq('api_key_hash', hash).single()
   return data?.agent_id || null
 }
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
     const supabase = sb()
 
     // Get agent profile
-    const { data: agent } = await (supabase as any)
+    const { data: agent } = await supabase
       .from('agent_registry')
       .select('agent_id, name, platform, reputation, tier, created_at, metadata')
       .eq('agent_id', agentId)
@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
 
     // Check if agent_provenance table exists
     let provenanceEvents: any[] = []
-    const { data: provData, error: provErr } = await (supabase as any)
+    const { data: provData, error: provErr } = await supabase
       .from('agent_provenance')
       .select('*')
       .eq('agent_id', agentId)
@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
     // This gracefully degrades: provenance gets richer as events are logged
 
     // Reconstruct from contracts (job completions)
-    const { data: completedJobs } = await (supabase as any)
+    const { data: completedJobs } = await supabase
       .from('marketplace_contracts')
       .select('id, job_id, hirer_id, agreed_budget, result_cid, started_at, completed_at, rating')
       .eq('worker_id', agentId)
@@ -105,14 +105,14 @@ export async function GET(req: NextRequest) {
       .order('completed_at', { ascending: true })
 
     // Reconstruct from attestations
-    const { data: attestations } = await (supabase as any)
+    const { data: attestations } = await supabase
       .from('agent_skill_attestations')
       .select('*')
       .eq('agent_id', agentId)
       .order('attested_at', { ascending: true })
 
     // Reconstruct spawn lineage
-    const { data: spawnInfo } = await (supabase as any)
+    const { data: spawnInfo } = await supabase
       .from('agent_registry')
       .select('metadata')
       .eq('agent_id', agentId)
@@ -213,7 +213,7 @@ export async function GET(req: NextRequest) {
 
     // Add spawner node if exists
     if (spawnedBy) {
-      const { data: spawnerInfo } = await (supabase as any)
+      const { data: spawnerInfo } = await supabase
         .from('agent_registry')
         .select('agent_id, name, platform, reputation, tier')
         .eq('agent_id', spawnedBy)
@@ -240,7 +240,7 @@ export async function GET(req: NextRequest) {
         // Fetch spawner's own provenance at depth > 0
         if (depth > 0) {
           // Basic: just show spawner's spawn info
-          const { data: spawnerSpawnMeta } = await (supabase as any)
+          const { data: spawnerSpawnMeta } = await supabase
             .from('agent_registry')
             .select('metadata, created_at')
             .eq('agent_id', spawnedBy)
@@ -262,7 +262,7 @@ export async function GET(req: NextRequest) {
     // Add hirer nodes for top 5 jobs
     const topHirers = [...new Set((completedJobs || []).slice(0, 5).map((c: any) => c.hirer_id))].filter(Boolean) as string[]
     if (topHirers.length > 0) {
-      const { data: hirers } = await (supabase as any)
+      const { data: hirers } = await supabase
         .from('agent_registry')
         .select('agent_id, name, platform, reputation, tier')
         .in('agent_id', topHirers)
@@ -282,7 +282,7 @@ export async function GET(req: NextRequest) {
     // Add attesters as nodes
     const attesters = [...new Set((attestations || []).map((a: any) => a.attested_by))].filter(Boolean) as string[]
     if (attesters.length > 0) {
-      const { data: attesterInfo } = await (supabase as any)
+      const { data: attesterInfo } = await supabase
         .from('agent_registry')
         .select('agent_id, name, platform, reputation, tier')
         .in('agent_id', attesters)

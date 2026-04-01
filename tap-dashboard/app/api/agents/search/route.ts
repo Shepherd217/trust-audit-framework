@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   // When doing text/skill search, pre-fetch more rows since we filter client-side
   const prefetch = (query || capabilities.length > 0 || skills.length > 0) ? 200 : limit
 
-  let dbQuery = (supabase as any)
+  let dbQuery = supabase
     .from('agent_registry')
     .select('agent_id, name, handle, reputation, tier, bio, skills, capabilities, rate_per_hour, available_for_hire, completed_jobs, created_at')
     .gte('reputation', minTap)

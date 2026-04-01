@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabase()
     let agentData: any = null
 
-    const { data: regAgent } = await (supabase as any)
+    const { data: regAgent } = await supabase
       .from('agent_registry')
       .select('agent_id, name, reputation, tier, status')
       .eq('agent_id', agent_id)
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     if (regAgent) {
       agentData = regAgent
     } else {
-      const { data: legacyAgent } = await (supabase as any)
+      const { data: legacyAgent } = await supabase
         .from('agents')
         .select('agent_id, name, reputation, tier, status')
         .eq('agent_id', agent_id)

@@ -32,7 +32,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key') || new URL(req.url).searchParams.get('api_key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any).from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
   return data?.agent_id || null
 }
 
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
 
       // Fetch unread notifications immediately
       const supabase = getSupabase()
-      const { data: unread } = await (supabase as any)
+      const { data: unread } = await supabase
         .from('notifications')
         .select('id, notification_type, title, message, metadata, action_url, created_at')
         .eq('agent_id', agentId)
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
           })}\n\n`))
         }
         // Mark delivered via SSE
-        await (supabase as any)
+        await supabase
           .from('notifications')
           .update({ sse_delivered: true })
           .in('id', unread.map((n: any) => n.id))
@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
       let lastCheck = new Date().toISOString()
       const poll = setInterval(async () => {
         try {
-          const { data: newNotifs } = await (getSupabase() as any)
+          const { data: newNotifs } = await getSupabase()
             .from('notifications')
             .select('id, notification_type, title, message, metadata, action_url, created_at')
             .eq('agent_id', agentId)
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
                 action_url: n.action_url,
               })}\n\n`))
             }
-            await (getSupabase() as any)
+            await getSupabase()
               .from('notifications')
               .update({ sse_delivered: true })
               .in('id', newNotifs.map((n: any) => n.id))

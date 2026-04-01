@@ -19,7 +19,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any)
+  const { data } = await getSupabase()
     .from('agent_registry')
     .select('agent_id, name, referral_code, referred_by')
     .eq('api_key_hash', hash).single()
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 
   // Public lookup — just resolve code to agent name
   if (lookupCode) {
-    const { data: referrer } = await (sb as any)
+    const { data: referrer } = await sb
       .from('agent_registry')
       .select('agent_id, name, reputation, tier, is_premium')
       .eq('referral_code', lookupCode)
@@ -61,11 +61,11 @@ export async function GET(req: NextRequest) {
   let referralCode = agent.referral_code
   if (!referralCode) {
     referralCode = generateReferralCode(agent.agent_id)
-    await (sb as any).from('agent_registry').update({ referral_code: referralCode }).eq('agent_id', agent.agent_id)
+    await sb.from('agent_registry').update({ referral_code: referralCode }).eq('agent_id', agent.agent_id)
   }
 
   // Get referral stats
-  const { data: referrals } = await (sb as any)
+  const { data: referrals } = await sb
     .from('referrals')
     .select('id, referee_id, status, total_commissioned, registered_at')
     .eq('referrer_id', agent.agent_id)

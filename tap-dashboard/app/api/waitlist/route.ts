@@ -113,7 +113,7 @@ export async function POST(request: Request) {
     // }
 
     // Pre-check for existing agent_id (reduces race conditions)
-    const { data: existing } = await (getSupabase() as any)
+    const { data: existing } = await getSupabase()
       .from('waitlist')
       .select('agent_id')
       .eq('agent_id', agent_id)
@@ -124,7 +124,7 @@ export async function POST(request: Request) {
     }
 
     // Also check email uniqueness
-    const { data: existingEmail } = await (getSupabase() as any)
+    const { data: existingEmail } = await getSupabase()
       .from('waitlist')
       .select('email')
       .eq('email', email)
@@ -137,7 +137,7 @@ export async function POST(request: Request) {
     // Validate referrer exists and is not self
     let validReferrer = null;
     if (referrer_agent_id) {
-      const { data: ref } = await (getSupabase() as any)
+      const { data: ref } = await getSupabase()
         .from('waitlist')
         .select('agent_id')
         .eq('agent_id', referrer_agent_id)
@@ -152,9 +152,9 @@ export async function POST(request: Request) {
     const token = uuidv4();
 
     // Insert with conflict handling
-    const { error: insertError } = await (getSupabase() as any)
+    const { error: insertError } = await getSupabase()
       .from('waitlist')
-      .insert([{
+      .upsert([{
         email,
         agent_id,
         public_key,
@@ -173,7 +173,7 @@ export async function POST(request: Request) {
     }
 
     // Get position
-    const { count } = await (getSupabase() as any)
+    const { count } = await getSupabase()
       .from('waitlist')
       .select('*', { count: 'exact', head: true });
     

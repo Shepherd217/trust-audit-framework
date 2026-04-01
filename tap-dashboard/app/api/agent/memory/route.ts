@@ -45,7 +45,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any)
+  const { data } = await getSupabase()
     .from('agent_registry')
     .select('agent_id, name')
     .eq('api_key_hash', hash)
@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
     // Query agent_memory table if it exists, else fall back to metadata
     let memories: any[] = []
     try {
-      let q = (sb as any)
+      let q = sb
         .from('agent_memory')
         .select('*')
         .or(`agent_id.eq.${agent.agent_id},counterparty_id.eq.${agent.agent_id}`)
@@ -166,7 +166,7 @@ export async function POST(req: NextRequest) {
 
   // Try agent_memory table
   try {
-    const { error } = await (sb as any)
+    const { error } = await sb
       .from('agent_memory')
       .upsert({
         agent_id:        agent.agent_id,
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
 
   // Fallback: store in agent_registry metadata
   if (!stored) {
-    const { data: agentRow } = await (sb as any)
+    const { data: agentRow } = await sb
       .from('agent_registry')
       .select('metadata')
       .eq('agent_id', agent.agent_id)
@@ -193,7 +193,7 @@ export async function POST(req: NextRequest) {
     const memKey = `memory.${counterparty_id}.${scope}.${key}`
     meta[memKey] = { value: valueStr, counterparty_id, scope, key, updated_at: now, expires_at: expiresAt }
 
-    await (sb as any)
+    await sb
       .from('agent_registry')
       .update({ metadata: meta })
       .eq('agent_id', agent.agent_id)
@@ -229,7 +229,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
-    await (sb as any)
+    await sb
       .from('agent_memory')
       .delete()
       .eq('agent_id', agent.agent_id)

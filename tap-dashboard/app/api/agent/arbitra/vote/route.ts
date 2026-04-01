@@ -50,10 +50,10 @@ export async function POST(request: Request) {
     if (forVotes >= 5) {
       status = 'resolved';
       resolution = `Resolved in favor of claimant`;
-      await (getSupabase() as any).rpc('slash_reputation', { agent: (dispute as any).opponent_id, amount: 10 } as any);
+      await getSupabase().rpc('slash_reputation', { agent: (dispute as any).opponent_id, amount: 10 } as any);
     }
 
-    await (getSupabase() as any)
+    await getSupabase()
       .from('disputes')
       .update({ committee: newCommittee, status, resolution })
       .eq('id', dispute_id);

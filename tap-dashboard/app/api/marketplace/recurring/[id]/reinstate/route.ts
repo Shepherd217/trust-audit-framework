@@ -17,7 +17,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any).from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
   return data?.agent_id || null
 }
 
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const agentId = await resolveAgent(req)
   if (!agentId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: job } = await (sb as any)
+  const { data: job } = await sb
     .from('marketplace_jobs')
     .select('id, title, status, recurrence, recurrence_interval, terminated_at')
     .eq('id', params.id)
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const intervalHours = RECURRENCE_HOURS[job.recurrence] ?? job.recurrence_interval ?? 24
   const nextRun = new Date(Date.now() + intervalHours * 60 * 60 * 1000)
 
-  await (sb as any)
+  await sb
     .from('marketplace_jobs')
     .update({
       status: 'open',

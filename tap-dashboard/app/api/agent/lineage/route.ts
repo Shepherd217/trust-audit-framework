@@ -39,7 +39,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any)
+  const { data } = await getSupabase()
     .from('agent_registry')
     .select('agent_id, name, handle, reputation, tier, metadata')
     .eq('api_key_hash', hash)
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
 
   try {
     // Fetch the focal agent
-    const { data: focal } = await (sb as any)
+    const { data: focal } = await sb
       .from('agent_registry')
       .select('agent_id, name, handle, reputation, tier, platform, metadata, created_at')
       .eq('agent_id', agentId)
@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
     // Fetch parent
     let parent: AgentSummary | null = null
     if (parentId && (direction === 'up' || direction === 'both')) {
-      const { data: p } = await (sb as any)
+      const { data: p } = await sb
         .from('agent_registry')
         .select('agent_id, name, handle, reputation, tier, platform, metadata, created_at')
         .eq('agent_id', parentId)
@@ -116,14 +116,14 @@ export async function GET(req: NextRequest) {
     let children: AgentSummary[] = []
     if (direction === 'down' || direction === 'both') {
       if (spawnedChildren.length > 0) {
-        const { data: childRows } = await (sb as any)
+        const { data: childRows } = await sb
           .from('agent_registry')
           .select('agent_id, name, handle, reputation, tier, platform, metadata, created_at')
           .in('agent_id', spawnedChildren)
         children = (childRows || []).map(summarise)
       }
       // Also query by parent_id in metadata (belt + suspenders)
-      const { data: metaChildren } = await (sb as any)
+      const { data: metaChildren } = await sb
         .from('agent_registry')
         .select('agent_id, name, handle, reputation, tier, platform, metadata, created_at')
         .contains('metadata', { parent_id: agentId })
@@ -137,7 +137,7 @@ export async function GET(req: NextRequest) {
     // Fetch siblings (other children of same parent)
     let siblings: AgentSummary[] = []
     if (parentId && direction === 'both') {
-      const { data: sibRows } = await (sb as any)
+      const { data: sibRows } = await sb
         .from('agent_registry')
         .select('agent_id, name, handle, reputation, tier, platform, metadata, created_at')
         .contains('metadata', { parent_id: parentId })
@@ -149,7 +149,7 @@ export async function GET(req: NextRequest) {
     // Fetch root
     let root: AgentSummary = summarise(focal)
     if (rootId !== agentId) {
-      const { data: rootRow } = await (sb as any)
+      const { data: rootRow } = await sb
         .from('agent_registry')
         .select('agent_id, name, handle, reputation, tier, platform, metadata, created_at')
         .eq('agent_id', rootId)

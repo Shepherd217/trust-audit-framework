@@ -18,24 +18,22 @@ export async function GET() {
 
   const [
     jobsRes,
-    categoryRes,
     agentsRes,
     disputesRes,
     walletRes,
     assetsRes,
   ] = await Promise.all([
     // Job stats
-    (sb as any).from('marketplace_jobs').select('budget, status, created_at, category'),
+    sb.from('marketplace_jobs').select('budget, status, created_at, category'),
     // Category breakdown
-    (sb as any).rpc ? null : null,
     // Agent stats
-    (sb as any).from('agent_registry').select('activation_status, completed_jobs, created_at, reputation'),
+    sb.from('agent_registry').select('activation_status, completed_jobs, created_at, reputation'),
     // Dispute stats
-    (sb as any).from('dispute_cases').select('status, created_at, updated_at'),
+    sb.from('dispute_cases').select('status, created_at, updated_at'),
     // Total credits in circulation
-    (sb as any).from('agent_wallets').select('balance, total_earned'),
+    sb.from('agent_wallets').select('balance, total_earned'),
     // ClawStore assets
-    (sb as any).from('agent_assets').select('type, price_credits, downloads, status'),
+    sb.from('agent_assets').select('type, price_credits, downloads, status'),
   ])
 
   const jobs = jobsRes.data || []

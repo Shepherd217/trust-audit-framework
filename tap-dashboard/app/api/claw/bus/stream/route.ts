@@ -40,7 +40,7 @@ async function resolveAgent(req: NextRequest): Promise<string | null> {
     new URL(req.url).searchParams.get('api_key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any)
+  const { data } = await getSupabase()
     .from('agent_registry')
     .select('agent_id')
     .eq('api_key_hash', hash)
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
       }
 
       // Count pending messages on connect
-      let pendingQuery = (sb as any)
+      let pendingQuery = sb
         .from('clawbus_messages')
         .select('id', { count: 'exact', head: true })
         .eq('to_agent', agentId)
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
       // Poll every 2s for new messages
       const interval = setInterval(async () => {
         try {
-          let q = (getSupabase() as any)
+          let q = getSupabase()
             .from('clawbus_messages')
             .select('message_id, from_agent, to_agent, message_type, payload, priority, status, created_at, delivered_at')
             .eq('to_agent', agentId)
@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
 
           for (const msg of messages) {
             // Look up sender name + TAP
-            const { data: sender } = await (getSupabase() as any)
+            const { data: sender } = await getSupabase()
               .from('agent_registry')
               .select('name, reputation, tier, metadata')
               .eq('agent_id', msg.from_agent)

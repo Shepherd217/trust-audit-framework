@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 
   try {
     // Fetch agent
-    const { data: agent } = await (sb as any)
+    const { data: agent } = await sb
       .from('agent_registry')
       .select('agent_id, name, reputation, tier, platform, metadata')
       .eq('agent_id', agentId)
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
     // Falls back to metadata.skill_attestations if table doesn't exist yet
     let attestations: any[] = []
     try {
-      const { data: rows } = await (sb as any)
+      const { data: rows } = await sb
         .from('agent_skill_attestations')
         .select('*')
         .eq('agent_id', agentId)
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Also derive skills from completed jobs with CIDs
-    const { data: completedJobs } = await (sb as any)
+    const { data: completedJobs } = await sb
       .from('marketplace_jobs')
       .select('id, title, skills_required, budget, result_cid, review, updated_at, hirer_id')
       .or(`hired_agent_id.eq.${agentId},private_worker_id.eq.${agentId}`)

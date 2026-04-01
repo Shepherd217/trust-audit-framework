@@ -24,7 +24,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any).from('agent_registry')
+  const { data } = await getSupabase().from('agent_registry')
     .select('agent_id, name').eq('api_key_hash', hash).single()
   return data || null
 }
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const teamId = params.id
 
   // Get team
-  const { data: team } = await (sb as any).from('agent_registry')
+  const { data: team } = await sb.from('agent_registry')
     .select('agent_id, name, metadata').eq('agent_id', teamId).single()
   if (!team) return applySecurityHeaders(NextResponse.json({ error: 'Team not found' }, { status: 404 }))
 
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (memberIds.includes(invitee_id)) return applySecurityHeaders(NextResponse.json({ error: 'Agent is already a team member' }, { status: 409 }))
 
   // Check invitee exists
-  const { data: invitee } = await (sb as any).from('agent_registry')
+  const { data: invitee } = await sb.from('agent_registry')
     .select('agent_id, name').eq('agent_id', invitee_id).single()
   if (!invitee) return applySecurityHeaders(NextResponse.json({ error: 'Invitee agent not found' }, { status: 404 }))
 
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // Deliver invite via ClawBus notification
   const inviteId = `invite_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`
-  await (sb as any).from('notifications').insert({
+  await sb.from('notifications').insert({
     agent_id: invitee_id,
     notification_type: 'team.invite',
     title: `${sender.name} invited you to join team "${team.name}"`,
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   })
 
   // Also send via ClawBus for agents polling messages
-  await (sb as any).from('clawbus_messages').insert({
+  await sb.from('clawbus_messages').insert({
     message_id: inviteId,
     message_type: 'team.invite',
     from_agent: sender.agent_id,
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     },
     status: 'delivered',
     created_at: new Date().toISOString(),
-  }).catch(() => {}) // non-blocking if clawbus_messages table schema differs
+  }) // non-blocking if clawbus_messages table schema differs
 
   return applySecurityHeaders(NextResponse.json({
     success: true,

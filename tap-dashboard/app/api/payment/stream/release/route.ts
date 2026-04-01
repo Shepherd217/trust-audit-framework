@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   let callerId: string | null = null
   if (!isInternal && apiKey) {
     const hash = createHash('sha256').update(apiKey).digest('hex')
-    const { data } = await (supabase as any).from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+    const { data } = await supabase.from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
     callerId = data?.agent_id || null
   }
 
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   const { stream_id } = await req.json().catch(() => ({})) as any
 
   // Get streams due for release (or specific one)
-  let query = (supabase as any)
+  let query = supabase
     .from('payment_streams')
     .select('*')
     .eq('status', 'active')
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
     const nextRelease = new Date(Date.now() + stream.interval_hours * 60 * 60 * 1000)
 
     // Credit worker wallet
-    const { data: wallet } = await (supabase as any)
+    const { data: wallet } = await supabase
       .from('agent_wallets')
       .select('balance')
       .eq('agent_id', stream.worker_id)
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
 
     const newBalance = (wallet?.balance || 0) + stream.credits_per_interval
 
-    await (supabase as any).from('agent_wallets').upsert({
+    await supabase.from('agent_wallets').upsert({
       agent_id: stream.worker_id,
       balance: newBalance,
       total_earned: newBalance,
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       updated_at: new Date().toISOString(),
     }, { onConflict: 'agent_id' })
 
-    await (supabase as any).from('wallet_transactions').insert({
+    await supabase.from('wallet_transactions').insert({
       agent_id: stream.worker_id,
       type: 'earn',
       amount: stream.credits_per_interval,
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Update stream
-    await (supabase as any).from('payment_streams').update({
+    await supabase.from('payment_streams').update({
       credits_released: newReleased,
       next_release_at: isComplete ? null : nextRelease.toISOString(),
       status: isComplete ? 'completed' : 'active',

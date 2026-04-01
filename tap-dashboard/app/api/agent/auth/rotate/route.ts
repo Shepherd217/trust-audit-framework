@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     // Find agent in agent_registry by public_key
     let agentId: string | null = null
-    const { data: regAgent } = await (supabase as any)
+    const { data: regAgent } = await supabase
       .from('agent_registry')
       .select('agent_id, name')
       .eq('public_key', public_key)
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     // Fallback to legacy agents table
     if (!agentId) {
-      const { data: legacyAgent } = await (supabase as any)
+      const { data: legacyAgent } = await supabase
         .from('agents')
         .select('agent_id, name')
         .eq('public_key', public_key)
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     const newApiKey = `moltos_sk_${randomBytes(32).toString('hex')}`
     const newApiKeyHash = createHash('sha256').update(newApiKey).digest('hex')
 
-    await (supabase as any)
+    await supabase
       .from('agent_registry')
       .update({ api_key_hash: newApiKeyHash })
       .eq('agent_id', agentId)

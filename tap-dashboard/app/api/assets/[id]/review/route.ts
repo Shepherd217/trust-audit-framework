@@ -24,7 +24,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any).from('agent_registry')
+  const { data } = await getSupabase().from('agent_registry')
     .select('agent_id, name, reputation').eq('api_key_hash', hash).single()
   return data || null
 }
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   // Must be a verified purchaser
-  const { data: purchase } = await (sb as any).from('asset_purchases')
+  const { data: purchase } = await sb.from('asset_purchases')
     .select('id').eq('asset_id', params.id).eq('buyer_id', reviewer.agent_id).maybeSingle()
   if (!purchase) {
     return applySecurityHeaders(NextResponse.json({
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   // Get asset + seller
-  const { data: asset } = await (sb as any).from('agent_assets')
+  const { data: asset } = await sb.from('agent_assets')
     .select('id, title, seller_id').eq('id', params.id).single()
   if (!asset) return applySecurityHeaders(NextResponse.json({ error: 'Asset not found' }, { status: 404 }))
   // Block seller reviewing their own asset
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const moderationStatus = isLowEffort ? 'pending_moderation' : 'active'
 
   // Insert or update review (one per buyer per asset)
-  const { data: review, error } = await (sb as any).from('asset_reviews').upsert({
+  const { data: review, error } = await sb.from('asset_reviews').upsert({
     asset_id: params.id, reviewer_id: reviewer.agent_id,
     purchase_id: purchase.id, rating,
     review_text: review_text?.slice(0, 1000) || null,
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // 2. The purchased asset must cost >= 500 credits
   //    (buying a 1-credit asset to leave 5★ and +1 TAP costs too little)
   // 3. Review must not be flagged as low effort (auto-moderated)
-  const { data: purchaseDetails } = await (sb as any).from('asset_purchases')
+  const { data: purchaseDetails } = await sb.from('asset_purchases')
     .select('amount_paid').eq('id', purchase.id).single()
   const purchasedAtPrice = purchaseDetails?.amount_paid ?? 0
 
@@ -91,18 +91,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const reviewQualifies = reviewerHasEnoughTap && purchasePriceQualifies && !isLowEffort
 
   if (reviewQualifies) {
-    const { data: seller } = await (sb as any).from('agent_registry').select('reputation').eq('agent_id', asset.seller_id).single()
+    const { data: seller } = await sb.from('agent_registry').select('reputation').eq('agent_id', asset.seller_id).single()
     if (seller) {
       if (rating >= 5) {
-        await (sb as any).from('agent_registry').update({ reputation: Math.min(100, (seller.reputation || 0) + 1) }).eq('agent_id', asset.seller_id)
+        await sb.from('agent_registry').update({ reputation: Math.min(100, (seller.reputation || 0) + 1) }).eq('agent_id', asset.seller_id)
       } else if (rating <= 2) {
-        await (sb as any).from('agent_registry').update({ reputation: Math.max(0, (seller.reputation || 0) - 1) }).eq('agent_id', asset.seller_id)
+        await sb.from('agent_registry').update({ reputation: Math.max(0, (seller.reputation || 0) - 1) }).eq('agent_id', asset.seller_id)
       }
     }
   }
 
   // Notify seller of review
-  await (sb as any).from('notifications').insert({
+  await sb.from('notifications').insert({
     agent_id: asset.seller_id, notification_type: 'asset.review',
     title: `${reviewer.name} left a ${rating}★ review on "${asset.title}"`,
     message: review_text || `${rating}/5 stars.`,

@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   const results: Record<string, string> = {}
 
   // Step 1: Check if agent_guardians exists
-  const { data: checkGuardians, error: checkErr1 } = await (supabase as any)
+  const { data: checkGuardians, error: checkErr1 } = await supabase
     .from('agent_guardians').select('id').limit(1)
   
   if (!checkErr1 || checkErr1.code !== 'PGRST205') {
@@ -39,13 +39,13 @@ export async function POST(request: NextRequest) {
   }
 
   // Step 2: Check agent_recovery_requests
-  const { data: checkRecovery, error: checkErr2 } = await (supabase as any)
+  const { data: checkRecovery, error: checkErr2 } = await supabase
     .from('agent_recovery_requests').select('id').limit(1)
   
   results['agent_recovery_requests'] = (!checkErr2 || checkErr2.code !== 'PGRST205') ? 'already exists' : 'NEEDS_MANUAL_CREATION'
 
   // Step 3: Check recovery_approvals
-  const { data: checkApprovals, error: checkErr3 } = await (supabase as any)
+  const { data: checkApprovals, error: checkErr3 } = await supabase
     .from('recovery_approvals').select('id').limit(1)
   
   results['recovery_approvals'] = (!checkErr3 || checkErr3.code !== 'PGRST205') ? 'already exists' : 'NEEDS_MANUAL_CREATION'

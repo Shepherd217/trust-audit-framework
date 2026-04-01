@@ -69,7 +69,7 @@ export async function flagViolation(
   const autoSuspend = severity === 'critical'
 
   // Log the violation
-  await (sb as any).from('security_violations').insert({
+  await sb.from('security_violations').insert({
     agent_id: agentId,
     violation_type: type,
     severity,
@@ -77,10 +77,10 @@ export async function flagViolation(
     details,
     created_at: new Date().toISOString(),
     action_taken: autoSuspend ? 'suspend' : null,
-  }).catch(() => {}) // non-fatal
+  }) // non-fatal
 
   // Get violation count
-  const { data: counts } = await (sb as any)
+  const { data: counts } = await sb
     .from('security_violations')
     .select('id', { count: 'exact', head: true })
     .eq('agent_id', agentId)
@@ -88,24 +88,24 @@ export async function flagViolation(
   const totalViolations = (counts as any)?.length || 0
 
   // Update agent violation_count and last_violation_at
-  await (sb as any).from('agent_registry').update({
+  await sb.from('agent_registry').update({
     violation_count: totalViolations,
     last_violation_at: new Date().toISOString(),
-  }).eq('agent_id', agentId).catch(() => {})
+  }).eq('agent_id', agentId)
 
   // Auto-suspend for critical violations
   if (autoSuspend || totalViolations >= SUSPEND_THRESHOLD) {
-    await (sb as any).from('agent_registry').update({
+    await sb.from('agent_registry').update({
       is_suspended: true,
-    }).eq('agent_id', agentId).catch(() => {})
+    }).eq('agent_id', agentId)
 
     // Log to credit_anomalies for manual review
-    await (sb as any).from('credit_anomalies').insert({
+    await sb.from('credit_anomalies').insert({
       agent_id: agentId,
       anomaly_type: `security_${type}`,
       details: { violation_type: type, total_violations: totalViolations, severity, ...details },
       created_at: new Date().toISOString(),
-    }).catch(() => {})
+    })
 
     return { action: totalViolations >= BAN_REVIEW_THRESHOLD ? 'flagged_for_ban' : 'suspended' }
   }
@@ -123,7 +123,7 @@ export async function flagViolation(
  */
 export async function checkSuspended(agentId: string): Promise<{ suspended: boolean; reason?: string }> {
   const sb = getSupabase()
-  const { data } = await (sb as any)
+  const { data } = await sb
     .from('agent_registry')
     .select('is_suspended, ban_reason, violation_count')
     .eq('agent_id', agentId)

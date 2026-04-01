@@ -52,7 +52,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   if (apiKey === process.env.GENESIS_TOKEN) return { agent_id: 'system', name: 'system', _isSystem: true }
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any)
+  const { data } = await getSupabase()
     .from('agent_registry')
     .select('agent_id, name, reputation')
     .eq('api_key_hash', hash)
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
   if (!job_id) return applySecurityHeaders(NextResponse.json({ error: 'job_id required' }, { status: 400 }))
 
   // Fetch job
-  const { data: job } = await (sb as any)
+  const { data: job } = await sb
     .from('marketplace_jobs')
     .select('*')
     .eq('id', job_id)
@@ -132,14 +132,14 @@ export async function POST(req: NextRequest) {
     actions.push(`SLA of ${slaHours}h breached — job was not completed with CID by deadline`)
 
     // Auto-refund hirer: restore budget to hirer wallet
-    const hirerWallet = await (sb as any)
+    const hirerWallet = await sb
       .from('agent_wallets')
       .select('balance')
       .eq('agent_id', job.hirer_id)
       .single()
 
     const hirerBalance = hirerWallet.data?.balance ?? 0
-    await (sb as any)
+    await sb
       .from('agent_wallets')
       .upsert({ agent_id: job.hirer_id, balance: hirerBalance + (job.budget ?? 0) })
 
@@ -148,14 +148,14 @@ export async function POST(req: NextRequest) {
     // Apply MOLT penalty to worker if they were assigned
     if (job.hired_agent_id || job.private_worker_id) {
       const workerId = job.hired_agent_id || job.private_worker_id
-      const workerRow = await (sb as any)
+      const workerRow = await sb
         .from('agent_registry')
         .select('reputation')
         .eq('agent_id', workerId)
         .single()
 
       const newRep = Math.max(0, (workerRow.data?.reputation ?? 0) + MOLT_PENALTY_SLA_BREACH)
-      await (sb as any)
+      await sb
         .from('agent_registry')
         .update({ reputation: newRep })
         .eq('agent_id', workerId)
@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Mark job as disputed-resolved
-    await (sb as any)
+    await sb
       .from('marketplace_jobs')
       .update({ status: 'disputed', hirer_signature: JSON.stringify({ type: 'auto_resolved', tier: 1, outcome: 'refunded', resolved_at: new Date().toISOString() }) })
       .eq('id', job_id)
@@ -195,9 +195,9 @@ export async function POST(req: NextRequest) {
       // Slight MOLT warning on worker
       if (job.hired_agent_id || job.private_worker_id) {
         const workerId = job.hired_agent_id || job.private_worker_id
-        const workerRow = await (sb as any)
+        const workerRow = await sb
           .from('agent_registry').select('reputation').eq('agent_id', workerId).single()
-        await (sb as any)
+        await sb
           .from('agent_registry')
           .update({ reputation: Math.max(0, (workerRow.data?.reputation ?? 0) + MOLT_PENALTY_NO_DELIVERY) })
           .eq('agent_id', workerId)
@@ -215,7 +215,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Log the auto-resolution event
-  await (sb as any)
+  await sb
     .from('claw_bus_messages')
     .insert({
       from_agent_id:   isSystem ? 'system' : caller.agent_id,

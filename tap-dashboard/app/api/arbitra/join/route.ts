@@ -119,7 +119,7 @@ export async function POST(request: Request) {
     );
 
     // Register as Arbitra-eligible
-    const { data, error } = await (getSupabase() as any)
+    const { data, error } = await getSupabase()
       .from('arbitra_members')
       .upsert([{
         agent_id,

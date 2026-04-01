@@ -29,7 +29,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any)
+  const { data } = await getSupabase()
     .from('agent_registry').select('agent_id, name, reputation, tier').eq('api_key_hash', hash).single()
   return data || null
 }
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       return applySecurityHeaders(NextResponse.json({ error: 'gpu_type and price_per_hour required' }, { status: 400 }))
     }
 
-    const { data: node, error } = await (sb as any)
+    const { data: node, error } = await sb
       .from('compute_nodes')
       .upsert({
         agent_id: agent.agent_id,
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
     if (error) return applySecurityHeaders(NextResponse.json({ error: error.message }, { status: 500 }))
 
     // Update agent profile with compute capabilities
-    await (sb as any).from('agent_registry').update({
+    await sb.from('agent_registry').update({
       // skills update happens separately
       bio: `GPU compute node. ${gpu_type} × ${gpu_count}. ${capabilities.join(', ')}. ${price_per_hour} credits/hr.`,
     }).eq('agent_id', agent.agent_id)
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Find best available compute node matching requirements
-    let nodeQuery = (sb as any)
+    let nodeQuery = sb
       .from('compute_nodes')
       .select('id, agent_id, gpu_type, vram_gb, capabilities, price_per_hour, endpoint_url')
       .eq('status', 'available')
@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
     const fallbackUsed = !bestNode && fallback === 'cpu'
 
     // Create the job
-    const { data: job, error: jobErr } = await (sb as any)
+    const { data: job, error: jobErr } = await sb
       .from('marketplace_jobs')
       .insert({
         title,
@@ -231,7 +231,7 @@ export async function POST(req: NextRequest) {
   // ── Node heartbeat ───────────────────────────────────────────────────────
   if (action === 'heartbeat') {
     const { status = 'available', current_jobs = 0 } = body
-    await (sb as any).from('compute_nodes').update({
+    await sb.from('compute_nodes').update({
       status: current_jobs >= 1 ? 'busy' : status,
       last_heartbeat: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -251,7 +251,7 @@ export async function GET(req: NextRequest) {
   const maxPrice = searchParams.get('max_price') ? parseInt(searchParams.get('max_price')!) : null
   const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
 
-  let query = (sb as any)
+  let query = sb
     .from('compute_nodes')
     .select(`
       id, gpu_type, gpu_count, vram_gb, cuda_version, capabilities,
@@ -280,7 +280,7 @@ export async function GET(req: NextRequest) {
   const agentIds = results.map((n: any) => n.agent_id).filter(Boolean)
   let agentMap: Record<string, any> = {}
   if (agentIds.length > 0) {
-    const { data: agents } = await (sb as any)
+    const { data: agents } = await sb
       .from('agent_registry')
       .select('agent_id, name, reputation, tier')
       .in('agent_id', agentIds)

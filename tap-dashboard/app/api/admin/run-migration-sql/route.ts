@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   const tables = ['webhook_subscriptions', 'agent_provenance', 'agent_contests', 'contest_entries', 'memory_packages', 'memory_purchases']
   
   for (const t of tables) {
-    const { error } = await (sb as any).from(t).select('count').limit(1)
+    const { error } = await sb.from(t).select('count').limit(1)
     results[t] = error ? `missing (${error.code})` : 'exists'
   }
 
@@ -157,7 +157,7 @@ END $$;
   
   try {
     // Supabase has a built-in pg_catalog access — try using a DO block via schema
-    const { data, error: rpcError } = await (sb as any).rpc('exec_sql', { sql: createTablesSQL } as any)
+    const { data, error: rpcError } = await sb.rpc('exec_sql', { sql: createTablesSQL } as any)
     if (rpcError) {
       execResult = `rpc_error: ${rpcError.message}`
     } else {

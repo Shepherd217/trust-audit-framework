@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
 
     // Look up agent — check both tables (agents = legacy, agent_registry = new registrations)
     let agent: { agent_id: string } | null = null
-    const agentResult = await (supabase as any)
+    const agentResult = await supabase
       .from('agents')
       .select('agent_id')
       .eq('public_key', public_key)
@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
     if (!agentResult.error && agentResult.data) {
       agent = agentResult.data as { agent_id: string }
     } else {
-      const regResult = await (supabase as any)
+      const regResult = await supabase
         .from('agent_registry')
         .select('agent_id')
         .eq('public_key', public_key)

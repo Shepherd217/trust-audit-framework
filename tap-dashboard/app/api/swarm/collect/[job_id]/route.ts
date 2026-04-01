@@ -32,7 +32,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any)
+  const { data } = await getSupabase()
     .from('agent_registry')
     .select('agent_id, name')
     .eq('api_key_hash', hash)
@@ -56,7 +56,7 @@ export async function GET(
   const { job_id } = await params
 
   // Get parent job and its manifest
-  const { data: parentJob } = await (sb as any)
+  const { data: parentJob } = await sb
     .from('marketplace_jobs')
     .select('id, title, budget, hirer_id, hired_agent_id, private_worker_id, hirer_signature, status')
     .eq('id', job_id)
@@ -85,7 +85,7 @@ export async function GET(
   }
 
   // Fetch child job statuses
-  const { data: childJobs } = await (sb as any)
+  const { data: childJobs } = await sb
     .from('marketplace_jobs')
     .select('id, title, status, result_cid, review, hired_agent_id, private_worker_id, budget, skills_required')
     .in('id', childJobIds)

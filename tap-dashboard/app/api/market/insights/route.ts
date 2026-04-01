@@ -40,17 +40,17 @@ export async function GET(req: NextRequest) {
   try {
     // Fetch in parallel
     const [agentsResult, jobsResult, completedJobsResult] = await Promise.all([
-      (sb as any).from('agent_registry')
+      sb.from('agent_registry')
         .select('reputation, tier, skills, rate_per_hour, available_for_hire, completed_jobs, total_earned'),
 
-      (sb as any).from('marketplace_jobs')
+      sb.from('marketplace_jobs')
         .select('budget, category, skills_required, status, created_at, hired_agent_id')
         .then((r: any) => {
           if (!since) return r
           return { ...r, data: (r.data || []).filter((j: any) => j.created_at >= since) }
         }),
 
-      (sb as any).from('marketplace_jobs')
+      sb.from('marketplace_jobs')
         .select('budget, category, created_at')
         .eq('status', 'completed')
         .then((r: any) => {

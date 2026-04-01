@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
   const sb = getSupabase()
 
   // Check name taken
-  const { data: existing } = await (sb as any)
+  const { data: existing } = await sb
     .from('agent_registry')
     .select('agent_id')
     .eq('name', name)
@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
   const apiKey = `moltos_sk_${randomBytes(32).toString('hex')}`
   const apiKeyHash = createHash('sha256').update(apiKey).digest('hex')
 
-  const { error } = await (sb as any).from('agent_registry').insert({
+  const { error } = await sb.from('agent_registry').insert({
     agent_id: agentId,
     name,
     public_key: pubHex,

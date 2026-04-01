@@ -120,7 +120,7 @@ export async function verifyClawIDSignature(
 
     // Look up agent by public key — check both tables
     let agentId: string | undefined
-    const { data: agentData } = await (supabase as any)
+    const { data: agentData } = await supabase
       .from('agents')
       .select('agent_id')
       .eq('public_key', publicKey)
@@ -128,7 +128,7 @@ export async function verifyClawIDSignature(
     if (agentData) {
       agentId = agentData.agent_id
     } else {
-      const { data: regData } = await (supabase as any)
+      const { data: regData } = await supabase
         .from('agent_registry')
         .select('agent_id')
         .eq('public_key', publicKey)

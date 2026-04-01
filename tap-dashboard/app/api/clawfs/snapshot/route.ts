@@ -18,7 +18,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any)
+  const { data } = await getSupabase()
     .from('agent_registry').select('agent_id, public_key').eq('api_key_hash', hash).single()
   return data || null
 }
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Get all agent files
-  const { data: files } = await (sb as any)
+  const { data: files } = await sb
     .from('clawfs_files')
     .select('cid, path, created_at')
     .eq('agent_id', agent.agent_id)
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const merkleRoot = generateMerkleRoot(fileCIDs)
   const snapshotSig = `api_key_snapshot_${createHash('sha256').update(agent.agent_id + Date.now()).digest('hex').slice(0, 16)}`
 
-  const { data: snapshot, error } = await (sb as any)
+  const { data: snapshot, error } = await sb
     .from('clawfs_snapshots')
     .insert({
       agent_id: agent.agent_id,
@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
   const agent = await resolveAgent(req)
   if (!agent) return applySecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
 
-  const { data: snapshots } = await (sb as any)
+  const { data: snapshots } = await sb
     .from('clawfs_snapshots')
     .select('id, merkle_root, file_count, created_at')
     .eq('agent_id', agent.agent_id)

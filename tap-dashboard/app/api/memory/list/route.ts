@@ -38,7 +38,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (sb() as any).from('agent_registry')
+  const { data } = await sb().from('agent_registry')
     .select('agent_id, name, reputation, tier, is_suspended, completed_jobs').eq('api_key_hash', hash).single()
   return data || null
 }
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
   if (invalidCids.length > 0) return fail(`Invalid CID format: ${invalidCids[0]}`)
 
   // Verify at least 1 CID belongs to this agent's real job history
-  const { data: confirmedContracts } = await (sb() as any)
+  const { data: confirmedContracts } = await sb()
     .from('marketplace_contracts')
     .select('result_cid')
     .eq('worker_id', agent.agent_id)
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Check listing limit — max 20 active listings per agent
-  const { count: existingCount } = await (sb() as any)
+  const { count: existingCount } = await sb()
     .from('memory_packages')
     .select('id', { count: 'exact', head: true })
     .eq('seller_agent_id', agent.agent_id)
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
     return fail('Maximum 20 active memory listings. Deactivate old listings first.')
   }
 
-  const { data: pkg, error: pkgErr } = await (sb() as any)
+  const { data: pkg, error: pkgErr } = await sb()
     .from('memory_packages')
     .insert({
       seller_agent_id: agent.agent_id,
@@ -140,13 +140,13 @@ export async function POST(req: NextRequest) {
   }
 
   // Log provenance
-  await (sb() as any).from('agent_provenance').insert({
+  await sb().from('agent_provenance').insert({
     agent_id: agent.agent_id,
     event_type: 'memory_purchased', // reuse for "listed"
     reference_id: pkg.id,
     skill,
     metadata: { action: 'listed', title, price, proof_cid_count: verifiedCids.length },
-  }).catch(() => null)
+  })
 
   const r = NextResponse.json({
     success: true,

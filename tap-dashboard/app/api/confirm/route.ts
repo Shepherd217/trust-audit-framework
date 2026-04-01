@@ -29,7 +29,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 400 });
     }
 
-    const { data, error } = await (getSupabase() as any)
+    const { data, error } = await getSupabase()
       .from('waitlist')
       .update({ 
         confirmed: true, 
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
 
     // Increment referrer count if exists
     if ((data as any).referrer_agent_id) {
-      await (getSupabase() as any).rpc('increment_referral_count', { 
+      await getSupabase().rpc('increment_referral_count', { 
         ref_agent_id: (data as any).referrer_agent_id 
       } as any);
     }

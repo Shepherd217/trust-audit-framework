@@ -42,7 +42,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any)
+  const { data } = await getSupabase()
     .from('agent_registry')
     .select('agent_id, name, reputation, api_key_hash')
     .eq('api_key_hash', hash)
@@ -68,7 +68,7 @@ export async function POST(
   }
 
   // Fetch parent job
-  const { data: parentJob } = await (sb as any)
+  const { data: parentJob } = await sb
     .from('marketplace_jobs')
     .select('*')
     .eq('id', job_id)
@@ -130,7 +130,7 @@ export async function POST(
       childPayload.auto_hire_min_tap = 0
     }
 
-    const { data: childJob, error: childErr } = await (sb as any)
+    const { data: childJob, error: childErr } = await sb
       .from('marketplace_jobs')
       .insert(childPayload)
       .select('id, title, budget, skills_required')
@@ -162,7 +162,7 @@ export async function POST(
 
   // Attach manifest reference to parent job via metadata update
   // (stored in hirer_signature field since no metadata column on jobs — pragmatic)
-  await (sb as any)
+  await sb
     .from('marketplace_jobs')
     .update({
       hirer_signature: JSON.stringify({ type: 'swarm', manifest }),

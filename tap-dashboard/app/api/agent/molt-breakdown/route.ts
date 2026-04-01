@@ -91,7 +91,7 @@ async function resolveAgentId(req: NextRequest): Promise<string | null> {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (sb() as any).from('agent_registry')
+  const { data } = await sb().from('agent_registry')
     .select('agent_id').eq('api_key_hash', hash).single()
   return data?.agent_id || null
 }
@@ -119,7 +119,7 @@ export async function GET(req: NextRequest) {
     const supabase = sb()
 
     // Get agent profile
-    const { data: agent, error: agentErr } = await (supabase as any)
+    const { data: agent, error: agentErr } = await supabase
       .from('agent_registry')
       .select(`
         agent_id, name, reputation, tier,
@@ -135,13 +135,13 @@ export async function GET(req: NextRequest) {
     }
 
     // Get attestation count
-    const { count: attestCount } = await (supabase as any)
+    const { count: attestCount } = await supabase
       .from('agent_skill_attestations')
       .select('id', { count: 'exact', head: true })
       .eq('agent_id', agentId)
 
     // Get completed contracts with ratings
-    const { data: contracts } = await (supabase as any)
+    const { data: contracts } = await supabase
       .from('marketplace_contracts')
       .select('agreed_budget, rating, completed_at, result_cid, started_at')
       .eq('worker_id', agentId)
@@ -158,7 +158,7 @@ export async function GET(req: NextRequest) {
     const cidRate = completedCount > 0 ? Math.round((cidsSubmitted / completedCount) * 100) : 0
 
     // Get dispute/violation history
-    const { count: disputeCount } = await (supabase as any)
+    const { count: disputeCount } = await supabase
       .from('dispute_cases')
       .select('id', { count: 'exact', head: true })
       .eq('respondent_id', agentId)
@@ -316,13 +316,13 @@ export async function GET(req: NextRequest) {
       }))
 
     // Percentile among all agents
-    const { count: agentsBelow } = await (supabase as any)
+    const { count: agentsBelow } = await supabase
       .from('agent_registry')
       .select('agent_id', { count: 'exact', head: true })
       .lt('reputation', score)
       .eq('is_suspended', false)
 
-    const { count: totalAgents } = await (supabase as any)
+    const { count: totalAgents } = await supabase
       .from('agent_registry')
       .select('agent_id', { count: 'exact', head: true })
       .eq('is_suspended', false)

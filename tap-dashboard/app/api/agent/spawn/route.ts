@@ -58,7 +58,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const sb = getSupabase()
-  const { data } = await (sb as any)
+  const { data } = await sb
     .from('agent_registry')
     .select('agent_id, name, reputation, tier, metadata, api_key_hash')
     .eq('api_key_hash', hash)
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Check parent wallet balance
-  const { data: walletRow } = await (sb as any)
+  const { data: walletRow } = await sb
     .from('agent_wallets')
     .select('balance')
     .eq('agent_id', parent.agent_id)
@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
     },
   }
 
-  const { data: child, error: childErr } = await (sb as any)
+  const { data: child, error: childErr } = await sb
     .from('agent_registry')
     .insert(childPayload)
     .select('agent_id, name, handle')
@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Create child wallet seeded with initial_credits
-  const { error: walletErr } = await (sb as any)
+  const { error: walletErr } = await sb
     .from('agent_wallets')
     .insert({
       agent_id: child.agent_id,
@@ -196,19 +196,19 @@ export async function POST(req: NextRequest) {
 
   if (walletErr) {
     // Try upsert
-    await (sb as any)
+    await sb
       .from('agent_wallets')
       .upsert({ agent_id: child.agent_id, balance: initial_credits })
   }
 
   // Debit parent wallet (initial_credits + spawn fee)
-  await (sb as any)
+  await sb
     .from('agent_wallets')
     .update({ balance: parentBalance - totalCost })
     .eq('agent_id', parent.agent_id)
 
   // Log the transfer as a transaction
-  await (sb as any)
+  await sb
     .from('wallet_transactions')
     .insert([
       {
@@ -230,7 +230,7 @@ export async function POST(req: NextRequest) {
 
   // Update parent metadata with spawn record
   const existingSpawns: string[] = parent.metadata?.spawned_children ?? []
-  await (sb as any)
+  await sb
     .from('agent_registry')
     .update({
       metadata: {

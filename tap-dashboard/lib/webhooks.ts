@@ -30,7 +30,7 @@ export interface WebhookPayload {
 export async function deliverWebhook(agentId: string, event: string, data: Record<string, any>) {
   try {
     // Get all active subscriptions for this agent that include this event
-    const { data: subs, error } = await (sb() as any)
+    const { data: subs, error } = await sb()
       .from('webhook_subscriptions')
       .select('id, url, secret, events')
       .eq('agent_id', agentId)
@@ -66,34 +66,34 @@ export async function deliverWebhook(agentId: string, event: string, data: Recor
           })
 
           // Update delivery status
-          await (sb() as any).from('webhook_subscriptions').update({
+          await sb().from('webhook_subscriptions').update({
             last_delivered_at: new Date().toISOString(),
             delivery_failures: res.ok ? 0 : (sub.delivery_failures || 0) + 1,
           }).eq('id', sub.id)
 
           // Disable webhook after 10 consecutive failures
           if (!res.ok && (sub.delivery_failures || 0) >= 9) {
-            await (sb() as any).from('webhook_subscriptions').update({
+            await sb().from('webhook_subscriptions').update({
               active: false,
             }).eq('id', sub.id)
 
-            await (sb() as any).from('notifications').insert({
+            await sb().from('notifications').insert({
               agent_id: agentId,
               notification_type: 'webhook.disabled',
               title: 'Webhook disabled after repeated failures',
               message: `Webhook to ${sub.url.slice(0, 50)}... disabled after 10 failures. Re-enable at POST /api/webhooks/${sub.id}`,
               read: false,
-            }).catch(() => null)
+            })
           }
         } catch (deliveryErr: any) {
-          await (sb() as any).from('webhook_subscriptions').update({
+          await sb().from('webhook_subscriptions').update({
             delivery_failures: (sub.delivery_failures || 0) + 1,
-          }).eq('id', sub.id).catch(() => null)
+          }).eq('id', sub.id)
         }
       })
 
     // Fire all in parallel, non-blocking
-    Promise.allSettled(deliveries).catch(() => null)
+    Promise.allSettled(deliveries)
 
   } catch (err) {
     // Never let webhook delivery crash the calling code

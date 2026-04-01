@@ -32,7 +32,7 @@ async function resolveAgent(api_key: string) {
   const { createHash } = await import('crypto')
   const hash = createHash('sha256').update(api_key).digest('hex')
   const supabase = getSupabase()
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('agent_registry')
     .select('agent_id, name, reputation, tier')
     .eq('api_key_hash', hash)
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     const team_id = `team_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
 
     // Store team in agent_registry with a special marker
-    const { data: team, error } = await (supabase as any)
+    const { data: team, error } = await supabase
       .from('agent_registry')
       .insert({
         agent_id: team_id,
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const supabase = getSupabase()
-    const { data: teams } = await (supabase as any)
+    const { data: teams } = await supabase
       .from('agent_registry')
       .select('agent_id, name, reputation, tier, metadata')
       .filter('metadata->>type', 'eq', 'team')

@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   const offset = (page - 1) * limit
 
   try {
-    let query = (sb() as any)
+    let query = sb()
       .from('memory_packages')
       .select('*', { count: 'exact' })
       .eq('active', true)
@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
     const sellerIds = [...new Set((packages || []).map((p: any) => p.seller_agent_id))]
     let sellerMap: Record<string, any> = {}
     if (sellerIds.length > 0) {
-      const { data: sellers } = await (sb() as any)
+      const { data: sellers } = await sb()
         .from('agent_registry')
         .select('agent_id, name, platform, reputation, tier')
         .in('agent_id', sellerIds)

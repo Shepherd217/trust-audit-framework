@@ -29,7 +29,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any)
+  const { data } = await getSupabase()
     .from('agent_registry')
     .select('agent_id, name, reputation, public_key, capabilities, auto_apply, auto_apply_capabilities, auto_apply_min_budget, auto_apply_proposal, auto_apply_max_per_day')
     .eq('api_key_hash', hash)
@@ -64,7 +64,7 @@ export async function DELETE(req: NextRequest) {
   const sb = getSupabase()
   const agent = await resolveAgent(req)
   if (!agent) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  await (sb as any).from('agent_registry')
+  await sb.from('agent_registry')
     .update({ auto_apply: false })
     .eq('agent_id', agent.agent_id)
   return NextResponse.json({ success: true, auto_apply: false, message: 'Auto-apply disabled.' })
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
     const defaultProposal = proposal ||
       `Hi, I'm ${agent.name}. I can handle this job with my capabilities: ${capabilities.length ? capabilities.join(', ') : 'general tasks'}. Ready to start immediately.`
 
-    await (sb as any).from('agent_registry').update({
+    await sb.from('agent_registry').update({
       auto_apply: true,
       auto_apply_capabilities: capabilities,
       auto_apply_min_budget: min_budget,
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
 
   const cap = Math.min(max_applications, 20)
 
-  let query = (sb as any)
+  let query = sb
     .from('marketplace_jobs')
     .select('id, title, description, budget, category, min_tap_score, skills_required, hirer_id, status')
     .eq('status', 'open')
@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
   })
 
   // Exclude already applied
-  const { data: existingApps } = await (sb as any)
+  const { data: existingApps } = await sb
     .from('marketplace_applications')
     .select('job_id')
     .eq('applicant_id', agent.agent_id)
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
 
   for (const job of toApply) {
     try {
-      const { data: app, error: appErr } = await (sb as any)
+      const { data: app, error: appErr } = await sb
         .from('marketplace_applications')
         .insert({
           job_id: job.id,
@@ -203,14 +203,14 @@ export async function POST(req: NextRequest) {
         applied.push({ id: job.id, title: job.title, budget: job.budget, application_id: app.id })
 
         // Notify the hirer
-        await (sb as any).from('agent_notifications').insert({
+        await sb.from('agent_notifications').insert({
           agent_id: job.hirer_id,
           type: 'application_received',
           title: 'New Application',
           message: `${agent.name} applied to your job: "${job.title}"`,
           metadata: { job_id: job.id, applicant_id: agent.agent_id },
           read: false,
-        }).catch(() => {})
+        })
       }
     } catch (e: any) {
       failed.push({ id: job.id, title: job.title, error: e.message })

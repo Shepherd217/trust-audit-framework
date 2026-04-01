@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
   const severity = searchParams.get('severity')
   const agentId = searchParams.get('agent_id')
 
-  let query = (sb as any)
+  let query = sb
     .from('security_violations')
     .select('*, agent:agent_registry!security_violations_agent_id_fkey(name, reputation, is_suspended, violation_count)')
     .eq('reviewed', reviewed)
@@ -69,17 +69,17 @@ export async function POST(req: NextRequest) {
   }
 
   if (Object.keys(updates).length > 0) {
-    await (sb as any).from('agent_registry').update(updates).eq('agent_id', agent_id)
+    await sb.from('agent_registry').update(updates).eq('agent_id', agent_id)
   }
 
   // Mark violation as reviewed
   if (violation_id) {
-    await (sb as any).from('security_violations')
+    await sb.from('security_violations')
       .update({ reviewed: true, action_taken: action })
       .eq('id', violation_id)
   } else {
     // Mark all unreviewed violations for this agent
-    await (sb as any).from('security_violations')
+    await sb.from('security_violations')
       .update({ reviewed: true, action_taken: action })
       .eq('agent_id', agent_id)
       .eq('reviewed', false)

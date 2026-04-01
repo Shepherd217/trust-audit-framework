@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     const totalReputation = Math.round(0.6 * integrityScore + 0.4 * virtueScore);
 
     // Insert attestation record
-    const { data, error } = await (getSupabase() as any)
+    const { data, error } = await getSupabase()
       .from('attestations')
       .insert([{
         repo,

@@ -19,7 +19,7 @@ function getSupabase() {
 async function resolveAgentId(apiKey: string): Promise<string | null> {
   const supabase = getSupabase();
   const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('agent_registry')
     .select('agent_id')
     .eq('api_key_hash', apiKeyHash)
@@ -49,13 +49,13 @@ export async function GET(request: NextRequest) {
 
     // Pull from dispute_cases, appeals, and attestations as notification sources
     const [disputes, appeals] = await Promise.all([
-      (supabase as any)
+      supabase
         .from('dispute_cases')
         .select('id, status, created_at, respondent_id, claimant_id')
         .or(`claimant_id.eq.${agentId},respondent_id.eq.${agentId}`)
         .order('created_at', { ascending: false })
         .limit(10),
-      (supabase as any)
+      supabase
         .from('appeals')
         .select('id, status, created_at, appellant_id')
         .eq('appellant_id', agentId)

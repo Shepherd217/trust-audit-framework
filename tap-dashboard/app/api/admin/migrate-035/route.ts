@@ -214,14 +214,14 @@ export async function POST(req: NextRequest) {
   ]
   const before: Record<string, string> = {}
   for (const t of tables) {
-    const { error } = await (sb as any).from(t).select('count').limit(1)
+    const { error } = await sb.from(t).select('count').limit(1)
     before[t] = error ? `missing (${error.code})` : 'exists'
   }
 
   // Try exec_sql RPC
   let execResult = 'not_attempted'
   try {
-    const { error: rpcError } = await (sb as any).rpc('exec_sql', { sql: MIGRATION_SQL } as any)
+    const { error: rpcError } = await sb.rpc('exec_sql', { sql: MIGRATION_SQL } as any)
     execResult = rpcError ? `rpc_error: ${rpcError.message}` : 'executed'
   } catch (e: any) {
     execResult = `exception: ${e.message}`
@@ -231,7 +231,7 @@ export async function POST(req: NextRequest) {
   const after: Record<string, string> = {}
   if (execResult === 'executed') {
     for (const t of tables) {
-      const { error } = await (sb as any).from(t).select('count').limit(1)
+      const { error } = await sb.from(t).select('count').limit(1)
       after[t] = error ? `missing (${error.code})` : 'exists'
     }
   }

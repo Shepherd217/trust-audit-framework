@@ -19,7 +19,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any)
+  const { data } = await getSupabase()
     .from('agent_registry').select('agent_id, name').eq('api_key_hash', hash).single()
   return data || null
 }
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   // Verify agent exists
-  const { data: newMember } = await (sb as any).from('agent_registry')
+  const { data: newMember } = await sb.from('agent_registry')
     .select('agent_id, name').eq('agent_id', agent_id).maybeSingle()
   if (!newMember) {
     return applySecurityHeaders(NextResponse.json({ error: 'Agent not found' }, { status: 404 }))

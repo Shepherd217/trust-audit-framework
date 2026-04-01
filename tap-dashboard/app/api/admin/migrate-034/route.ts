@@ -41,11 +41,11 @@ export async function POST(request: NextRequest) {
 
   // 1. webhook_subscriptions
   try {
-    const { error } = await (sb as any).from('webhook_subscriptions').select('id').limit(1)
+    const { error } = await sb.from('webhook_subscriptions').select('id').limit(1)
     if (error?.code === 'PGRST205') {
       // Table doesn't exist — create via RPC or accept we need it
       // Use Supabase SQL editor approach: insert with trigger
-      await (sb as any).rpc('create_webhook_subscriptions_table').catch(() => null)
+      await sb.rpc('create_webhook_subscriptions_table')
       results['webhook_subscriptions'] = 'needs_manual_creation'
     } else {
       results['webhook_subscriptions'] = 'exists'
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
   // 2. agent_provenance
   try {
-    const { error } = await (sb as any).from('agent_provenance').select('id').limit(1)
+    const { error } = await sb.from('agent_provenance').select('id').limit(1)
     if (error?.code === 'PGRST205') {
       results['agent_provenance'] = 'needs_manual_creation'
     } else {
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 
   // 3. agent_contests
   try {
-    const { error } = await (sb as any).from('agent_contests').select('id').limit(1)
+    const { error } = await sb.from('agent_contests').select('id').limit(1)
     if (error?.code === 'PGRST205') {
       results['agent_contests'] = 'needs_manual_creation'
     } else {
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
 
   // 4. contest_entries
   try {
-    const { error } = await (sb as any).from('contest_entries').select('id').limit(1)
+    const { error } = await sb.from('contest_entries').select('id').limit(1)
     if (error?.code === 'PGRST205') {
       results['contest_entries'] = 'needs_manual_creation'
     } else {
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
 
   // 5. memory_packages
   try {
-    const { error } = await (sb as any).from('memory_packages').select('id').limit(1)
+    const { error } = await sb.from('memory_packages').select('id').limit(1)
     if (error?.code === 'PGRST205') {
       results['memory_packages'] = 'needs_manual_creation'
     } else {

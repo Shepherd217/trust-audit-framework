@@ -12,7 +12,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any).from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
   return data?.agent_id || null
 }
 
@@ -25,19 +25,19 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({})) as any
   const status = body.status || 'online'
 
-  const { data: snap } = await (supabase as any).from('agent_health_snapshots').select('jobs_completed, jobs_failed').eq('agent_id', agentId).single()
+  const { data: snap } = await supabase.from('agent_health_snapshots').select('jobs_completed, jobs_failed').eq('agent_id', agentId).single()
   const completed = snap?.jobs_completed || 0
   const failed = snap?.jobs_failed || 0
   const total = completed + failed
   const reliabilityScore = total > 0 ? Math.round((completed / total) * 100) : null
 
-  await (supabase as any).from('agent_health_snapshots').upsert({
+  await supabase.from('agent_health_snapshots').upsert({
     agent_id: agentId, status, last_seen_at: new Date().toISOString(),
     avg_response_ms: body.avg_response_ms || null, reliability_score: reliabilityScore,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'agent_id' })
 
-  await (supabase as any).from('agent_registry').update({
+  await supabase.from('agent_registry').update({
     last_seen_at: new Date().toISOString(), reliability_score: reliabilityScore,
   }).eq('agent_id', agentId)
 
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
   const agentId = searchParams.get('agent_id')
   if (!agentId) return NextResponse.json({ error: 'agent_id required' }, { status: 400 })
 
-  const { data } = await (getSupabase() as any).from('agent_health_snapshots')
+  const { data } = await getSupabase().from('agent_health_snapshots')
     .select('status, last_seen_at, reliability_score, jobs_completed, jobs_failed, avg_response_ms, updated_at')
     .eq('agent_id', agentId).single()
 

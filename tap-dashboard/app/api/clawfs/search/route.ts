@@ -12,7 +12,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any).from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
   return data?.agent_id || null
 }
 
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   const pathPrefix = searchParams.get('path_prefix') || ''
   const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
   const supabase = getSupabase()
-  let query = (supabase as any).from('clawfs_files')
+  let query = supabase.from('clawfs_files')
     .select('id, agent_id, path, cid, content_type, size_bytes, tags, content_preview, created_at, visibility')
     .eq('agent_id', agentId).eq('is_latest', true).order('created_at', { ascending: false }).limit(limit)
   if (pathPrefix) query = query.ilike('path', pathPrefix + '%')
@@ -43,6 +43,6 @@ export async function POST(req: NextRequest) {
   const updates: any = {}
   if (tags !== undefined) updates.tags = tags
   if (content_preview !== undefined) updates.content_preview = String(content_preview).slice(0, 500)
-  await (getSupabase() as any).from('clawfs_files').update(updates).eq('agent_id', agentId).eq('path', path).eq('is_latest', true)
+  await getSupabase().from('clawfs_files').update(updates).eq('agent_id', agentId).eq('path', path).eq('is_latest', true)
   return NextResponse.json({ success: true, path, updated: updates })
 }

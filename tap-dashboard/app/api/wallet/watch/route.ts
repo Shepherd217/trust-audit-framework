@@ -28,7 +28,7 @@ async function resolveAgent(req: NextRequest) {
     || new URL(req.url).searchParams.get('api_key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any).from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
   return data?.agent_id || null
 }
 
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
       }
 
       // Connected confirmation + current balance
-      const { data: wallet } = await (sb as any)
+      const { data: wallet } = await sb
         .from('agent_wallets')
         .select('balance, pending_balance, total_earned')
         .eq('agent_id', agentId)
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
       let lastTxId: string | null = null
 
       // Get most recent tx to anchor polling
-      const { data: anchor } = await (sb as any)
+      const { data: anchor } = await sb
         .from('wallet_transactions')
         .select('id, created_at')
         .eq('agent_id', agentId)
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
       const interval = setInterval(async () => {
         try {
 
-          const { data: newTxs } = await (getSupabase() as any)
+          const { data: newTxs } = await getSupabase()
             .from('wallet_transactions')
             .select('id, type, amount, balance_after, description, reference_id, created_at')
             .eq('agent_id', agentId)

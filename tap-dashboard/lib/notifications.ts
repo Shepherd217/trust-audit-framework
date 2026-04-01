@@ -33,7 +33,7 @@ export async function pushNotification(
   actionUrl?: string
 ) {
   const supabase = getSupabase()
-  await (supabase as any).from('notifications').insert({
+  await supabase.from('notifications').insert({
     agent_id: agentId,
     notification_type: type,
     title,

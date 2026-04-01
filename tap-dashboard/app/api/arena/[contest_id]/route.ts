@@ -20,7 +20,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (sb() as any).from('agent_registry')
+  const { data } = await sb().from('agent_registry')
     .select('agent_id, name, reputation, tier, is_suspended').eq('api_key_hash', hash).single()
   return data || null
 }
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
   if (rl) return rl
 
   try {
-    const { data: contest, error } = await (sb() as any)
+    const { data: contest, error } = await sb()
       .from('agent_contests')
       .select('*')
       .eq('id', contest_id)
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     }
 
     // Get all entries with agent info
-    const { data: entries } = await (sb() as any)
+    const { data: entries } = await sb()
       .from('contest_entries')
       .select('*')
       .eq('contest_id', contest_id)
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const agentIds = (entries || []).map((e: any) => e.agent_id)
     let agentMap: Record<string, any> = {}
     if (agentIds.length > 0) {
-      const { data: agents } = await (sb() as any)
+      const { data: agents } = await sb()
         .from('agent_registry')
         .select('agent_id, name, platform, reputation, tier')
         .in('agent_id', agentIds)
@@ -78,7 +78,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     // 0.25.0: Judging panel — fetch if judging_enabled
     let judgingPanel: any = null
     if (contest.judging_enabled) {
-      const { data: judgeRecords } = await (sb() as any)
+      const { data: judgeRecords } = await sb()
         .from('contest_judges')
         .select('judge_agent_id, qualification_score, verdict, submitted_at')
         .eq('contest_id', contest_id)
@@ -86,7 +86,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       const judgeIds = (judgeRecords || []).map((j: any) => j.judge_agent_id)
       let judgeAgentMap: Record<string, any> = {}
       if (judgeIds.length > 0) {
-        const { data: judgeAgents } = await (sb() as any)
+        const { data: judgeAgents } = await sb()
           .from('agent_registry')
           .select('agent_id, name, reputation, tier')
           .in('agent_id', judgeIds)
@@ -175,7 +175,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   if (!agent) return fail('Unauthorized', 401)
   if (agent.is_suspended) return fail('Account suspended', 403)
 
-  const { data: contest } = await (sb() as any)
+  const { data: contest } = await sb()
     .from('agent_contests')
     .select('*')
     .eq('id', contest_id)
@@ -191,7 +191,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   }
 
   // Check already entered
-  const { data: existing } = await (sb() as any)
+  const { data: existing } = await sb()
     .from('contest_entries')
     .select('id')
     .eq('contest_id', contest_id)
@@ -207,30 +207,30 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
   // Pay entry fee if any
   if (contest.entry_fee > 0) {
-    const { data: wallet } = await (sb() as any)
+    const { data: wallet } = await sb()
       .from('agent_wallets').select('balance').eq('agent_id', agent.agent_id).single()
     if (!wallet || wallet.balance < contest.entry_fee) {
       return fail(`Insufficient credits for entry fee (${contest.entry_fee} credits required)`)
     }
     const newBal = wallet.balance - contest.entry_fee
-    await (sb() as any).from('agent_wallets').update({ balance: newBal }).eq('agent_id', agent.agent_id)
-    await (sb() as any).from('wallet_transactions').insert({
+    await sb().from('agent_wallets').update({ balance: newBal }).eq('agent_id', agent.agent_id)
+    await sb().from('wallet_transactions').insert({
       agent_id: agent.agent_id, type: 'contest_entry_fee',
       amount: -contest.entry_fee, balance_after: newBal,
       reference_id: contest_id, description: `Entry fee for contest: ${contest.title}`,
     })
     // Add entry fee to trust commitment pool
-    await (sb() as any).from('agent_contests').update({
+    await sb().from('agent_contests').update({
       staking_pool: (contest.staking_pool || 0) + contest.entry_fee,
       participant_count: (contest.participant_count || 0) + 1,
     }).eq('id', contest_id)
   } else {
-    await (sb() as any).from('agent_contests').update({
+    await sb().from('agent_contests').update({
       participant_count: (contest.participant_count || 0) + 1,
     }).eq('id', contest_id)
   }
 
-  const { data: entry, error: entryErr } = await (sb() as any)
+  const { data: entry, error: entryErr } = await sb()
     .from('contest_entries')
     .insert({
       contest_id,
@@ -244,12 +244,12 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   if (entryErr) return fail('Failed to enter contest', 500)
 
   // Log provenance event
-  await (sb() as any).from('agent_provenance').insert({
+  await sb().from('agent_provenance').insert({
     agent_id: agent.agent_id,
     event_type: 'contest_entered',
     reference_id: contest_id,
     metadata: { contest_title: contest.title, prize_pool: contest.prize_pool },
-  }).catch(() => null)
+  })
 
   const r = NextResponse.json({
     success: true,

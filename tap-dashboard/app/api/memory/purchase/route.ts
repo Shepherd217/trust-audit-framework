@@ -29,7 +29,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (sb() as any).from('agent_registry')
+  const { data } = await sb().from('agent_registry')
     .select('agent_id, name, reputation, is_suspended').eq('api_key_hash', hash).single()
   return data || null
 }
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
   const supabase = sb()
 
   // Get package
-  const { data: pkg, error: pkgErr } = await (supabase as any)
+  const { data: pkg, error: pkgErr } = await supabase
     .from('memory_packages')
     .select('*')
     .eq('id', package_id)
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Check already purchased
-  const { data: existingPurchase } = await (supabase as any)
+  const { data: existingPurchase } = await supabase
     .from('memory_purchases')
     .select('id')
     .eq('package_id', package_id)
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Check buyer credits
-  const { data: buyerWallet } = await (supabase as any)
+  const { data: buyerWallet } = await supabase
     .from('agent_wallets').select('balance').eq('agent_id', agent.agent_id).single()
 
   if (!buyerWallet || buyerWallet.balance < pkg.price) {
@@ -100,11 +100,11 @@ export async function POST(req: NextRequest) {
 
   // Deduct from buyer
   const buyerNewBal = buyerWallet.balance - pkg.price
-  await (supabase as any).from('agent_wallets').update({
+  await supabase.from('agent_wallets').update({
     balance: buyerNewBal, updated_at: new Date().toISOString(),
   }).eq('agent_id', agent.agent_id)
 
-  await (supabase as any).from('wallet_transactions').insert({
+  await supabase.from('wallet_transactions').insert({
     agent_id: agent.agent_id, type: 'memory_purchase',
     amount: -pkg.price, balance_after: buyerNewBal,
     reference_id: package_id, source_type: 'memory',
@@ -112,16 +112,16 @@ export async function POST(req: NextRequest) {
   })
 
   // Credit seller
-  const { data: sellerWallet } = await (supabase as any)
+  const { data: sellerWallet } = await supabase
     .from('agent_wallets').select('balance').eq('agent_id', pkg.seller_agent_id).single()
 
   if (sellerWallet) {
     const sellerNewBal = sellerWallet.balance + sellerAmount
-    await (supabase as any).from('agent_wallets').update({
+    await supabase.from('agent_wallets').update({
       balance: sellerNewBal, updated_at: new Date().toISOString(),
     }).eq('agent_id', pkg.seller_agent_id)
 
-    await (supabase as any).from('wallet_transactions').insert({
+    await supabase.from('wallet_transactions').insert({
       agent_id: pkg.seller_agent_id, type: 'memory_sale',
       amount: sellerAmount, balance_after: sellerNewBal,
       reference_id: package_id, source_type: 'memory',
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Record purchase
-  await (supabase as any).from('memory_purchases').insert({
+  await supabase.from('memory_purchases').insert({
     package_id,
     buyer_agent_id: agent.agent_id,
     seller_agent_id: pkg.seller_agent_id,
@@ -139,30 +139,30 @@ export async function POST(req: NextRequest) {
   })
 
   // Increment download count
-  await (supabase as any).from('memory_packages').update({
+  await supabase.from('memory_packages').update({
     downloads: (pkg.downloads || 0) + 1,
     updated_at: new Date().toISOString(),
   }).eq('id', package_id)
 
   // Log provenance for buyer
-  await (supabase as any).from('agent_provenance').insert({
+  await supabase.from('agent_provenance').insert({
     agent_id: agent.agent_id,
     event_type: 'memory_purchased',
     reference_id: package_id,
     related_agent_id: pkg.seller_agent_id,
     skill: pkg.skill,
     metadata: { title: pkg.title, price: pkg.price },
-  }).catch(() => null)
+  })
 
   // Notify seller
-  await (supabase as any).from('notifications').insert({
+  await supabase.from('notifications').insert({
     agent_id: pkg.seller_agent_id,
     notification_type: 'memory.sold',
     title: `Memory sold: "${pkg.title}"`,
     message: `${agent.name} purchased your memory package. You earned ${sellerAmount} credits ($${(sellerAmount / 100).toFixed(2)}).`,
     metadata: { package_id, buyer_id: agent.agent_id, amount: sellerAmount },
     read: false,
-  }).catch(() => null)
+  })
 
   const r = NextResponse.json({
     success: true,

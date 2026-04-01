@@ -30,7 +30,7 @@ function getSupabase() {
 async function authenticateAgent(apiKey: string) {
   const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
   
-  const { data: agent, error } = await (getSupabase() as any)
+  const { data: agent, error } = await getSupabase()
     .from('agent_registry')
     .select('*')
     .eq('api_key_hash', apiKeyHash)
@@ -45,7 +45,7 @@ async function authenticateAgent(apiKey: string) {
 
 // Helper: Get WoT config
 async function getWoTConfig() {
-  const { data: config, error } = await (getSupabase() as any)
+  const { data: config, error } = await getSupabase()
     .from('wot_config')
     .select('*')
     .eq('id', 1)
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Get target agent
-    const { data: vouchee, error: voucheeError } = await (getSupabase() as any)
+    const { data: vouchee, error: voucheeError } = await getSupabase()
       .from('agent_registry')
       .select('*')
       .eq('agent_id', target_agent_id)
@@ -204,14 +204,14 @@ export async function POST(request: NextRequest) {
     // ── Sybil Protection ──────────────────────────────────────────────────────
     // Vouching requires a completed marketplace contract between the two agents.
     // Founding agents (in legacy `agents` table) are exempt during bootstrap.
-    const { data: voucherFoundingAgent } = await (getSupabase() as any)
+    const { data: voucherFoundingAgent } = await getSupabase()
       .from('agents')
       .select('agent_id')
       .eq('agent_id', voucher.agent_id)
       .single();
 
     if (!voucherFoundingAgent) {
-      const { data: sharedContract } = await (getSupabase() as any)
+      const { data: sharedContract } = await getSupabase()
         .from('marketplace_contracts')
         .select('id')
         .or(
@@ -234,7 +234,7 @@ export async function POST(request: NextRequest) {
     // ── End Sybil Protection ──────────────────────────────────────────────────
 
     // Check if already vouched
-    const { data: existingVouch, error: existingError } = await (getSupabase() as any)
+    const { data: existingVouch, error: existingError } = await getSupabase()
       .from('agent_vouches')
       .select('*')
       .eq('voucher_id', voucher.agent_id)
@@ -257,7 +257,7 @@ export async function POST(request: NextRequest) {
     const signature = createHash('sha256').update(signatureData).digest('hex');
     
     // Create the vouch record
-    const { data: vouch, error: vouchError } = await (getSupabase() as any)
+    const { data: vouch, error: vouchError } = await getSupabase()
       .from('agent_vouches')
       .insert({
         voucher_id: voucher.agent_id,
@@ -282,7 +282,7 @@ export async function POST(request: NextRequest) {
     
     // Update staked reputation for voucher
     const newStakedAmount = stakedReputation + requestedStake;
-    await (getSupabase() as any)
+    await getSupabase()
       .from('agent_registry')
       .update({ staked_reputation: newStakedAmount })
       .eq('agent_id', voucher.agent_id);
@@ -290,7 +290,7 @@ export async function POST(request: NextRequest) {
     // Check if vouchee should be activated (the trigger will handle this, but let's get the updated status)
     await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for trigger
     
-    const { data: updatedVouchee } = await (getSupabase() as any)
+    const { data: updatedVouchee } = await getSupabase()
       .from('agent_registry')
       .select('activation_status, vouch_count, reputation, activated_at')
       .eq('agent_id', target_agent_id)
@@ -344,7 +344,7 @@ export async function GET(request: NextRequest) {
     const voucheeId = searchParams.get('for');
     const voucherId = searchParams.get('by');
     
-    let query = (getSupabase() as any)
+    let query = getSupabase()
       .from('agent_vouches')
       .select(`
         *,

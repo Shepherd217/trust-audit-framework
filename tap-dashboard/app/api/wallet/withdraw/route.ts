@@ -34,7 +34,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any).from('agent_registry')
+  const { data } = await getSupabase().from('agent_registry')
     .select('agent_id, name, is_suspended').eq('api_key_hash', hash).single()
   return data || null
 }
@@ -70,12 +70,12 @@ export async function POST(req: NextRequest) {
   }
 
   // Get wallet balance
-  const { data: wallet } = await (sb as any).from('agent_wallets')
+  const { data: wallet } = await sb.from('agent_wallets')
     .select('balance').eq('agent_id', agent.agent_id).single()
   if (!wallet) return applySecurityHeaders(NextResponse.json({ error: 'Wallet not found' }, { status: 404 }))
 
   // Calculate held credits (bootstrap + transfer credits within hold period)
-  const { data: heldTxs } = await (sb as any).from('wallet_transactions')
+  const { data: heldTxs } = await sb.from('wallet_transactions')
     .select('amount')
     .eq('agent_id', agent.agent_id)
     .gt('hold_until', new Date().toISOString())
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 
   if (amount_credits > withdrawable) {
     // Find when the largest hold expires
-    const { data: nextRelease } = await (sb as any).from('wallet_transactions')
+    const { data: nextRelease } = await sb.from('wallet_transactions')
       .select('hold_until')
       .eq('agent_id', agent.agent_id)
       .gt('hold_until', new Date().toISOString())
@@ -106,11 +106,11 @@ export async function POST(req: NextRequest) {
 
   // Flag large withdrawals for review
   if (amount_credits >= LARGE_WITHDRAW_FLAG) {
-    await (sb as any).from('credit_anomalies').insert({
+    await sb.from('credit_anomalies').insert({
       agent_id: agent.agent_id, type: 'large_withdrawal',
       severity: 'high',
       details: { amount_credits, usd: (amount_credits / 100).toFixed(2), method },
-    }).catch(() => {})
+    })
   }
 
   // Process withdrawal via Stripe Connect
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
       // Resolve Stripe Connect account
       let connectAccountId = stripe_account_id
       if (!connectAccountId) {
-        const { data: connectAccount } = await (sb as any).from('stripe_connect_accounts')
+        const { data: connectAccount } = await sb.from('stripe_connect_accounts')
           .select('stripe_account_id, charges_enabled, payouts_enabled')
           .eq('agent_id', agent.agent_id)
           .single()
@@ -184,11 +184,11 @@ export async function POST(req: NextRequest) {
 
   // Deduct from balance (only after successful Stripe transfer or non-Stripe method)
   const newBal = wallet.balance - amount_credits
-  await (sb as any).from('agent_wallets').update({
+  await sb.from('agent_wallets').update({
     balance: newBal, updated_at: new Date().toISOString()
   }).eq('agent_id', agent.agent_id)
 
-  await (sb as any).from('wallet_transactions').insert({
+  await sb.from('wallet_transactions').insert({
     agent_id: agent.agent_id, type: 'withdrawal',
     amount: -amount_credits, balance_after: newBal,
     reference_id: withdrawalId, source_type: 'withdrawal',
@@ -201,7 +201,7 @@ export async function POST(req: NextRequest) {
     ? `${amount_credits} credits withdrawn. ${usdAmount} transferred to your Stripe account (${stripeTransferId}).`
     : `${amount_credits} credits withdrawn. Payout processing (1-3 business days).`
 
-  await (sb as any).from('notifications').insert({
+  await sb.from('notifications').insert({
     agent_id: agent.agent_id, notification_type: 'wallet.withdrawal',
     title: `Withdrawal of ${usdAmount} ${isComplete ? 'completed' : 'initiated'}`,
     message: notifMsg,

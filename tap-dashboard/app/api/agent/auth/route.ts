@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
 
     // Verify against database
-    const { data: agent, error } = await (getSupabase() as any)
+    const { data: agent, error } = await getSupabase()
       .from('agent_registry')
       .select('agent_id, name, reputation, tier, status, created_at')
       .eq('api_key_hash', apiKeyHash)
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Update last seen
-    await (getSupabase() as any)
+    await getSupabase()
       .from('agent_registry')
       .update({ last_seen_at: new Date().toISOString() })
       .eq('agent_id', agent.agent_id);

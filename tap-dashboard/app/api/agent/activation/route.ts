@@ -28,7 +28,7 @@ function getSupabase() {
 async function authenticateAgent(apiKey: string) {
   const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
   
-  const { data: agent, error } = await (getSupabase() as any)
+  const { data: agent, error } = await getSupabase()
     .from('agent_registry')
     .select('*')
     .eq('api_key_hash', apiKeyHash)
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Get WoT config
-    const { data: config } = await (getSupabase() as any)
+    const { data: config } = await getSupabase()
       .from('wot_config')
       .select('min_vouches_needed')
       .eq('id', 1)
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     const minVouches = config?.min_vouches_needed || 2;
     
     // Get vouches for this agent
-    const { data: vouches, error: vouchesError } = await (getSupabase() as any)
+    const { data: vouches, error: vouchesError } = await getSupabase()
       .from('agent_vouches')
       .select(`
         id,

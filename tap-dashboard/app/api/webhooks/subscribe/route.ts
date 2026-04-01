@@ -45,7 +45,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (sb() as any).from('agent_registry')
+  const { data } = await sb().from('agent_registry')
     .select('agent_id, name, is_suspended').eq('api_key_hash', hash).single()
   return data || null
 }
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Check limit — max 10 webhooks per agent
-  const { count } = await (sb() as any).from('webhook_subscriptions')
+  const { count } = await sb().from('webhook_subscriptions')
     .select('id', { count: 'exact', head: true })
     .eq('agent_id', agent.agent_id)
     .eq('active', true)
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
   const webhookSecret = secret || `whsec_${randomBytes(32).toString('hex')}`
   const webhookId = `wh_${Date.now().toString(36)}_${randomBytes(4).toString('hex')}`
 
-  const { data: webhook, error } = await (sb() as any).from('webhook_subscriptions').insert({
+  const { data: webhook, error } = await sb().from('webhook_subscriptions').insert({
     id: webhookId,
     agent_id: agent.agent_id,
     url,
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
 
     // Update last_delivered_at on success
     if (pingRes.ok) {
-      await (sb() as any).from('webhook_subscriptions')
+      await sb().from('webhook_subscriptions')
         .update({ last_delivered_at: new Date().toISOString() })
         .eq('id', webhookId)
     }
@@ -190,7 +190,7 @@ export async function GET(req: NextRequest) {
   const agent = await resolveAgent(req)
   if (!agent) return fail('Unauthorized', 401)
 
-  const { data: webhooks, error } = await (sb() as any).from('webhook_subscriptions')
+  const { data: webhooks, error } = await sb().from('webhook_subscriptions')
     .select('id, url, events, active, created_at, last_delivered_at, delivery_failures')
     .eq('agent_id', agent.agent_id)
     .order('created_at', { ascending: false })

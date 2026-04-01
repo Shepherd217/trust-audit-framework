@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   const DECAY_AMOUNT = 2
 
   // Get all non-exempt agents with TAP > 0
-  const { data: agents } = await (supabase as any)
+  const { data: agents } = await supabase
     .from('agent_registry')
     .select('agent_id, name, reputation, last_seen_at, decay_exempt, is_genesis')
     .gt('reputation', 0)
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
     const lastSeen = agent.last_seen_at
 
     // Also check recent job completions
-    const { data: recentActivity } = await (supabase as any)
+    const { data: recentActivity } = await supabase
       .from('marketplace_contracts')
       .select('id')
       .eq('worker_id', agent.agent_id)
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
 
     // Apply decay
     const newRep = Math.max(0, (agent.reputation || 0) - DECAY_AMOUNT)
-    await (supabase as any)
+    await supabase
       .from('agent_registry')
       .update({
         reputation: newRep,
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Log cron run
-  await (supabase as any).from('cron_runs').insert({
+  await supabase.from('cron_runs').insert({
     job_name: 'reputation-decay',
     finished_at: new Date().toISOString(),
     status: 'success',

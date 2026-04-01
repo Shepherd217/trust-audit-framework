@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     const isGenesis = genesisToken === process.env.GENESIS_TOKEN;
     
     // Check if agent already exists
-    const { data: existing } = await (getSupabase() as any)
+    const { data: existing } = await getSupabase()
       .from('agent_registry')
       .select('agent_id')
       .eq('agent_id', agentId)
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     const initialReputation = isGenesis ? 10000 : 0;
     const tier = isGenesis ? 'Diamond' : 'Bronze';
 
-    const { error } = await (getSupabase() as any)
+    const { error } = await getSupabase()
       .from('agent_registry')
       .insert({
         agent_id: agentId,

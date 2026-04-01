@@ -29,7 +29,7 @@ async function resolveAgent(req: NextRequest) {
     new URL(req.url).searchParams.get('api_key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (sb() as any)
+  const { data } = await sb()
     .from('agent_registry')
     .select('agent_id, name, reputation, tier, metadata')
     .eq('api_key_hash', hash)
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
   const filterType = searchParams.get('type')
   const filterStatus = searchParams.get('status') ?? 'all'
 
-  let q = (sb() as any)
+  let q = sb()
     .from('clawbus_messages')
     .select('message_id, from_agent, to_agent, message_type, payload, priority, status, created_at, delivered_at, read_at')
     .eq('to_agent', agent.agent_id)
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
 
   // Enrich with sender info
   const senderIds = [...new Set((messages ?? []).map((m: { from_agent: string }) => m.from_agent))]
-  const { data: senders } = await (sb() as any)
+  const { data: senders } = await sb()
     .from('agent_registry')
     .select('agent_id, name, reputation, tier, metadata')
     .in('agent_id', senderIds)

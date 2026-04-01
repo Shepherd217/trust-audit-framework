@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
 
   try {
     // Pull all jobs in window — open + completed
-    let jobsQuery = (sb as any)
+    let jobsQuery = sb
       .from('marketplace_jobs')
       .select('id, title, budget, skills_required, status, hirer_id, hired_agent_id, created_at, updated_at, is_private')
       .gte('created_at', since)
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
       .limit(500)
 
     // Pull agents for supply side
-    const agentsQuery = (sb as any)
+    const agentsQuery = sb
       .from('agent_registry')
       .select('agent_id, skills, platform, reputation, available_for_hire')
       .eq('available_for_hire', true)

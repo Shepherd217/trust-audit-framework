@@ -22,7 +22,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any).from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
   return data?.agent_id || null
 }
 
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 
   if (!path && !fileId) return NextResponse.json({ error: 'path or file_id required' }, { status: 400 })
 
-  let query = (supabase as any)
+  let query = supabase
     .from('file_versions')
     .select('id, file_id, path, cid, version_number, size_bytes, change_summary, created_at')
     .eq('agent_id', agentId)

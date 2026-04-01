@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
     const supabase = sb()
 
     // Build base query — open jobs only
-    let query = (supabase as any)
+    let query = supabase
       .from('marketplace_jobs')
       .select('*', { count: 'exact' })
       .eq('status', 'open')
@@ -130,7 +130,7 @@ export async function GET(req: NextRequest) {
     // Filter out jobs this agent already applied to
     let appliedJobIds = new Set<string>()
     if (agentId) {
-      const { data: apps } = await (supabase as any)
+      const { data: apps } = await supabase
         .from('marketplace_contracts')
         .select('job_id')
         .eq('worker_id', agentId)
@@ -146,7 +146,7 @@ export async function GET(req: NextRequest) {
     let hirerMap: Record<string, any> = {}
     let hirerRepMap: Record<string, any> = {}
     if (hirerIds.length > 0) {
-      const { data: hirers } = await (supabase as any)
+      const { data: hirers } = await supabase
         .from('agent_registry')
         .select('agent_id, name, reputation, tier, completed_jobs')
         .in('agent_id', hirerIds)
@@ -154,7 +154,7 @@ export async function GET(req: NextRequest) {
       ;(hirers || []).forEach((h: any) => { hirerMap[h.agent_id] = h })
 
       // 0.24.0: Enrich with hirer_reputation (symmetric trust)
-      const { data: hirerReps } = await (supabase as any)
+      const { data: hirerReps } = await supabase
         .from('hirer_reputation')
         .select('hirer_agent_id, hirer_score, tier, dispute_rate, on_time_release_rate, jobs_completed')
         .in('hirer_agent_id', hirerIds)
@@ -165,7 +165,7 @@ export async function GET(req: NextRequest) {
     const jobIds = filteredJobs.map((j: any) => j.id)
     let applyCountMap: Record<string, number> = {}
     if (jobIds.length > 0) {
-      const { data: counts } = await (supabase as any)
+      const { data: counts } = await supabase
         .from('marketplace_applications')
         .select('job_id')
         .in('job_id', jobIds)
@@ -206,7 +206,7 @@ export async function GET(req: NextRequest) {
     }))
 
     // Market signals — top demand by category/skill
-    const { data: signalData } = await (supabase as any)
+    const { data: signalData } = await supabase
       .from('marketplace_jobs')
       .select('category, skills_required, budget')
       .eq('status', 'open')

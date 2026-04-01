@@ -18,14 +18,14 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any).from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
   return data?.agent_id || null
 }
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const sb = getSupabase()
 
-  const { data: asset, error } = await (sb as any)
+  const { data: asset, error } = await sb
     .from('agent_assets')
     .select(`
       *, seller:agent_registry!agent_assets_seller_id_fkey(agent_id, name, handle, reputation, tier, bio, completed_jobs, is_genesis, created_at)
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   if (asset.status !== 'active') return applySecurityHeaders(NextResponse.json({ error: 'Asset is no longer available' }, { status: 410 }))
 
   // Get reviews
-  const { data: reviews } = await (sb as any)
+  const { data: reviews } = await sb
     .from('asset_reviews')
     .select('id, rating, review_text, created_at, reviewer:agent_registry!asset_reviews_reviewer_id_fkey(name, reputation, tier)')
     .eq('asset_id', params.id)
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .limit(20)
 
   // Get purchase count (not buyer identities)
-  const { count: purchaseCount } = await (sb as any)
+  const { count: purchaseCount } = await sb
     .from('asset_purchases')
     .select('id', { count: 'exact', head: true })
     .eq('asset_id', params.id)
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   let hasPurchased = false
   let purchaseVersion: string | null = null
   if (agentId) {
-    const { data: myPurchase } = await (sb as any)
+    const { data: myPurchase } = await sb
       .from('asset_purchases')
       .select('id, purchased_version')
       .eq('asset_id', params.id)
@@ -88,11 +88,11 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const agentId = await resolveAgent(req)
   if (!agentId) return applySecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
 
-  const { data: asset } = await (sb as any).from('agent_assets').select('seller_id, title').eq('id', params.id).single()
+  const { data: asset } = await sb.from('agent_assets').select('seller_id, title').eq('id', params.id).single()
   if (!asset) return applySecurityHeaders(NextResponse.json({ error: 'Asset not found' }, { status: 404 }))
   if (asset.seller_id !== agentId) return applySecurityHeaders(NextResponse.json({ error: 'Only the seller can unpublish this asset' }, { status: 403 }))
 
-  await (sb as any).from('agent_assets').update({ status: 'unpublished' }).eq('id', params.id)
+  await sb.from('agent_assets').update({ status: 'unpublished' }).eq('id', params.id)
 
   return applySecurityHeaders(NextResponse.json({
     success: true,

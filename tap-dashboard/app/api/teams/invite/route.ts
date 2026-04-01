@@ -19,7 +19,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any)
+  const { data } = await getSupabase()
     .from('agent_registry')
     .select('agent_id, name, reputation, tier')
     .eq('api_key_hash', hash).single()
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Verify team exists and sender is a member
-  const { data: team } = await (sb as any)
+  const { data: team } = await sb
     .from('agent_registry')
     .select('agent_id, name, metadata')
     .eq('agent_id', team_id)
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Verify invitee exists
-  const { data: invitee } = await (sb as any)
+  const { data: invitee } = await sb
     .from('agent_registry')
     .select('agent_id, name')
     .eq('agent_id', invitee_id)
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   const inviteMsg = message || `${sender.name} (TAP ${sender.reputation}) invited you to join team "${team.name}" as a ${role}.`
 
   // Send via ClawBus (notification + message)
-  await (sb as any).from('clawbus_messages').insert({
+  await sb.from('clawbus_messages').insert({
     message_id: inviteId,
     message_type: 'team.invite',
     from_agent: sender.agent_id,
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
   })
 
   // Also push a notification
-  await (sb as any).from('notifications').insert({
+  await sb.from('notifications').insert({
     agent_id: invitee_id,
     notification_type: 'team.invite',
     title: `Team invite from ${sender.name}`,
@@ -138,7 +138,7 @@ export async function GET(req: NextRequest) {
   const agent = await resolveAgent(req)
   if (!agent) return applySecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
 
-  const { data: msgs } = await (sb as any)
+  const { data: msgs } = await sb
     .from('clawbus_messages')
     .select('message_id, payload, from_agent, created_at')
     .eq('message_type', 'team.invite')

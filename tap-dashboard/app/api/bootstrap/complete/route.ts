@@ -12,7 +12,7 @@ async function resolveAgent(req: NextRequest) {
   const k = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!k) return null
   const h = createHash('sha256').update(k).digest('hex')
-  const { data } = await (getSupabase() as any).from('agent_registry').select('agent_id').eq('api_key_hash', h).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', h).single()
   return data?.agent_id || null
 }
 
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   if (!agentId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // ── Anti-abuse guards ────────────────────────────────────────────────────────
-  const { data: agentInfo } = await (sb as any).from('agent_registry')
+  const { data: agentInfo } = await sb.from('agent_registry')
     .select('activation_status, is_suspended, bootstrap_claimed_at')
     .eq('agent_id', agentId).single()
 
@@ -44,19 +44,19 @@ export async function POST(req: NextRequest) {
   const { task_type } = await req.json()
   if (!task_type) return NextResponse.json({ error: 'task_type required' }, { status: 400 })
 
-  const { data: task } = await (sb as any).from('bootstrap_tasks').select('*')
+  const { data: task } = await sb.from('bootstrap_tasks').select('*')
     .eq('agent_id', agentId).eq('task_type', task_type).eq('status', 'pending').single()
 
   if (!task) return NextResponse.json({ error: 'Task not found or already completed' }, { status: 404 })
   if (new Date(task.expires_at) < new Date()) return NextResponse.json({ error: 'Task expired' }, { status: 400 })
 
-  await (sb as any).from('bootstrap_tasks')
+  await sb.from('bootstrap_tasks')
     .update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', task.id)
 
-  const { data: w } = await (sb as any).from('agent_wallets').select('balance').eq('agent_id', agentId).single()
+  const { data: w } = await sb.from('agent_wallets').select('balance').eq('agent_id', agentId).single()
   const nb = (w?.balance || 0) + task.reward_credits
 
-  await (sb as any).from('agent_wallets').upsert({
+  await sb.from('agent_wallets').upsert({
     agent_id: agentId, balance: nb, total_earned: nb,
     currency: 'credits', updated_at: new Date().toISOString(),
   }, { onConflict: 'agent_id' })
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   // Bootstrap credits: 7-day withdrawal hold (anti-farming / anti-laundering)
   // Credits can be used internally immediately, but cannot be withdrawn for 7 days
   const holdUntil = new Date(Date.now() + 7 * 86400 * 1000).toISOString()
-  await (sb as any).from('wallet_transactions').insert({
+  await sb.from('wallet_transactions').insert({
     agent_id: agentId, type: 'bootstrap', amount: task.reward_credits,
     balance_after: nb, reference_id: task.id,
     description: 'Bootstrap: ' + task.title,
@@ -72,12 +72,12 @@ export async function POST(req: NextRequest) {
   })
 
   // Mark bootstrap claimed timestamp (anti-duplicate)
-  await (sb as any).from('agent_registry')
+  await sb.from('agent_registry')
     .update({ bootstrap_claimed_at: new Date().toISOString() })
     .eq('agent_id', agentId)
 
-  const { data: a } = await (sb as any).from('agent_registry').select('reputation').eq('agent_id', agentId).single()
-  await (sb as any).from('agent_registry')
+  const { data: a } = await sb.from('agent_registry').select('reputation').eq('agent_id', agentId).single()
+  await sb.from('agent_registry')
     .update({ reputation: (a?.reputation || 0) + task.reward_tap }).eq('agent_id', agentId)
 
   return NextResponse.json({

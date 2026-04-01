@@ -8,6 +8,717 @@ export type { Json } from "./database.types"
 
 // Extended tables not in generated types
 export interface ExtendedTables {
+  agent_notifications: {
+    Row: {
+      id: string | null
+      agent_id: string | null
+      type: string | null
+      title: string | null
+      message: string | null
+      read: boolean | null
+      created_at: string | null
+      metadata: Json | null
+    }
+    Insert: {
+      id?: string | null
+      agent_id?: string | null
+      type?: string | null
+      title?: string | null
+      message?: string | null
+      read?: boolean | null
+      created_at?: string | null
+      metadata?: Json | null
+    }
+    Update: {
+      id?: string | null
+      agent_id?: string | null
+      type?: string | null
+      title?: string | null
+      message?: string | null
+      read?: boolean | null
+      created_at?: string | null
+      metadata?: Json | null
+    }
+    Relationships: []
+  }
+  analytics_activity_feed: {
+    Row: {
+      id: string | null
+      agent_id: string | null
+      event_type: string | null
+      created_at: string | null
+      metadata: Json | null
+    }
+    Insert: {
+      id?: string | null
+      agent_id?: string | null
+      event_type?: string | null
+      created_at?: string | null
+      metadata?: Json | null
+    }
+    Update: {
+      id?: string | null
+      agent_id?: string | null
+      event_type?: string | null
+      created_at?: string | null
+      metadata?: Json | null
+    }
+    Relationships: []
+  }
+  analytics_agents: {
+    Row: {
+      id: string | null
+      agent_id: string | null
+      event_type: string | null
+      metric_value: number | null
+      reputation_score: number | null
+      created_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      agent_id?: string | null
+      event_type?: string | null
+      metric_value?: number | null
+      reputation_score?: number | null
+      created_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      agent_id?: string | null
+      event_type?: string | null
+      metric_value?: number | null
+      reputation_score?: number | null
+      created_at?: string | null
+    }
+    Relationships: []
+  }
+  analytics_daily_trends: {
+    Row: {
+      id: string | null
+      date: string | null
+      metric: string | null
+      value: number | null
+      created_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      date?: string | null
+      metric?: string | null
+      value?: number | null
+      created_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      date?: string | null
+      metric?: string | null
+      value?: number | null
+      created_at?: string | null
+    }
+    Relationships: []
+  }
+  analytics_events: {
+    Row: {
+      id: string | null
+      event_type: string | null
+      metric_value: number | null
+      agent_id: string | null
+      created_at: string | null
+      metadata: Json | null
+    }
+    Insert: {
+      id?: string | null
+      event_type?: string | null
+      metric_value?: number | null
+      agent_id?: string | null
+      created_at?: string | null
+      metadata?: Json | null
+    }
+    Update: {
+      id?: string | null
+      event_type?: string | null
+      metric_value?: number | null
+      agent_id?: string | null
+      created_at?: string | null
+      metadata?: Json | null
+    }
+    Relationships: []
+  }
+  analytics_hourly_patterns: {
+    Row: {
+      id: string | null
+      hour: number | null
+      metric: string | null
+      value: number | null
+      created_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      hour?: number | null
+      metric?: string | null
+      value?: number | null
+      created_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      hour?: number | null
+      metric?: string | null
+      value?: number | null
+      created_at?: string | null
+    }
+    Relationships: []
+  }
+  analytics_reputation_distribution: {
+    Row: {
+      id: string | null
+      event_type: string | null
+      tier: string | null
+      count: number | null
+      created_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      event_type?: string | null
+      tier?: string | null
+      count?: number | null
+      created_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      event_type?: string | null
+      tier?: string | null
+      count?: number | null
+      created_at?: string | null
+    }
+    Relationships: []
+  }
+  avatars: {
+    Row: {
+      id: string | null
+      agent_id: string | null
+      url: string | null
+      created_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      agent_id?: string | null
+      url?: string | null
+      created_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      agent_id?: string | null
+      url?: string | null
+      created_at?: string | null
+    }
+    Relationships: []
+  }
+  claw_bus_messages: {
+    Row: {
+      id: string | null
+      from_agent: string | null
+      to_agent: string | null
+      channel: string | null
+      payload: Json | null
+      priority: string | null
+      type: string | null
+      status: string | null
+      created_at: string | null
+      delivered_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      from_agent?: string | null
+      to_agent?: string | null
+      channel?: string | null
+      payload?: Json | null
+      priority?: string | null
+      type?: string | null
+      status?: string | null
+      created_at?: string | null
+      delivered_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      from_agent?: string | null
+      to_agent?: string | null
+      channel?: string | null
+      payload?: Json | null
+      priority?: string | null
+      type?: string | null
+      status?: string | null
+      created_at?: string | null
+      delivered_at?: string | null
+    }
+    Relationships: []
+  }
+  claw_files: {
+    Row: {
+      id: string | null
+      cid: string | null
+      owner: string | null
+      tier: string | null
+      locations: Json | null
+      read_access: Json | null
+      created_at: string | null
+      expires_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      cid?: string | null
+      owner?: string | null
+      tier?: string | null
+      locations?: Json | null
+      read_access?: Json | null
+      created_at?: string | null
+      expires_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      cid?: string | null
+      owner?: string | null
+      tier?: string | null
+      locations?: Json | null
+      read_access?: Json | null
+      created_at?: string | null
+      expires_at?: string | null
+    }
+    Relationships: []
+  }
+  claw_messages: {
+    Row: {
+      id: string | null
+      from_agent: string | null
+      to_agent: string | null
+      payload: Json | null
+      priority: string | null
+      type: string | null
+      status: string | null
+      created_at: string | null
+      delivered_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      from_agent?: string | null
+      to_agent?: string | null
+      payload?: Json | null
+      priority?: string | null
+      type?: string | null
+      status?: string | null
+      created_at?: string | null
+      delivered_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      from_agent?: string | null
+      to_agent?: string | null
+      payload?: Json | null
+      priority?: string | null
+      type?: string | null
+      status?: string | null
+      created_at?: string | null
+      delivered_at?: string | null
+    }
+    Relationships: []
+  }
+  claw_vm_metrics: {
+    Row: {
+      id: string | null
+      vm_id: string | null
+      timestamp: string | null
+      cpu_percent: number | null
+      memory_mb: number | null
+      created_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      vm_id?: string | null
+      timestamp?: string | null
+      cpu_percent?: number | null
+      memory_mb?: number | null
+      created_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      vm_id?: string | null
+      timestamp?: string | null
+      cpu_percent?: number | null
+      memory_mb?: number | null
+      created_at?: string | null
+    }
+    Relationships: []
+  }
+  claw_vm_snapshots: {
+    Row: {
+      id: string | null
+      agent_id: string | null
+      vm_id: string | null
+      snapshot_data: Json | null
+      created_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      agent_id?: string | null
+      vm_id?: string | null
+      snapshot_data?: Json | null
+      created_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      agent_id?: string | null
+      vm_id?: string | null
+      snapshot_data?: Json | null
+      created_at?: string | null
+    }
+    Relationships: []
+  }
+  claw_vms: {
+    Row: {
+      id: string | null
+      agent_id: string | null
+      state: string | null
+      config: Json | null
+      created_at: string | null
+      updated_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      agent_id?: string | null
+      state?: string | null
+      config?: Json | null
+      created_at?: string | null
+      updated_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      agent_id?: string | null
+      state?: string | null
+      config?: Json | null
+      created_at?: string | null
+      updated_at?: string | null
+    }
+    Relationships: []
+  }
+  clawbus_channels: {
+    Row: {
+      id: string | null
+      name: string | null
+      created_by: string | null
+      created_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      name?: string | null
+      created_by?: string | null
+      created_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      name?: string | null
+      created_by?: string | null
+      created_at?: string | null
+    }
+    Relationships: []
+  }
+  clawbus_subscriptions: {
+    Row: {
+      id: string | null
+      agent_id: string | null
+      pattern: string | null
+      channel: string | null
+      created_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      agent_id?: string | null
+      pattern?: string | null
+      channel?: string | null
+      created_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      agent_id?: string | null
+      pattern?: string | null
+      channel?: string | null
+      created_at?: string | null
+    }
+    Relationships: []
+  }
+  escrows: {
+    Row: {
+      id: string | null
+      escrow_id: string | null
+      payer_claw_id: string | null
+      payee_claw_id: string | null
+      amount: number | null
+      status: string | null
+      created_at: string | null
+      updated_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      escrow_id?: string | null
+      payer_claw_id?: string | null
+      payee_claw_id?: string | null
+      amount?: number | null
+      status?: string | null
+      created_at?: string | null
+      updated_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      escrow_id?: string | null
+      payer_claw_id?: string | null
+      payee_claw_id?: string | null
+      amount?: number | null
+      status?: string | null
+      created_at?: string | null
+      updated_at?: string | null
+    }
+    Relationships: []
+  }
+  file_permissions: {
+    Row: {
+      id: string | null
+      owner_id: string | null
+      version: string | null
+      file_id: string | null
+      grantee_id: string | null
+      permissions: Json | null
+      created_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      owner_id?: string | null
+      version?: string | null
+      file_id?: string | null
+      grantee_id?: string | null
+      permissions?: Json | null
+      created_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      owner_id?: string | null
+      version?: string | null
+      file_id?: string | null
+      grantee_id?: string | null
+      permissions?: Json | null
+      created_at?: string | null
+    }
+    Relationships: []
+  }
+  files: {
+    Row: {
+      id: string | null
+      file_id: string | null
+      owner_id: string | null
+      storage_tier: string | null
+      version: string | null
+      path: string | null
+      created_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      file_id?: string | null
+      owner_id?: string | null
+      storage_tier?: string | null
+      version?: string | null
+      path?: string | null
+      created_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      file_id?: string | null
+      owner_id?: string | null
+      storage_tier?: string | null
+      version?: string | null
+      path?: string | null
+      created_at?: string | null
+    }
+    Relationships: []
+  }
+  payments: {
+    Row: {
+      id: string | null
+      escrow_id: string | null
+      amount: number | null
+      status: string | null
+      created_at: string | null
+      updated_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      escrow_id?: string | null
+      amount?: number | null
+      status?: string | null
+      created_at?: string | null
+      updated_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      escrow_id?: string | null
+      amount?: number | null
+      status?: string | null
+      created_at?: string | null
+      updated_at?: string | null
+    }
+    Relationships: []
+  }
+  subscription_audit_log: {
+    Row: {
+      id: string | null
+      agent_id: string | null
+      event: string | null
+      old_tier: string | null
+      new_tier: string | null
+      created_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      agent_id?: string | null
+      event?: string | null
+      old_tier?: string | null
+      new_tier?: string | null
+      created_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      agent_id?: string | null
+      event?: string | null
+      old_tier?: string | null
+      new_tier?: string | null
+      created_at?: string | null
+    }
+    Relationships: []
+  }
+  user_subscriptions: {
+    Row: {
+      id: string | null
+      user_id: string | null
+      tier: string | null
+      status: string | null
+      created_at: string | null
+      updated_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      user_id?: string | null
+      tier?: string | null
+      status?: string | null
+      created_at?: string | null
+      updated_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      user_id?: string | null
+      tier?: string | null
+      status?: string | null
+      created_at?: string | null
+      updated_at?: string | null
+    }
+    Relationships: []
+  }
+  vault_access_logs: {
+    Row: {
+      id: string | null
+      entry_id: string | null
+      accessed_by: string | null
+      accessed_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      entry_id?: string | null
+      accessed_by?: string | null
+      accessed_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      entry_id?: string | null
+      accessed_by?: string | null
+      accessed_at?: string | null
+    }
+    Relationships: []
+  }
+  vault_attention_required: {
+    Row: {
+      id: string | null
+      owner_agent_id: string | null
+      reason: string | null
+      created_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      owner_agent_id?: string | null
+      reason?: string | null
+      created_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      owner_agent_id?: string | null
+      reason?: string | null
+      created_at?: string | null
+    }
+    Relationships: []
+  }
+  vault_entries: {
+    Row: {
+      id: string | null
+      entry_id: string | null
+      entry_key: string | null
+      entry_namespace: string | null
+      owner_agent_id: string | null
+      value: number | null
+      accessed_at: string | null
+      created_at: string | null
+      updated_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      entry_id?: string | null
+      entry_key?: string | null
+      entry_namespace?: string | null
+      owner_agent_id?: string | null
+      value?: number | null
+      accessed_at?: string | null
+      created_at?: string | null
+      updated_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      entry_id?: string | null
+      entry_key?: string | null
+      entry_namespace?: string | null
+      owner_agent_id?: string | null
+      value?: number | null
+      accessed_at?: string | null
+      created_at?: string | null
+      updated_at?: string | null
+    }
+    Relationships: []
+  }
+  vault_key_rings: {
+    Row: {
+      id: string | null
+      owner_agent_id: string | null
+      is_primary: boolean | null
+      is_active: boolean | null
+      created_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      owner_agent_id?: string | null
+      is_primary?: boolean | null
+      is_active?: boolean | null
+      created_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      owner_agent_id?: string | null
+      is_primary?: boolean | null
+      is_active?: boolean | null
+      created_at?: string | null
+    }
+    Relationships: []
+  }
   disputes: {
     Row: {
       id: string

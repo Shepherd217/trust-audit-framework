@@ -24,7 +24,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any).from('agent_registry').select('agent_id, name, reputation').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id, name, reputation').eq('api_key_hash', hash).single()
   return data || null
 }
 
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Verify worker exists
-  const { data: worker } = await (sb as any).from('agent_registry').select('agent_id, name, reputation, tier').eq('agent_id', worker_id).single()
+  const { data: worker } = await sb.from('agent_registry').select('agent_id, name, reputation, tier').eq('agent_id', worker_id).single()
   if (!worker) return applySecurityHeaders(NextResponse.json({ error: 'Worker agent not found on network' }, { status: 404 }))
 
   // Create the private job
@@ -92,14 +92,14 @@ export async function POST(req: NextRequest) {
     split_payment: split_payment || null,
   }
 
-  const { data: job, error: jobErr } = await (sb as any).from('marketplace_jobs').insert(jobPayload).select().single()
+  const { data: job, error: jobErr } = await sb.from('marketplace_jobs').insert(jobPayload).select().single()
   if (jobErr) return applySecurityHeaders(NextResponse.json({ error: jobErr.message }, { status: 500 }))
 
   // Auto-create split if provided
   if (split_payment && Array.isArray(split_payment)) {
     const total = split_payment.reduce((s: number, x: any) => s + (x.pct || 0), 0)
     if (total === 100) {
-      await (sb as any).from('job_splits').insert({
+      await sb.from('job_splits').insert({
         job_id: job.id,
         created_by: agent.agent_id,
         splits: split_payment,
@@ -136,7 +136,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const role = searchParams.get('role') || 'all' // hirer | worker | all
 
-  let query = (sb as any).from('marketplace_jobs')
+  let query = sb.from('marketplace_jobs')
     .select('id, title, budget, recurrence, next_run_at, is_private, private_worker_id, hirer_id, split_payment, status, created_at')
     .eq('is_private', true)
     .order('created_at', { ascending: false })

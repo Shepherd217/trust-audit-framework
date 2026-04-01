@@ -22,7 +22,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (getSupabase() as any)
+  const { data } = await getSupabase()
     .from('agent_registry').select('agent_id, public_key').eq('api_key_hash', hash).single()
   return data || null
 }
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
   const size = Buffer.byteLength(content, 'utf8')
   const preview = content.slice(0, 500)
 
-  const { error } = await (sb as any).from('clawfs_files').insert({
+  const { error } = await sb.from('clawfs_files').insert({
     agent_id: agent.agent_id,
     public_key: agent.public_key || agent.agent_id,
     path,
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     // Try upsert if duplicate path
-    await (sb as any).from('clawfs_files').update({
+    await sb.from('clawfs_files').update({
       cid, size_bytes: size, content_preview: preview,
       signature: `api_key_write_${randomBytes(8).toString('hex')}`,
       created_at: new Date().toISOString(),

@@ -31,7 +31,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await (sb() as any).from('agent_registry')
+  const { data } = await sb().from('agent_registry')
     .select('agent_id, name, reputation, tier, is_suspended').eq('api_key_hash', hash).single()
   return data || null
 }
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
   const offset = (page - 1) * limit
 
   try {
-    const { data: contests, count, error } = await (sb() as any)
+    const { data: contests, count, error } = await sb()
       .from('agent_contests')
       .select('*', { count: 'exact' })
       .eq('status', statusFilter)
@@ -70,12 +70,12 @@ export async function GET(req: NextRequest) {
 
     // Enrich with entry counts and top contenders
     const enriched = await Promise.all((contests || []).map(async (c: any) => {
-      const { count: entryCount } = await (sb() as any)
+      const { count: entryCount } = await sb()
         .from('contest_entries')
         .select('id', { count: 'exact', head: true })
         .eq('contest_id', c.id)
 
-      const { data: topEntries } = await (sb() as any)
+      const { data: topEntries } = await sb()
         .from('contest_entries')
         .select('agent_id, status, submitted_at')
         .eq('contest_id', c.id)
@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
   if (deadlineDate.getTime() > Date.now() + 30 * 24 * 60 * 60 * 1000) return fail('Deadline must be within 30 days')
 
   // Check hirer has enough credits for prize pool
-  const { data: wallet } = await (sb() as any)
+  const { data: wallet } = await sb()
     .from('agent_wallets')
     .select('balance')
     .eq('agent_id', agent.agent_id)
@@ -164,7 +164,7 @@ export async function POST(req: NextRequest) {
   // Create contest
   const contestId = `contest_${Date.now().toString(36)}`
 
-  const { data: contest, error: contestErr } = await (sb() as any)
+  const { data: contest, error: contestErr } = await sb()
     .from('agent_contests')
     .insert({
       id: contestId,
@@ -192,16 +192,16 @@ export async function POST(req: NextRequest) {
   }
 
   // Escrow prize pool credits
-  const { data: walletBalance } = await (sb() as any)
+  const { data: walletBalance } = await sb()
     .from('agent_wallets')
     .select('balance').eq('agent_id', agent.agent_id).single()
 
   const newBal = (walletBalance?.balance || 0) - prize_pool
-  await (sb() as any).from('agent_wallets').update({
+  await sb().from('agent_wallets').update({
     balance: newBal, updated_at: new Date().toISOString(),
   }).eq('agent_id', agent.agent_id)
 
-  await (sb() as any).from('wallet_transactions').insert({
+  await sb().from('wallet_transactions').insert({
     agent_id: agent.agent_id, type: 'contest_escrow',
     amount: -prize_pool, balance_after: newBal,
     reference_id: contestId, source_type: 'contest',
@@ -209,7 +209,7 @@ export async function POST(req: NextRequest) {
   })
 
   // Broadcast on ClawBus to notify agents
-  await (sb() as any).from('clawbus_messages').insert({
+  await sb().from('clawbus_messages').insert({
     channel: 'arena:new_contest',
     from_agent: agent.agent_id,
     to_agent: null,
@@ -221,7 +221,7 @@ export async function POST(req: NextRequest) {
       deadline: deadlineDate.toISOString(),
       min_molt_score,
     },
-  }).catch(() => null) // Non-blocking
+  }) // Non-blocking
 
   const r = NextResponse.json({
     success: true,
