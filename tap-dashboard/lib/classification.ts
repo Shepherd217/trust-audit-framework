@@ -1,6 +1,6 @@
 import type { taskCategory, coordinationType } from '@/types/committee-intelligence';
 import { createClient } from '@supabase/supabase-js';
-import type { ExtendedDatabase } from '@/lib/database.extensions'
+import type { ExtendedDatabase, TypedSupabaseClient } from '@/lib/database.extensions'
 
 /**
  * Auto-classifies disputes by complexity using keyword matching + evidence analysis.

@@ -8,6 +8,81 @@ export type { Json } from "./database.types"
 
 // Extended tables not in generated types
 export interface ExtendedTables {
+  disputes: {
+    Row: {
+      id: string
+      escrow_id: string | null
+      job_id: string | null
+      initiator_claw_id: string | null
+      respondent_claw_id: string | null
+      reason: string | null
+      evidence_urls: string[] | null
+      evidence_types: string[] | null
+      description: string | null
+      status: string | null
+      resolution: string | null
+      committee_size: number | null
+      committee_members: string[] | null
+      votes_for_payer: number | null
+      votes_for_payee: number | null
+      slashed_members: string[] | null
+      slash_reasons: string[] | null
+      evidence_deadline: string | null
+      voting_deadline: string | null
+      resolved_at: string | null
+      created_at: string | null
+      updated_at: string | null
+    }
+    Insert: {
+      id?: string | null
+      escrow_id?: string | null
+      job_id?: string | null
+      initiator_claw_id?: string | null
+      respondent_claw_id?: string | null
+      reason?: string | null
+      evidence_urls?: string[] | null
+      evidence_types?: string[] | null
+      description?: string | null
+      status?: string | null
+      resolution?: string | null
+      committee_size?: number | null
+      committee_members?: string[] | null
+      votes_for_payer?: number | null
+      votes_for_payee?: number | null
+      slashed_members?: string[] | null
+      slash_reasons?: string[] | null
+      evidence_deadline?: string | null
+      voting_deadline?: string | null
+      resolved_at?: string | null
+      created_at?: string | null
+      updated_at?: string | null
+    }
+    Update: {
+      id?: string | null
+      escrow_id?: string | null
+      job_id?: string | null
+      initiator_claw_id?: string | null
+      respondent_claw_id?: string | null
+      reason?: string | null
+      evidence_urls?: string[] | null
+      evidence_types?: string[] | null
+      description?: string | null
+      status?: string | null
+      resolution?: string | null
+      committee_size?: number | null
+      committee_members?: string[] | null
+      votes_for_payer?: number | null
+      votes_for_payee?: number | null
+      slashed_members?: string[] | null
+      slash_reasons?: string[] | null
+      evidence_deadline?: string | null
+      voting_deadline?: string | null
+      resolved_at?: string | null
+      created_at?: string | null
+      updated_at?: string | null
+    }
+    Relationships: []
+  }
   agent_activity: {
     Row: {
       agent_id: string | null
@@ -5099,6 +5174,8 @@ export interface ExtendedFunctions {
   }
 }
 
+// Convenience type for typed Supabase client — use this in function params
+// instead of ReturnType<typeof createClient<ExtendedDatabase>> which collapses in TS
 // Helper: extended Database type merging base + extensions
 // Uses a mapped type to ensure all tables/functions satisfy GenericSchema constraints
 // while preserving full type information.
@@ -5146,3 +5223,7 @@ export function createTypedClient(url: string, key: string, options?: Parameters
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return _createClient<any>(url, key, options)
 }
+
+// Convenience alias — use in function params instead of ReturnType<typeof createClient<ExtendedDatabase>>
+import type { SupabaseClient as _SC } from '@supabase/supabase-js'
+export type TypedSupabaseClient = _SC<ExtendedDatabase>

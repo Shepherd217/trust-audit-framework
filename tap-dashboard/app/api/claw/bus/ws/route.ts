@@ -24,7 +24,7 @@ export const runtime = 'edge';
 const bus = getBus({
   enablePersistence: true,
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  supabaseKey: process.env.SUPABASE_SERVICE_KEY,
+  supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
 });
 
 export async function GET(request: Request) {
