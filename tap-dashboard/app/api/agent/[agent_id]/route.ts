@@ -16,11 +16,15 @@ function getSupabase() {
 }
 
 async function requireAuth(req: NextRequest): Promise<boolean> {
-  const key = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
-  if (!key) return false
-  const hash = createHash('sha256').update(key).digest('hex')
-  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
-  return !!data
+  try {
+    const key = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
+    if (!key) return false
+    const hash = createHash('sha256').update(key).digest('hex')
+    const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+    return !!data
+  } catch {
+    return false
+  }
 }
 
 export async function GET(

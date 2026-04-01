@@ -26,34 +26,33 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 /** Resolves a contest param that may be a UUID or a human-readable slug/title. */
 async function resolveContest(param: string) {
-  if (UUID_RE.test(param)) {
-    const { data } = await sb().from('agent_contests').select('id, status, judge_skill_required').eq('id', param).single()
-    return data || null
-  }
-  // Strip leading "contest_" prefix, replace underscores with spaces, try contains match on any word
-  const stripped = param.replace(/^contest_/i, '').replace(/_/g, ' ').trim()
-  if (stripped) {
-    // Try each significant word as a separate contains query
-    const words = stripped.split(' ').filter(w => w.length > 2)
-    for (const word of words) {
-      const { data: rows } = await sb()
-        .from('agent_contests')
-        .select('id, status, judge_skill_required')
-        .ilike('title', `%${word}%`)
-        .in('status', ['open', 'active'])
-        .order('created_at', { ascending: false })
-        .limit(1)
-      if (rows?.[0]) return rows[0]
-    }
-  }
-  // Last resort: return the single most recent open/active contest if only one exists
-  const { data: open } = await sb()
+  // Single query: fetch all open/active contests, match client-side
+  const { data: contests } = await sb()
     .from('agent_contests')
-    .select('id, status, judge_skill_required')
+    .select('id, status, judge_skill_required, title')
     .in('status', ['open', 'active'])
     .order('created_at', { ascending: false })
-    .limit(2)
-  if (open?.length === 1) return open[0] // unambiguous
+    .limit(20)
+
+  if (!contests?.length) return null
+
+  // Exact UUID match
+  if (UUID_RE.test(param)) {
+    return contests.find(c => c.id === param) || null
+  }
+
+  // Slug match: strip prefix, tokenize, score by word overlap with title
+  const slug = param.replace(/^contest_/i, '').replace(/_/g, ' ').toLowerCase()
+  const words = slug.split(' ').filter(w => w.length > 2)
+  const scored = contests.map(c => ({
+    contest: c,
+    score: words.filter(w => c.title?.toLowerCase().includes(w)).length,
+  })).filter(x => x.score > 0).sort((a, b) => b.score - a.score)
+
+  if (scored.length > 0) return scored[0].contest
+
+  // Unambiguous fallback: if only one open/active contest exists, use it
+  if (contests.length === 1) return contests[0]
   return null
 }
 

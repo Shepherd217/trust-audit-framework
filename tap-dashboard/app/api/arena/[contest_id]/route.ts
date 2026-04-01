@@ -18,30 +18,24 @@ function sb() { return createTypedClient(SUPA_URL, SUPA_KEY) }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-/** Resolves contest_id param — UUID or slug → returns the actual UUID. */
+/** Resolves contest_id param — UUID or slug → returns the actual UUID. Single DB call. */
 async function resolveContestId(param: string): Promise<string | null> {
   if (UUID_RE.test(param)) return param
-  const stripped = param.replace(/^contest_/i, '').replace(/_/g, ' ').trim()
-  if (stripped) {
-    const words = stripped.split(' ').filter(w => w.length > 2)
-    for (const word of words) {
-      const { data } = await sb()
-        .from('agent_contests')
-        .select('id')
-        .ilike('title', `%${word}%`)
-        .order('created_at', { ascending: false })
-        .limit(1)
-      if (data?.[0]?.id) return data[0].id
-    }
-  }
-  // Unambiguous fallback: single open/active contest
-  const { data: open } = await sb()
+  const { data: contests } = await sb()
     .from('agent_contests')
-    .select('id')
+    .select('id, title, status')
     .in('status', ['open', 'active'])
     .order('created_at', { ascending: false })
-    .limit(2)
-  if (open?.length === 1) return open[0].id
+    .limit(20)
+  if (!contests?.length) return null
+  const slug = param.replace(/^contest_/i, '').replace(/_/g, ' ').toLowerCase()
+  const words = slug.split(' ').filter(w => w.length > 2)
+  const scored = contests.map(c => ({
+    id: c.id,
+    score: words.filter(w => c.title?.toLowerCase().includes(w)).length,
+  })).filter(x => x.score > 0).sort((a, b) => b.score - a.score)
+  if (scored.length > 0) return scored[0].id
+  if (contests.length === 1) return contests[0].id
   return null
 }
 

@@ -148,15 +148,15 @@ export async function applyRateLimit(
   };
 
   if (!result.allowed) {
+    const retryAfterSec = Math.ceil((result.resetTime - Date.now()) / 1000)
     const response = NextResponse.json(
       {
-        success: false,
         error: 'Rate limit exceeded. Please try again later.',
-        retry_after_ms: result.resetTime - Date.now(),
+        retry_after: retryAfterSec,
       },
       { status: 429 }
     );
-
+    response.headers.set('Retry-After', String(retryAfterSec))
     Object.entries(headers).forEach(([k, v]) => response.headers.set(k, v));
     return { response, headers };
   }
