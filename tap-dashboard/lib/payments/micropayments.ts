@@ -290,7 +290,7 @@ export async function addToBalance(
   userBalances.set(userId, balance);
   
   // Log the deposit
-  console.log(`[Micropayments] Added $${amount.toFixed(4)} to ${userId} via ${source}`, { sourceRef });
+  console.error(`[Micropayments] Added $${amount.toFixed(4)} to ${userId} via ${source}`, { sourceRef });
   
   return { ...balance };
 }
@@ -480,7 +480,7 @@ async function checkAndTriggerAutoTopup(userId: string, currentBalance: number):
   }
   
   if (config.monthlyChargedThisMonth + config.chargeAmount > config.maxMonthlyCharge) {
-    console.log(`[Micropayments] Monthly auto-topup limit reached for ${userId}`);
+    console.error(`[Micropayments] Monthly auto-topup limit reached for ${userId}`);
     return;
   }
   
@@ -508,7 +508,7 @@ async function checkAndTriggerAutoTopup(userId: string, currentBalance: number):
       config.monthlyChargedThisMonth += config.chargeAmount;
       autoTopupConfigs.set(userId, config);
       
-      console.log(`[Micropayments] Auto-topup successful: $${config.chargeAmount} for ${userId}`);
+      console.error(`[Micropayments] Auto-topup successful: $${config.chargeAmount} for ${userId}`);
     }
   } catch (error) {
     console.error(`[Micropayments] Auto-topup failed for ${userId}:`, error);

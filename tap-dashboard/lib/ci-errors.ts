@@ -145,6 +145,6 @@ export function logCIEvent(
       console.warn('[CI]', JSON.stringify(logEntry));
       break;
     default:
-      console.log('[CI]', JSON.stringify(logEntry));
+      console.error('[CI]', JSON.stringify(logEntry));
   }
 }

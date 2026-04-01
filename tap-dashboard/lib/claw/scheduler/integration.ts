@@ -85,7 +85,7 @@ class AuditTrail {
     this.logs.push(logEntry);
     
     // In production, this would write to persistent storage
-    console.log(`[AUDIT] ${integration}.${action}: ${status}`, error || '');
+    console.error(`[AUDIT] ${integration}.${action}: ${status}`, error || '');
   }
 
   getLogs(): AuditLog[] {

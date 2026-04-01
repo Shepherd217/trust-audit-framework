@@ -777,7 +777,7 @@ export class EscrowService {
 
     private async transferFundsToPayee(escrow: Escrow): Promise<void> {
         // TODO: Trigger actual fund transfer via crypto/Stripe/bank
-        console.log(`Transferring ${escrow.amount} ${escrow.currency} to ${escrow.payeeClawId}`);
+        console.error(`Transferring ${escrow.amount} ${escrow.currency} to ${escrow.payeeClawId}`);
     }
 
     // =====================================================

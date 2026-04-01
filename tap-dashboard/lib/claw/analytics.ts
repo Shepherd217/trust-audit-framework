@@ -210,7 +210,7 @@ export class AnalyticsService {
   async track(event: AnalyticsEvent): Promise<void> {
     if (!ANALYTICS_CONFIG.ENABLED) {
       if (ANALYTICS_CONFIG.DEBUG) {
-        console.log('[Analytics] Tracking disabled, skipping:', event.eventType);
+        console.error('[Analytics] Tracking disabled, skipping:', event.eventType);
       }
       return;
     }
@@ -237,7 +237,7 @@ export class AnalyticsService {
     }
 
     if (ANALYTICS_CONFIG.DEBUG) {
-      console.log('[Analytics] Tracked:', event.eventType);
+      console.error('[Analytics] Tracked:', event.eventType);
     }
   }
 
@@ -433,7 +433,7 @@ export class AnalyticsService {
         // Re-add events to batch for retry
         this.batch.unshift(...eventsToFlush);
       } else if (ANALYTICS_CONFIG.DEBUG) {
-        console.log('[Analytics] Flushed', eventsToFlush.length, 'events');
+        console.error('[Analytics] Flushed', eventsToFlush.length, 'events');
       }
     } catch (error) {
       console.error('[Analytics] Flush exception:', error);

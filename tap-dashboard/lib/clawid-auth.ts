@@ -201,7 +201,7 @@ async function checkAndRecordNonce(nonce: string, publicKey: string): Promise<bo
       return false
     }
     
-    console.log('[ClawID] Nonce recorded successfully for:', publicKey.slice(0, 16) + '...')
+    console.error('[ClawID] Nonce recorded successfully for:', publicKey.slice(0, 16) + '...')
     return true
   } catch (err: any) {
     console.error('Nonce check error:', err)

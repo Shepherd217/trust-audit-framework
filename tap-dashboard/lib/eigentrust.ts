@@ -499,7 +499,7 @@ async function updateTAPScores(scores: Map<string, number>): Promise<void> {
 export async function runEigenTrustCalculation(
   customConfig?: Partial<EigenTrustConfig>
 ): Promise<EigenTrustResult> {
-  console.log('Starting EigenTrust calculation with stake weighting...');
+  console.error('Starting EigenTrust calculation with stake weighting...');
   const startTime = Date.now();
 
   try {
@@ -516,16 +516,16 @@ export async function runEigenTrustCalculation(
     };
 
     // Fetch data
-    console.log('Fetching attestations and agents...');
+    console.error('Fetching attestations and agents...');
     const [attestations, agents] = await Promise.all([
       fetchAttestations(config.timeWindowDays),
       fetchAgents(),
     ]);
 
-    console.log(`Found ${attestations.length} attestations, ${agents.length} agents`);
+    console.error(`Found ${attestations.length} attestations, ${agents.length} agents`);
 
     if (attestations.length === 0 || agents.length === 0) {
-      console.log('Insufficient data for EigenTrust calculation');
+      console.error('Insufficient data for EigenTrust calculation');
       return {
         scores: new Map(),
         iterations: 0,
@@ -535,23 +535,23 @@ export async function runEigenTrustCalculation(
     }
 
     // Build weighted trust matrix
-    console.log('Building weighted trust matrix...');
+    console.error('Building weighted trust matrix...');
     const trustMatrix = buildWeightedTrustMatrix(attestations, agents, config, wotConfig);
 
     // Calculate EigenTrust
-    console.log('Running power iteration...');
+    console.error('Running power iteration...');
     const agentIds = agents.map(a => a.agent_id);
     const result = await calculateEigenTrust(trustMatrix, agentIds, config);
 
-    console.log(`Converged after ${result.iterations} iterations (delta: ${result.convergenceDelta.toExponential(2)})`);
+    console.error(`Converged after ${result.iterations} iterations (delta: ${result.convergenceDelta.toExponential(2)})`);
 
     // Normalize and update scores
-    console.log('Normalizing and updating scores...');
+    console.error('Normalizing and updating scores...');
     const tapScores = normalizeToTAPScores(result.scores);
     await updateTAPScores(tapScores);
 
     const duration = Date.now() - startTime;
-    console.log(`EigenTrust calculation complete in ${duration}ms`);
+    console.error(`EigenTrust calculation complete in ${duration}ms`);
 
     return {
       ...result,

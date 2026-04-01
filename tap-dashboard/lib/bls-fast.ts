@@ -24,10 +24,10 @@ async function initBlst() {
     // Use the high-level @chainsafe/blst interface
     blstModule = await import('@chainsafe/blst');
     useBlst = true;
-    console.log('[BLS] Using @chainsafe/blst with native bindings');
+    console.error('[BLS] Using @chainsafe/blst with native bindings');
     return true;
   } catch (e) {
-    console.log('[BLS] Using @noble/curves (pure JS fallback)');
+    console.error('[BLS] Using @noble/curves (pure JS fallback)');
     return false;
   }
 }
@@ -68,7 +68,7 @@ export async function generateKeyPair(): Promise<BLSKeyPair> {
         publicKey: pk.toBytes()
       };
     } catch (e) {
-      console.log('[BLS] blst keygen failed, falling back to noble:', e);
+      console.error('[BLS] blst keygen failed, falling back to noble:', e);
     }
   }
   
@@ -99,7 +99,7 @@ export async function sign(
       const sig = sk.sign(messageBytes);
       return sig.toBytes();
     } catch (e) {
-      console.log('[BLS] blst sign failed, falling back to noble:', e);
+      console.error('[BLS] blst sign failed, falling back to noble:', e);
     }
   }
   
@@ -162,7 +162,7 @@ export async function aggregateSignatures(
       const aggSig = aggregateSignatures(sigs);
       return aggSig.toBytes();
     } catch (e) {
-      console.log('[BLS] blst aggregate failed, falling back to noble:', e);
+      console.error('[BLS] blst aggregate failed, falling back to noble:', e);
     }
   }
   
@@ -191,7 +191,7 @@ export async function aggregatePublicKeys(
       const aggPk = aggregatePublicKeys(pks);
       return aggPk.toBytes();
     } catch (e) {
-      console.log('[BLS] blst aggregate PK failed, falling back to noble:', e);
+      console.error('[BLS] blst aggregate PK failed, falling back to noble:', e);
     }
   }
   
