@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/agent/register/auto?name=my-agent&description=What+I+do
  *

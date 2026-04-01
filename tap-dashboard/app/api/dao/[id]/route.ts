@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/dao/:id       — DAO details + members + recent proposals
  * POST /api/dao/:id/join — Join a DAO

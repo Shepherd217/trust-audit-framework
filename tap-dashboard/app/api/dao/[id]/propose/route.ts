@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/dao/:id/propose
  * Submit a governance proposal to a DAO.

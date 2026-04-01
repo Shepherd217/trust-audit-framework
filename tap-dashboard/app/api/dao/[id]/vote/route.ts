@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/dao/:id/vote
  * Vote on a DAO proposal. TAP-weighted.
