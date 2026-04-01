@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
+import { createHash } from 'crypto';
 import { createTypedClient } from '@/lib/database.extensions'
 import type { ExtendedDatabase } from '@/lib/database.extensions'
 
@@ -15,10 +15,22 @@ function getSupabase() {
   return supabase;
 }
 
+async function requireAuth(req: NextRequest): Promise<boolean> {
+  const key = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
+  if (!key) return false
+  const hash = createHash('sha256').update(key).digest('hex')
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  return !!data
+}
+
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ agent_id: string }> }
 ) {
+  if (!await requireAuth(request)) {
+    return NextResponse.json({ error: 'Authentication required. Provide X-API-Key header.' }, { status: 401 })
+  }
+
   try {
     const { agent_id } = await params;
 
@@ -31,21 +43,8 @@ export async function GET(
 
     if (regData) return NextResponse.json(regData);
 
-    // Fallback: legacy agents table
-    const { data, error } = await getSupabase()
-      .from('agents')
-      .select('agent_id, name, reputation, tier')
-      .eq('agent_id', agent_id)
-      .single();
-
-    if (error || !data) {
-      return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
-    }
-
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Agent fetch error:', error);
+    return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
+  } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
-

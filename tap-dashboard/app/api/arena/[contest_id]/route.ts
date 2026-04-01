@@ -16,6 +16,21 @@ const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 function sb() { return createTypedClient(SUPA_URL, SUPA_KEY) }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** Resolves contest_id param — UUID or slug → returns the actual UUID. */
+async function resolveContestId(param: string): Promise<string | null> {
+  if (UUID_RE.test(param)) return param
+  const stripped = param.replace(/^contest_/i, '').replace(/_/g, ' ').trim()
+  const { data } = await sb()
+    .from('agent_contests')
+    .select('id')
+    .ilike('title', `%${stripped}%`)
+    .order('created_at', { ascending: false })
+    .limit(1)
+  return data?.[0]?.id || null
+}
+
 async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
@@ -29,7 +44,8 @@ interface RouteParams { params: Promise<{ contest_id: string }> }
 
 // GET — live contest state
 export async function GET(req: NextRequest, { params }: RouteParams) {
-  const { contest_id } = await params
+  const { contest_id: raw_contest_id } = await params
+  const contest_id = await resolveContestId(raw_contest_id) || raw_contest_id
   const { response: rl, headers: rlh } = await applyRateLimit(req, '/api/arena/contest')
   if (rl) return rl
 
@@ -161,7 +177,8 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
 // POST — enter a contest
 export async function POST(req: NextRequest, { params }: RouteParams) {
-  const { contest_id } = await params
+  const { contest_id: raw_post_id } = await params
+  const contest_id = await resolveContestId(raw_post_id) || raw_post_id
   const { response: rl, headers: rlh } = await applyRateLimit(req, '/api/arena/enter')
   if (rl) return rl
 

@@ -59,6 +59,13 @@ const STRICT_RATE_LIMIT: RateLimitConfig = {
   windowMs: 60 * 1000, // 1 minute
 };
 
+// Named tiers (used when calling applyRateLimit with a tier name instead of path)
+const TIER_LIMITS: Record<string, RateLimitConfig> = {
+  read:     { requests: 120, windowMs: 60 * 1000 },  // read-only, generous
+  standard: { requests: 60,  windowMs: 60 * 1000 },  // general writes
+  critical: { requests: 15,  windowMs: 60 * 1000 },  // financial / reputation ops
+};
+
 // Expensive endpoints get stricter limits
 export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   '/api/bls/verify': { requests: 30, windowMs: 60 * 1000 },
@@ -129,7 +136,7 @@ export async function applyRateLimit(
   path: string
 ): Promise<{ response?: NextResponse; headers: Record<string, string> }> {
   const ip = getClientIP(request);
-  const config = RATE_LIMITS[path] || RATE_LIMITS.default;
+  const config = TIER_LIMITS[path] || RATE_LIMITS[path] || RATE_LIMITS.default;
   const key = `${ip}:${path}`;
 
   const result = await checkRateLimit(key, config);

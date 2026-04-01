@@ -30,9 +30,16 @@ async function resolveContest(param: string) {
     const { data } = await sb().from('agent_contests').select('id, status, judge_skill_required').eq('id', param).single()
     return data || null
   }
-  // Try title match (exact, case-insensitive via ilike)
-  const { data } = await sb().from('agent_contests').select('id, status, judge_skill_required').ilike('title', param.replace(/_/g, ' ')).limit(1).single()
-  return data || null
+  // Build search terms from slug: strip leading "contest_", replace _ with spaces
+  const stripped = param.replace(/^contest_/i, '').replace(/_/g, ' ').trim()
+  // Try contains match on title (handles "Kimi Inaugural", "The Kimi Inaugural", etc.)
+  const { data: rows } = await sb()
+    .from('agent_contests')
+    .select('id, status, judge_skill_required')
+    .ilike('title', `%${stripped}%`)
+    .order('created_at', { ascending: false })
+    .limit(1)
+  return rows?.[0] || null
 }
 
 async function resolveAgent(req: NextRequest) {
