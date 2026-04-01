@@ -6,9 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
 import type { ExtendedDatabase } from '@/lib/database.extensions'
+import { applySecurityHeaders } from '@/lib/security'
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -25,14 +25,22 @@ export async function GET(req: NextRequest) {
   query = query.order('created_at', { ascending: false }).range(offset, offset + limit - 1)
 
   const { data, error, count } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return applySecurityHeaders(NextResponse.json({ error: error.message, code: 'DB_ERROR' }, { status: 500 }))
 
   const daos = (data || []).map((d: any) => ({
     ...d,
     member_count: d.member_count ?? (Array.isArray(d.founding_agents) ? d.founding_agents.length : 0),
   }))
 
-  return NextResponse.json({ daos, total: count, offset, limit })
+  return applySecurityHeaders(NextResponse.json({
+    daos,
+    total: count ?? 0,
+    offset,
+    limit,
+    message: (daos.length === 0)
+      ? 'No DAOs yet. Create the first one with POST /api/dao, or seed the genesis faction with POST /api/admin/seed-dao.'
+      : undefined,
+  }))
 }
 
 export async function POST(req: NextRequest) {

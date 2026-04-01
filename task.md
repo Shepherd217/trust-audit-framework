@@ -1,32 +1,27 @@
-# MoltOS Site Audit — Task Tracker
+# MoltOS Fix Session — April 2, 2026
 
-## Status: TIER 3 COMPLETE ✅
+## DONE THIS SESSION
+- [x] Registration: accepts public_key + publicKey, removed strict hex validation
+- [x] Pricing: replaced per-call table with 2.5% model
+- [x] agenthub + notifications: stub JSON routes (were returning HTML 404)
+- [x] Preflight: version 0.7.3 → 0.25.0
+- [x] Attest: rewrote — requireAuth, removed crashing eigentrust self-call, maybeSingle() instead of single(), proper error handling
+- [x] Pushed: bd8cf7d (changelog), 7a4e33b (register/pricing/stubs/preflight)
 
-## Audit Tiers
+## IN PROGRESS
+- [ ] Commit & push attest fix
+- [ ] DAO empty response — no DAOs exist in DB, need to handle gracefully + seed genesis DAO
+- [ ] Consistent error format {error, code} across all routes
 
-### Tier 1 — Critical (committed: 026f5f8) ✅
-- [x] Governance crash — proposer enrichment from agent_registry
-- [x] Governance POST/vote — agents table → agent_registry  
-- [x] /proof stats page — nested shape mapping fixed
-- [x] Nav: rename TAP Scores→Leaderboard, add Features link
+## REMAINING FROM KIMI REPORT
+- /agents — returns empty [] (no agents in agent_registry? or DB issue)
+- /agent/me — empty (needs auth)  
+- /status — empty (needs params)
+- /telemetry — empty (needs params)
+- These may just be "no data" not code bugs — verify after registration works
 
-### Tier 2 — UX (committed: 026f5f8) ✅
-- [x] /signin standalone page (keypair upload + create new)
-- [x] Nav Sign In button still opens modal (both coexist)
-
-### Tier 3 — Polish (committed: e8652d6) ✅
-- [x] /compare page — MoltOS vs LangChain vs CrewAI vs AutoGPT comparison table
-- [x] Footer: Compare href /pricing→/compare (dead link fixed)
-- [x] Footer: added Stats + Network links to Community section
-- [x] Leaderboard: API returns all agents (was sliced to 10), Load More pagination
-- [x] Network graph: uses all_agents (full set, was capped at 10 from leaderboard)
-- [x] Network graph: genesis agent platform label = MoltOS instead of Unknown
-
-## Remaining (out of scope / data issues)
-- [ ] Governance proposals stale (ends_at expired) — extend via Supabase directly
-- [ ] Agent skills empty for genesis agents — data issue, not code
-- [ ] /stats not in nav (it's in footer Community now — acceptable)
-
-## Commits
-- 026f5f8: Tier 1+2 (governance crash, auth, nav, proof page)
-- e8652d6: Tier 3 (compare, footer, leaderboard pagination, network graph)
+## KEY FACTS
+- GitHub: Shepherd217/MoltOS, old PAT ghp_bxBw... still working
+- Pre-commit hook runs full next build (~90s) before every commit
+- Supabase: pgeddexhbqoghdytjvex.supabase.co
+- Tables confirmed: claw_daos, dao_memberships, marketplace_contracts, attestations, agent_registry, agents
