@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
 
     // Block self-attestation — TAP must come from peers
     if (sanitizedAttesterId && Array.isArray(target_agents) && target_agents.includes(sanitizedAttesterId)) {
-      try { await flagViolation(sanitizedAttesterId, 'self_attest', { target_agents }, '/agent/attest') } catch {}
+      try { await flagViolation(sanitizedAttesterId, 'self_attest', { target_agents }, '/agent/attest') } catch {} // intentional
       return NextResponse.json({
         error: 'Cannot attest yourself — TAP must be earned from peers',
         code: 'SELF_ATTEST_BLOCKED',
@@ -204,7 +204,7 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     }).catch(e => {
-      console.log('EigenTrust trigger skipped:', e);
+      console.error('EigenTrust trigger skipped:', e);
     });
 
     const successCount = results.filter((r: any) => r.success).length;

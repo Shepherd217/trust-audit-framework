@@ -72,7 +72,7 @@ export async function GET(
 
   // Parse manifest from hirer_signature
   let manifest: any = null
-  try { manifest = JSON.parse(parentJob.hirer_signature || '{}') } catch {}
+  try { manifest = JSON.parse(parentJob.hirer_signature || '{}') } catch {} // intentional
 
   const childJobIds: string[] = manifest?.manifest?.child_job_ids ?? []
 

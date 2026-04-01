@@ -85,7 +85,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // Log all tracked events
   if (TRACKED_EVENTS.includes(event.type)) {
-    console.log(`[Stripe Webhook] ${event.type} received:`, {
+    console.error(`[Stripe Webhook] ${event.type} received:`, {
       eventId: (event as any).id,
       created: new Date((event as any).created * 1000).toISOString(),
     });
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   if (result.handled) {
-    console.log(`[Stripe Webhook] ${event.type} processed:`, {
+    console.error(`[Stripe Webhook] ${event.type} processed:`, {
       action: result.action,
       data: result.data,
     });
@@ -223,7 +223,7 @@ async function processBusinessLogic(
 
 // Business logic handlers
 async function handlePaymentAuthorized(data: any): Promise<void> {
-  console.log('[Webhook Business Logic] Payment authorized:', data);
+  console.error('[Webhook Business Logic] Payment authorized:', data);
   
   // Update escrow status to locked
   await getSupabase()
@@ -244,7 +244,7 @@ async function handlePaymentAuthorized(data: any): Promise<void> {
 }
 
 async function handleEscrowReady(data: any): Promise<void> {
-  console.log('[Webhook Business Logic] Escrow ready for capture:', data);
+  console.error('[Webhook Business Logic] Escrow ready for capture:', data);
   
   // Update payment status
   await getSupabase()
@@ -254,7 +254,7 @@ async function handleEscrowReady(data: any): Promise<void> {
 }
 
 async function handlePaymentCanceled(data: any): Promise<void> {
-  console.log('[Webhook Business Logic] Payment canceled:', data);
+  console.error('[Webhook Business Logic] Payment canceled:', data);
   
   // Update escrow status
   await getSupabase()
@@ -264,7 +264,7 @@ async function handlePaymentCanceled(data: any): Promise<void> {
 }
 
 async function handlePaymentFailed(data: any): Promise<void> {
-  console.log('[Webhook Business Logic] Payment failed:', data);
+  console.error('[Webhook Business Logic] Payment failed:', data);
   
   // Update escrow status
   await getSupabase()
@@ -283,7 +283,7 @@ async function handlePaymentFailed(data: any): Promise<void> {
 }
 
 async function handleRefundProcessed(data: any): Promise<void> {
-  console.log('[Webhook Business Logic] Refund processed:', data);
+  console.error('[Webhook Business Logic] Refund processed:', data);
   
   // Update escrow status
   await getSupabase()
@@ -301,7 +301,7 @@ async function handleRefundProcessed(data: any): Promise<void> {
 }
 
 async function handleDisputeOpened(data: any): Promise<void> {
-  console.log('[Webhook Business Logic] Dispute opened:', data);
+  console.error('[Webhook Business Logic] Dispute opened:', data);
   
   // Update escrow status
   await getSupabase()
@@ -331,7 +331,7 @@ async function handleDisputeOpened(data: any): Promise<void> {
 }
 
 async function handlePayoutFailed(data: any): Promise<void> {
-  console.log('[Webhook Business Logic] Payout failed:', data);
+  console.error('[Webhook Business Logic] Payout failed:', data);
   
   // Log the failure
   await getSupabase().from('payment_audit_log').insert({
@@ -342,7 +342,7 @@ async function handlePayoutFailed(data: any): Promise<void> {
 }
 
 async function handleAccountUpdated(data: any): Promise<void> {
-  console.log('[Webhook Business Logic] Account updated:', data);
+  console.error('[Webhook Business Logic] Account updated:', data);
   
   // Update Connect account status
   await getSupabase()

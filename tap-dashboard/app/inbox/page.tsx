@@ -104,7 +104,7 @@ export default function InboxPage() {
       setMessages(prev => prev.map(m =>
         m.message_id === msgId ? { ...m, status: 'read' } : m
       ))
-    } catch {}
+    } catch {} // intentional
     setAcking(null)
   }
 

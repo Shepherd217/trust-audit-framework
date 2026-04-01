@@ -43,7 +43,7 @@ export async function POST(
     );
     
     // Step 1: Auto-classify complexity
-    console.log(`[Classify] Dispute ${disputeId}: classifying...`);
+    console.error(`[Classify] Dispute ${disputeId}: classifying...`);
     const classification = classifyDispute({
       description: input.description,
       evidenceTypes: input.evidence_types,
@@ -55,10 +55,10 @@ export async function POST(
     
     // Step 2: Save classification
     await saveClassification(supabase, disputeId, classification);
-    console.log(`[Classify] Dispute ${disputeId}: classified as ${classification.primaryCategory}, difficulty ${classification.difficultyRating}/5`);
+    console.error(`[Classify] Dispute ${disputeId}: classified as ${classification.primaryCategory}, difficulty ${classification.difficultyRating}/5`);
     
     // Step 3: Select committee based on complexity
-    console.log(`[Classify] Dispute ${disputeId}: selecting committee...`);
+    console.error(`[Classify] Dispute ${disputeId}: selecting committee...`);
     const committeeSize = classification.difficultyRating >= 4 ? 7 : 5; // Complex = larger committee
     
     const { data: committee, error: committeeError } = await supabase.rpc(
@@ -100,7 +100,7 @@ export async function POST(
       if (insertError) {
         console.error('[Classify] Failed to save committee:', insertError);
       } else {
-        console.log(`[Classify] Dispute ${disputeId}: committee of ${committee.length} selected`);
+        console.error(`[Classify] Dispute ${disputeId}: committee of ${committee.length} selected`);
       }
     }
     

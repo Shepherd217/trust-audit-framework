@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
   } catch (e) {
-    console.log('Rate limiter error:', e);
+    console.error('Rate limiter error:', e);
   }
 
   try {

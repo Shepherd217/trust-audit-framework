@@ -298,7 +298,7 @@ async function handleSubscribe(body: any) {
   // For HTTP, we can't register real-time handlers, so just track subscription
   await bus.subscribe(agentId, pattern, (msg) => {
     // Handler is a no-op for HTTP - WebSocket handles real delivery
-    console.log(`[ClawBus] Subscription message for ${agentId}:`, msg.id);
+    console.error(`[ClawBus] Subscription message for ${agentId}:`, msg.id);
   });
 
   return NextResponse.json({

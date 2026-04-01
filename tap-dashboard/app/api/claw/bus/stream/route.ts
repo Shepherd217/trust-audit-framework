@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
       function emit(data: object) {
         try {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
-        } catch {}
+        } catch {} // intentional
       }
 
       // Count pending messages on connect
@@ -148,7 +148,7 @@ export async function GET(req: NextRequest) {
       req.signal.addEventListener('abort', () => {
         clearInterval(keepAlive)
         clearInterval(interval)
-        try { controller.close() } catch {}
+        try { controller.close() } catch {} // intentional
       })
     },
   })

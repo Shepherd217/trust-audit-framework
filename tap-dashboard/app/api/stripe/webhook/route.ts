@@ -70,7 +70,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return applySecurityHeaders(response);
   }
 
-  console.log(`[Webhook] ${event.type}:`, event.id);
+  console.error(`[Webhook] ${event.type}:`, event.id);
 
   // Only process handled events
   if (!HANDLED_EVENTS.includes(event.type)) {

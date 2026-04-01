@@ -51,7 +51,7 @@ interface AlertPayload {
 async function sendDiscordAlert(payload: AlertPayload): Promise<boolean> {
   const webhookUrl = process.env.DISCORD_ALERT_WEBHOOK;
   if (!webhookUrl) {
-    console.log('[Alert] Discord webhook not configured, skipping');
+    console.error('[Alert] Discord webhook not configured, skipping');
     return false;
   }
   
@@ -119,7 +119,7 @@ async function sendDiscordAlert(payload: AlertPayload): Promise<boolean> {
 async function sendPagerDutyAlert(payload: AlertPayload): Promise<boolean> {
   const routingKey = process.env.PAGERDUTY_ROUTING_KEY;
   if (!routingKey) {
-    console.log('[Alert] PagerDuty not configured, skipping');
+    console.error('[Alert] PagerDuty not configured, skipping');
     return false;
   }
   

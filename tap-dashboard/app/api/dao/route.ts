@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
       dao_id: dao.id,
       agent_id: co,
       governance_weight: 0.5,
-    }) } catch {}
+    }) } catch {} // intentional
   }
 
   return NextResponse.json({

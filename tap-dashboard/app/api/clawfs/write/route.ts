@@ -157,19 +157,19 @@ export async function POST(request: NextRequest) {
     const payload = { challenge, content_hash: contentHash, path: filePath, timestamp }
     
     // DEBUG: Log exact payload being verified
-    console.log('[API] Content hash:', contentHash);
-    console.log('[API] Raw content (base64):', content.slice(0, 50) + '...');
-    console.log('[API] Verifying payload:', JSON.stringify(payload, Object.keys(payload).sort()));
-    console.log('[API] Public key:', public_key);
-    console.log('[API] Signature:', signature);
+    console.error('[API] Content hash:', contentHash);
+    console.error('[API] Raw content (base64):', content.slice(0, 50) + '...');
+    console.error('[API] Verifying payload:', JSON.stringify(payload, Object.keys(payload).sort()));
+    console.error('[API] Public key:', public_key);
+    console.error('[API] Signature:', signature);
     
     // Diagnostic: Check if clawid_nonces table exists
     const { error: tableError } = await supabase.from('clawid_nonces').select('id', { count: 'exact', head: true }).limit(1)
-    console.log('[ClawFS Write] Table check error:', tableError?.message || 'none', 'code:', tableError?.code)
+    console.error('[ClawFS Write] Table check error:', tableError?.message || 'none', 'code:', tableError?.code)
     
-    console.log('[ClawFS Write] Verifying signature for:', public_key.slice(0, 16) + '...', 'challenge:', challenge.slice(0, 20) + '...')
+    console.error('[ClawFS Write] Verifying signature for:', public_key.slice(0, 16) + '...', 'challenge:', challenge.slice(0, 20) + '...')
     const verification = await verifyClawIDSignature(public_key, signature, payload)
-    console.log('[ClawFS Write] Verification result:', verification.valid, 'error:', verification.error)
+    console.error('[ClawFS Write] Verification result:', verification.valid, 'error:', verification.error)
     
     if (!verification.valid) {
       const response = NextResponse.json(

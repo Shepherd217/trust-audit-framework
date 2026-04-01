@@ -21,6 +21,9 @@ import { getBus } from '@/lib/claw/bus';
 // Use edge runtime for WebSocket support
 export const runtime = 'edge';
 
+// Cloudflare Workers edge runtime globals
+declare const WebSocketPair: { new(): { 0: WebSocket; 1: WebSocket & { accept(): void } } };
+
 const bus = getBus({
   enablePersistence: true,
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -38,16 +41,14 @@ export async function GET(request: Request) {
   }
 
   try {
-    // @ts-ignore - WebSocketPair is available in edge runtime
     const { 0: client, 1: server } = new WebSocketPair();
 
-    handleWebSocket(server, request);
+    handleWebSocket(server as unknown as WebSocket, request);
 
     return new Response(null, {
       status: 101,
-      // @ts-ignore
       webSocket: client,
-    });
+    } as ResponseInit & { webSocket: WebSocket });
   } catch (error: any) {
     console.error('[ClawBus WS] Error creating WebSocket:', error);
     return new Response(

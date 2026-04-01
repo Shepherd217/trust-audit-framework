@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
 
       // Separate keep-alive ping every 25s to prevent idle timeouts
       const keepAlive = setInterval(() => {
-        try { emit({ type: 'ping', timestamp: Date.now() }) } catch {}
+        try { emit({ type: 'ping', timestamp: Date.now() }) } catch {} // intentional
       }, 25000)
 
       const interval = setInterval(async () => {
@@ -138,7 +138,7 @@ export async function GET(req: NextRequest) {
       req.signal.addEventListener('abort', () => {
         clearInterval(keepAlive)
         clearInterval(interval)
-        try { controller.close() } catch {}
+        try { controller.close() } catch {} // intentional
       })
     },
   })

@@ -178,7 +178,7 @@ export async function POST(
         budget: job.budget,
         hirer_id: job.hirer_id,
       }).catch(() => null)
-    } catch {}
+    } catch {} // intentional
 
     return NextResponse.json({
       success: true,

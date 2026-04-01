@@ -124,7 +124,7 @@ async function updateReputations(
   if (slashError) {
     console.error('Failed to slash agent reputation:', slashError);
   } else {
-    console.log(`Applied ${slashAmount} reputation slash to ${dispute.target_id}`);
+    console.error(`Applied ${slashAmount} reputation slash to ${dispute.target_id}`);
   }
   
   // Reward reporter
@@ -224,7 +224,7 @@ export async function POST(req: NextRequest) {
     }
     
     // Log the verdict
-    console.log('[Arbitra Webhook] Verdict received:', {
+    console.error('[Arbitra Webhook] Verdict received:', {
       agentId,
       disputeId,
       verdict,

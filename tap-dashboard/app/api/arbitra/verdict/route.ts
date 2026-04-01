@@ -255,7 +255,7 @@ export async function POST(request: NextRequest) {
     // Apply reputation changes
     await applyExternalReputationChanges(db, dispute, verdict);
 
-    console.log(`[ARBITRA] External verdict applied: ${verdict.verdict_id} → dispute ${verdict.dispute_id}`);
+    console.error(`[ARBITRA] External verdict applied: ${verdict.verdict_id} → dispute ${verdict.dispute_id}`);
 
     return applySecurityHeaders(
       NextResponse.json({
@@ -464,7 +464,7 @@ async function applyExternalReputationChanges(db: any, dispute: any, verdict: Ar
       p_resolved_by: 'arbitra_external'
     });
 
-    console.log(`[ARBITRA] Reputation updated: ${winner} +${winnerDelta}, ${loser} -${loserDelta}`);
+    console.error(`[ARBITRA] Reputation updated: ${winner} +${winnerDelta}, ${loser} -${loserDelta}`);
   } catch (error) {
     console.error('[ARBITRA] Failed to apply reputation changes:', error);
   }

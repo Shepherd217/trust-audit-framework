@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     // Adjust committee size based on difficulty if not specified
     const finalSize = committee_size || (complexity?.difficulty_rating >= 4 ? 7 : 5);
     
-    console.log(`[Committee] Selecting ${finalSize} members for dispute ${dispute_id}`);
+    console.error(`[Committee] Selecting ${finalSize} members for dispute ${dispute_id}`);
     
     // Call RPC to select committee
     const { data: committee, error } = await supabase.rpc('select_committee', {

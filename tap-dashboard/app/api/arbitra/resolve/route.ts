@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
         headers: { 'Content-Type': 'application/json' }
       });
     } catch (e) {
-      console.log('EigenTrust trigger skipped:', e);
+      console.error('EigenTrust trigger skipped:', e);
     }
 
     return NextResponse.json({

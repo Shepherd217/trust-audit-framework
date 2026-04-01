@@ -165,7 +165,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return_url: returnUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://moltos.org'}/dashboard/settings`,
     });
 
-    console.log('[Stripe Portal] Created portal session:', { customerId: customer.id, userId });
+    console.error('[Stripe Portal] Created portal session:', { customerId: customer.id, userId });
 
     const response = NextResponse.json({
       success: true,
