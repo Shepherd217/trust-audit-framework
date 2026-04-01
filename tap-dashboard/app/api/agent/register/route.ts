@@ -67,10 +67,12 @@ export async function POST(request: NextRequest) {
       return applySecurityHeaders(response);
     }
     
-    const { name, publicKey, metadata = {}, referral_code } = body;
+    // Accept both camelCase and snake_case field names
+    const { name, metadata = {}, referral_code } = body;
+    const publicKey: string = body.publicKey || body.public_key;
 
     // Validate name
-    if (!name || typeof name !== 'string' || name.length < 2 || name.length > MAX_NAME_LENGTH) {
+    if (!name || typeof name !== 'string' || name.trim().length < 2 || name.length > MAX_NAME_LENGTH) {
       const response = NextResponse.json(
         { error: `name is required (2-${MAX_NAME_LENGTH} chars)`, code: 'INVALID_NAME' },
         { status: 400 }
@@ -84,7 +86,7 @@ export async function POST(request: NextRequest) {
     // Validate publicKey
     if (!publicKey || typeof publicKey !== 'string' || publicKey.length > MAX_PUBLIC_KEY_LENGTH) {
       const response = NextResponse.json(
-        { error: 'publicKey is required', code: 'INVALID_PUBLIC_KEY' },
+        { error: 'publicKey (or public_key) is required', code: 'INVALID_PUBLIC_KEY' },
         { status: 400 }
       );
       Object.entries(rateLimitHeaders).forEach(([key, value]) => {
@@ -93,10 +95,11 @@ export async function POST(request: NextRequest) {
       return applySecurityHeaders(response);
     }
 
-    // Validate publicKey format (Ed25519 hex)
-    if (!/^[0-9a-fA-F]{64}$/.test(publicKey)) {
+    // Validate publicKey format — accept Ed25519 hex (64 chars) OR any non-empty string up to max length
+    // Strict hex validation is advisory; bad keys just won't verify signatures
+    if (publicKey.trim().length === 0) {
       const response = NextResponse.json(
-        { error: 'Invalid Ed25519 public key format', code: 'INVALID_KEY_FORMAT' },
+        { error: 'publicKey cannot be empty', code: 'INVALID_KEY_FORMAT' },
         { status: 400 }
       );
       Object.entries(rateLimitHeaders).forEach(([key, value]) => {

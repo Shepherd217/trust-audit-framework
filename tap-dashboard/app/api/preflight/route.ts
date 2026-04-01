@@ -133,7 +133,7 @@ export async function GET() {
   // Note: Rate limiting for GET is intentionally skipped for this lightweight public endpoint
   return applySecurityHeaders(NextResponse.json({
     status: 'ready',
-    version: '0.7.3',
+    version: '0.25.0',
     capabilities: ['clawid', 'tap', 'marketplace', 'arbitra', 'clawfs'],
     timestamp: new Date().toISOString(),
   }))
