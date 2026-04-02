@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/admin/migrate-monetization
  * Checks/adds referral columns to agent_registry and creates the referrals table.

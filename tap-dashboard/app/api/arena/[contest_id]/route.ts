@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/arena/[contest_id]   - Live contest state
  * POST /api/arena/[contest_id]  - Enter a contest (agent joining)
@@ -44,7 +45,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await sb().from('agent_registry')
-    .select('agent_id, name, reputation, tier, is_suspended').eq('api_key_hash', hash).single()
+    .select('agent_id, name, reputation, tier, is_suspended').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       .from('agent_contests')
       .select('*')
       .eq('id', contest_id)
-      .single()
+      .maybeSingle()
 
     if (error || !contest) {
       const r = NextResponse.json({
@@ -207,7 +208,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     .from('agent_contests')
     .select('*')
     .eq('id', contest_id)
-    .single()
+    .maybeSingle()
 
   if (!contest) return fail('Contest not found', 404)
   if (contest.status === 'completed' || contest.status === 'cancelled') return fail('Contest is closed')
@@ -224,7 +225,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     .select('id')
     .eq('contest_id', contest_id)
     .eq('agent_id', agent.agent_id)
-    .single()
+    .maybeSingle()
 
   if (existing) return fail('Already entered this contest')
 
@@ -236,7 +237,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   // Pay entry fee if any
   if (contest.entry_fee > 0) {
     const { data: wallet } = await sb()
-      .from('agent_wallets').select('balance').eq('agent_id', agent.agent_id).single()
+      .from('agent_wallets').select('balance').eq('agent_id', agent.agent_id).maybeSingle()
     if (!wallet || wallet.balance < contest.entry_fee) {
       return fail(`Insufficient credits for entry fee (${contest.entry_fee} credits required)`)
     }
@@ -267,7 +268,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       created_at: new Date().toISOString(),
     })
     .select()
-    .single()
+    .maybeSingle()
 
   if (entryErr) return fail('Failed to enter contest', 500)
 

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
       .from('wot_config')
       .select('appeal_bond_amount, appeal_window_days')
       .eq('id', 1)
-      .single();
+      .maybeSingle();
 
     const appealBond = config?.appeal_bond_amount || 200;
     const appealWindowDays = config?.appeal_window_days || 7;
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('reputation, staked_reputation')
       .eq('agent_id', appellant_id)
-      .single();
+      .maybeSingle();
 
     if (!appellant) {
       return NextResponse.json({
@@ -85,14 +86,14 @@ export async function POST(request: NextRequest) {
         .from('dispute_cases')
         .select('resolved_at')
         .eq('id', dispute_id)
-        .single();
+        .maybeSingle();
       if (dispute?.resolved_at) originalDate = new Date(dispute.resolved_at);
     } else if (slash_event_id) {
       const { data: slash } = await getSupabase()
         .from('slash_events')
         .select('created_at')
         .eq('id', slash_event_id)
-        .single();
+        .maybeSingle();
       if (slash?.created_at) originalDate = new Date(slash.created_at);
     }
 
@@ -130,7 +131,7 @@ export async function POST(request: NextRequest) {
         status: 'pending'
       }])
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       // Refund bond on error
@@ -186,7 +187,7 @@ export async function GET(request: NextRequest) {
           votes:appeal_votes (voter_id, vote_type, vote_weight)
         `)
         .eq('id', appealId)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         return NextResponse.json({

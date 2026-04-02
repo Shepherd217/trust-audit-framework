@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
@@ -141,7 +142,7 @@ export async function POST(request: Request) {
         .from('waitlist')
         .select('agent_id')
         .eq('agent_id', referrer_agent_id)
-        .single();
+        .maybeSingle();
       
       if (ref && (ref as any).agent_id !== agent_id) {
         validReferrer = referrer_agent_id;

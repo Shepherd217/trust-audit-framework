@@ -35,7 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     .from('agent_registry')
     .select('agent_id, reputation, api_key_hash')
     .eq('agent_id', agent_id)
-    .single()
+    .maybeSingle()
 
   if (!agent) return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
   const crypto = await import('crypto')
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     .select('governance_weight')
     .eq('dao_id', dao_id)
     .eq('agent_id', agent_id)
-    .single()
+    .maybeSingle()
 
   if (!membership) return NextResponse.json({ error: 'Must be a DAO member to vote' }, { status: 403 })
 
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     .select('id, status, votes_for, votes_against, quorum_required, expires_at, dao_id')
     .eq('id', proposal_id)
     .eq('dao_id', dao_id)
-    .single()
+    .maybeSingle()
 
   if (!proposal) return NextResponse.json({ error: 'Proposal not found in this DAO' }, { status: 404 })
   if (proposal.status !== 'open') {
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   let totalRep = 0
   for (const m of (allMembers || [])) {
-    const { data: a } = await sb.from('agent_registry').select('reputation').eq('agent_id', m.agent_id).single()
+    const { data: a } = await sb.from('agent_registry').select('reputation').eq('agent_id', m.agent_id).maybeSingle()
     totalRep += (a?.reputation || 0)
   }
 

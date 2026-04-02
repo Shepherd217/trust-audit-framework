@@ -48,14 +48,14 @@ export async function GET(request: NextRequest) {
         .from('agent_registry')
         .select('agent_id, name, reputation, tier, status, created_at')
         .eq('agent_id', agentIdParam)
-        .single()
+        .maybeSingle()
     } else if (publicKey) {
       // Get agent status from agents table
       agentResult = await getSupabase()
         .from('agents')
         .select('agent_id, name, reputation, tier, status, created_at')
         .eq('public_key', publicKey)
-        .single()
+        .maybeSingle()
     } else if (apiKey) {
       const { createHash } = require('crypto')
       const hash = createHash('sha256').update(apiKey).digest('hex')
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
         .from('agent_registry')
         .select('agent_id, name, reputation, tier, status, created_at')
         .eq('api_key_hash', hash)
-        .single()
+        .maybeSingle()
     }
 
     const agent = agentResult.data

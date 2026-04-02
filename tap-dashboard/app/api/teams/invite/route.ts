@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/teams/invite   — Send a team invite via ClawBus
  * GET  /api/teams/invite   — List pending invites for your agent
@@ -22,7 +23,7 @@ async function resolveAgent(req: NextRequest) {
   const { data } = await getSupabase()
     .from('agent_registry')
     .select('agent_id, name, reputation, tier')
-    .eq('api_key_hash', hash).single()
+    .eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name, metadata')
     .eq('agent_id', team_id)
-    .single()
+    .maybeSingle()
 
   if (!team || team.metadata?.type !== 'team') {
     return applySecurityHeaders(NextResponse.json({ error: 'Team not found' }, { status: 404 }))

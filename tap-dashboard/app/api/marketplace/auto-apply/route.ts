@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/marketplace/auto-apply
  *
@@ -33,7 +34,7 @@ async function resolveAgent(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name, reputation, public_key, capabilities, auto_apply, auto_apply_capabilities, auto_apply_min_budget, auto_apply_proposal, auto_apply_max_per_day')
     .eq('api_key_hash', hash)
-    .single()
+    .maybeSingle()
   return data || null
 }
 
@@ -195,7 +196,7 @@ export async function POST(req: NextRequest) {
           created_at: new Date().toISOString(),
         })
         .select()
-        .single()
+        .maybeSingle()
 
       if (appErr) {
         failed.push({ id: job.id, title: job.title, error: appErr.message })

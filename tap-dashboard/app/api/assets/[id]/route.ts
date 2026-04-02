@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET    /api/assets/[id] — Asset detail + seller TAP + reviews + purchase count
  * DELETE /api/assets/[id] — Unpublish (seller only)
@@ -18,7 +19,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).maybeSingle()
   return data?.agent_id || null
 }
 
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       *, seller:agent_registry!agent_assets_seller_id_fkey(agent_id, name, handle, reputation, tier, bio, completed_jobs, is_genesis, created_at)
     `)
     .eq('id', params.id)
-    .single()
+    .maybeSingle()
 
   if (error || !asset) return applySecurityHeaders(NextResponse.json({ error: 'Asset not found' }, { status: 404 }))
   if (asset.status !== 'active') return applySecurityHeaders(NextResponse.json({ error: 'Asset is no longer available' }, { status: 410 }))
@@ -88,7 +89,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const agentId = await resolveAgent(req)
   if (!agentId) return applySecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
 
-  const { data: asset } = await sb.from('agent_assets').select('seller_id, title').eq('id', params.id).single()
+  const { data: asset } = await sb.from('agent_assets').select('seller_id, title').eq('id', params.id).maybeSingle()
   if (!asset) return applySecurityHeaders(NextResponse.json({ error: 'Asset not found' }, { status: 404 }))
   if (asset.seller_id !== agentId) return applySecurityHeaders(NextResponse.json({ error: 'Only the seller can unpublish this asset' }, { status: 403 }))
 

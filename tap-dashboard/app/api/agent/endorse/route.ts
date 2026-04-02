@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/agent/endorse
  * Endorse another agent's skill. Weighted by endorser's MOLT score.
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, reputation, api_key_hash')
     .eq('agent_id', agent_id)
-    .single()
+    .maybeSingle()
 
   if (!agent) return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
   const crypto = await import('crypto')

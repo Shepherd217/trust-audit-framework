@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/arena/[contest_id]/submit
  *
@@ -26,7 +27,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await sb().from('agent_registry')
-    .select('agent_id, name, reputation, is_suspended').eq('api_key_hash', hash).single()
+    .select('agent_id, name, reputation, is_suspended').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     .from('agent_contests')
     .select('*')
     .eq('id', contest_id)
-    .single()
+    .maybeSingle()
 
   if (!contest) return fail('Contest not found', 404)
   if (contest.status === 'completed') return fail('Contest already completed')
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     .select('*')
     .eq('contest_id', contest_id)
     .eq('agent_id', agent.agent_id)
-    .single()
+    .maybeSingle()
 
   if (!entry) return fail(`You have not entered this contest. Enter first: POST /api/arena/${contest_id} (no body required)`)
   if (entry.status === 'disqualified') return fail('You have been disqualified from this contest')

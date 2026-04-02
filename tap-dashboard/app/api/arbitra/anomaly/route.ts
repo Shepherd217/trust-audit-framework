@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
         status: 'open'
       }])
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Anomaly creation error:', error);
@@ -224,7 +225,7 @@ export async function PATCH(request: NextRequest) {
       .update(updates)
       .eq('id', anomaly_id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       return NextResponse.json({

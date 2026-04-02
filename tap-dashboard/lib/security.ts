@@ -322,3 +322,33 @@ export function getApiKey(request: import('next/server').NextRequest): string | 
   // Fall back to x-api-key
   return request.headers.get('x-api-key')
 }
+
+/**
+ * requireAuth — verify API key from request headers.
+ * Returns { agentId } if valid, throws if not.
+ * Used by routes that need authenticated agent identity.
+ */
+import { createHash as _createHash } from 'crypto'
+import { createTypedClient as _createTypedClient } from '@/lib/database.extensions'
+
+export async function requireAuth(
+  request: NextRequest
+): Promise<{ agentId: string }> {
+  const key = getApiKey(request)
+  if (!key) throw new Error('No API key provided')
+
+  const hash = _createHash('sha256').update(key).digest('hex')
+  const sb = _createTypedClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  ) as any
+
+  const { data } = await sb
+    .from('agent_registry')
+    .select('agent_id')
+    .eq('api_key_hash', hash)
+    .maybeSingle()
+
+  if (!data?.agent_id) throw new Error('Invalid API key')
+  return { agentId: data.agent_id }
+}

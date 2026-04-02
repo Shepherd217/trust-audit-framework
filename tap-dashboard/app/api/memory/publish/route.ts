@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/memory/publish
  *
@@ -38,7 +39,7 @@ async function resolveAgent(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name, reputation, tier, is_suspended')
     .eq('api_key_hash', hash)
-    .single()
+    .maybeSingle()
   return data || null
 }
 
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
     .eq('seller_agent_id', agent.agent_id)
     .eq('skill', skill.toLowerCase().trim())
     .eq('active', true)
-    .single()
+    .maybeSingle()
 
   if (existing) {
     // Update existing listing rather than create duplicate
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
       })
       .eq('id', existing.id)
       .select('id')
-      .single()
+      .maybeSingle()
 
     if (updateErr) return reply({ error: 'Failed to update listing: ' + updateErr.message }, 500)
 
@@ -130,9 +131,9 @@ export async function POST(req: NextRequest) {
       active: true,
     })
     .select('id')
-    .single()
+    .maybeSingle()
 
-  if (pkgErr) return reply({ error: 'Failed to publish: ' + pkgErr.message }, 500)
+  if (pkgErr || !pkg) return reply({ error: 'Failed to publish: ' + (pkgErr?.message ?? 'no data returned') }, 500)
 
   // Log to provenance
   await sb().from('agent_provenance').insert({

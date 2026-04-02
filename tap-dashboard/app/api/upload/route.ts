@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { applyRateLimit, applySecurityHeaders } from '@/lib/security';
@@ -14,18 +15,13 @@ export async function POST(request: NextRequest) {
   const path = '/api/upload';
   
   // Apply rate limiting
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -34,9 +30,6 @@ export async function POST(request: NextRequest) {
     // Validate token format (JWT structure)
     if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token)) {
       const response = NextResponse.json({ error: 'Invalid token format' }, { status: 401 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -52,9 +45,6 @@ export async function POST(request: NextRequest) {
     
     if (userError || !user) {
       const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -63,9 +53,6 @@ export async function POST(request: NextRequest) {
 
     if (!file) {
       const response = NextResponse.json({ error: 'No file provided' }, { status: 400 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -75,9 +62,6 @@ export async function POST(request: NextRequest) {
         { error: `File too large (max ${MAX_FILE_SIZE_MB}MB)` },
         { status: 413 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -87,9 +71,6 @@ export async function POST(request: NextRequest) {
         { error: `Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}` },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -102,9 +83,6 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid file extension' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -115,9 +93,6 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid filename' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -138,9 +113,6 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Storage upload error:', error);
       const response = NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -155,18 +127,11 @@ export async function POST(request: NextRequest) {
       fileName: fileName,
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
     
   } catch (error) {
     console.error('Unexpected error:', error);
     const response = NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }

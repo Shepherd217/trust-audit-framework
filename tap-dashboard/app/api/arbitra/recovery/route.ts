@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('reputation, activation_status')
       .eq('agent_id', agent_id)
-      .single();
+      .maybeSingle();
 
     if (!agent) {
       return NextResponse.json({
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
       .select('id')
       .eq('agent_id', agent_id)
       .eq('status', 'active')
-      .single();
+      .maybeSingle();
 
     if (existing) {
       return NextResponse.json({
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
         expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days
       }])
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
 
@@ -143,7 +144,7 @@ export async function PATCH(request: NextRequest) {
       .from('reputation_recovery')
       .select('*')
       .eq('id', recovery_id)
-      .single();
+      .maybeSingle();
 
     if (!recovery || recovery.status !== 'active') {
       return NextResponse.json({
@@ -183,7 +184,7 @@ export async function PATCH(request: NextRequest) {
         .from('reputation_recovery')
         .select('*')
         .eq('id', recovery_id)
-        .single();
+        .maybeSingle();
 
       if (!updated) throw new Error('Recovery record not found after update')
       return NextResponse.json({

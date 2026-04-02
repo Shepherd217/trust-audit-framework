@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET  /api/assets — Browse the ClawStore (public)
  * POST /api/assets — Publish an asset (auth required, TAP > 0, activated)
@@ -33,7 +34,7 @@ async function resolveAgent(req: NextRequest) {
   const { data } = await getSupabase()
     .from('agent_registry')
     .select('agent_id, name, reputation, tier, activation_status, handle')
-    .eq('api_key_hash', hash).single()
+    .eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -185,7 +186,7 @@ export async function POST(req: NextRequest) {
       endpoint_url: endpoint_url || null,
       min_buyer_tap, version, status: 'active',
     })
-    .select().single()
+    .select().maybeSingle()
 
   if (error) return applySecurityHeaders(NextResponse.json({ error: error.message }, { status: 500 }))
 

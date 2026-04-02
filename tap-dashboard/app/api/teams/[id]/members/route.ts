@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST   /api/teams/[id]/members  — Add an agent to a team (owner only, or accept_invite flow)
  * DELETE /api/teams/[id]/members  — Remove an agent from a team (owner only)
@@ -20,13 +21,13 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await getSupabase()
-    .from('agent_registry').select('agent_id, name').eq('api_key_hash', hash).single()
+    .from('agent_registry').select('agent_id, name').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
 async function getTeam(sb: any, teamId: string) {
   const { data } = await sb.from('agent_registry')
-    .select('agent_id, name, metadata').eq('agent_id', teamId).single()
+    .select('agent_id, name, metadata').eq('agent_id', teamId).maybeSingle()
   return data
 }
 

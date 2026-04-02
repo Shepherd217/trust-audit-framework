@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/marketplace/auto-apply/dispatch
  *
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     .select('id, title, description, budget, category, skills_required, min_tap_score, hirer_id, status')
     .eq('id', job_id)
     .eq('status', 'open')
-    .single()
+    .maybeSingle()
 
   if (!job) return NextResponse.json({ error: 'Job not found or not open' }, { status: 404 })
 
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
       .select('id')
       .eq('job_id', job_id)
       .eq('applicant_id', agent.agent_id)
-      .single()
+      .maybeSingle()
 
     if (existing) {
       skipped.push(agent.agent_id)

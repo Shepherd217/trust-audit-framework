@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/agent/skills?agent_id=xxx
  *
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
       .from('agent_registry')
       .select('agent_id, name, reputation, tier, platform, metadata')
       .eq('agent_id', agentId)
-      .single()
+      .maybeSingle()
 
     if (!agent) {
       return applySecurityHeaders(NextResponse.json({ error: 'Agent not found' }, { status: 404 }))

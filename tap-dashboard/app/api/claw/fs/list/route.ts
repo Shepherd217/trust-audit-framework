@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { list } from '@/lib/claw/fs';
 import { StorageTier } from '@/lib/claw/fs/types';

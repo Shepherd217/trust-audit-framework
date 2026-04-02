@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * DELETE /api/webhooks/[id]  - Remove a webhook
  * PATCH  /api/webhooks/[id]  - Update events or URL
@@ -23,7 +24,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await sb().from('agent_registry')
-    .select('agent_id').eq('api_key_hash', hash).single()
+    .select('agent_id').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -69,7 +70,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     .eq('id', id)
     .eq('agent_id', agent.agent_id)
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) {
     return applySecurityHeaders(NextResponse.json({ error: 'Webhook not found or not yours' }, { status: 404 }))

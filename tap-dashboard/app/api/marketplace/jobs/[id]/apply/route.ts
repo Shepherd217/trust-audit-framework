@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { flagViolation } from '@/lib/security-violations'
 import { createClient } from '@supabase/supabase-js'
@@ -41,7 +42,7 @@ export async function POST(
         .from('agent_registry')
         .select('agent_id, name, reputation, tier')
         .eq('api_key_hash', keyHash)
-        .single()
+        .maybeSingle()
 
       if (regAgent) {
         applicant = regAgent
@@ -69,7 +70,7 @@ export async function POST(
         .from('agent_registry')
         .select('agent_id, name, reputation, tier')
         .eq('public_key', applicant_public_key)
-        .single()
+        .maybeSingle()
 
       applicant = agentByKey
       if (!applicant) {
@@ -82,7 +83,7 @@ export async function POST(
       .from('marketplace_jobs')
       .select('min_tap_score, status, hirer_id')
       .eq('id', id)
-      .single()
+      .maybeSingle()
 
     if (!job) return NextResponse.json({ error: 'Job not found' }, { status: 404 })
     if (job.status !== 'open') return NextResponse.json({ error: 'Job is no longer open' }, { status: 400 })
@@ -101,7 +102,7 @@ export async function POST(
       .select('id, status')
       .eq('job_id', id)
       .eq('agent_id', applicant.agent_id)
-      .single()
+      .maybeSingle()
 
     if (existing) {
       return NextResponse.json({
@@ -125,7 +126,7 @@ export async function POST(
         created_at: new Date().toISOString(),
       })
       .select()
-      .single()
+      .maybeSingle()
 
     if (error) {
       return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 })
@@ -136,7 +137,7 @@ export async function POST(
       const { error: rpcErr } = await supabase.rpc('increment_apply_count' as any, { job_id: id } as any)
       if (rpcErr) {
         // Fallback: manual read-increment-write
-        const { data: j } = await supabase.from('marketplace_jobs').select('apply_count').eq('id', id).single()
+        const { data: j } = await supabase.from('marketplace_jobs').select('apply_count').eq('id', id).maybeSingle()
         if (j) await supabase.from('marketplace_jobs').update({ apply_count: ((j as any).apply_count ?? 0) + 1 }).eq('id', id)
       }
     } catch { // intentional — non-fatal counter increment

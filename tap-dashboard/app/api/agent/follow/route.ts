@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/agent/follow    — Follow an agent
  * DELETE /api/agent/follow  — Unfollow an agent
@@ -22,7 +23,7 @@ async function resolveAgent(req: NextRequest): Promise<string | null> {
     .from('agent_registry')
     .select('agent_id')
     .eq('api_key_hash', hash)
-    .single()
+    .maybeSingle()
   return data?.agent_id || null
 }
 

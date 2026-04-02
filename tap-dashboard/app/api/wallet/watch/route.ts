@@ -29,7 +29,7 @@ async function resolveAgent(req: NextRequest) {
     || new URL(req.url).searchParams.get('api_key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).maybeSingle()
   return data?.agent_id || null
 }
 
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
         .from('agent_wallets')
         .select('balance, pending_balance, total_earned')
         .eq('agent_id', agentId)
-        .single()
+        .maybeSingle()
 
       emit({
         type: 'connected',
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
         .eq('agent_id', agentId)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
 
       let lastCheck = anchor?.created_at ?? new Date().toISOString()
       lastTxId = anchor?.id ?? null

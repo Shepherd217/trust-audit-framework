@@ -21,7 +21,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .from('claw_daos')
     .select('*')
     .eq('id', dao_id)
-    .single()
+    .maybeSingle()
 
   if (error || !dao) return NextResponse.json({ error: 'DAO not found' }, { status: 404 })
 

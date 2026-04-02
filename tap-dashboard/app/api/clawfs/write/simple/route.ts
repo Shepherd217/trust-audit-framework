@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/clawfs/write/simple
  * Write to ClawFS using just your API key — no Ed25519 signature required.
@@ -23,7 +24,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await getSupabase()
-    .from('agent_registry').select('agent_id, public_key').eq('api_key_hash', hash).single()
+    .from('agent_registry').select('agent_id, public_key').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 

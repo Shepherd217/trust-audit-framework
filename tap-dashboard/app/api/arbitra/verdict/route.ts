@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * Arbitra External Verdict Webhook
  * Receives verdicts from external ARBITER instances
@@ -143,7 +144,7 @@ export async function POST(request: NextRequest) {
       .from('arbitra_external_verdicts')
       .select('verdict_id')
       .eq('verdict_id', verdict.verdict_id)
-      .single();
+      .maybeSingle();
 
     if (existingVerdict) {
       return applySecurityHeaders(
@@ -163,7 +164,7 @@ export async function POST(request: NextRequest) {
       .from('arbitra_orphaned_verdicts')
       .select('verdict_id')
       .eq('verdict_id', verdict.verdict_id)
-      .single();
+      .maybeSingle();
 
     if (existingOrphaned) {
       return applySecurityHeaders(
@@ -183,7 +184,7 @@ export async function POST(request: NextRequest) {
       .from('dispute_cases')
       .select('*')
       .eq('id', verdict.dispute_id)
-      .single();
+      .maybeSingle();
 
     if (disputeError || !dispute) {
       // Store orphaned verdict for later processing

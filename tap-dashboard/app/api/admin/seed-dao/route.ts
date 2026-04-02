@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       founding_agents: [],
     })
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) {
     return applySecurityHeaders(NextResponse.json({ error: error.message }, { status: 500 }))

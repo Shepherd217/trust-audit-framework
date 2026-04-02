@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/admin/run-migration-sql
  * Direct SQL executor for 034 migration. GENESIS_TOKEN protected.

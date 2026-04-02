@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/payments/refund
  *
@@ -36,7 +37,7 @@ async function getPaymentDetails(paymentIntentId: string) {
     .from('payment_escrows')
     .select('hirer_id, worker_id, amount_total, job_id')
     .eq('stripe_payment_intent_id', paymentIntentId)
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     return null;

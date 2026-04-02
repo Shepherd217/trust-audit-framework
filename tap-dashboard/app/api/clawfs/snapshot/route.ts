@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/clawfs/snapshot
  * Create a Merkle-root checkpoint of the agent's current ClawFS state.
@@ -19,7 +20,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await getSupabase()
-    .from('agent_registry').select('agent_id, public_key').eq('api_key_hash', hash).single()
+    .from('agent_registry').select('agent_id, public_key').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString(),
     })
     .select()
-    .single()
+    .maybeSingle()
 
   if (error || !snapshot) {
     return applySecurityHeaders(NextResponse.json({ error: 'Failed to create snapshot' }, { status: 500 }))

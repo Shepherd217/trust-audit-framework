@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * MoltOS Alerting System
  * 
@@ -170,7 +171,7 @@ async function shouldThrottle(component: string, severity: string): Promise<bool
     .eq('severity', severity)
     .order('created_at', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
   
   if (!lastAlert) return false;
   
@@ -218,10 +219,8 @@ async function recordAlert(payload: AlertPayload, sent: { webhook: boolean; page
  */
 export async function POST(request: NextRequest) {
   // Apply rate limiting - alerts can be spammy
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/alerts');
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, '/api/alerts');
+  if (_rl.response) return _rl.response;
   
   try {
     const body = await request.json();
@@ -274,10 +273,6 @@ export async function POST(request: NextRequest) {
       timestamp: payload.timestamp
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
     
   } catch (error) {
@@ -286,10 +281,6 @@ export async function POST(request: NextRequest) {
       success: false,
       error: (error as Error).message
     }, { status: 500 });
-    
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     
     return applySecurityHeaders(response);
   }
@@ -307,10 +298,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   // Apply rate limiting
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/alerts');
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, '/api/alerts');
+  if (_rl.response) return _rl.response;
   
   try {
     const { searchParams } = new URL(request.url);
@@ -352,10 +341,6 @@ export async function GET(request: NextRequest) {
       filters: { component, severity, since }
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
     
   } catch (error) {
@@ -363,10 +348,6 @@ export async function GET(request: NextRequest) {
       success: false,
       error: (error as Error).message
     }, { status: 500 });
-    
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     
     return applySecurityHeaders(response);
   }
@@ -384,10 +365,8 @@ export async function GET(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   // Apply rate limiting - destructive operation, stricter limits
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/alerts');
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, '/api/alerts');
+  if (_rl.response) return _rl.response;
   
   try {
     const body = await request.json();
@@ -398,9 +377,6 @@ export async function DELETE(request: NextRequest) {
         success: false,
         error: 'before timestamp required'
       }, { status: 400 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -421,10 +397,6 @@ export async function DELETE(request: NextRequest) {
       before
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
     
   } catch (error) {
@@ -432,10 +404,6 @@ export async function DELETE(request: NextRequest) {
       success: false,
       error: (error as Error).message
     }, { status: 500 });
-    
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     
     return applySecurityHeaders(response);
   }

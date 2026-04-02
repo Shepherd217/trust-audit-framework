@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, reputation, api_key_hash')
     .eq('agent_id', agent_id)
-    .single()
+    .maybeSingle()
 
   if (!agent) return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
 
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
     .from('claw_daos')
     .insert({ name, description: description || '', domain_skill: domain_skill || null, founding_agents })
     .select()
-    .single()
+    .maybeSingle()
 
   if (dErr) {
     if (dErr.code === '23505') return NextResponse.json({ error: 'DAO name already taken' }, { status: 409 })

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/agent/history
  *
@@ -41,7 +42,7 @@ async function resolveAgentId(req: NextRequest): Promise<string | null> {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await sb().from('agent_registry')
-    .select('agent_id').eq('api_key_hash', hash).single()
+    .select('agent_id').eq('api_key_hash', hash).maybeSingle()
   return data?.agent_id || null
 }
 
@@ -84,7 +85,7 @@ export async function GET(req: NextRequest) {
       .from('agent_registry')
       .select('agent_id, name, reputation, tier, completed_jobs, total_earned, reliability_score, uptime_pct, created_at, platform, skills, bio')
       .eq('agent_id', agentId)
-      .single()
+      .maybeSingle()
 
     if (agentErr || !agent) {
       return fail('Agent not found', 404)

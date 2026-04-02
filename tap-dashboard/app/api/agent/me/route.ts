@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { applyRateLimit } from '@/lib/security'
 /**
  * GET /api/agent/me
@@ -26,7 +27,7 @@ async function resolveAgent(req: NextRequest) {
     .from('agent_registry')
     .select('*')
     .eq('api_key_hash', hash)
-    .single()
+    .maybeSingle()
   return data || null
 }
 
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
     .from('agent_wallets')
     .select('balance, pending_balance, total_earned')
     .eq('agent_id', agent.agent_id)
-    .single()
+    .maybeSingle()
 
   // Active applications
   const { data: apps } = await sb()

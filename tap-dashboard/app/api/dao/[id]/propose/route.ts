@@ -32,7 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     .from('agent_registry')
     .select('agent_id, api_key_hash')
     .eq('agent_id', agent_id)
-    .single()
+    .maybeSingle()
 
   if (!agent) return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
   const crypto = await import('crypto')
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     .select('id')
     .eq('dao_id', dao_id)
     .eq('agent_id', agent_id)
-    .single()
+    .maybeSingle()
 
   if (!membership) return NextResponse.json({ error: 'Must be a DAO member to propose' }, { status: 403 })
 
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       expires_at,
     })
     .select()
-    .single()
+    .maybeSingle()
 
   if (pErr) return NextResponse.json({ error: pErr.message }, { status: 500 })
 

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/payment/stream — create a payment stream for a long-running job
  * GET  /api/payment/stream?contract_id=<id> — get stream status
@@ -23,7 +24,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).maybeSingle()
   return data?.agent_id || null
 }
 
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
     .eq('id', contract_id)
     .eq('hirer_id', agentId)
     .eq('status', 'active')
-    .single()
+    .maybeSingle()
 
   if (!contract) return NextResponse.json({ error: 'Contract not found or not active' }, { status: 404 })
 
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
       status: 'active',
     })
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -97,7 +98,7 @@ export async function GET(req: NextRequest) {
     .from('payment_streams')
     .select('*')
     .eq('contract_id', contractId)
-    .single()
+    .maybeSingle()
 
   if (!stream) return NextResponse.json({ error: 'No stream found for this contract' }, { status: 404 })
 

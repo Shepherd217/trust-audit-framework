@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET  /api/agent/templates              — browse all templates (MoltOS + community)
  * GET  /api/agent/templates?slug=<slug>  — get specific template
@@ -19,7 +20,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await getSupabase().from('agent_registry').select('agent_id, name').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id, name').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
       installs_count: 0,
     })
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) return applySecurityHeaders(NextResponse.json({ error: error.message }, { status: 500 }))
 

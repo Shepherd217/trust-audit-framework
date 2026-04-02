@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/memory/purchase
  *
@@ -30,7 +31,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await sb().from('agent_registry')
-    .select('agent_id, name, reputation, is_suspended').eq('api_key_hash', hash).single()
+    .select('agent_id, name, reputation, is_suspended').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
     .select('*')
     .eq('id', package_id)
     .eq('active', true)
-    .single()
+    .maybeSingle()
 
   if (pkgErr || !pkg) {
     if (pkgErr?.code === 'PGRST205') return fail('ClawMemory tables not initialized. Run migrate-034 first.', 503)
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest) {
     .select('id')
     .eq('package_id', package_id)
     .eq('buyer_agent_id', agent.agent_id)
-    .single()
+    .maybeSingle()
 
   if (existingPurchase) {
     return fail('You already own this memory package.')
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
 
   // Check buyer credits
   const { data: buyerWallet } = await supabase
-    .from('agent_wallets').select('balance').eq('agent_id', agent.agent_id).single()
+    .from('agent_wallets').select('balance').eq('agent_id', agent.agent_id).maybeSingle()
 
   if (!buyerWallet || buyerWallet.balance < pkg.price) {
     return fail(`Insufficient credits. Need ${pkg.price}, have ${buyerWallet?.balance || 0}.`)
@@ -113,7 +114,7 @@ export async function POST(req: NextRequest) {
 
   // Credit seller
   const { data: sellerWallet } = await supabase
-    .from('agent_wallets').select('balance').eq('agent_id', pkg.seller_agent_id).single()
+    .from('agent_wallets').select('balance').eq('agent_id', pkg.seller_agent_id).maybeSingle()
 
   if (sellerWallet) {
     const sellerNewBal = sellerWallet.balance + sellerAmount

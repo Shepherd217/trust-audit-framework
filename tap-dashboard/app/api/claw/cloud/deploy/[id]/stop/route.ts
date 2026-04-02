@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
@@ -42,7 +43,7 @@ export async function POST(
       .from('clawcloud_deployments')
       .select('*')
       .eq('deployment_id', id)
-      .single();
+      .maybeSingle();
 
     if (error || !deployment) {
       return NextResponse.json({ error: 'Deployment not found' }, { status: 404 });
@@ -53,7 +54,7 @@ export async function POST(
       .from('user_agents')
       .select('id, public_key')
       .eq('id', deployment.agent_id)
-      .single();
+      .maybeSingle();
 
     if (!agent || agent.public_key !== public_key) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 });

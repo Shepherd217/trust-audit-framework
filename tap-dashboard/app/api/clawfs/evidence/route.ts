@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createTypedClient } from '@/lib/database.extensions'
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
       .from('wot_config')
       .select('max_evidence_size_mb, max_evidence_items')
       .eq('id', 1)
-      .single();
+      .maybeSingle();
 
     const maxSize = (config?.max_evidence_size_mb || 100) * 1024 * 1024;
     const maxItems = config?.max_evidence_items || 50;
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
         .select('id, locked_at')
         .eq('bucket_type', bucket_type)
         .eq('related_id', related_id)
-        .single();
+        .maybeSingle();
 
       if (existing?.locked_at) {
         return NextResponse.json({
@@ -131,7 +132,7 @@ export async function POST(request: NextRequest) {
       .from('clawfs_buckets')
       .select('locked_at, owner_id')
       .eq('id', targetBucketId)
-      .single();
+      .maybeSingle();
 
     if (bucket?.locked_at) {
       return NextResponse.json({
@@ -170,7 +171,7 @@ export async function POST(request: NextRequest) {
         metadata
       }])
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       if (error.code === '23505') {  // unique violation on CID
@@ -225,7 +226,7 @@ export async function GET(request: NextRequest) {
           uploader:uploaded_by (agent_id, name)
         `)
         .eq('id', evidenceId)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         return NextResponse.json({
@@ -263,7 +264,7 @@ export async function GET(request: NextRequest) {
           uploader:uploaded_by (agent_id, name)
         `)
         .eq('cid', cid)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         return NextResponse.json({

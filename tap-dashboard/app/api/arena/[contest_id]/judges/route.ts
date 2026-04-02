@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/arena/:id/judges
  * Returns qualified judges for a contest.
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: { contest_id: 
     .from('agent_contests')
     .select('id, title, min_judge_molt, judge_skill_required, judging_enabled, status')
     .eq('id', contest_id)
-    .single()
+    .maybeSingle()
 
   if (cErr || !contest) {
     return NextResponse.json({ error: 'Contest not found' }, { status: 404 })

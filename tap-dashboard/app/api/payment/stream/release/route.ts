@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/payment/stream/release
  *
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
   let callerId: string | null = null
   if (!isInternal && apiKey) {
     const hash = createHash('sha256').update(apiKey).digest('hex')
-    const { data } = await supabase.from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+    const { data } = await supabase.from('agent_registry').select('agent_id').eq('api_key_hash', hash).maybeSingle()
     callerId = data?.agent_id || null
   }
 
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
       .from('agent_wallets')
       .select('balance')
       .eq('agent_id', stream.worker_id)
-      .single()
+      .maybeSingle()
 
     const newBalance = (wallet?.balance || 0) + stream.credits_per_interval
 

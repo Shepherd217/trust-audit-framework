@@ -47,7 +47,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     .from('agent_registry')
     .select('agent_id, name, reputation, tier, api_key_hash, is_suspended')
     .eq('agent_id', agent_id)
-    .single()
+    .maybeSingle()
 
   if (!agent) return fail('Agent not found', 404)
   if (agent.is_suspended) return fail('Account suspended', 403)
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     .from('claw_daos')
     .select('id, name, domain_skill, member_count')
     .eq('id', dao_id)
-    .single()
+    .maybeSingle()
 
   if (!dao) return fail('DAO not found', 404)
 
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     .select('id')
     .eq('dao_id', dao_id)
     .eq('agent_id', agent_id)
-    .single()
+    .maybeSingle()
 
   if (existing) return fail('Already a member of this DAO', 409)
 
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       joined_at: new Date().toISOString(),
     })
     .select()
-    .single()
+    .maybeSingle()
 
   if (mErr) {
     if (mErr.code === '23505') return fail('Already a member of this DAO', 409)

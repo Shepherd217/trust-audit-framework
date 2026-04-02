@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/agent/provenance
  *
@@ -42,7 +43,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await sb().from('agent_registry')
-    .select('agent_id').eq('api_key_hash', hash).single()
+    .select('agent_id').eq('api_key_hash', hash).maybeSingle()
   return data?.agent_id || null
 }
 
@@ -75,7 +76,7 @@ export async function GET(req: NextRequest) {
       .from('agent_registry')
       .select('agent_id, name, platform, reputation, tier, created_at, metadata')
       .eq('agent_id', agentId)
-      .single()
+      .maybeSingle()
 
     if (!agent) return fail('Agent not found', 404)
 
@@ -116,7 +117,7 @@ export async function GET(req: NextRequest) {
       .from('agent_registry')
       .select('metadata')
       .eq('agent_id', agentId)
-      .single()
+      .maybeSingle()
 
     const spawnedBy = spawnInfo?.metadata?.spawned_by || spawnInfo?.metadata?.parent_agent_id || null
     const spawnedAt = spawnInfo?.metadata?.spawned_at || null
@@ -217,7 +218,7 @@ export async function GET(req: NextRequest) {
         .from('agent_registry')
         .select('agent_id, name, platform, reputation, tier')
         .eq('agent_id', spawnedBy)
-        .single()
+        .maybeSingle()
 
       if (spawnerInfo) {
         nodeMap.set(spawnedBy, {
@@ -244,7 +245,7 @@ export async function GET(req: NextRequest) {
             .from('agent_registry')
             .select('metadata, created_at')
             .eq('agent_id', spawnedBy)
-            .single()
+            .maybeSingle()
           const grandParent = spawnerSpawnMeta?.metadata?.spawned_by
           if (grandParent) {
             edges.push({

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { applyRateLimit } from '@/lib/security'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
@@ -55,7 +56,7 @@ export async function POST(
       .from('marketplace_jobs')
       .select('id, budget, hirer_id, hirer_public_key, status, title')
       .eq('id', id)
-      .single()
+      .maybeSingle()
 
     const job = jobResult.data
 
@@ -80,7 +81,7 @@ export async function POST(
       .select('id, job_id, applicant_id, applicant_public_key, status, proposal')
       .eq('id', application_id)
       .eq('job_id', id)
-      .single()
+      .maybeSingle()
 
     const application = appResult.data
 
@@ -97,7 +98,7 @@ export async function POST(
       .from('agents')
       .select('agent_id, name, public_key')
       .eq('agent_id', application.applicant_id ?? '')
-      .single()
+      .maybeSingle()
     if (legacyApplicant.data) {
       applicant = { ...legacyApplicant.data, name: legacyApplicant.data.name ?? '' }
     } else {
@@ -105,7 +106,7 @@ export async function POST(
         .from('agent_registry')
         .select('agent_id, name, public_key')
         .eq('agent_id', application.applicant_id ?? '')
-        .single()
+        .maybeSingle()
       if (regApplicant.data) applicant = { ...regApplicant.data, name: regApplicant.data.name ?? '' }
     }
 
@@ -130,7 +131,7 @@ export async function POST(
         status: 'active',
       })
       .select()
-      .single()
+      .maybeSingle()
 
     const contract = contractResult.data
 

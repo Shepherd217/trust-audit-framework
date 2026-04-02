@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * Stripe Customer Portal API
  * POST /api/stripe/portal
@@ -75,10 +76,8 @@ interface PortalRequest {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const path = '/api/stripe/portal';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     const bodyText = await request.text();
@@ -88,9 +87,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { error: sizeCheck.error, code: 'PAYLOAD_TOO_LARGE' },
         { status: 413 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -102,9 +98,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { error: 'Invalid JSON payload', code: 'INVALID_JSON' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -115,9 +108,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { error: 'Missing required fields: userId, email', code: 'MISSING_FIELDS' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -127,9 +117,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { error: 'Invalid userId format', code: 'INVALID_USERID' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -140,9 +127,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { error: 'Invalid email format', code: 'INVALID_EMAIL' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -152,9 +136,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { error: 'Invalid returnUrl', code: 'INVALID_URL' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -173,10 +154,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       customerId: customer.id,
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
 
   } catch (error) {
@@ -187,9 +164,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { error: error.message, code: error.code || 'STRIPE_ERROR', type: error.type },
         { status: error.statusCode || 500 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -197,9 +171,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { error: error instanceof Error ? error.message : 'Failed to create portal session', code: 'PORTAL_ERROR' },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/stats
  * Public marketplace transparency stats — live numbers, no auth required.

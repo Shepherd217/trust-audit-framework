@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verifyClawIDSignature } from '@/lib/clawid-auth'
@@ -33,10 +34,10 @@ export async function POST(request: NextRequest) {
     // Check agents table (legacy) then agent_registry
     const lookupBy = agentPublicKey ? { col: 'public_key', val: agentPublicKey } : agent_id ? { col: 'agent_id', val: agent_id } : null
     if (lookupBy) {
-      const { data: a1 } = await supabase.from('agents').select('agent_id, public_key').eq(lookupBy.col, lookupBy.val).single()
+      const { data: a1 } = await supabase.from('agents').select('agent_id, public_key').eq(lookupBy.col, lookupBy.val).maybeSingle()
       if (a1) { agent = a1 as Agent }
       if (!agent) {
-        const { data: a2 } = await supabase.from('agent_registry').select('agent_id, public_key').eq(lookupBy.col, lookupBy.val).single()
+        const { data: a2 } = await supabase.from('agent_registry').select('agent_id, public_key').eq(lookupBy.col, lookupBy.val).maybeSingle()
         if (a2) agent = a2 as Agent
       }
     }
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
       snapshotQuery = snapshotQuery.order('created_at', { ascending: false })
     }
     
-    const { data: snapshot, error: snapshotError } = await snapshotQuery.single()
+    const { data: snapshot, error: snapshotError } = await snapshotQuery.maybeSingle()
 
     if (snapshotError || !snapshot) {
       return NextResponse.json({ 
@@ -116,10 +117,10 @@ export async function GET(request: NextRequest) {
     const lookupCol = public_key ? 'public_key' : 'agent_id'
     const lookupVal = public_key || agent_id
     if (lookupVal) {
-      const { data: a1 } = await supabase.from('agents').select('agent_id').eq(lookupCol, lookupVal).single()
+      const { data: a1 } = await supabase.from('agents').select('agent_id').eq(lookupCol, lookupVal).maybeSingle()
       if (a1) agent = a1 as Agent
       if (!agent) {
-        const { data: a2 } = await supabase.from('agent_registry').select('agent_id').eq(lookupCol, lookupVal).single()
+        const { data: a2 } = await supabase.from('agent_registry').select('agent_id').eq(lookupCol, lookupVal).maybeSingle()
         if (a2) agent = a2 as Agent
       }
     }
@@ -135,7 +136,7 @@ export async function GET(request: NextRequest) {
       .eq('agent_id', agent.agent_id)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single()
+      .maybeSingle()
 
     if (snapshotError || !snapshot) {
       return NextResponse.json({ 

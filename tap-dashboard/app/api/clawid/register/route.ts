@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security'
@@ -12,10 +13,8 @@ const MAX_AGENT_ID_LENGTH = 100;
 
 export async function POST(request: NextRequest) {
   // Apply rate limiting - prevents identity spam
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/clawid/register');
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, '/api/clawid/register');
+  if (_rl.response) return _rl.response;
 
   try {
     // Read and validate body size
@@ -26,9 +25,6 @@ export async function POST(request: NextRequest) {
         { error: sizeCheck.error },
         { status: 413 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -40,9 +36,6 @@ export async function POST(request: NextRequest) {
         { error: 'Missing publicKey or agentId' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -52,9 +45,6 @@ export async function POST(request: NextRequest) {
         { error: `publicKey must be a string with max ${MAX_PUBLIC_KEY_LENGTH} chars` },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -63,9 +53,6 @@ export async function POST(request: NextRequest) {
         { error: `agentId must be a string with max ${MAX_AGENT_ID_LENGTH} chars` },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -74,7 +61,7 @@ export async function POST(request: NextRequest) {
       .from('agents')
       .select('agent_id')
       .eq('public_key', publicKey)
-      .single()
+      .maybeSingle()
 
     if (existing) {
       // Return existing agent
@@ -82,16 +69,13 @@ export async function POST(request: NextRequest) {
         .from('agents')
         .select('*')
         .eq('public_key', publicKey)
-        .single()
+        .maybeSingle()
 
       if (!agent) {
         const response = NextResponse.json(
           { error: 'Agent not found' },
           { status: 404 }
         );
-        Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-          response.headers.set(key, value);
-        });
         return applySecurityHeaders(response);
       }
 
@@ -105,9 +89,6 @@ export async function POST(request: NextRequest) {
           reputation: agent.reputation ?? 0,
           status: agent.status ?? 'active',
         },
-      });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
       });
       return applySecurityHeaders(response);
     }
@@ -129,7 +110,7 @@ export async function POST(request: NextRequest) {
       .from('agents')
       .insert(insertData)
       .select()
-      .single()
+      .maybeSingle()
 
     if (error || !agent) {
       console.error('Failed to create agent:', error)
@@ -137,9 +118,6 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to register ClawID' },
         { status: 500 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -154,9 +132,6 @@ export async function POST(request: NextRequest) {
         status: agent.status ?? 'active',
       },
     });
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   } catch (error) {
     console.error('ClawID registration error:', error)
@@ -164,9 +139,6 @@ export async function POST(request: NextRequest) {
       { error: 'Registration failed' },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }

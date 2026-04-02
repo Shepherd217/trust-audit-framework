@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/clawfs/read?path=...  OR  ?cid=...
  * Read a file from ClawFS.
@@ -24,7 +25,7 @@ async function resolveAgentId(req: NextRequest): Promise<string | null> {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await getSupabase()
-    .from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+    .from('agent_registry').select('agent_id').eq('api_key_hash', hash).maybeSingle()
   return data?.agent_id || null
 }
 

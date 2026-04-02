@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * Auto-Topup Configuration API
  * GET: Get auto-topup configuration
@@ -32,10 +33,8 @@ const MAX_MONTHLY_CHARGE = 5000; // $5000 max monthly
 export async function GET(request: NextRequest) {
   const path = '/api/topup';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     const { searchParams } = new URL(request.url);
@@ -46,9 +45,6 @@ export async function GET(request: NextRequest) {
         { error: 'userId is required', code: 'MISSING_USER_ID' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -58,9 +54,6 @@ export async function GET(request: NextRequest) {
         { error: 'Invalid userId format', code: 'INVALID_USER_ID' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -83,10 +76,6 @@ export async function GET(request: NextRequest) {
       },
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
     
   } catch (error: any) {
@@ -95,9 +84,6 @@ export async function GET(request: NextRequest) {
       { error: error.message || 'Failed to get configuration', code: 'CONFIG_ERROR' },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }
@@ -109,10 +95,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const path = '/api/topup';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     const bodyText = await request.text();
@@ -122,9 +106,6 @@ export async function POST(request: NextRequest) {
         { error: sizeCheck.error, code: 'PAYLOAD_TOO_LARGE' },
         { status: 413 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -136,9 +117,6 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid JSON payload', code: 'INVALID_JSON' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -156,9 +134,6 @@ export async function POST(request: NextRequest) {
         { error: 'userId is required', code: 'MISSING_USER_ID' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -168,9 +143,6 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid userId format', code: 'INVALID_USER_ID' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -181,9 +153,6 @@ export async function POST(request: NextRequest) {
           { error: `threshold must be between $1.00 and $${MAX_THRESHOLD}`, code: 'INVALID_THRESHOLD' },
           { status: 400 }
         );
-        Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-          response.headers.set(key, value);
-        });
         return applySecurityHeaders(response);
       }
       
@@ -192,9 +161,6 @@ export async function POST(request: NextRequest) {
           { error: `chargeAmount must be between $5.00 and $${MAX_CHARGE_AMOUNT}`, code: 'INVALID_CHARGE_AMOUNT' },
           { status: 400 }
         );
-        Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-          response.headers.set(key, value);
-        });
         return applySecurityHeaders(response);
       }
       
@@ -203,9 +169,6 @@ export async function POST(request: NextRequest) {
           { error: `maxMonthlyCharge must be between chargeAmount and $${MAX_MONTHLY_CHARGE}`, code: 'INVALID_MONTHLY_LIMIT' },
           { status: 400 }
         );
-        Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-          response.headers.set(key, value);
-        });
         return applySecurityHeaders(response);
       }
       
@@ -214,9 +177,6 @@ export async function POST(request: NextRequest) {
           { error: 'paymentMethodId is required when enabling auto-topup', code: 'MISSING_PAYMENT_METHOD' },
           { status: 400 }
         );
-        Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-          response.headers.set(key, value);
-        });
         return applySecurityHeaders(response);
       }
     }
@@ -241,10 +201,6 @@ export async function POST(request: NextRequest) {
         : 'Auto-topup disabled successfully',
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
     
   } catch (error: any) {
@@ -253,9 +209,6 @@ export async function POST(request: NextRequest) {
       { error: error.message || 'Failed to configure auto-topup', code: 'CONFIG_ERROR' },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }
@@ -267,10 +220,8 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const path = '/api/topup';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     const { searchParams } = new URL(request.url);
@@ -281,9 +232,6 @@ export async function DELETE(request: NextRequest) {
         { error: 'userId is required', code: 'MISSING_USER_ID' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -293,9 +241,6 @@ export async function DELETE(request: NextRequest) {
         { error: 'Invalid userId format', code: 'INVALID_USER_ID' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -311,10 +256,6 @@ export async function DELETE(request: NextRequest) {
       message: 'Auto-topup disabled',
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
     
   } catch (error: any) {
@@ -323,9 +264,6 @@ export async function DELETE(request: NextRequest) {
       { error: error.message || 'Failed to disable auto-topup', code: 'CONFIG_ERROR' },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }

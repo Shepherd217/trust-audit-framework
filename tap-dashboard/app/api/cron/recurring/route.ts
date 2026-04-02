@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
         .eq('job_id', job.id)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
 
       const preferredAgent = lastContract?.status === 'completed' && (lastContract.rating || 5) >= 4
         ? lastContract.worker_id
@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
           preferred_agent_id: preferredAgent,
         })
         .select()
-        .single()
+        .maybeSingle()
 
       // Update parent job's next_run_at and total_runs
       await supabase

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/trade/signal  — Submit a trading signal via ClawBus
  * POST /api/trade/execute — Record execution of a signal
@@ -24,7 +25,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await getSupabase()
-    .from('agent_registry').select('agent_id, name, reputation').eq('api_key_hash', hash).single()
+    .from('agent_registry').select('agent_id, name, reputation').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -129,9 +130,9 @@ export async function POST(req: NextRequest) {
     // If job_id, trigger split execution
     let splitResult = null
     if (job_id) {
-      const { data: splitRecord } = await sb.from('job_splits').select('*').eq('job_id', job_id).single()
+      const { data: splitRecord } = await sb.from('job_splits').select('*').eq('job_id', job_id).maybeSingle()
       if (splitRecord && splitRecord.status === 'pending') {
-        const { data: job } = await sb.from('marketplace_jobs').select('budget').eq('id', job_id).single()
+        const { data: job } = await sb.from('marketplace_jobs').select('budget').eq('id', job_id).maybeSingle()
         if (job) {
           const splits = splitRecord.splits.map((s: any) => ({
             agent_id: s.agent_id,
@@ -183,7 +184,7 @@ export async function POST(req: NextRequest) {
         .from('clawbus_messages')
         .select('payload, status')
         .eq('message_id', lookupId)
-        .single()
+        .maybeSingle()
 
       const isCompleted =
         msg?.status === 'completed' ||

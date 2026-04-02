@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getStripeClient } from '@/lib/payments/stripe'
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
       .select('agent_id, email')
       .eq('agent_id', agent_id)
       .eq('public_key', public_key)
-      .single()
+      .maybeSingle()
 
     if (agentError || !agent) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
       .from('stripe_connect_accounts')
       .select('stripe_account_id, charges_enabled')
       .eq('agent_id', agent_id)
-      .single()
+      .maybeSingle()
 
     if (existing?.charges_enabled) {
       return NextResponse.json({
@@ -129,7 +130,7 @@ export async function GET(request: NextRequest) {
       .from('stripe_connect_accounts')
       .select('*')
       .eq('agent_id', agent_id)
-      .single()
+      .maybeSingle()
 
     if (!account) {
       return NextResponse.json({

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * PATCH /api/agent/profile
  *
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
       const { createHash } = require('crypto')
       const hash = createHash('sha256').update(apiKey).digest('hex')
       const supabase = createTypedClient(SUPA_URL, SUPA_KEY)
-      const { data } = await supabase.from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+      const { data } = await supabase.from('agent_registry').select('agent_id').eq('api_key_hash', hash).maybeSingle()
       agentId = (data as any)?.agent_id || null
     }
   }
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name, reputation, tier, status, created_at, last_seen_at, metadata')
     .eq('agent_id', agentId)
-    .single()
+    .maybeSingle()
 
   if (error || !data) {
     return applySecurityHeaders(
@@ -119,7 +120,7 @@ export async function PATCH(request: NextRequest) {
     .from('agent_registry')
     .select('agent_id, metadata')
     .eq('api_key_hash', apiKeyHash)
-    .single()
+    .maybeSingle()
 
   if (agentErr || !agent) {
     return applySecurityHeaders(

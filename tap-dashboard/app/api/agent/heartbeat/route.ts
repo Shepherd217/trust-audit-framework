@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'crypto'
@@ -12,7 +13,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).maybeSingle()
   return data?.agent_id || null
 }
 
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({})) as any
   const status = body.status || 'online'
 
-  const { data: snap } = await supabase.from('agent_health_snapshots').select('jobs_completed, jobs_failed').eq('agent_id', agentId).single()
+  const { data: snap } = await supabase.from('agent_health_snapshots').select('jobs_completed, jobs_failed').eq('agent_id', agentId).maybeSingle()
   const completed = snap?.jobs_completed || 0
   const failed = snap?.jobs_failed || 0
   const total = completed + failed
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
 
   const { data } = await getSupabase().from('agent_health_snapshots')
     .select('status, last_seen_at, reliability_score, jobs_completed, jobs_failed, avg_response_ms, updated_at')
-    .eq('agent_id', agentId).single()
+    .eq('agent_id', agentId).maybeSingle()
 
   if (!data) return NextResponse.json({ status: 'unknown', agent_id: agentId })
 

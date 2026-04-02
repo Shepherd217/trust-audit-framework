@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verifyClawIDSignature } from '@/lib/clawid-auth'
@@ -17,10 +18,8 @@ const MIN_TAP_TO_PROPOSE = 70;
 export async function GET(request: NextRequest) {
   const path = '/api/governance/proposals';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     const { searchParams } = new URL(request.url)
@@ -33,9 +32,6 @@ export async function GET(request: NextRequest) {
         { error: 'Invalid status. Use: ' + validStatuses.join(', ') },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -53,9 +49,6 @@ export async function GET(request: NextRequest) {
         { error: 'Failed to fetch proposals' },
         { status: 500 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -122,10 +115,6 @@ export async function GET(request: NextRequest) {
       count: proposalsWithVotes.length,
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
     
   } catch (error) {
@@ -134,9 +123,6 @@ export async function GET(request: NextRequest) {
       { error: 'Failed to fetch proposals' },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }
@@ -145,10 +131,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const path = '/api/governance/proposals';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     const bodyText = await request.text();
@@ -158,9 +142,6 @@ export async function POST(request: NextRequest) {
         { error: sizeCheck.error },
         { status: 413 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -172,9 +153,6 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid JSON payload' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -194,9 +172,6 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -206,9 +181,6 @@ export async function POST(request: NextRequest) {
         { error: `Title must be 5-${MAX_TITLE_LENGTH} characters` },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -218,9 +190,6 @@ export async function POST(request: NextRequest) {
         { error: `Description must be 20-${MAX_DESCRIPTION_LENGTH} characters` },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -230,9 +199,6 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid evidence_cid format' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -245,9 +211,6 @@ export async function POST(request: NextRequest) {
         { error: verification.error || 'Invalid ClawID signature' },
         { status: 401 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -256,7 +219,7 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('agent_id, name, reputation, tier')
       .eq('public_key', proposer_public_key)
-      .single()
+      .maybeSingle()
     
     const proposer = proposerResult.data as Agent | null
     
@@ -265,9 +228,6 @@ export async function POST(request: NextRequest) {
         { error: 'Proposer agent not found' },
         { status: 404 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -277,9 +237,6 @@ export async function POST(request: NextRequest) {
         { error: `Insufficient MOLT score to create proposal (minimum ${MIN_TAP_TO_PROPOSE})` },
         { status: 403 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -305,7 +262,7 @@ export async function POST(request: NextRequest) {
       .from('governance_proposals')
       .insert(insertData)
       .select()
-      .single()
+      .maybeSingle()
     
     const proposal = proposalResult.data as Proposal | null
     
@@ -315,9 +272,6 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to create proposal' },
         { status: 500 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -336,10 +290,6 @@ export async function POST(request: NextRequest) {
       },
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
     
   } catch (error) {
@@ -348,9 +298,6 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to create proposal' },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }

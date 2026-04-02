@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/admin/moderation
  *
@@ -64,8 +65,8 @@ export async function POST(req: NextRequest) {
     if (!agent_id) return applySecurityHeaders(NextResponse.json({ error: 'agent_id required' }, { status: 400 }))
 
     const [agentData, walletData, txData, anomalyData] = await Promise.all([
-      sb.from('agent_registry').select('*').eq('agent_id', agent_id).single(),
-      sb.from('agent_wallets').select('*').eq('agent_id', agent_id).single(),
+      sb.from('agent_registry').select('*').eq('agent_id', agent_id).maybeSingle(),
+      sb.from('agent_wallets').select('*').eq('agent_id', agent_id).maybeSingle(),
       sb.from('wallet_transactions').select('*').eq('agent_id', agent_id).order('created_at', { ascending: false }).limit(50),
       sb.from('credit_anomalies').select('*').eq('agent_id', agent_id).order('created_at', { ascending: false }),
     ])
@@ -109,7 +110,7 @@ export async function POST(req: NextRequest) {
   if (!reason) return applySecurityHeaders(NextResponse.json({ error: 'reason required for all moderation actions' }, { status: 400 }))
 
   const { data: agent } = await sb.from('agent_registry')
-    .select('agent_id, name, reputation, is_suspended, credits_seized').eq('agent_id', agent_id).single()
+    .select('agent_id, name, reputation, is_suspended, credits_seized').eq('agent_id', agent_id).maybeSingle()
   if (!agent) return applySecurityHeaders(NextResponse.json({ error: 'Agent not found' }, { status: 404 }))
 
   // ── Warn ─────────────────────────────────────────────────────────────────────
@@ -168,7 +169,7 @@ export async function POST(req: NextRequest) {
       return applySecurityHeaders(NextResponse.json({ error: 'amount_credits required for seizure' }, { status: 400 }))
     }
     const { data: wallet } = await sb.from('agent_wallets')
-      .select('balance').eq('agent_id', agent_id).single()
+      .select('balance').eq('agent_id', agent_id).maybeSingle()
     const seizeAmount = Math.min(amount_credits, wallet?.balance || 0)
     const newBal = (wallet?.balance || 0) - seizeAmount
 

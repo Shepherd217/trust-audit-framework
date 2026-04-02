@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('reputation, staked_reputation')
       .eq('agent_id', reporter_id)
-      .single();
+      .maybeSingle();
 
     if (!reporter) {
       return NextResponse.json({
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString()
       }])
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Failed to create dispute:', error);
@@ -174,7 +175,7 @@ export async function GET(request: NextRequest) {
           reporter:reporter_id (agent_id, name)
         `)
         .eq('id', disputeId)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         return NextResponse.json({

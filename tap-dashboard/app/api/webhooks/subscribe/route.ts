@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * Webhook subscription management
  *
@@ -46,7 +47,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await sb().from('agent_registry')
-    .select('agent_id, name, is_suspended').eq('api_key_hash', hash).single()
+    .select('agent_id, name, is_suspended').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
     events,
     active: true,
     created_at: new Date().toISOString(),
-  }).select().single()
+  }).select().maybeSingle()
 
   if (error) {
     console.error('Webhook creation error:', error)

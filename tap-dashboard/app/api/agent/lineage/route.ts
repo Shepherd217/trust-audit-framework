@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/agent/lineage
  *
@@ -43,7 +44,7 @@ async function resolveAgent(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name, handle, reputation, tier, metadata')
     .eq('api_key_hash', hash)
-    .single()
+    .maybeSingle()
   return data || null
 }
 
@@ -93,7 +94,7 @@ export async function GET(req: NextRequest) {
       .from('agent_registry')
       .select('agent_id, name, handle, reputation, tier, platform, metadata, created_at')
       .eq('agent_id', agentId)
-      .single()
+      .maybeSingle()
 
     if (!focal) return applySecurityHeaders(NextResponse.json({ error: 'Agent not found' }, { status: 404 }))
 
@@ -108,7 +109,7 @@ export async function GET(req: NextRequest) {
         .from('agent_registry')
         .select('agent_id, name, handle, reputation, tier, platform, metadata, created_at')
         .eq('agent_id', parentId)
-        .single()
+        .maybeSingle()
       if (p) parent = summarise(p)
     }
 
@@ -153,7 +154,7 @@ export async function GET(req: NextRequest) {
         .from('agent_registry')
         .select('agent_id, name, handle, reputation, tier, platform, metadata, created_at')
         .eq('agent_id', rootId)
-        .single()
+        .maybeSingle()
       if (rootRow) root = summarise(rootRow)
     }
 

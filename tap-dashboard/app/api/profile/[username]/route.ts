@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createTypedClient } from '@/lib/database.extensions'
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .from('profiles')
       .select('id, username, display_name, bio, avatar_url, tap_score, tier, created_at')
       .eq('username', username)
-      .single();
+      .maybeSingle();
 
     if (error || !profileData) {
       return NextResponse.json(

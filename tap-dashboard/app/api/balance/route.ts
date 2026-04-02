@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * Balance API
  * GET: Get current balance
@@ -25,7 +26,7 @@ async function resolveAgent(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id')
     .eq('api_key_hash', hash)
-    .single();
+    .maybeSingle();
   return data || null;
 }
 

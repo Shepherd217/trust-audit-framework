@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verifyClawIDSignature } from '@/lib/clawid-auth'
@@ -45,7 +46,7 @@ export async function POST(
       .select('id, job_id, hirer_id, worker_id, hirer_public_key, worker_public_key, status')
       .eq('job_id', id)
       .eq('hirer_public_key', hirer_public_key)
-      .single()
+      .maybeSingle()
 
     const contract = contractResult.data
 
@@ -74,7 +75,7 @@ export async function POST(
         dispute_status: 'pending',
       })
       .select()
-      .single()
+      .maybeSingle()
 
     const dispute = disputeResult.data
 

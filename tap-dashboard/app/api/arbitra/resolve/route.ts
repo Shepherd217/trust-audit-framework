@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('reputation, is_genesis, activation_status')
       .eq('agent_id', resolver_id)
-      .single();
+      .maybeSingle();
 
     if (!resolver || resolver.activation_status !== 'active') {
       return NextResponse.json({

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   generatePriceQuote,
@@ -118,7 +119,7 @@ async function getAgentReputationScore(agentId: string): Promise<number> {
     .from('agents')
     .select('reputation')
     .eq('agent_id', agentId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('Failed to fetch agent reputation:', error);

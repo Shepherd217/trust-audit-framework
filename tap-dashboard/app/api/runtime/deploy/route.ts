@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'crypto'
@@ -15,7 +16,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await getSupabase().from('agent_registry').select('agent_id, name, reputation').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id, name, reputation').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
       clawfs_path: clawfsPath,
     })
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
     name: deploymentName,
     status: 'pending',
     config: definition,
-  }).select().single()
+  }).select().maybeSingle()
 
   return NextResponse.json({
     success: true,

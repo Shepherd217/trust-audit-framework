@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * Agent Withdrawal API Routes
  * 
@@ -35,7 +36,7 @@ async function validateAgentApiKey(apiKey: string): Promise<string | null> {
       .from('agent_registry')
       .select('agent_id')
       .eq('api_key_hash', apiKeyHash)
-      .single();
+      .maybeSingle();
     
     return data?.agent_id || null;
   } catch {
@@ -59,7 +60,7 @@ async function getAuthenticatedAgentId(request: NextRequest, supabase: any, toke
       .from('user_agents')
       .select('id')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
     
     if (agent) return agent.id;
   }

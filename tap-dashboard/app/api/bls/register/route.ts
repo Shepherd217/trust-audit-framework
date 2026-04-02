@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('agent_id, activation_status')
       .eq('agent_id', agent_id)
-      .single();
+      .maybeSingle();
 
     if (!agent) {
       return NextResponse.json({
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
         rotated_at: new Date().toISOString()
       }], { onConflict: 'agent_id,key_type' })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
 
@@ -184,7 +185,7 @@ export async function DELETE(request: NextRequest) {
       .from('bls_keypairs')
       .select('agent_id')
       .eq('id', key_id)
-      .single();
+      .maybeSingle();
 
     if (!key || key.agent_id !== agent_id) {
       return NextResponse.json({

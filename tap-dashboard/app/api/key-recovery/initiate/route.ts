@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/key-recovery/initiate
  *
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name')
     .eq('agent_id', agent_id)
-    .single()
+    .maybeSingle()
 
   if (!agent) {
     return applySecurityHeaders(
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
     .eq('agent_id', agent_id)
     .eq('status', 'pending')
     .gt('expires_at', new Date().toISOString())
-    .single()
+    .maybeSingle()
 
   if (existing) {
     return applySecurityHeaders(
@@ -134,7 +135,7 @@ export async function POST(request: NextRequest) {
       expires_at: expiresAt,
     })
     .select()
-    .single()
+    .maybeSingle()
 
   if (insertErr) {
     return applySecurityHeaders(

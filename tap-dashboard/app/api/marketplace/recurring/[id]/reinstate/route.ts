@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/marketplace/recurring/[id]/reinstate — Undo a terminate within 24h.
  * Restores the recurring job and schedules the next run based on original recurrence.
@@ -17,7 +18,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).maybeSingle()
   return data?.agent_id || null
 }
 
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     .select('id, title, status, recurrence, recurrence_interval, terminated_at')
     .eq('id', params.id)
     .eq('hirer_id', agentId)
-    .single()
+    .maybeSingle()
 
   if (!job) return NextResponse.json({ error: 'Recurring job not found or you do not own it' }, { status: 404 })
   if (!job.terminated_at) return NextResponse.json({ error: 'Job is not terminated — nothing to reinstate' }, { status: 409 })

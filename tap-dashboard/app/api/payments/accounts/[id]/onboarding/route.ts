@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * Create onboarding link for connected account
  * 

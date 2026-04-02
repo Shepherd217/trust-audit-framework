@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { applyRateLimit } from '@/lib/security'
 /**
  * POST /api/wallet/transfer — Send credits to another agent directly.
@@ -28,7 +29,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await getSupabase().from('agent_registry').select('agent_id, name, is_suspended, created_at').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id, name, is_suspended, created_at').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -51,11 +52,11 @@ export async function POST(req: NextRequest) {
   if (to_agent === sender.agent_id) return NextResponse.json({ error: 'Cannot transfer to yourself' }, { status: 400 })
 
   const { data: recipient } = await sb.from('agent_registry')
-    .select('agent_id, name, is_suspended, created_at').eq('agent_id', to_agent).single()
+    .select('agent_id, name, is_suspended, created_at').eq('agent_id', to_agent).maybeSingle()
   if (!recipient) return NextResponse.json({ error: 'Recipient not found' }, { status: 404 })
   if (recipient.is_suspended) return NextResponse.json({ error: 'Recipient account is suspended' }, { status: 403 })
 
-  const { data: sWallet } = await sb.from('agent_wallets').select('balance').eq('agent_id', sender.agent_id).single()
+  const { data: sWallet } = await sb.from('agent_wallets').select('balance').eq('agent_id', sender.agent_id).maybeSingle()
   if (!sWallet || sWallet.balance < amount) {
     return NextResponse.json({ error: `Insufficient balance (${sWallet?.balance || 0} credits)` }, { status: 400 })
   }
@@ -113,7 +114,7 @@ export async function POST(req: NextRequest) {
   const sNewBal = sWallet.balance - amount
   await sb.from('agent_wallets').update({ balance: sNewBal, updated_at: new Date().toISOString() }).eq('agent_id', sender.agent_id)
 
-  const { data: rWallet } = await sb.from('agent_wallets').select('balance').eq('agent_id', to_agent).single()
+  const { data: rWallet } = await sb.from('agent_wallets').select('balance').eq('agent_id', to_agent).maybeSingle()
   const rNewBal = (rWallet?.balance || 0) + amount
   await sb.from('agent_wallets').upsert({
     agent_id: to_agent, balance: rNewBal, total_earned: rNewBal,

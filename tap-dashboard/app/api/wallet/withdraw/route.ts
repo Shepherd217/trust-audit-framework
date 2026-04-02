@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/wallet/withdraw
  *
@@ -35,7 +36,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await getSupabase().from('agent_registry')
-    .select('agent_id, name, is_suspended').eq('api_key_hash', hash).single()
+    .select('agent_id, name, is_suspended').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
 
   // Get wallet balance
   const { data: wallet } = await sb.from('agent_wallets')
-    .select('balance').eq('agent_id', agent.agent_id).single()
+    .select('balance').eq('agent_id', agent.agent_id).maybeSingle()
   if (!wallet) return applySecurityHeaders(NextResponse.json({ error: 'Wallet not found' }, { status: 404 }))
 
   // Calculate held credits (bootstrap + transfer credits within hold period)
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest) {
         const { data: connectAccount } = await sb.from('stripe_connect_accounts')
           .select('stripe_account_id, charges_enabled, payouts_enabled')
           .eq('agent_id', agent.agent_id)
-          .single()
+          .maybeSingle()
 
         if (!connectAccount) {
           return applySecurityHeaders(NextResponse.json({

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/memory/list
  *
@@ -39,7 +40,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await sb().from('agent_registry')
-    .select('agent_id, name, reputation, tier, is_suspended, completed_jobs').eq('api_key_hash', hash).single()
+    .select('agent_id, name, reputation, tier, is_suspended, completed_jobs').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -129,7 +130,7 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString(),
     })
     .select()
-    .single()
+    .maybeSingle()
 
   if (pkgErr) {
     if (pkgErr.code === 'PGRST205' || pkgErr.code === '42P01') {

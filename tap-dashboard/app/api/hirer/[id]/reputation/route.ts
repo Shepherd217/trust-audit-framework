@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/hirer/:id/reputation
  * Returns hirer trust score, tier, and breakdown.
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .from('hirer_reputation')
     .select('*')
     .eq('hirer_agent_id', hirer_id)
-    .single()
+    .maybeSingle()
 
   if (rep) {
     return NextResponse.json({
@@ -142,7 +143,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       updated_at: new Date().toISOString(),
     }, { onConflict: 'hirer_agent_id' })
     .select()
-    .single()
+    .maybeSingle()
 
   return NextResponse.json({ ok: true, hirer_id, score, tier, record: upserted })
 }

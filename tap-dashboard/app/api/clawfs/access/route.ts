@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * PATCH /api/clawfs/access — set visibility on a file
  * GET   /api/clawfs/access?path=<path> — get file access settings
@@ -27,7 +28,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).maybeSingle()
   return data?.agent_id || null
 }
 
@@ -82,7 +83,7 @@ export async function GET(req: NextRequest) {
     .eq('agent_id', agentId)
     .eq('path', path)
     .eq('is_latest', true)
-    .single()
+    .maybeSingle()
 
   if (!file) return NextResponse.json({ error: 'File not found' }, { status: 404 })
   return NextResponse.json(file)

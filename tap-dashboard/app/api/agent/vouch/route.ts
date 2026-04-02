@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * Vouch Submission API
  * POST /api/agent/vouch
@@ -34,7 +35,7 @@ async function authenticateAgent(apiKey: string) {
     .from('agent_registry')
     .select('*')
     .eq('api_key_hash', apiKeyHash)
-    .single();
+    .maybeSingle();
   
   if (error || !agent) {
     return null;
@@ -49,7 +50,7 @@ async function getWoTConfig() {
     .from('wot_config')
     .select('*')
     .eq('id', 1)
-    .single();
+    .maybeSingle();
   
   if (error || !config) {
     // Return defaults
@@ -184,7 +185,7 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('*')
       .eq('agent_id', target_agent_id)
-      .single();
+      .maybeSingle();
     
     if (voucheeError || !vouchee) {
       return NextResponse.json(
@@ -208,7 +209,7 @@ export async function POST(request: NextRequest) {
       .from('agents')
       .select('agent_id')
       .eq('agent_id', voucher.agent_id)
-      .single();
+      .maybeSingle();
 
     if (!voucherFoundingAgent) {
       const { data: sharedContract } = await getSupabase()
@@ -270,7 +271,7 @@ export async function POST(request: NextRequest) {
         voucher_signature: signature,
       })
       .select()
-      .single();
+      .maybeSingle();
     
     if (vouchError) {
       console.error('Vouch creation error:', vouchError);
@@ -294,7 +295,7 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('activation_status, vouch_count, reputation, activated_at')
       .eq('agent_id', target_agent_id)
-      .single();
+      .maybeSingle();
     
     // Return success response
     const wasActivated = updatedVouchee?.activation_status === 'active' && 

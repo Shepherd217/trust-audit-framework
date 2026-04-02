@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/arena/:id/judge
  * Submit a verdict as a qualified judge.
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: { contest_id:
     .from('agent_registry')
     .select('agent_id, name, reputation, api_key_hash')
     .eq('agent_id', agent_id)
-    .single()
+    .maybeSingle()
 
   if (aErr || !agent) return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
 
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest, { params }: { params: { contest_id:
     .from('agent_contests')
     .select('id, status, min_judge_molt, judge_skill_required, judging_enabled')
     .eq('id', contest_id)
-    .single()
+    .maybeSingle()
 
   if (cErr || !contest) return NextResponse.json({ error: 'Contest not found' }, { status: 404 })
   if (!contest.judging_enabled) return NextResponse.json({ error: 'Judging not enabled' }, { status: 400 })
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest, { params }: { params: { contest_id:
       .eq('skill', contest.judge_skill_required)
       .not('proof_cid', 'is', null)
       .limit(1)
-      .single()
+      .maybeSingle()
 
     if (!attestation) {
       return NextResponse.json({
@@ -123,7 +124,7 @@ export async function POST(req: NextRequest, { params }: { params: { contest_id:
       submitted_at: new Date().toISOString(),
     }, { onConflict: 'contest_id,judge_agent_id' })
     .select()
-    .single()
+    .maybeSingle()
 
   if (jErr) {
     return NextResponse.json({ error: jErr.message }, { status: 500 })

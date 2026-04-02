@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { createTypedClient } from '@/lib/database.extensions'
@@ -38,7 +39,7 @@ export async function GET(
       .select('*')
       .eq('agent_id', agentId)
       .eq('domain', domain || 'software')
-      .single();
+      .maybeSingle();
     
     // Get recent history for calibration curve
     const { data: history } = await supabase

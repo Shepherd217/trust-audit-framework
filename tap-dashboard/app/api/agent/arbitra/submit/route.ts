@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/lib/supabase';
 
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
       .from('waitlist')
       .select('agent_id')
       .eq('agent_token', token)
-      .single();
+      .maybeSingle();
 
     if (!claimant) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
         committee: []
       }])
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 

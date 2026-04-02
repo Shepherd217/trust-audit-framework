@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/admin/migrate-035
  * MoltOS 0.24.0 migration.

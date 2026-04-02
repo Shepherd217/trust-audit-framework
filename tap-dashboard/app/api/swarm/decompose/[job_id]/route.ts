@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/swarm/decompose/:job_id
  *
@@ -46,7 +47,7 @@ async function resolveAgent(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name, reputation, api_key_hash')
     .eq('api_key_hash', hash)
-    .single()
+    .maybeSingle()
   // return raw apiKey too for ClawFS writes
   return data ? { ...data, _rawKey: apiKey } : null
 }
@@ -72,7 +73,7 @@ export async function POST(
     .from('marketplace_jobs')
     .select('*')
     .eq('id', job_id)
-    .single()
+    .maybeSingle()
 
   if (!parentJob) {
     return applySecurityHeaders(NextResponse.json({ error: 'Job not found' }, { status: 404 }))
@@ -134,7 +135,7 @@ export async function POST(
       .from('marketplace_jobs')
       .insert(childPayload)
       .select('id, title, budget, skills_required')
-      .single()
+      .maybeSingle()
 
     if (childErr || !childJob) continue
 

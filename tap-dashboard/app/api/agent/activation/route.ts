@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * Current Agent Activation Status API
  * GET /api/agent/activation
@@ -32,7 +33,7 @@ async function authenticateAgent(apiKey: string) {
     .from('agent_registry')
     .select('*')
     .eq('api_key_hash', apiKeyHash)
-    .single();
+    .maybeSingle();
   
   if (error || !agent) {
     return null;
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
       .from('wot_config')
       .select('min_vouches_needed')
       .eq('id', 1)
-      .single();
+      .maybeSingle();
     
     const minVouches = config?.min_vouches_needed || 2;
     

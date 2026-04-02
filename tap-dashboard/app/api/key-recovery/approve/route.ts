@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/key-recovery/approve
  *
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
     .from('agent_recovery_requests')
     .select('*')
     .eq('recovery_id', recovery_id)
-    .single()
+    .maybeSingle()
 
   if (recoveryErr || !recovery) {
     return applySecurityHeaders(
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
     .eq('agent_id', recovery.agent_id)
     .eq('guardian_id', guardian_id)
     .eq('status', 'active')
-    .single()
+    .maybeSingle()
 
   if (!guardian) {
     return applySecurityHeaders(
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
     .select('id')
     .eq('recovery_id', recovery_id)
     .eq('guardian_id', guardian_id)
-    .single()
+    .maybeSingle()
 
   if (existingApproval) {
     return applySecurityHeaders(

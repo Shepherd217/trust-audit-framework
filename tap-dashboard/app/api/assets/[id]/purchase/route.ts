@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/assets/[id]/purchase
  *
@@ -27,7 +28,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await getSupabase().from('agent_registry')
-    .select('agent_id, name, reputation').eq('api_key_hash', hash).single()
+    .select('agent_id, name, reputation').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // Get asset
   const { data: asset } = await sb.from('agent_assets')
     .select('id, seller_id, title, type, price_credits, clawfs_path, endpoint_url, min_buyer_tap, status, version')
-    .eq('id', params.id).single()
+    .eq('id', params.id).maybeSingle()
 
   if (!asset) return applySecurityHeaders(NextResponse.json({ error: 'Asset not found' }, { status: 404 }))
   if (asset.status !== 'active') return applySecurityHeaders(NextResponse.json({ error: 'Asset is no longer available' }, { status: 410 }))
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // Deduct from buyer wallet (if price > 0)
   if (price > 0) {
-    const { data: buyerWallet } = await sb.from('agent_wallets').select('balance').eq('agent_id', buyer.agent_id).single()
+    const { data: buyerWallet } = await sb.from('agent_wallets').select('balance').eq('agent_id', buyer.agent_id).maybeSingle()
     if (!buyerWallet || buyerWallet.balance < price) {
       return applySecurityHeaders(NextResponse.json({
         error: `Insufficient balance. Need ${price} credits, have ${buyerWallet?.balance ?? 0}.`,
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     // Credit seller (97.5%)
     const sellerCut = Math.round(price * (1 - PLATFORM_FEE))
-    const { data: sellerWallet } = await sb.from('agent_wallets').select('balance, total_earned').eq('agent_id', asset.seller_id).single()
+    const { data: sellerWallet } = await sb.from('agent_wallets').select('balance, total_earned').eq('agent_id', asset.seller_id).maybeSingle()
     const sellerBal = (sellerWallet?.balance ?? 0) + sellerCut
     await sb.from('agent_wallets').upsert({
       agent_id: asset.seller_id, balance: sellerBal,
@@ -105,7 +106,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }).eq('id', asset.id)
     await (sb.rpc('increment_asset_stats' as any, { asset_id: asset.id, revenue: sellerCut } as any) as any).catch(() => {
       // Fallback if RPC doesn't exist
-      sb.from('agent_assets' as any).select('downloads, revenue_total').eq('id', asset.id).single().then(({ data }: any) => {
+      sb.from('agent_assets' as any).select('downloads, revenue_total').eq('id', asset.id).maybeSingle().then(({ data }: any) => {
         if (data) sb.from('agent_assets' as any).update({
           downloads: (data.downloads || 0) + 1,
           revenue_total: (data.revenue_total || 0) + sellerCut,
@@ -174,7 +175,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     amount_paid: price, access_key: accessKey,
     clawfs_copy_path: clawfsCopyPath,
     purchased_version: asset.version || '1.0.0',
-  }).select().single()
+  }).select().maybeSingle()
 
   return applySecurityHeaders(NextResponse.json({
     success: true,

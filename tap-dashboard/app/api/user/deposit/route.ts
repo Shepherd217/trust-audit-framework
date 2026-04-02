@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * User Deposit API Routes
  * 
@@ -51,10 +52,8 @@ export async function GET(request: NextRequest) {
   const path = '/api/user/deposit';
   
   // Apply rate limiting
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     // Get authenticated user
@@ -64,9 +63,6 @@ export async function GET(request: NextRequest) {
         { success: false, error: authError || 'Unauthorized' },
         { status: 401 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -100,10 +96,6 @@ export async function GET(request: NextRequest) {
       },
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
 
   } catch (error) {
@@ -116,9 +108,6 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }
@@ -128,10 +117,8 @@ export async function POST(request: NextRequest) {
   const path = '/api/user/deposit';
   
   // Apply rate limiting
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     // Get authenticated user first
@@ -141,9 +128,6 @@ export async function POST(request: NextRequest) {
         { success: false, error: authError || 'Unauthorized' },
         { status: 401 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -155,9 +139,6 @@ export async function POST(request: NextRequest) {
         { success: false, error: sizeCheck.error },
         { status: 413 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -171,9 +152,6 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Invalid JSON payload' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -187,9 +165,6 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -203,9 +178,6 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -218,9 +190,6 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -235,9 +204,6 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -252,9 +218,6 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -274,10 +237,6 @@ export async function POST(request: NextRequest) {
       message: 'Deposit initiated successfully',
     }, { status: 201 });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
 
   } catch (error) {
@@ -290,9 +249,6 @@ export async function POST(request: NextRequest) {
       },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }

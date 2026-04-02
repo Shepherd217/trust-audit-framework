@@ -44,7 +44,7 @@ async function resolveAgent(req: NextRequest): Promise<string | null> {
     .from('agent_registry')
     .select('agent_id')
     .eq('api_key_hash', hash)
-    .single()
+    .maybeSingle()
   return data?.agent_id || null
 }
 
@@ -121,7 +121,7 @@ export async function GET(req: NextRequest) {
               .from('agent_registry')
               .select('name, reputation, tier, metadata')
               .eq('agent_id', msg.from_agent)
-              .single()
+              .maybeSingle()
 
             emit({
               type: 'message',

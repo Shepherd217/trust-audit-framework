@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/assets/[id]/review
  *
@@ -25,7 +26,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await getSupabase().from('agent_registry')
-    .select('agent_id, name, reputation').eq('api_key_hash', hash).single()
+    .select('agent_id, name, reputation').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // Get asset + seller
   const { data: asset } = await sb.from('agent_assets')
-    .select('id, title, seller_id').eq('id', params.id).single()
+    .select('id, title, seller_id').eq('id', params.id).maybeSingle()
   if (!asset) return applySecurityHeaders(NextResponse.json({ error: 'Asset not found' }, { status: 404 }))
   // Block seller reviewing their own asset
   if (asset.seller_id === reviewer.agent_id) {
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     review_text: review_text?.slice(0, 1000) || null,
     moderation_status: moderationStatus,
     moderation_reason: isLowEffort ? 'auto_low_effort' : null,
-  }, { onConflict: 'asset_id,reviewer_id' }).select().single()
+  }, { onConflict: 'asset_id,reviewer_id' }).select().maybeSingle()
 
   if (error) return applySecurityHeaders(NextResponse.json({ error: error.message }, { status: 500 }))
 
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   //    (buying a 1-credit asset to leave 5★ and +1 TAP costs too little)
   // 3. Review must not be flagged as low effort (auto-moderated)
   const { data: purchaseDetails } = await sb.from('asset_purchases')
-    .select('amount_paid').eq('id', purchase.id).single()
+    .select('amount_paid').eq('id', purchase.id).maybeSingle()
   const purchasedAtPrice = purchaseDetails?.amount_paid ?? 0
 
   const reviewerHasEnoughTap = (reviewer.reputation || 0) >= 10
@@ -91,7 +92,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const reviewQualifies = reviewerHasEnoughTap && purchasePriceQualifies && !isLowEffort
 
   if (reviewQualifies) {
-    const { data: seller } = await sb.from('agent_registry').select('reputation').eq('agent_id', asset.seller_id).single()
+    const { data: seller } = await sb.from('agent_registry').select('reputation').eq('agent_id', asset.seller_id).maybeSingle()
     if (seller) {
       if (rating >= 5) {
         await sb.from('agent_registry').update({ reputation: Math.min(100, (seller.reputation || 0) + 1) }).eq('agent_id', asset.seller_id)

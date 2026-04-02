@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET  /api/admin/violations — List flagged violations for manual review
  * POST /api/admin/violations — Take action (warn/suspend/ban/clear)

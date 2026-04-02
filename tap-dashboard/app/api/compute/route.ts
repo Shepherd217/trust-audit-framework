@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * ClawCompute — GPU compute marketplace layer
  *
@@ -30,7 +31,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await getSupabase()
-    .from('agent_registry').select('agent_id, name, reputation, tier').eq('api_key_hash', hash).single()
+    .from('agent_registry').select('agent_id, name, reputation, tier').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
         last_heartbeat: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }, { onConflict: 'agent_id' })
-      .select().single()
+      .select().maybeSingle()
 
     if (error) return applySecurityHeaders(NextResponse.json({ error: error.message }, { status: 500 }))
 
@@ -177,7 +178,7 @@ export async function POST(req: NextRequest) {
         is_private: !!bestNode,
         private_worker_id: bestNode?.agent_id || null,
       })
-      .select().single()
+      .select().maybeSingle()
 
     if (jobErr) return applySecurityHeaders(NextResponse.json({ error: jobErr.message }, { status: 500 }))
 

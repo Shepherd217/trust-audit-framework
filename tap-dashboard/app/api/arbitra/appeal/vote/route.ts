@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
       .from('appeals')
       .select('yes_votes, no_votes, status')
       .eq('id', appeal_id)
-      .single();
+      .maybeSingle();
 
     return NextResponse.json({
       success: true,

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * DELETE /api/marketplace/recurring/[id] — Terminate a recurring job.
  * The current in-progress run completes normally. Future runs are cancelled.
@@ -20,7 +21,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).maybeSingle()
   return data?.agent_id || null
 }
 
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .select('id, title, budget, category, recurrence, recurrence_interval, next_run_at, total_runs, last_hired_agent, status, auto_hire, terminated_at')
     .eq('id', params.id)
     .eq('hirer_id', agentId)
-    .single()
+    .maybeSingle()
 
   if (error || !job) return NextResponse.json({ error: 'Recurring job not found' }, { status: 404 })
 
@@ -63,7 +64,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     .select('id, title, status, recurrence, next_run_at, terminated_at')
     .eq('id', params.id)
     .eq('hirer_id', agentId)
-    .single()
+    .maybeSingle()
 
   if (!job) return NextResponse.json({ error: 'Recurring job not found or you do not own it' }, { status: 404 })
   if (job.terminated_at) return NextResponse.json({ error: 'Already terminated. Use /reinstate to undo within 24h.' }, { status: 409 })

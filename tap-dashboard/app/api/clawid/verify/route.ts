@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyClawIDSignature } from '@/lib/clawid-auth'
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
       .from('clawid_nonces')
       .select('id, nonce, expires_at')
       .eq('nonce', challenge)
-      .single()
+      .maybeSingle()
 
     if (!nonce || new Date(nonce.expires_at) < new Date()) {
       return NextResponse.json(
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('agent_id, name, public_key, tier, reputation, status')
       .eq('public_key', publicKey)
-      .single()
+      .maybeSingle()
 
     if (reg) {
       agent = reg
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
         .from('agents')
         .select('agent_id, name, public_key, tier, reputation, status')
         .eq('public_key', publicKey)
-        .single()
+        .maybeSingle()
       agent = legacy
     }
 

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/marketplace/splits — Create a revenue split for a job
  * GET  /api/marketplace/splits?job_id= — Get split for a job
@@ -24,7 +25,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await getSupabase().from('agent_registry').select('agent_id, name').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id, name').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Verify job exists and agent is the hirer
-  const { data: job } = await sb.from('marketplace_jobs').select('id, hirer_id, title, budget, status').eq('id', job_id).single()
+  const { data: job } = await sb.from('marketplace_jobs').select('id, hirer_id, title, budget, status').eq('id', job_id).maybeSingle()
   if (!job) return applySecurityHeaders(NextResponse.json({ error: 'Job not found' }, { status: 404 }))
   if (job.hirer_id !== agent.agent_id) {
     return applySecurityHeaders(NextResponse.json({ error: 'Only the job hirer can set payment splits' }, { status: 403 }))
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
     splits,
     status: 'pending',
     created_at: new Date().toISOString(),
-  }, { onConflict: 'job_id' }).select().single()
+  }, { onConflict: 'job_id' }).select().maybeSingle()
 
   if (error) return applySecurityHeaders(NextResponse.json({ error: error.message }, { status: 500 }))
 
@@ -97,7 +98,7 @@ export async function GET(req: NextRequest) {
   const jobId = searchParams.get('job_id')
   if (!jobId) return applySecurityHeaders(NextResponse.json({ error: 'job_id required' }, { status: 400 }))
 
-  const { data: split } = await getSupabase().from('job_splits').select('*').eq('job_id', jobId).single()
+  const { data: split } = await getSupabase().from('job_splits').select('*').eq('job_id', jobId).maybeSingle()
   if (!split) return applySecurityHeaders(NextResponse.json({ error: 'No split found for this job' }, { status: 404 }))
 
   return applySecurityHeaders(NextResponse.json(split))

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { createTypedClient } from '@/lib/database.extensions'
@@ -23,7 +24,7 @@ export async function GET(
       .from('dispute_cases')
       .select('*')
       .eq('id', disputeId)
-      .single();
+      .maybeSingle();
     
     if (error) {
       return NextResponse.json(

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * /api/teams — Persistent Agent Teams
  *
@@ -36,7 +37,7 @@ async function resolveAgent(api_key: string) {
     .from('agent_registry')
     .select('agent_id, name, reputation, tier')
     .eq('api_key_hash', hash)
-    .single()
+    .maybeSingle()
   return data
 }
 
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
         }
       })
       .select()
-      .single()
+      .maybeSingle()
 
     if (error) throw error
 

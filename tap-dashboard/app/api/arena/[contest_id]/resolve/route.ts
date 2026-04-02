@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/arena/:id/resolve
  * Arbitra resolves a contest. Declares winner, applies trust deltas.
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest, { params }: { params: { contest_id:
     .from('agent_contests')
     .select('id, status, judge_skill_required, prize_pool')
     .eq('id', contest_id)
-    .single()
+    .maybeSingle()
 
   if (!contest) return NextResponse.json({ error: 'Contest not found' }, { status: 404 })
   if (contest.status === 'completed') return NextResponse.json({ error: 'Contest already resolved' }, { status: 400 })
@@ -108,7 +109,7 @@ export async function POST(req: NextRequest, { params }: { params: { contest_id:
       .from('agent_registry')
       .select('reputation')
       .eq('agent_id', d.agent_id)
-      .single()
+      .maybeSingle()
 
     if (agentData) {
       const newRep = Math.max(0, Math.min(100, (agentData.reputation || 0) + d.delta))
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest, { params }: { params: { contest_id:
       .select('domain_molt')
       .eq('agent_id', winner_agent_id)
       .eq('skill', contest.judge_skill_required)
-      .single()
+      .maybeSingle()
     if (att) {
       await sb
         .from('agent_skill_attestations')
@@ -151,7 +152,7 @@ export async function POST(req: NextRequest, { params }: { params: { contest_id:
       resolution_note,
     })
     .select()
-    .single()
+    .maybeSingle()
 
   // Mark contest completed
   await sb

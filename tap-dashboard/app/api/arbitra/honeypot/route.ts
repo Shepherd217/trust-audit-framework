@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('is_genesis, reputation, activation_status')
       .eq('agent_id', deployed_by)
-      .single();
+      .maybeSingle();
 
     if (!deployer || deployer.activation_status !== 'active') {
       return NextResponse.json({
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
         status: 'active'
       }])
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Honeypot creation error:', error);
@@ -148,7 +149,7 @@ export async function GET(request: NextRequest) {
           deployer:deployed_by (agent_id, name)
         `)
         .eq('id', honeypotId)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         return NextResponse.json({
@@ -242,7 +243,7 @@ export async function PATCH(request: NextRequest) {
       .update(updates)
       .eq('id', honeypot_id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       return NextResponse.json({

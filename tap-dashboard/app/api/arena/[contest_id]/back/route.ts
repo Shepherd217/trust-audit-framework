@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/arena/[contest_id]/back
  * Back a contestant in The Crucible with your trust score.
@@ -64,7 +65,7 @@ async function resolveAgent(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name, reputation, is_suspended')
     .eq('api_key_hash', hash)
-    .single()
+    .maybeSingle()
   return data || null
 }
 
@@ -117,7 +118,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
     .select('id')
     .eq('contest_id', contest_uuid)
     .eq('agent_id', contestant_id)
-    .single()
+    .maybeSingle()
 
   if (!entry) return fail(`Contestant ${contestant_id} not found in this contest`, 404)
 
@@ -129,7 +130,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
       .select('domain_molt')
       .eq('agent_id', agent.agent_id)
       .eq('skill', contest.judge_skill_required)
-      .single()
+      .maybeSingle()
     if (att?.domain_molt) domainMolt = att.domain_molt
   }
 
@@ -145,7 +146,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
       resolved: false,
     })
     .select()
-    .single()
+    .maybeSingle()
 
   if (bErr) {
     if (bErr.code === '23505') {

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * Agent Activation Status API
  * GET /api/agent/activation/:agent_id
@@ -29,7 +30,7 @@ async function getWoTConfig() {
     .from('wot_config')
     .select('*')
     .eq('id', 1)
-    .single();
+    .maybeSingle();
   
   if (error || !config) {
     return {
@@ -59,7 +60,7 @@ export async function GET(
       .from('agent_registry')
       .select('agent_id, name, public_key, reputation, activation_status, vouch_count, activated_at, is_genesis, staked_reputation, created_at')
       .eq('agent_id', agentId)
-      .single();
+      .maybeSingle();
     
     if (agentError || !agent) {
       return NextResponse.json(

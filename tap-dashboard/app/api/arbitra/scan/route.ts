@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
               status: 'open'
             }])
             .select()
-            .single();
+            .maybeSingle();
 
           results.rapid_attestation.push({
             agent_id: agent.agent_id,
@@ -123,7 +124,7 @@ export async function POST(request: NextRequest) {
                 status: 'open'
               }])
               .select()
-              .single();
+              .maybeSingle();
 
             results.collusion.push({
               agent_id: agent.agent_id,

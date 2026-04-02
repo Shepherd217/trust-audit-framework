@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createTypedClient } from '@/lib/database.extensions'
@@ -70,7 +71,7 @@ export async function PATCH(request: NextRequest) {
         .select('id')
         .eq('username', username)
         .neq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         return applySecurityHeaders(NextResponse.json(
@@ -94,7 +95,7 @@ export async function PATCH(request: NextRequest) {
       } as never)
       .eq('user_id', user.id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error updating profile:', error);
@@ -148,7 +149,7 @@ export async function GET(request: NextRequest) {
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching profile:', error);

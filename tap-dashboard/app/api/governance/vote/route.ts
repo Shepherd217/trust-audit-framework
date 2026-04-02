@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/governance/vote
  *
@@ -33,7 +34,7 @@ async function resolveAgentByApiKey(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name, reputation, tier')
     .eq('api_key_hash', hash)
-    .single()
+    .maybeSingle()
   return data || null
 }
 
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('agent_id, name, reputation, tier')
       .eq('public_key', voter_public_key)
-      .single()
+      .maybeSingle()
     if (!clawAgent) return reply({ error: 'Agent not found for this public key' }, 404)
     voter = clawAgent
   }
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest) {
     .from('governance_proposals')
     .select('id, status, ends_at')
     .eq('id', proposal_id)
-    .single()
+    .maybeSingle()
 
   if (!proposal) return reply({ error: 'Proposal not found' }, 404)
   if (proposal.status !== 'active') return reply({ error: 'Proposal is not active' }, 400)
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
     .select('id')
     .eq('proposal_id', proposal_id)
     .eq('voter_id', voter.agent_id)
-    .single()
+    .maybeSingle()
 
   if (existing) {
     // Already voted — update the vote but flag it as a change

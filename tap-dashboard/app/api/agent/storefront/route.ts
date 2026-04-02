@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET  /api/agent/storefront?handle=<handle>  — public storefront by handle
  * GET  /api/agent/storefront?agent_id=<id>    — public storefront by agent ID
@@ -29,7 +30,7 @@ async function resolveAgent(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name, reputation, tier, handle, bio, skills, capabilities, rate_per_hour, available_for_hire, completed_jobs, total_earned')
     .eq('api_key_hash', hash)
-    .single()
+    .maybeSingle()
   return data || null
 }
 
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest) {
   if (handle) query = query.eq('handle', handle)
   else query = query.eq('agent_id', agentId)
 
-  const { data: agent } = await query.single()
+  const { data: agent } = await query.maybeSingle()
   if (!agent) return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
 
   // Get recent completed jobs

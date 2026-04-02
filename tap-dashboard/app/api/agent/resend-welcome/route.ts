@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * Resend Welcome Email API
  * POST /api/agent/resend-welcome
@@ -32,15 +33,14 @@ function getSupabase() {
 
 export async function POST(request: NextRequest) {
   const path = '/api/agent/resend-welcome';
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) return rateLimitResponse;
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;;
 
   try {
     const bodyText = await request.text();
     const sizeCheck = validateBodySize(bodyText, 10);
     if (!sizeCheck.valid) {
       const res = NextResponse.json({ error: sizeCheck.error, code: 'PAYLOAD_TOO_LARGE' }, { status: 413 });
-      Object.entries(rateLimitHeaders).forEach(([k, v]) => res.headers.set(k, v));
       return applySecurityHeaders(res);
     }
 
@@ -49,7 +49,6 @@ export async function POST(request: NextRequest) {
       body = JSON.parse(bodyText);
     } catch {
       const res = NextResponse.json({ error: 'Invalid JSON', code: 'INVALID_JSON' }, { status: 400 });
-      Object.entries(rateLimitHeaders).forEach(([k, v]) => res.headers.set(k, v));
       return applySecurityHeaders(res);
     }
 
@@ -58,13 +57,11 @@ export async function POST(request: NextRequest) {
     // Validate inputs
     if (!agentId || typeof agentId !== 'string') {
       const res = NextResponse.json({ error: 'agentId required', code: 'MISSING_AGENT_ID' }, { status: 400 });
-      Object.entries(rateLimitHeaders).forEach(([k, v]) => res.headers.set(k, v));
       return applySecurityHeaders(res);
     }
 
     if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       const res = NextResponse.json({ error: 'Valid email required', code: 'INVALID_EMAIL' }, { status: 400 });
-      Object.entries(rateLimitHeaders).forEach(([k, v]) => res.headers.set(k, v));
       return applySecurityHeaders(res);
     }
 
@@ -72,7 +69,6 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       const res = NextResponse.json({ error: 'API key required (Bearer token)', code: 'UNAUTHORIZED' }, { status: 401 });
-      Object.entries(rateLimitHeaders).forEach(([k, v]) => res.headers.set(k, v));
       return applySecurityHeaders(res);
     }
 
@@ -84,17 +80,15 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('agent_id, name, api_key_hash, owner_email')
       .eq('agent_id', agentId)
-      .single();
+      .maybeSingle();
 
     if (fetchError || !agent) {
       const res = NextResponse.json({ error: 'Agent not found', code: 'NOT_FOUND' }, { status: 404 });
-      Object.entries(rateLimitHeaders).forEach(([k, v]) => res.headers.set(k, v));
       return applySecurityHeaders(res);
     }
 
     if (agent.api_key_hash !== apiKeyHash) {
       const res = NextResponse.json({ error: 'Invalid API key', code: 'UNAUTHORIZED' }, { status: 401 });
-      Object.entries(rateLimitHeaders).forEach(([k, v]) => res.headers.set(k, v));
       return applySecurityHeaders(res);
     }
 
@@ -109,7 +103,6 @@ export async function POST(request: NextRequest) {
     // Send welcome email
     if (!process.env.RESEND_API_KEY) {
       const res = NextResponse.json({ error: 'Email service not configured', code: 'EMAIL_NOT_CONFIGURED' }, { status: 503 });
-      Object.entries(rateLimitHeaders).forEach(([k, v]) => res.headers.set(k, v));
       return applySecurityHeaders(res);
     }
 
@@ -125,13 +118,11 @@ export async function POST(request: NextRequest) {
       success: true,
       message: `Welcome email sent to ${targetEmail}`,
     });
-    Object.entries(rateLimitHeaders).forEach(([k, v]) => res.headers.set(k, v));
     return applySecurityHeaders(res);
 
   } catch (error: any) {
     console.error('Resend welcome error:', error);
     const res = NextResponse.json({ error: error.message || 'Server error', code: 'SERVER_ERROR' }, { status: 500 });
-    Object.entries(rateLimitHeaders || {}).forEach(([k, v]) => res.headers.set(k, v));
     return applySecurityHeaders(res);
   }
 }

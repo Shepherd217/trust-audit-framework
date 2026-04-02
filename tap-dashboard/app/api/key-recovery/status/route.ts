@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/key-recovery/status?recovery_id=xxx
  * GET /api/key-recovery/status?agent_id=xxx  (latest request)
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
     query = query.eq('agent_id', agentId)
   }
 
-  const { data, error } = await query.single()
+  const { data, error } = await query.maybeSingle()
 
   if (error || !data) {
     return applySecurityHeaders(

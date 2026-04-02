@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getStripeClient } from '@/lib/payments/stripe'
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('job_id', job_id)
     }
 
-    const { data: escrow, error } = await (query.single() as any) as { data: any, error: any }
+    const { data: escrow, error } = await (query.maybeSingle() as any) as { data: any, error: any }
 
     if (error || !escrow) {
       return NextResponse.json({ error: 'Escrow not found' }, { status: 404 })
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
       .select('*')
       .eq('id', escrow_id)
       .eq('stripe_payment_intent_id', payment_intent_id)
-      .single()
+      .maybeSingle()
 
     if (escrowError || !escrow) {
       return NextResponse.json({ error: 'Escrow not found' }, { status: 404 })

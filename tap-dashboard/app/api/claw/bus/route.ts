@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * ============================================================================
  * ClawBus API Routes - Agent-to-Agent Messaging Endpoints

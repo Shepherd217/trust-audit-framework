@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET  /api/claw/bus/schema          — list all registered message types
  * GET  /api/claw/bus/schema?type=<t> — get schema for a specific type
@@ -24,7 +25,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).maybeSingle()
   return data?.agent_id || null
 }
 
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
       .from('clawbus_message_types')
       .select('*')
       .eq('type_name', typeName)
-      .single()
+      .maybeSingle()
     if (!schema) return NextResponse.json({ error: `Unknown message type: ${typeName}` }, { status: 404 })
     return NextResponse.json(schema)
   }
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
     .from('clawbus_message_types')
     .upsert({ type_name: fullTypeName, schema, description, version: version || '1.0', created_by: agentId }, { onConflict: 'type_name' })
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

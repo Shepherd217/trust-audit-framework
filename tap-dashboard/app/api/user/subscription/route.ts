@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * User Subscription API
  * GET: Get current user's subscription details (authenticated users)
@@ -55,10 +56,8 @@ function getServiceClient() {
 export async function GET(request: NextRequest) {
   const path = '/api/user/subscription';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     const user = await getCurrentUser();
@@ -74,9 +73,6 @@ export async function GET(request: NextRequest) {
         },
         { status: 401 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -152,10 +148,6 @@ export async function GET(request: NextRequest) {
       },
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
     
   } catch (error: any) {
@@ -170,9 +162,6 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }
@@ -184,10 +173,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const path = '/api/user/subscription';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     // Verify service role (admin only)
@@ -202,9 +189,6 @@ export async function POST(request: NextRequest) {
         },
         { status: 403 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -216,9 +200,6 @@ export async function POST(request: NextRequest) {
         { success: false, error: { code: 'PAYLOAD_TOO_LARGE', message: sizeCheck.error } },
         { status: 413 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -230,9 +211,6 @@ export async function POST(request: NextRequest) {
         { success: false, error: { code: 'INVALID_JSON', message: 'Invalid JSON payload' } },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -250,9 +228,6 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -269,9 +244,6 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -283,7 +255,7 @@ export async function POST(request: NextRequest) {
       .from('user_subscriptions')
       .select('tier, status')
       .eq('user_id', user_id)
-      .single();
+      .maybeSingle();
     
     if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows
       console.error('[Subscription API] Error fetching current subscription:', fetchError);
@@ -297,9 +269,6 @@ export async function POST(request: NextRequest) {
         },
         { status: 500 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -320,7 +289,7 @@ export async function POST(request: NextRequest) {
         onConflict: 'user_id',
       })
       .select()
-      .single();
+      .maybeSingle();
     
     if (updateError) {
       console.error('[Subscription API] Error updating subscription:', updateError);
@@ -334,9 +303,6 @@ export async function POST(request: NextRequest) {
         },
         { status: 500 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -370,10 +336,6 @@ export async function POST(request: NextRequest) {
       },
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
     
   } catch (error: any) {
@@ -388,9 +350,6 @@ export async function POST(request: NextRequest) {
       },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }

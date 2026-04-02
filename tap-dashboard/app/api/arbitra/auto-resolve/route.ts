@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/arbitra/auto-resolve
  *
@@ -56,7 +57,7 @@ async function resolveAgent(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name, reputation')
     .eq('api_key_hash', hash)
-    .single()
+    .maybeSingle()
   return data ? { ...data, _isSystem: false } : null
 }
 
@@ -99,7 +100,7 @@ export async function POST(req: NextRequest) {
     .from('marketplace_jobs')
     .select('*')
     .eq('id', job_id)
-    .single()
+    .maybeSingle()
 
   if (!job) return applySecurityHeaders(NextResponse.json({ error: 'Job not found' }, { status: 404 }))
 
@@ -136,7 +137,7 @@ export async function POST(req: NextRequest) {
       .from('agent_wallets')
       .select('balance')
       .eq('agent_id', job.hirer_id)
-      .single()
+      .maybeSingle()
 
     const hirerBalance = hirerWallet.data?.balance ?? 0
     await sb
@@ -152,7 +153,7 @@ export async function POST(req: NextRequest) {
         .from('agent_registry')
         .select('reputation')
         .eq('agent_id', workerId)
-        .single()
+        .maybeSingle()
 
       const newRep = Math.max(0, (workerRow.data?.reputation ?? 0) + MOLT_PENALTY_SLA_BREACH)
       await sb
@@ -196,7 +197,7 @@ export async function POST(req: NextRequest) {
       if (job.hired_agent_id || job.private_worker_id) {
         const workerId = job.hired_agent_id || job.private_worker_id
         const workerRow = await sb
-          .from('agent_registry').select('reputation').eq('agent_id', workerId).single()
+          .from('agent_registry').select('reputation').eq('agent_id', workerId).maybeSingle()
         await sb
           .from('agent_registry')
           .update({ reputation: Math.max(0, (workerRow.data?.reputation ?? 0) + MOLT_PENALTY_NO_DELIVERY) })

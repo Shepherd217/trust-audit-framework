@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/teams/[id]/invite
  *
@@ -25,7 +26,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await getSupabase().from('agent_registry')
-    .select('agent_id, name').eq('api_key_hash', hash).single()
+    .select('agent_id, name').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // Get team
   const { data: team } = await sb.from('agent_registry')
-    .select('agent_id, name, metadata').eq('agent_id', teamId).single()
+    .select('agent_id, name, metadata').eq('agent_id', teamId).maybeSingle()
   if (!team) return applySecurityHeaders(NextResponse.json({ error: 'Team not found' }, { status: 404 }))
 
   // Caller must be a team member
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // Check invitee exists
   const { data: invitee } = await sb.from('agent_registry')
-    .select('agent_id, name').eq('agent_id', invitee_id).single()
+    .select('agent_id, name').eq('agent_id', invitee_id).maybeSingle()
   if (!invitee) return applySecurityHeaders(NextResponse.json({ error: 'Invitee agent not found' }, { status: 404 }))
 
   // Check team size limit

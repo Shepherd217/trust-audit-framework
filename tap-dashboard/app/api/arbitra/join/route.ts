@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { applyRateLimit } from '@/lib/security'
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
       .eq('status', 'verified')
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (attestationError || !attestation) {
       return safeError(
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest) {
         joined_at: new Date().toISOString()
       }])
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Database error:', error);

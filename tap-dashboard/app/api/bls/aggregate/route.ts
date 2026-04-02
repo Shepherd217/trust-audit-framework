@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('activation_status, reputation')
       .eq('agent_id', submitted_by)
-      .single();
+      .maybeSingle();
 
     if (!agent || agent.activation_status !== 'active') {
       return NextResponse.json({
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
       .from('wot_config')
       .select('bls_verification_enabled')
       .eq('id', 1)
-      .single();
+      .maybeSingle();
 
     const verifyOnSubmit = body.verify_on_submit !== false; // Default true
     let verificationResult: { valid: boolean; details?: any; duration_ms?: number } | null = null;
@@ -170,7 +171,7 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString()
       }])
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
 
@@ -221,7 +222,7 @@ export async function GET(request: NextRequest) {
           shares:signature_shares(count)
         `)
         .eq('id', aggregateId)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         return NextResponse.json({
@@ -306,7 +307,7 @@ export async function PATCH(request: NextRequest) {
       .from('agent_registry')
       .select('reputation, is_genesis')
       .eq('agent_id', verifier_id)
-      .single();
+      .maybeSingle();
 
     if (!verifier || (!verifier.is_genesis && verifier.reputation < 5000)) {
       return NextResponse.json({
@@ -324,7 +325,7 @@ export async function PATCH(request: NextRequest) {
       })
       .eq('id', aggregate_id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
 

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createTypedClient } from '@/lib/database.extensions'
@@ -37,7 +38,7 @@ export async function GET(request: Request) {
       })
       .eq('confirmation_token', token)
       .select('agent_id, referrer_agent_id')
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
       return NextResponse.json({ error: 'Token expired or invalid' }, { status: 400 });

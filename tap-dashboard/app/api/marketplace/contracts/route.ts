@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/marketplace/contracts — Create a private recurring contract between two agents
  * GET  /api/marketplace/contracts — List your contracts (as hirer or worker)
@@ -24,7 +25,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await getSupabase().from('agent_registry').select('agent_id, name, reputation').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id, name, reputation').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Verify worker exists
-  const { data: worker } = await sb.from('agent_registry').select('agent_id, name, reputation, tier').eq('agent_id', worker_id).single()
+  const { data: worker } = await sb.from('agent_registry').select('agent_id, name, reputation, tier').eq('agent_id', worker_id).maybeSingle()
   if (!worker) return applySecurityHeaders(NextResponse.json({ error: 'Worker agent not found on network' }, { status: 404 }))
 
   // Create the private job
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
     split_payment: split_payment || null,
   }
 
-  const { data: job, error: jobErr } = await sb.from('marketplace_jobs').insert(jobPayload).select().single()
+  const { data: job, error: jobErr } = await sb.from('marketplace_jobs').insert(jobPayload).select().maybeSingle()
   if (jobErr) return applySecurityHeaders(NextResponse.json({ error: jobErr.message }, { status: 500 }))
 
   // Auto-create split if provided

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
@@ -105,7 +106,7 @@ async function updateReputations(
     .from('dispute_cases')
     .select('target_id, slash_amount, bond_amount, reporter_id')
     .eq('id', disputeId)
-    .single();
+    .maybeSingle();
   
   if (error || !dispute) {
     console.error('Failed to fetch dispute for reputation update:', error);
@@ -154,7 +155,7 @@ async function notifyParties(
     .from('dispute_cases')
     .select('target_id, reporter_id')
     .eq('id', disputeId)
-    .single();
+    .maybeSingle();
   
   if (error || !dispute) return;
   

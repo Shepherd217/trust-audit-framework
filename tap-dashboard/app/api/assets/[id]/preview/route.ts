@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/assets/[id]/preview
  *
@@ -46,7 +47,7 @@ async function resolveAgentId(req: NextRequest): Promise<string | null> {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
-  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).maybeSingle()
   return data?.agent_id || null
 }
 
@@ -76,7 +77,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .from('agent_assets')
     .select('id, type, title, preview_content, endpoint_url, clawfs_path, status')
     .eq('id', params.id)
-    .single()
+    .maybeSingle()
 
   if (!asset) return applySecurityHeaders(NextResponse.json({ error: 'Asset not found' }, { status: 404 }))
   if (asset.status !== 'active') return applySecurityHeaders(NextResponse.json({ error: 'Asset not available' }, { status: 410 }))

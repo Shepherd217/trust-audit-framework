@@ -38,11 +38,10 @@ function getSupabase() {
 export async function POST(request: NextRequest) {
   const path = '/api/agent/attest'
 
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path)
-  if (rateLimitResponse) return rateLimitResponse
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
 
   const applyHeaders = (res: NextResponse) => {
-    Object.entries(rateLimitHeaders).forEach(([k, v]) => res.headers.set(k, v))
     return applySecurityHeaders(res)
   }
 
@@ -196,8 +195,8 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   const path = '/api/agent/attest'
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path)
-  if (rateLimitResponse) return rateLimitResponse
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
 
   const response = NextResponse.json({
     endpoint: 'POST /api/agent/attest',
@@ -210,6 +209,5 @@ export async function GET(request: NextRequest) {
     },
     limits: { maxAgents: MAX_TARGET_AGENTS },
   })
-  Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v))
   return applySecurityHeaders(response)
 }

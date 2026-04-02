@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/agent/notifications
  * Returns notifications for the authenticated agent
@@ -23,7 +24,7 @@ async function resolveAgentId(apiKey: string): Promise<string | null> {
     .from('agent_registry')
     .select('agent_id')
     .eq('api_key_hash', apiKeyHash)
-    .single();
+    .maybeSingle();
   return data?.agent_id || null;
 }
 

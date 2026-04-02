@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
@@ -44,11 +45,8 @@ export async function POST(request: NextRequest) {
   
   // Apply rate limiting
   const path = '/api/bls/verify';
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     const bodyText = await request.text();
@@ -108,9 +106,6 @@ export async function POST(request: NextRequest) {
     });
     
     // Add rate limit headers
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     
     return applySecurityHeaders(response);
 
@@ -120,10 +115,6 @@ export async function POST(request: NextRequest) {
       success: false,
       error: 'Verification failed: ' + (error as Error).message
     }, { status: 500 });
-    
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     
     return applySecurityHeaders(response);
   }
@@ -384,11 +375,8 @@ async function verifyByAttestations(body: any): Promise<{ valid: boolean; detail
 export async function GET(request: NextRequest) {
   // Apply rate limiting
   const path = '/api/bls/verify';
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     // Run a quick benchmark
@@ -425,9 +413,6 @@ export async function GET(request: NextRequest) {
     });
     
     // Add rate limit headers
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     
     return applySecurityHeaders(response);
 
@@ -436,10 +421,6 @@ export async function GET(request: NextRequest) {
       success: false,
       error: 'Failed to get verification stats'
     }, { status: 500 });
-    
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     
     return applySecurityHeaders(response);
   }

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
@@ -238,7 +239,7 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString()
       }])
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
 

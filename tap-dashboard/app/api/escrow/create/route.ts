@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getStripeClient } from '@/lib/payments/stripe'
@@ -18,10 +19,8 @@ const MAX_MILESTONE_DESC_LENGTH = 2000;
 // POST /api/escrow/create - Create escrow and payment intent
 export async function POST(request: NextRequest) {
   // Apply rate limiting - financial endpoint, strict limits
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/escrow/create');
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, '/api/escrow/create');
+  if (_rl.response) return _rl.response;
   
   try {
     // Read and validate body size
@@ -29,9 +28,6 @@ export async function POST(request: NextRequest) {
     const sizeCheck = validateBodySize(bodyText, MAX_BODY_SIZE_KB);
     if (!sizeCheck.valid) {
       const response = NextResponse.json({ error: sizeCheck.error }, { status: 413 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -48,9 +44,6 @@ export async function POST(request: NextRequest) {
     // Validate
     if (!job_id || !milestones?.length || !hirer_public_key || !hirer_signature) {
       const response = NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -58,9 +51,6 @@ export async function POST(request: NextRequest) {
     const arrayCheck = validateArrayLength(milestones, MAX_MILESTONES, 'milestones');
     if (!arrayCheck.valid) {
       const response = NextResponse.json({ error: arrayCheck.error }, { status: 400 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -68,16 +58,10 @@ export async function POST(request: NextRequest) {
     const totalAmount = milestones.reduce((sum: number, m: { amount: number }) => sum + m.amount, 0)
     if (totalAmount < 500) { // $5 minimum
       const response = NextResponse.json({ error: 'Minimum escrow amount is $5.00' }, { status: 400 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     if (totalAmount > 100000) { // $1000 maximum
       const response = NextResponse.json({ error: 'Maximum escrow amount is $1000.00' }, { status: 400 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -87,18 +71,12 @@ export async function POST(request: NextRequest) {
         const response = NextResponse.json({ 
           error: `Milestone title exceeds ${MAX_MILESTONE_TITLE_LENGTH} characters` 
         }, { status: 400 });
-        Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-          response.headers.set(key, value);
-        });
         return applySecurityHeaders(response);
       }
       if (m.description && m.description.length > MAX_MILESTONE_DESC_LENGTH) {
         const response = NextResponse.json({ 
           error: `Milestone description exceeds ${MAX_MILESTONE_DESC_LENGTH} characters` 
         }, { status: 400 });
-        Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-          response.headers.set(key, value);
-        });
         return applySecurityHeaders(response);
       }
     }
@@ -116,9 +94,6 @@ export async function POST(request: NextRequest) {
         { error: verification.error || 'Invalid signature' },
         { status: 401 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -127,13 +102,10 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('agent_id, name')
       .eq('public_key', hirer_public_key)
-      .single()
+      .maybeSingle()
 
     if (hirerError || !hirer) {
       const response = NextResponse.json({ error: 'Hirer not found' }, { status: 404 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -142,21 +114,15 @@ export async function POST(request: NextRequest) {
       .from('marketplace_jobs')
       .select('id, title, budget, worker_id, status')
       .eq('id', job_id)
-      .single()
+      .maybeSingle()
 
     if (jobError || !job) {
       const response = NextResponse.json({ error: 'Job not found' }, { status: 404 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
     if (job.status !== 'open' && job.status !== 'filled') {
       const response = NextResponse.json({ error: 'Job is not available for escrow' }, { status: 400 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -165,16 +131,13 @@ export async function POST(request: NextRequest) {
       .from('payment_escrows')
       .select('id, status')
       .eq('job_id', job_id)
-      .single()
+      .maybeSingle()
 
     if (existing && existing.status !== 'cancelled') {
       const response = NextResponse.json(
         { error: 'Escrow already exists for this job', escrow_id: existing.id },
         { status: 409 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -227,9 +190,6 @@ export async function POST(request: NextRequest) {
         // Non-fatal: payment intent will expire automatically
       }
       const response = NextResponse.json({ error: 'Failed to create escrow' }, { status: 500 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -250,10 +210,6 @@ export async function POST(request: NextRequest) {
       },
       next_step: 'Confirm payment to lock funds in escrow',
     });
-    
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
     
   } catch (error) {
@@ -262,9 +218,6 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to create escrow' },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }

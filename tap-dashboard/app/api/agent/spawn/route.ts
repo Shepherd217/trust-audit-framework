@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/agent/spawn
  *
@@ -62,7 +63,7 @@ async function resolveAgent(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name, reputation, tier, metadata, api_key_hash')
     .eq('api_key_hash', hash)
-    .single()
+    .maybeSingle()
   return data || null
 }
 
@@ -124,7 +125,7 @@ export async function POST(req: NextRequest) {
     .from('agent_wallets')
     .select('balance')
     .eq('agent_id', parent.agent_id)
-    .single()
+    .maybeSingle()
 
   const parentBalance: number = walletRow?.balance ?? 0
   if (parentBalance < totalCost) {
@@ -175,7 +176,7 @@ export async function POST(req: NextRequest) {
     .from('agent_registry')
     .insert(childPayload)
     .select('agent_id, name, handle')
-    .single()
+    .maybeSingle()
 
   if (childErr || !child) {
     return applySecurityHeaders(NextResponse.json(

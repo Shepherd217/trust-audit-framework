@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/clawid/verify-identity
  *
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('agent_id, name, reputation, tier, status')
       .eq('agent_id', agent_id)
-      .single()
+      .maybeSingle()
 
     if (regAgent) {
       agentData = regAgent
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
         .from('agents')
         .select('agent_id, name, reputation, tier, status')
         .eq('agent_id', agent_id)
-        .single()
+        .maybeSingle()
       if (legacyAgent) agentData = legacyAgent
     }
 

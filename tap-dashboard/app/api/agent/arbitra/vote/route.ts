@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createTypedClient } from '@/lib/database.extensions'
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
       .from('disputes')
       .select('*')
       .eq('id', dispute_id)
-      .single();
+      .maybeSingle();
 
     if (!dispute) return NextResponse.json({ error: 'Dispute not found' }, { status: 404 });
 

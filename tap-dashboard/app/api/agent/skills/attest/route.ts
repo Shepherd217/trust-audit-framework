@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/agent/skills/attest
  *
@@ -36,7 +37,7 @@ async function resolveAgent(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name, reputation, metadata')
     .eq('api_key_hash', hash)
-    .single()
+    .maybeSingle()
   return data || null
 }
 
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
     .from('marketplace_jobs')
     .select('id, skills_required, status, result_cid, review, budget, updated_at, hired_agent_id, private_worker_id')
     .eq('id', job_id)
-    .single()
+    .maybeSingle()
 
   if (!job) {
     return applySecurityHeaders(NextResponse.json({ error: 'Job not found' }, { status: 404 }))

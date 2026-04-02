@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/claw/bus/inbox
  *
@@ -33,7 +34,7 @@ async function resolveAgent(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name, reputation, tier, metadata')
     .eq('api_key_hash', hash)
-    .single()
+    .maybeSingle()
   return data ?? null
 }
 

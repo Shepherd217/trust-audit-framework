@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
       .from('user_agents')
       .select('id, public_key, status')
       .eq('id', agent_id)
-      .single();
+      .maybeSingle();
 
     if (agentError || !agent) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
         status: 'pending',
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (createError) {
       console.error('Deployment creation error:', createError);
@@ -226,7 +227,7 @@ async function triggerDeployment(deploymentId: string, targetType: string) {
     .from('clawcloud_deployments')
     .select('id')
     .eq('deployment_id', deploymentId)
-    .single();
+    .maybeSingle();
 
   if (deployment) {
     await getSupabase().rpc('log_deployment_event' as any, {

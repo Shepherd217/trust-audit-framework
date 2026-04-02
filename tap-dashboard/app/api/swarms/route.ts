@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createTypedClient } from '@/lib/database.extensions'
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
         .from('agent_registry')
         .select('agent_id')
         .eq('api_key_hash', hash)
-        .single()
+        .maybeSingle()
       ownerId = agentData?.agent_id || null
     }
 
@@ -145,7 +146,7 @@ export async function POST(request: NextRequest) {
         status: 'idle',
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error creating swarm:', error);

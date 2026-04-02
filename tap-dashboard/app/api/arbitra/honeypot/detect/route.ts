@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { createTypedClient } from '@/lib/database.extensions'
@@ -214,7 +215,7 @@ export async function PATCH(request: NextRequest) {
       .from('agent_registry')
       .select('reputation, is_genesis')
       .eq('agent_id', reviewer_id)
-      .single();
+      .maybeSingle();
 
     if (!reviewer || (!reviewer.is_genesis && reviewer.reputation < 1000)) {
       return NextResponse.json({
@@ -233,7 +234,7 @@ export async function PATCH(request: NextRequest) {
       })
       .eq('id', detection_id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       return NextResponse.json({

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verifyClawIDSignature } from '@/lib/clawid-auth'
@@ -13,10 +14,8 @@ const MAX_BUDGET = 100000000; // $1M max budget (in cents)
 export async function GET(request: NextRequest) {
   const path = '/api/marketplace/jobs';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     const { searchParams } = new URL(request.url)
@@ -31,9 +30,6 @@ export async function GET(request: NextRequest) {
         { error: 'Invalid status' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -51,7 +47,7 @@ export async function GET(request: NextRequest) {
         .from('agents')
         .select('reputation')
         .eq('public_key', applicantPublicKey.slice(0, 200))
-        .single()
+        .maybeSingle()
 
       if (applicant) {
         query = query.lte('min_tap_score', applicant.reputation)
@@ -67,9 +63,6 @@ export async function GET(request: NextRequest) {
         { error: 'Failed to fetch jobs' },
         { status: 500 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -102,10 +95,6 @@ export async function GET(request: NextRequest) {
       count: enrichedJobs.length,
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
     
   } catch (error) {
@@ -114,9 +103,6 @@ export async function GET(request: NextRequest) {
       { error: 'Failed to fetch jobs' },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }
@@ -125,10 +111,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const path = '/api/marketplace/jobs';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     const bodyText = await request.text();
@@ -138,9 +122,6 @@ export async function POST(request: NextRequest) {
         { error: sizeCheck.error },
         { status: 413 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -152,9 +133,6 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid JSON payload' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -204,9 +182,6 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -216,9 +191,6 @@ export async function POST(request: NextRequest) {
         { error: `Title must be 5-${MAX_TITLE_LENGTH} characters` },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -228,9 +200,6 @@ export async function POST(request: NextRequest) {
         { error: `Description must be 20-${MAX_DESCRIPTION_LENGTH} characters` },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -241,9 +210,6 @@ export async function POST(request: NextRequest) {
         { error: `Budget must be between $5.00 and ${MAX_BUDGET / 100}` },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -259,10 +225,9 @@ export async function POST(request: NextRequest) {
         .from('agent_registry')
         .select('agent_id')
         .eq('api_key_hash', keyHash)
-        .single()
+        .maybeSingle()
       if (!keyAgent) {
         const response = NextResponse.json({ error: 'Invalid API key' }, { status: 401 })
-        Object.entries(rateLimitHeaders).forEach(([key, value]) => { response.headers.set(key, value) })
         return applySecurityHeaders(response)
       }
       verifiedAgentId = keyAgent.agent_id
@@ -275,7 +240,6 @@ export async function POST(request: NextRequest) {
           { error: verification.error || 'Invalid ClawID signature' },
           { status: 401 }
         )
-        Object.entries(rateLimitHeaders).forEach(([key, value]) => { response.headers.set(key, value) })
         return applySecurityHeaders(response)
       }
       verifiedAgentId = verification.agentId
@@ -288,7 +252,7 @@ export async function POST(request: NextRequest) {
         .from('agents')
         .select('agent_id')
         .eq('public_key', hirer_public_key)
-        .single()
+        .maybeSingle()
       if (hirerAgent) hirerId = hirerAgent.agent_id
     }
     if (!hirerId) {
@@ -296,12 +260,11 @@ export async function POST(request: NextRequest) {
         .from('agent_registry')
         .select('agent_id')
         .eq('public_key', hirer_public_key)
-        .single()
+        .maybeSingle()
       if (regAgent) hirerId = regAgent.agent_id
     }
     if (!hirerId) {
       const response = NextResponse.json({ error: 'Hirer agent not found' }, { status: 404 })
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => { response.headers.set(key, value) })
       return applySecurityHeaders(response)
     }
 
@@ -325,7 +288,7 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString(),
       })
       .select()
-      .single()
+      .maybeSingle()
 
     if (error) {
       console.error('Failed to create job:', error)
@@ -333,9 +296,6 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to post job' },
         { status: 500 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -382,10 +342,6 @@ export async function POST(request: NextRequest) {
       },
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
     
   } catch (error) {
@@ -394,9 +350,6 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to post job' },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }

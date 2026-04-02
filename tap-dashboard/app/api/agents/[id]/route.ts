@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createHash } from 'crypto';
@@ -17,7 +18,7 @@ async function requireAuth(request: NextRequest): Promise<boolean> {
   const key = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || request.headers.get('x-api-key')
   if (!key) return false
   const hash = createHash('sha256').update(key).digest('hex')
-  const { data } = await sb().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await sb().from('agent_registry').select('agent_id').eq('api_key_hash', hash).maybeSingle()
   return !!data
 }
 
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .from('agent_registry')
       .select('agent_id, name, public_key, reputation, tier, status, created_at, metadata')
       .eq('agent_id', id)
-      .single()
+      .maybeSingle()
 
     if (error || !agent) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
@@ -103,7 +104,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       .eq('id', id)
       .eq('user_id', user.id)
       .select('*, agent_template:agent_templates(*)')
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error updating agent:', error);

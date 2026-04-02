@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -155,7 +156,7 @@ export async function GET(
       .from('dispute_complexity_scores')
       .select('*')
       .eq('dispute_id', disputeId)
-      .single();
+      .maybeSingle();
     
     if (classError && classError.code !== 'PGRST116') {
       throw classError;

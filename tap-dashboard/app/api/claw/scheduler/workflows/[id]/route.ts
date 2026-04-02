@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getWorkflowById, deleteWorkflow } from '@/lib/claw/scheduler';
 import { applyRateLimit, applySecurityHeaders } from '@/lib/security';

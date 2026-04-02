@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { 
@@ -67,10 +68,8 @@ export async function POST(request: NextRequest) {
   const path = '/api/attest';
   
   // Apply rate limiting
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     // Read body text for size validation
@@ -79,14 +78,14 @@ export async function POST(request: NextRequest) {
     // Validate body size
     const sizeCheck = validateBodySize(bodyText, MAX_BODY_SIZE_KB);
     if (!sizeCheck.valid) {
-      return safeError(sizeCheck.error!, 413, rateLimitHeaders);
+      return safeError(sizeCheck.error!, 413);
     }
     
     let body;
     try {
       body = JSON.parse(bodyText);
     } catch {
-      return safeError('Invalid JSON payload', 400, rateLimitHeaders);
+      return safeError('Invalid JSON payload', 400);
     }
 
     // Sanitize all inputs
@@ -96,16 +95,16 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!repo || typeof repo !== 'string') {
-      return safeError('repo is required and must be a string', 400, rateLimitHeaders);
+      return safeError('repo is required and must be a string', 400);
     }
     
     if (!commit || typeof commit !== 'string') {
-      return safeError('commit is required and must be a string', 400, rateLimitHeaders);
+      return safeError('commit is required and must be a string', 400);
     }
 
     // Validate string lengths
     if (repo.length > 255 || commit.length > 255) {
-      return safeError('Input too long', 400, rateLimitHeaders);
+      return safeError('Input too long', 400);
     }
 
     // Calculate Integrity from report
@@ -135,11 +134,11 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString()
       }])
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Database error:', error);
-      return safeError('Failed to create attestation', 500, rateLimitHeaders);
+      return safeError('Failed to create attestation', 500);
     }
 
     // Return success with security headers
@@ -160,15 +159,12 @@ export async function POST(request: NextRequest) {
     });
     
     // Add rate limit headers
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     
     return applySecurityHeaders(response);
 
   } catch (err: any) {
     console.error('Unexpected error:', err);
-    return safeError('Internal server error', 500, rateLimitHeaders);
+    return safeError('Internal server error', 500);
   }
 }
 
@@ -176,10 +172,8 @@ export async function GET(request: NextRequest) {
   const path = '/api/attest';
   
   // Apply rate limiting
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   const response = NextResponse.json({
     status: 'TAP Attestation API',
@@ -195,9 +189,6 @@ export async function GET(request: NextRequest) {
   });
   
   // Add rate limit headers
-  Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
   
   return applySecurityHeaders(response);
 }

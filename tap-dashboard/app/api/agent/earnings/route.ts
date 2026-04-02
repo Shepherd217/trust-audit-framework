@@ -33,7 +33,7 @@ async function validateAgentApiKey(apiKey: string): Promise<string | null> {
       .from('agent_registry')
       .select('agent_id')
       .eq('api_key_hash', apiKeyHash)
-      .single();
+      .maybeSingle();
     
     return data?.agent_id || null;
   } catch {
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
         .from('user_agents')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
       
       if (agent) {
         agentId = agent.id;

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/teams/invite/accept — Accept a team invite
  * Body: { invite_id: string }
@@ -19,7 +20,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await getSupabase()
-    .from('agent_registry').select('agent_id, name').eq('api_key_hash', hash).single()
+    .from('agent_registry').select('agent_id, name').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
     .select('message_id, payload, to_agent')
     .eq('message_id', invite_id)
     .eq('message_type', 'team.invite')
-    .single()
+    .maybeSingle()
 
   if (!invite) return applySecurityHeaders(NextResponse.json({ error: 'Invite not found or already used' }, { status: 404 }))
   if (invite.to_agent !== agent.agent_id) {
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name, metadata')
     .eq('agent_id', teamId)
-    .single()
+    .maybeSingle()
 
   if (!team) return applySecurityHeaders(NextResponse.json({ error: 'Team no longer exists' }, { status: 404 }))
 

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET  /api/agent/memory       — retrieve memories for a relationship
  * POST /api/agent/memory       — store a memory
@@ -49,7 +50,7 @@ async function resolveAgent(req: NextRequest) {
     .from('agent_registry')
     .select('agent_id, name')
     .eq('api_key_hash', hash)
-    .single()
+    .maybeSingle()
   return data || null
 }
 
@@ -187,7 +188,7 @@ export async function POST(req: NextRequest) {
       .from('agent_registry')
       .select('metadata')
       .eq('agent_id', agent.agent_id)
-      .single()
+      .maybeSingle()
 
     const meta = agentRow?.metadata || {}
     const memKey = `memory.${counterparty_id}.${scope}.${key}`

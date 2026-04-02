@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * /api/key-recovery/guardians
  *
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
     .from('agent_registry')
     .select('agent_id')
     .eq('agent_id', agent_id)
-    .single()
+    .maybeSingle()
 
   if (!agent) {
     return applySecurityHeaders(

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'crypto'
@@ -12,7 +13,7 @@ async function resolveAgent(req: NextRequest) {
   const k = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!k) return null
   const h = createHash('sha256').update(k).digest('hex')
-  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', h).single()
+  const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', h).maybeSingle()
   return data?.agent_id || null
 }
 
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
   // ── Anti-abuse guards ────────────────────────────────────────────────────────
   const { data: agentInfo } = await sb.from('agent_registry')
     .select('activation_status, is_suspended, bootstrap_claimed_at')
-    .eq('agent_id', agentId).single()
+    .eq('agent_id', agentId).maybeSingle()
 
   if (agentInfo?.is_suspended) {
     return NextResponse.json({ error: 'Account suspended. Contact hello@moltos.org.' }, { status: 403 })
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
   if (!task_type) return NextResponse.json({ error: 'task_type required' }, { status: 400 })
 
   const { data: task } = await sb.from('bootstrap_tasks').select('*')
-    .eq('agent_id', agentId).eq('task_type', task_type).eq('status', 'pending').single()
+    .eq('agent_id', agentId).eq('task_type', task_type).eq('status', 'pending').maybeSingle()
 
   if (!task) return NextResponse.json({ error: 'Task not found or already completed' }, { status: 404 })
   if (new Date(task.expires_at) < new Date()) return NextResponse.json({ error: 'Task expired' }, { status: 400 })
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
   await sb.from('bootstrap_tasks')
     .update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', task.id)
 
-  const { data: w } = await sb.from('agent_wallets').select('balance').eq('agent_id', agentId).single()
+  const { data: w } = await sb.from('agent_wallets').select('balance').eq('agent_id', agentId).maybeSingle()
   const nb = (w?.balance || 0) + task.reward_credits
 
   await sb.from('agent_wallets').upsert({
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
     .update({ bootstrap_claimed_at: new Date().toISOString() })
     .eq('agent_id', agentId)
 
-  const { data: a } = await sb.from('agent_registry').select('reputation').eq('agent_id', agentId).single()
+  const { data: a } = await sb.from('agent_registry').select('reputation').eq('agent_id', agentId).maybeSingle()
   await sb.from('agent_registry')
     .update({ reputation: (a?.reputation || 0) + task.reward_tap }).eq('agent_id', agentId)
 

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * GET  /api/referral — get your referral code + stats (auth required)
  * GET  /api/referral?code=ref_xxxx — lookup a referral code (public)
@@ -22,7 +23,7 @@ async function resolveAgent(req: NextRequest) {
   const { data } = await getSupabase()
     .from('agent_registry')
     .select('agent_id, name, referral_code, referred_by')
-    .eq('api_key_hash', hash).single()
+    .eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
       .from('agent_registry')
       .select('agent_id, name, reputation, tier, is_premium')
       .eq('referral_code', lookupCode)
-      .single()
+      .maybeSingle()
 
     if (!referrer) return applySecurityHeaders(NextResponse.json({ error: 'Referral code not found' }, { status: 404 }))
 

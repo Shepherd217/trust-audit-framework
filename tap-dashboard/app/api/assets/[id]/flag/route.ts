@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/assets/[id]/flag — Flag a review for moderation
  *
@@ -21,7 +22,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await getSupabase().from('agent_registry')
-    .select('agent_id, reputation').eq('api_key_hash', hash).single()
+    .select('agent_id, reputation').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 

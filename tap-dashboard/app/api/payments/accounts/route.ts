@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * API Routes for Connected Account Management
  * 

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verifyClawIDSignature } from '@/lib/clawid-auth'
@@ -14,10 +15,8 @@ export async function POST(request: NextRequest) {
   const path = '/api/deploy';
   
   // Apply rate limiting
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     // Read and validate body size
@@ -28,9 +27,6 @@ export async function POST(request: NextRequest) {
         { error: sizeCheck.error },
         { status: 413 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -42,9 +38,6 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid JSON payload' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -63,9 +56,6 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -75,9 +65,6 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid swarm_name format. Must start with alphanumeric, max 63 chars, alphanumeric and hyphens only.' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -87,9 +74,6 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid provider. Use: fly or helm' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -102,9 +86,6 @@ export async function POST(request: NextRequest) {
         { error: verification.error || 'Invalid ClawID signature' },
         { status: 401 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -113,7 +94,7 @@ export async function POST(request: NextRequest) {
       .from('agents')
       .select('agent_id, name')
       .eq('public_key', public_key)
-      .single()
+      .maybeSingle()
     
     const agent = agentResult.data as Agent | null
 
@@ -122,9 +103,6 @@ export async function POST(request: NextRequest) {
         { error: 'Agent not found' },
         { status: 404 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -146,7 +124,7 @@ export async function POST(request: NextRequest) {
       .from('swarms')
       .insert(insertData)
       .select()
-      .single()
+      .maybeSingle()
     
     const swarm = swarmResult.data as Swarm | null
 
@@ -156,9 +134,6 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to create swarm record' },
         { status: 500 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -186,10 +161,6 @@ export async function POST(request: NextRequest) {
       ],
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
     
   } catch (error) {
@@ -198,9 +169,6 @@ export async function POST(request: NextRequest) {
       { error: 'Deployment failed' },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }

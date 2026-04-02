@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * Usage Tracking API
  * POST: Log usage event (agentId, action, quantity, cost)

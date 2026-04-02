@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * Stripe Webhook Handler
  * POST /api/stripe/webhook
@@ -29,10 +30,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const path = '/api/stripe/webhook';
   
   // Apply rate limiting (100 req/min - Stripe can burst)
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   const payload = await request.text();
   const signature = request.headers.get('stripe-signature');
@@ -63,9 +62,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const response = NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     
     // Add rate limit headers even on auth failure
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     
     return applySecurityHeaders(response);
   }
@@ -76,10 +72,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!HANDLED_EVENTS.includes(event.type)) {
     const response = NextResponse.json({ received: true, handled: false }, { status: 200 });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
   }
 
@@ -87,18 +79,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const result = await handleWebhookEvent(event);
     const response = NextResponse.json({ received: true, ...result }, { status: 200 });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
   } catch (error) {
     console.error(`[Webhook] Error processing ${event.type}:`, error);
     const response = NextResponse.json({ received: true, error: 'Processing failed' }, { status: 500 });
-    
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     
     return applySecurityHeaders(response);
   }
@@ -144,7 +128,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     .from('payment_escrows')
     .select('id, amount_total, hirer_id')
     .eq('stripe_payment_intent_id', paymentIntent.id)
-    .single();
+    .maybeSingle();
 
   if (!escrow) {
     return { handled: false, reason: 'Escrow not found' };
@@ -214,7 +198,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     .from('payment_escrows')
     .select('id')
     .eq('stripe_payment_intent_id', paymentIntentId)
-    .single();
+    .maybeSingle();
 
   if (!escrow) return { handled: false };
 

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { applyRateLimit } from '@/lib/security'
 /**
  * GET /api/agent/me/votes
@@ -18,7 +19,7 @@ async function resolveAgent(req: NextRequest) {
   const key = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!key) return null
   const hash = createHash('sha256').update(key).digest('hex')
-  const { data } = await sb().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+  const { data } = await sb().from('agent_registry').select('agent_id').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 

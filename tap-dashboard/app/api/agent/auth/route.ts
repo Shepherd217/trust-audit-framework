@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * Agent Authentication API
  * GET /api/agent/auth
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
       .from('agent_registry')
       .select('agent_id, name, reputation, tier, status, created_at')
       .eq('api_key_hash', apiKeyHash)
-      .single();
+      .maybeSingle();
 
     if (error || !agent) {
       return NextResponse.json(

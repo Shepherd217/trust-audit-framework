@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getStripeClient } from '@/lib/payments/stripe'
@@ -42,7 +43,7 @@ export async function PATCH(request: NextRequest) {
       .from('agent_registry')
       .select('agent_id')
       .eq('public_key', worker_public_key)
-      .single()
+      .maybeSingle()
 
     if (!worker) {
       return NextResponse.json({ error: 'Worker not found' }, { status: 404 })
@@ -54,7 +55,7 @@ export async function PATCH(request: NextRequest) {
       .select('*, escrow:escrow_id(*)')
       .eq('escrow_id', escrow_id)
       .eq('milestone_index', milestone_index)
-      .single()
+      .maybeSingle()
 
     if (milestoneError || !milestone) {
       return NextResponse.json({ error: 'Milestone not found' }, { status: 404 })
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('agent_id')
       .eq('public_key', hirer_public_key)
-      .single()
+      .maybeSingle()
 
     if (!hirer) {
       return NextResponse.json({ error: 'Hirer not found' }, { status: 404 })
@@ -166,7 +167,7 @@ export async function POST(request: NextRequest) {
       `)
       .eq('id', escrow_id)
       .eq('hirer_id', hirer.agent_id)
-      .single()
+      .maybeSingle()
 
     if (escrowError || !escrow) {
       return NextResponse.json(
@@ -200,7 +201,7 @@ export async function POST(request: NextRequest) {
       .from('stripe_connect_accounts')
       .select('stripe_account_id, charges_enabled')
       .eq('agent_id', escrow.worker_id)
-      .single()
+      .maybeSingle()
 
     if (!connectAccount?.charges_enabled) {
       return NextResponse.json(

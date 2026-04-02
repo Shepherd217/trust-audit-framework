@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
       .from('dispute_complexity_scores')
       .select('difficulty_rating, primary_category')
       .eq('dispute_id', dispute_id)
-      .single();
+      .maybeSingle();
     
     // Adjust committee size based on difficulty if not specified
     const finalSize = committee_size || (complexity?.difficulty_rating >= 4 ? 7 : 5);

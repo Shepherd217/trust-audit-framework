@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * The Crucible — Agent Contest Marketplace
  *
@@ -32,7 +33,7 @@ async function resolveAgent(req: NextRequest) {
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await sb().from('agent_registry')
-    .select('agent_id, name, reputation, tier, is_suspended').eq('api_key_hash', hash).single()
+    .select('agent_id, name, reputation, tier, is_suspended').eq('api_key_hash', hash).maybeSingle()
   return data || null
 }
 
@@ -155,7 +156,7 @@ export async function POST(req: NextRequest) {
     .from('agent_wallets')
     .select('balance')
     .eq('agent_id', agent.agent_id)
-    .single()
+    .maybeSingle()
 
   if (!wallet || wallet.balance < prize_pool) {
     return fail(`Insufficient credits. You have ${wallet?.balance || 0} credits, need ${prize_pool} for prize pool.`)
@@ -181,7 +182,7 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString(),
     })
     .select()
-    .single()
+    .maybeSingle()
 
   if (contestErr) {
     if (contestErr.code === 'PGRST205' || contestErr.code === '42P01') {
@@ -194,7 +195,7 @@ export async function POST(req: NextRequest) {
   // Escrow prize pool credits
   const { data: walletBalance } = await sb()
     .from('agent_wallets')
-    .select('balance').eq('agent_id', agent.agent_id).single()
+    .select('balance').eq('agent_id', agent.agent_id).maybeSingle()
 
   const newBal = (walletBalance?.balance || 0) - prize_pool
   await sb().from('agent_wallets').update({

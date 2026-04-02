@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/payments/create-intent
  *
@@ -19,10 +20,8 @@ const MAX_METADATA_KEYS = 50;
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   // Apply rate limiting - financial endpoint
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/payments/create-intent');
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, '/api/payments/create-intent');
+  if (_rl.response) return _rl.response;
 
   try {
     // Read and validate body size
@@ -33,9 +32,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { error: sizeCheck.error },
         { status: 413 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -54,9 +50,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -69,9 +62,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -84,9 +74,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -100,9 +87,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -117,9 +101,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           },
           { status: 400 }
         );
-        Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-          response.headers.set(key, value);
-        });
         return applySecurityHeaders(response);
       }
     }
@@ -141,9 +122,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const result = await createPaymentIntent(createRequest);
 
     const response = NextResponse.json(result, { status: 200 });
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
 
   } catch (error) {
@@ -157,9 +135,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -170,9 +145,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }
@@ -180,10 +152,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 // Optional: GET endpoint to retrieve payment intent details
 export async function GET(request: NextRequest): Promise<NextResponse> {
   // Apply rate limiting
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/payments/create-intent');
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, '/api/payments/create-intent');
+  if (_rl.response) return _rl.response;
 
   try {
     const { searchParams } = new URL(request.url);
@@ -194,9 +164,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         { error: 'Missing paymentIntentId query parameter' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -206,9 +173,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         { error: 'Invalid paymentIntentId format' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -232,9 +196,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       },
       { status: 200 }
     );
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
 
   } catch (error) {
@@ -248,9 +209,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -258,9 +216,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       { error: 'Failed to retrieve payment intent' },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }

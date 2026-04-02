@@ -70,10 +70,8 @@ const MAX_AGENT_ID_LENGTH = 100;
  */
 export async function POST(request: NextRequest) {
   // Apply rate limiting - prevents data poisoning via spam
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/telemetry');
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, '/api/telemetry');
+  if (_rl.response) return _rl.response;
 
   try {
     // Read and validate body size
@@ -84,9 +82,6 @@ export async function POST(request: NextRequest) {
         success: false,
         error: sizeCheck.error
       }, { status: 413 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -98,9 +93,6 @@ export async function POST(request: NextRequest) {
         success: false,
         error: 'agent_id, window_start, and window_end required'
       }, { status: 400 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -110,9 +102,6 @@ export async function POST(request: NextRequest) {
         success: false,
         error: `agent_id must be a string with max ${MAX_AGENT_ID_LENGTH} chars`
       }, { status: 400 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -121,16 +110,13 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('agent_id, name')
       .eq('agent_id', body.agent_id)
-      .single();
+      .maybeSingle();
 
     if (agentError || !agent) {
       const response = NextResponse.json({
         success: false,
         error: 'Agent not found'
       }, { status: 404 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -158,7 +144,7 @@ export async function POST(request: NextRequest) {
       .from('tap_score_with_telemetry')
       .select('composite_score')
       .eq('agent_id', body.agent_id)
-      .single();
+      .maybeSingle();
 
     const result: TelemetryResponse = {
       success: true,
@@ -167,9 +153,6 @@ export async function POST(request: NextRequest) {
     };
 
     const response = NextResponse.json(result);
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
 
   } catch (error) {
@@ -178,9 +161,6 @@ export async function POST(request: NextRequest) {
       success: false,
       error: (error as Error).message
     }, { status: 500 });
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }
@@ -196,10 +176,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   // Apply rate limiting
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, '/api/telemetry');
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, '/api/telemetry');
+  if (_rl.response) return _rl.response;
 
   try {
     const { searchParams } = new URL(request.url);
@@ -213,7 +191,7 @@ export async function GET(request: NextRequest) {
       if (apiKey) {
         const { createHash } = require('crypto')
         const hash = createHash('sha256').update(apiKey).digest('hex')
-        const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+        const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).maybeSingle()
         agentId = (data as any)?.agent_id || null
       }
     }
@@ -223,9 +201,6 @@ export async function GET(request: NextRequest) {
         success: false,
         error: 'agent_id required (or pass Authorization: Bearer <api_key>)'
       }, { status: 400 });
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -263,7 +238,7 @@ export async function GET(request: NextRequest) {
       .from('tap_score_with_telemetry')
       .select('*')
       .eq('agent_id', agentId)
-      .single();
+      .maybeSingle();
 
     if (scoreData) {
       response.current_score = {
@@ -275,9 +250,6 @@ export async function GET(request: NextRequest) {
     }
 
     const httpResponse = NextResponse.json(response);
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      httpResponse.headers.set(key, value);
-    });
     return applySecurityHeaders(httpResponse);
 
   } catch (error) {
@@ -286,9 +258,6 @@ export async function GET(request: NextRequest) {
       success: false,
       error: (error as Error).message
     }, { status: 500 });
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }

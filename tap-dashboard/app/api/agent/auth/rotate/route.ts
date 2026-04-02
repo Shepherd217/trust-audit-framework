@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/agent/auth/rotate
  * Re-issue API key for an existing agent using their private key signature.
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
       .from('agent_registry')
       .select('agent_id, name')
       .eq('public_key', public_key)
-      .single()
+      .maybeSingle()
     if (regAgent) agentId = regAgent.agent_id
 
     // Fallback to legacy agents table
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
         .from('agents')
         .select('agent_id, name')
         .eq('public_key', public_key)
-        .single()
+        .maybeSingle()
       if (legacyAgent) agentId = legacyAgent.agent_id
     }
 

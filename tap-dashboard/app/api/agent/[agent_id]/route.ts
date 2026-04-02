@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { createTypedClient } from '@/lib/database.extensions'
@@ -20,7 +21,7 @@ async function requireAuth(req: NextRequest): Promise<boolean> {
     const key = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
     if (!key) return false
     const hash = createHash('sha256').update(key).digest('hex')
-    const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).single()
+    const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', hash).maybeSingle()
     return !!data
   } catch {
     return false
@@ -43,7 +44,7 @@ export async function GET(
       .from('agent_registry')
       .select('agent_id, name, reputation, tier, status, activation_status, created_at')
       .eq('agent_id', agent_id)
-      .single();
+      .maybeSingle();
 
     if (regData) return NextResponse.json(regData);
 

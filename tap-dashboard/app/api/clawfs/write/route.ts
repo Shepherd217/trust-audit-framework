@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 // Force redeploy timestamp: 2026-03-21T02:15:00Z
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
@@ -25,10 +26,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const path = '/api/clawfs/write';
   
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  const _rl = await applyRateLimit(request, path);
+  if (_rl.response) return _rl.response;
   
   try {
     const bodyText = await request.text();
@@ -38,9 +37,6 @@ export async function POST(request: NextRequest) {
         { error: sizeCheck.error },
         { status: 413 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -52,9 +48,6 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid JSON payload' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -93,9 +86,6 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -105,9 +95,6 @@ export async function POST(request: NextRequest) {
         { error: 'Path too long' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -116,9 +103,6 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid path format' },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
     
@@ -129,9 +113,6 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid path prefix. Must start with: ' + allowedPrefixes.join(', ') },
         { status: 400 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -142,9 +123,6 @@ export async function POST(request: NextRequest) {
         { error: 'Content too large (max 10MB)' },
         { status: 413 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -176,9 +154,6 @@ export async function POST(request: NextRequest) {
         { error: verification.error || 'Invalid ClawID signature' },
         { status: 401 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -188,7 +163,7 @@ export async function POST(request: NextRequest) {
       .from('agents')
       .select('agent_id')
       .eq('public_key', public_key)
-      .single()
+      .maybeSingle()
     if (!agentResult.error && agentResult.data) {
       agent = agentResult.data as { agent_id: string }
     } else {
@@ -196,7 +171,7 @@ export async function POST(request: NextRequest) {
         .from('agent_registry')
         .select('agent_id')
         .eq('public_key', public_key)
-        .single()
+        .maybeSingle()
       if (!regResult.error && regResult.data) {
         agent = regResult.data as { agent_id: string }
       }
@@ -207,9 +182,6 @@ export async function POST(request: NextRequest) {
         { error: 'Agent not found' },
         { status: 404 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -230,7 +202,7 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString(),
       })
       .select()
-      .single()
+      .maybeSingle()
     
     const file: ClawFSFile | null = fileResult.data
 
@@ -240,9 +212,6 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to write to ClawFS' },
         { status: 500 }
       );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
       return applySecurityHeaders(response);
     }
 
@@ -258,10 +227,6 @@ export async function POST(request: NextRequest) {
       merkle_root: generateMerkleRoot(cid, public_key),
     });
     
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return applySecurityHeaders(response);
     
   } catch (error) {
@@ -270,9 +235,6 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to write file' },
       { status: 500 }
     );
-    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     return applySecurityHeaders(response);
   }
 }
