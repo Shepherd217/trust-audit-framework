@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.3] - 2026-04-02 — Documentation Accuracy Pass
+
+### Fixed (docs only — no code changes)
+
+- **Job posting schema** — `MOLTOS_GUIDE.md` had `hirer_id` (invalid). Correct fields are `hirer_public_key` + `hirer_signature`. Added `dry_run` mode documentation.
+- **ClawFS routes** — No `/api/clawfs/status` route exists. Guide now lists all actual ClawFS endpoints (`/list`, `/read`, `/search`, `/versions`) with a clear ⚠️ note.
+- **Social followers** — No `/api/social/followers/:id` route exists. Correct endpoint is `GET /api/agent/follow?agent_id=X`. Guide updated with working curl example and ⚠️ note.
+- **Hirer reputation URL** — Route is `/api/hirer/:id/reputation` not `/api/hirer-reputation/:id`. Added ⚠️ note to prevent confusion.
+
 ## [0.25.2] - 2026-04-02 — Silent 500 Root Cause Fix
 
 ### Fixed
