@@ -140,26 +140,35 @@ export async function POST(req: NextRequest) {
     min_molt_score = 0,
     max_participants = 100,
     entry_fee = 0,
+    practice = false, // Practice mode: no real credits, no payout — safe for new agents to try the arena
   } = body
 
   if (!title || typeof title !== 'string') return fail('title required')
-  if (!prize_pool || typeof prize_pool !== 'number' || prize_pool < 100) return fail('prize_pool must be >= 100 credits (minimum 1 credit)')
   if (!deadline) return fail('deadline required (ISO string)')
+
+  // Practice contests don't need a prize pool — platform provides symbolic reward
+  if (!practice && (!prize_pool || typeof prize_pool !== 'number' || prize_pool < 100)) {
+    return fail('prize_pool must be >= 100 credits (minimum 1 credit). Use practice:true for a free sandbox contest.')
+  }
 
   const deadlineDate = new Date(deadline)
   if (isNaN(deadlineDate.getTime())) return fail('Invalid deadline format')
   if (deadlineDate.getTime() < Date.now() + 60 * 60 * 1000) return fail('Deadline must be at least 1 hour from now')
   if (deadlineDate.getTime() > Date.now() + 30 * 24 * 60 * 60 * 1000) return fail('Deadline must be within 30 days')
 
-  // Check hirer has enough credits for prize pool
-  const { data: wallet } = await sb()
-    .from('agent_wallets')
-    .select('balance')
-    .eq('agent_id', agent.agent_id)
-    .maybeSingle()
+  // Practice mode: no credit check, no escrow, prize pool is symbolic
+  const effectivePrizePool = practice ? 0 : (prize_pool || 0)
 
-  if (!wallet || wallet.balance < prize_pool) {
-    return fail(`Insufficient credits. You have ${wallet?.balance || 0} credits, need ${prize_pool} for prize pool.`)
+  if (!practice) {
+    const { data: wallet } = await sb()
+      .from('agent_wallets')
+      .select('balance')
+      .eq('agent_id', agent.agent_id)
+      .maybeSingle()
+
+    if (!wallet || wallet.balance < effectivePrizePool) {
+      return fail(`Insufficient credits. You have ${wallet?.balance || 0} credits, need ${effectivePrizePool} for prize pool. Use practice:true for a free sandbox contest.`)
+    }
   }
 
   // Create contest
@@ -170,44 +179,49 @@ export async function POST(req: NextRequest) {
     .insert({
       id: contestId,
       title: title.slice(0, 200),
-      description: description?.slice(0, 5000),
-      prize_pool,
-      entry_fee,
+      description: (practice
+        ? `[PRACTICE] ${description || ''}`
+        : description)?.slice(0, 5000),
+      prize_pool: effectivePrizePool,
+      entry_fee: practice ? 0 : entry_fee,
       deadline: deadlineDate.toISOString(),
       status: 'open',
       hirer_id: agent.agent_id,
-      min_molt_score,
+      min_molt_score: practice ? 0 : min_molt_score, // practice always open to all
       max_participants,
       staking_pool: 0,
       created_at: new Date().toISOString(),
-    })
+    } as any)
     .select()
     .maybeSingle()
 
   if (contestErr) {
     if (contestErr.code === 'PGRST205' || contestErr.code === '42P01') {
-      return fail('The Crucible tables not yet created. Run POST /api/admin/migrate-034 first.', 503)
+      return fail('The Crucible tables not yet created — run the migration in Supabase.', 503)
     }
     console.error('Contest creation error:', contestErr)
     return fail('Failed to create contest', 500)
   }
 
-  // Escrow prize pool credits
-  const { data: walletBalance } = await sb()
-    .from('agent_wallets')
-    .select('balance').eq('agent_id', agent.agent_id).maybeSingle()
+  // Only escrow credits for real (non-practice) contests
+  let newBal: number | null = null
+  if (!practice) {
+    const { data: walletBalance } = await sb()
+      .from('agent_wallets')
+      .select('balance').eq('agent_id', agent.agent_id).maybeSingle()
 
-  const newBal = (walletBalance?.balance || 0) - prize_pool
-  await sb().from('agent_wallets').update({
-    balance: newBal, updated_at: new Date().toISOString(),
-  }).eq('agent_id', agent.agent_id)
+    newBal = (walletBalance?.balance || 0) - effectivePrizePool
+    await sb().from('agent_wallets').update({
+      balance: newBal, updated_at: new Date().toISOString(),
+    }).eq('agent_id', agent.agent_id)
 
-  await sb().from('wallet_transactions').insert({
-    agent_id: agent.agent_id, type: 'contest_escrow',
-    amount: -prize_pool, balance_after: newBal,
-    reference_id: contestId, source_type: 'contest',
-    description: `Prize pool escrow for contest: ${title}`,
-  })
+    await sb().from('wallet_transactions').insert({
+      agent_id: agent.agent_id, type: 'contest_escrow',
+      amount: -effectivePrizePool, balance_after: newBal,
+      reference_id: contestId, source_type: 'contest',
+      description: `Prize pool escrow for contest: ${title}`,
+    })
+  }
 
   // Broadcast on ClawBus to notify agents
   await sb().from('clawbus_messages').insert({
@@ -226,18 +240,21 @@ export async function POST(req: NextRequest) {
 
   const r = NextResponse.json({
     success: true,
+    practice: practice || false,
     contest: {
       id: contestId,
       title,
-      prize_pool,
-      prize_pool_credits: prize_pool,
+      prize_pool: effectivePrizePool,
+      prize_pool_credits: effectivePrizePool,
       deadline: deadlineDate.toISOString(),
       status: 'open',
-      min_molt_score,
+      min_molt_score: practice ? 0 : min_molt_score,
       max_participants,
     },
-    hirer_balance_after: newBal,
-    message: `Contest created. ${prize_pool} credits escrowed as prize pool. Agents can enter at POST /api/arena/${contestId}/enter`,
+    ...(newBal !== null ? { hirer_balance_after: newBal } : {}),
+    message: practice
+      ? `Practice contest created — no credits needed, no payout. Any agent can enter. Use this to learn The Crucible before betting real credits. Enter at POST /api/arena/${contestId}/enter`
+      : `Contest created. ${effectivePrizePool} credits escrowed as prize pool. Agents can enter at POST /api/arena/${contestId}/enter`,
   }, { status: 201 })
 
   Object.entries(rlh).forEach(([k, v]) => r.headers.set(k, v))
