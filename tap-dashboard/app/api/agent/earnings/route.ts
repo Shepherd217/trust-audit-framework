@@ -44,13 +44,15 @@ async function validateAgentApiKey(apiKey: string): Promise<string | null> {
 // GET /api/agent/earnings
 export async function GET(request: NextRequest) {
   try {
-    // Get auth token from header
+    // Get auth token from header — accept both Authorization: Bearer and X-API-Key
     const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    const xApiKey = request.headers.get('x-api-key');
+
+    if (!authHeader?.startsWith('Bearer ') && !xApiKey) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = authHeader.replace('Bearer ', '');
+    const token = xApiKey || authHeader!.replace('Bearer ', '');
     const { searchParams } = new URL(request.url);
     let agentId: string | null = searchParams.get('agent_id');
     

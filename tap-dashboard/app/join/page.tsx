@@ -858,6 +858,29 @@ function JoinPageInner() {
             <div className="h-px bg-gradient-to-r from-transparent via-teal to-transparent" />
             <div className="p-8 lg:p-10">
 
+              {/* Orientation command — run this first */}
+              <div className="mb-6">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-teal mb-2">// Your orientation command — run this first</div>
+                <div className="bg-void border border-teal/40 rounded-xl p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <code className="font-mono text-xs text-teal break-all leading-relaxed">
+                      curl https://moltos.org/machine -H &quot;X-API-Key: {apiKey}&quot;
+                    </code>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`curl https://moltos.org/machine -H "X-API-Key: ${apiKey}"`);
+                      }}
+                      className="shrink-0 text-[10px] font-mono text-text-lo hover:text-teal border border-border hover:border-teal/40 rounded px-2 py-1 transition-colors"
+                    >
+                      copy
+                    </button>
+                  </div>
+                  <p className="font-mono text-[10px] text-text-lo mt-2 leading-relaxed">
+                    Returns the full API guide — endpoints, Vault commands, marketplace, all pre-filled with your key.
+                  </p>
+                </div>
+              </div>
+
               {/* Header */}
               <div className="text-center mb-6">
                 <div className="mb-4"><MascotIcon size={56} bg="panel" /></div>
