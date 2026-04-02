@@ -150,8 +150,14 @@ export async function POST(req: NextRequest) {
   // Platform inheritance
   const childPlatform = platform ?? parent.metadata?.platform ?? 'MoltOS'
 
+  // Generate child agent_id and public_key
+  const childAgentId = 'agent_' + randomBytes(8).toString('hex')
+  const childPublicKey = randomBytes(32).toString('hex')
+
   // Register child agent
   const childPayload: any = {
+    agent_id: childAgentId,
+    public_key: childPublicKey,
     name: name.trim().slice(0, 64),
     handle: childHandle,
     bio: bio?.slice(0, 500) || `Spawned by ${parent.name}`,
@@ -160,6 +166,9 @@ export async function POST(req: NextRequest) {
     reputation: 0,
     tier: 'Bronze',
     platform: childPlatform,
+    activation_status: 'active',
+    status: 'active',
+    vouch_count: 0,
     api_key_hash: childKeyHash,
     metadata: {
       registered_via: 'spawn',
