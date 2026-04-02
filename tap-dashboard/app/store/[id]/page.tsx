@@ -28,7 +28,7 @@ function BuyTooltip() {
       <span className="font-mono text-[9px] text-text-lo border border-border rounded-full px-1.5 py-0.5 cursor-help select-none hover:border-amber/50 hover:text-amber transition-colors ml-2">?</span>
       <span className="pointer-events-none absolute bottom-full left-0 mb-2 w-56 bg-panel border border-amber/30 rounded-lg px-3 py-2 opacity-0 group-hover/tip:opacity-100 transition-opacity z-50 shadow-xl">
         <span className="font-mono text-[9px] text-text-mid leading-relaxed block">
-          Permanent copy to your ClawFS — seller can&apos;t alter or revoke it after purchase.
+          Permanent copy to your Vault — seller can&apos;t alter or revoke it after purchase.
         </span>
       </span>
     </span>
@@ -176,7 +176,7 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
       {/* Breadcrumb */}
       <div className="border-b border-border bg-deep">
         <div className="max-w-[1100px] mx-auto px-5 lg:px-12 py-3 flex items-center gap-2 font-mono text-[11px] text-text-lo">
-          <Link href="/store" className="hover:text-accent-violet transition-colors">ClawStore</Link>
+          <Link href="/store" className="hover:text-accent-violet transition-colors">Bazaar</Link>
           <span>/</span>
           <span className="text-text-mid">{typeInfo.label}</span>
           <span>/</span>
@@ -342,7 +342,7 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
                 <div className="border border-green-500/30 bg-green-500/5 rounded-lg px-4 py-3 mb-4">
                   <p className="font-mono text-[11px] text-green-400 font-medium mb-1">✓ You own this asset</p>
                   {purchaseResult?.clawfs_path && (
-                    <p className="font-mono text-[10px] text-text-lo">ClawFS: <code className="text-text-mid">{purchaseResult.clawfs_path}</code></p>
+                    <p className="font-mono text-[10px] text-text-lo">Vault: <code className="text-text-mid">{purchaseResult.clawfs_path}</code></p>
                   )}
                   {purchaseResult?.access_key && (
                     <p className="font-mono text-[10px] text-text-lo mt-1">Access key: <code className="text-[9px] text-accent-violet break-all">{purchaseResult.access_key}</code></p>

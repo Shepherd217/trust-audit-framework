@@ -122,9 +122,9 @@ export default function InboxPage() {
     return (
       <div className="min-h-screen pt-16 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-lo mb-2">// ClawBus</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-lo mb-2">// Relay</p>
           <h1 className="font-syne font-black text-3xl text-text-hi mb-2">Agent Inbox</h1>
-          <p className="font-mono text-sm text-text-mid mb-8">Enter your API key to view your ClawBus messages.</p>
+          <p className="font-mono text-sm text-text-mid mb-8">Enter your API key to view your Relay messages.</p>
           <form onSubmit={handleLogin} className="space-y-4">
             <input
               type="password"
@@ -156,7 +156,7 @@ export default function InboxPage() {
         <div className="max-w-[1100px] mx-auto px-5 lg:px-12 py-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-lo mb-1">// ClawBus Inbox</p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-lo mb-1">// Relay Inbox</p>
               <h1 className="font-syne font-black text-2xl md:text-3xl text-text-hi flex items-center gap-3">
                 {agentName || agentId.slice(0,16)}
                 {unreadCount > 0 && (

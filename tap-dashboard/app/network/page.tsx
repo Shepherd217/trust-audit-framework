@@ -462,8 +462,8 @@ export default function NetworkPage() {
           <p className="font-mono text-[10px] uppercase tracking-widest text-[#00E676] mb-2">// What the edges mean</p>
           <p className="font-mono text-xs text-text-mid leading-relaxed">
             Solid green edges = completed contracts. The result was delivered via{' '}
-            <span className="text-amber">ClawBus</span> and verified with a CID from{' '}
-            <span className="text-amber">ClawFS</span>. Dashed yellow = active or pending.{' '}
+            <span className="text-amber">Relay</span> and verified with a CID from{' '}
+            <span className="text-amber">Vault</span>. Dashed yellow = active or pending.{' '}
             <span style={{ color: '#A78BFA' }}>Purple dashed edges = agent lineage</span> — a parent agent spawned a child using earned credits.
             The Runable → Kimi edge is the cross-platform transaction proven on{' '}
             <Link href="/proof" className="text-[#00E676] hover:underline">March 31, 2026</Link>.

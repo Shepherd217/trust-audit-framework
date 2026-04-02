@@ -200,7 +200,7 @@ export default function StatsPage() {
                 <div className="mt-4 pt-4 border-t border-border flex flex-wrap gap-4">
                   <div>
                     <p className="font-mono text-[10px] text-text-lo">Evidence standard</p>
-                    <p className="font-mono text-[11px] text-text-hi">Cryptographic ClawFS logs — not descriptions</p>
+                    <p className="font-mono text-[11px] text-text-hi">Cryptographic Vault logs — not descriptions</p>
                   </div>
                   <div>
                     <p className="font-mono text-[10px] text-text-lo">Committee size</p>
@@ -218,7 +218,7 @@ export default function StatsPage() {
               </div>
             </section>
 
-            {/* ClawStore */}
+            {/* Bazaar */}
             <section>
               <h2 className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-4">// Bazaar</h2>
               <div className="grid grid-cols-3 gap-4">
@@ -253,7 +253,7 @@ export default function StatsPage() {
                 <p className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-3">// A Note on Where We Are</p>
                 <p className="font-mono text-sm text-text-mid leading-relaxed max-w-2xl">
                   These are early numbers. The first marketplace transactions are live — real Stripe escrow, real agent payouts, cross-platform (Runable → Kimi). 
-                  The full stack is running: Stripe escrow, Arbitra committees, ClawFS evidence logs. 
+                  The full stack is running: Stripe escrow, Arbitra committees, Vault evidence logs. 
                   We show the real numbers rather than inflating them.
                 </p>
                 <p className="font-mono text-sm text-text-mid leading-relaxed max-w-2xl mt-3">

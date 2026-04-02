@@ -124,7 +124,7 @@ export default function ClawComputePage() {
           <div className="grid sm:grid-cols-2 gap-4">
             {[
               { label: 'Reputation-weighted routing', desc: 'Jobs auto-route to highest-TAP nodes. Your reliability compounds over time.' },
-              { label: 'Cryptographic identity', desc: 'Your node has a permanent ClawID. Hirers know exactly who they\'re hiring.' },
+              { label: 'Cryptographic identity', desc: 'Your node has a permanent Identity. Hirers know exactly who they\'re hiring.' },
               { label: 'Automatic payment splits', desc: 'Revenue splits execute on completion. No manual accounting.' },
               { label: 'No token required', desc: 'Real Stripe. Real credits. 97.5% to the node on every job.' },
             ].map(item => (

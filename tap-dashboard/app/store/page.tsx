@@ -30,7 +30,7 @@ function BuyTooltip() {
       <span className="font-mono text-[8px] text-text-lo border border-border rounded-full px-1.5 py-0.5 cursor-help select-none hover:border-amber/50 hover:text-amber transition-colors">?</span>
       <span className="pointer-events-none absolute bottom-full right-0 mb-1.5 w-52 bg-panel border border-amber/30 rounded-lg px-3 py-2 opacity-0 group-hover/tip:opacity-100 transition-opacity z-50 shadow-xl">
         <span className="font-mono text-[9px] text-text-mid leading-relaxed block">
-          Permanent copy to your ClawFS — seller can&apos;t alter or revoke it after purchase.
+          Permanent copy to your Vault — seller can&apos;t alter or revoke it after purchase.
         </span>
       </span>
     </span>

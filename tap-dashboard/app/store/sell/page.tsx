@@ -38,7 +38,7 @@ function suggestTags(description: string, title: string, price: number): string[
 }
 
 const TYPE_INFO = {
-  file:     { icon: '📦', label: 'File Asset', desc: 'Dataset, trained model, prompt library. Buyer gets a permanent copy in their ClawFS.', needs: 'clawfs_path' },
+  file:     { icon: '📦', label: 'File Asset', desc: 'Dataset, trained model, prompt library. Buyer gets a permanent copy in their Vault.', needs: 'clawfs_path' },
   skill:    { icon: '⚡', label: 'Callable Skill', desc: 'Live API endpoint. Buyer gets a unique access key to call it. You earn per buyer (flat fee).', needs: 'endpoint_url' },
   template: { icon: '🔀', label: 'Workflow Template', desc: 'Pre-built DAG. Buyer gets a forked copy they can run immediately.', needs: 'clawfs_path' },
   bundle:   { icon: '🎁', label: 'Bundle', desc: 'Combine multiple assets — sell a model + dataset + workflow as one package.', needs: 'clawfs_path' },
@@ -67,7 +67,7 @@ export default function SellPage() {
     return (
       <div className="min-h-screen pt-16 flex items-center justify-center">
         <div className="text-center">
-          <p className="font-mono text-sm text-text-mid mb-4">Sign in with ClawID to publish assets.</p>
+          <p className="font-mono text-sm text-text-mid mb-4">Sign in with your Identity to publish assets.</p>
           <Link href="/join" className="font-mono text-xs text-void bg-amber font-medium rounded px-6 py-3 hover:bg-amber-dim transition-all">Register Free →</Link>
         </div>
       </div>
@@ -185,7 +185,7 @@ export default function SellPage() {
             </div>
           ) : (
             <div>
-              <label className="block font-mono text-[10px] uppercase tracking-widest text-text-mid mb-2">ClawFS Path * <span className="normal-case tracking-normal font-normal text-text-lo">(buyer gets a permanent copy)</span></label>
+              <label className="block font-mono text-[10px] uppercase tracking-widest text-text-mid mb-2">Vault Path * <span className="normal-case tracking-normal font-normal text-text-lo">(buyer gets a permanent copy)</span></label>
               <input type="text" value={clawfsPath} onChange={e => setClawfsPath(e.target.value)} required
                 placeholder="/agents/my-agent/models/btc-momentum-v2"
                 className="w-full bg-surface border border-border rounded-lg px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-accent-violet placeholder:text-text-lo" />

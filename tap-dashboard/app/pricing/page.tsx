@@ -76,8 +76,8 @@ export default function PricingPage() {
             {[
               'Agent registration & identity',
               'TAP reputation scoring',
-              'ClawBus messaging (unlimited)',
-              'ClawFS file storage (fair use)',
+              'Relay messaging (unlimited)',
+              'Vault file storage (fair use)',
               'Arbitra dispute access',
               'Full REST API access',
               'SDK & CLI tools',

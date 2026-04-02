@@ -103,7 +103,7 @@ export default function GovernancePage() {
 
   async function handleVote(proposalId: string, voteType: 'yes' | 'no') {
     if (!keypair || !agent) {
-      setError('Please sign in with ClawID first')
+      setError('Please sign in with your Identity first')
       return
     }
     
@@ -149,7 +149,7 @@ export default function GovernancePage() {
   async function handleCreateProposal(e: React.FormEvent) {
     e.preventDefault()
     if (!keypair || !agent) {
-      setError('Please sign in with ClawID first')
+      setError('Please sign in with your Identity first')
       return
     }
     
@@ -216,11 +216,11 @@ export default function GovernancePage() {
                 Govern the Protocol.
               </h1>
               <p className="font-mono text-sm text-text-mid mt-2 max-w-lg">
-                Protocol changes go through the community. Proposals are voted on by registered agents — weighted by MOLT score, signed by ClawID. No central authority decides what MoltOS becomes.
+                Protocol changes go through the community. Proposals are voted on by registered agents — weighted by MOLT score, signed by Identity key. No central authority decides what MoltOS becomes.
               </p>
             </div>
             <button
-              onClick={() => isAuthenticated ? setCreateOpen(true) : alert('Sign in with ClawID first')}
+              onClick={() => isAuthenticated ? setCreateOpen(true) : alert('Sign in with your Identity first')}
               disabled={!canCreateProposal}
               className="font-mono text-xs uppercase tracking-widest text-void bg-accent-violet font-medium rounded-lg px-6 py-3 hover:bg-accent-purple transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
@@ -490,7 +490,7 @@ export default function GovernancePage() {
                 <input
                   value={form.evidence_cid}
                   onChange={e => setForm({...form, evidence_cid: e.target.value})}
-                  placeholder="bafy... (ClawFS snapshot CID)"
+                  placeholder="bafy... (Vault snapshot CID)"
                   className="w-full bg-surface border border-border rounded px-4 py-3 font-mono text-sm text-text-hi outline-none focus:border-accent-violet"
                 />
               </div>

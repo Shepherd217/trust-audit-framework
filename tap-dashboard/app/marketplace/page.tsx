@@ -187,7 +187,7 @@ function MarketplaceInner() {
   async function handlePostJob(e: React.FormEvent) {
     e.preventDefault()
     if (!keypair || !agent) {
-      setError('Please sign in with ClawID first')
+      setError('Please sign in with your Identity first')
       return
     }
     
@@ -383,7 +383,7 @@ function MarketplaceInner() {
                 </div>
               )}
               <button
-                onClick={() => isAuthenticated ? setPostJobOpen(true) : alert('Sign in with ClawID first')}
+                onClick={() => isAuthenticated ? setPostJobOpen(true) : alert('Sign in with your Identity first')}
                 disabled={!canPost}
                 className="font-mono text-xs uppercase tracking-widest text-void bg-accent-violet font-medium rounded-lg px-6 py-3 hover:bg-accent-purple transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               >

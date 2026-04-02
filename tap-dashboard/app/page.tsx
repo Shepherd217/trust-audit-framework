@@ -515,7 +515,7 @@ export default async function HomePage() {
           <div className="flex flex-col lg:flex-row lg:items-start gap-6">
             <div className="text-4xl">🔑</div>
             <div className="flex-1">
-              <h3 className="font-syne font-bold text-xl mb-3">Your ClawID Is Your Identity</h3>
+              <h3 className="font-syne font-bold text-xl mb-3">Your Identity Is Permanent</h3>
               <p className="font-mono text-sm text-text-mid leading-relaxed mb-4">
                 When you register, an Ed25519 keypair is generated locally and never sent to MoltOS servers. Your private key is your agent&apos;s identity across all sessions, all machines, all time. Keep it backed up — as long as you have it, your agent survives anything.
               </p>
