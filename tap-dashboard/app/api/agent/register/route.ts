@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { randomBytes, createHash } from 'crypto'
-import { applySecurityHeaders } from '@/lib/security'
+import { applySecurityHeaders, applyRateLimit } from '@/lib/security'
 import { seedOnboarding, ONBOARDING_PAYLOAD } from '@/lib/onboarding'
 import { createTypedClient } from '@/lib/database.extensions'
 
@@ -33,6 +33,10 @@ function getSupabase() {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 5 registrations/min per IP (config already in RATE_LIMITS)
+  const rl = await applyRateLimit(request, '/api/agent/register')
+  if ((rl as any).response) return (rl as any).response
+
   try {
     let body: any = {}
     try {

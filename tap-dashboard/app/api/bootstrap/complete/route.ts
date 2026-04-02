@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'crypto'
+import { applyRateLimit } from '@/lib/security'
 import { createTypedClient } from '@/lib/database.extensions'
 import type { ExtendedDatabase } from '@/lib/database.extensions'
 
@@ -18,6 +19,10 @@ async function resolveAgent(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 15/min — prevents task_type enumeration brute force
+  const rl = await applyRateLimit(req, 'critical')
+  if ((rl as any).response) return (rl as any).response
+
   const sb = getSupabase()
   const agentId = await resolveAgent(req)
   if (!agentId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -44,6 +49,99 @@ export async function POST(req: NextRequest) {
 
   const { task_type } = await req.json()
   if (!task_type) return NextResponse.json({ error: 'task_type required' }, { status: 400 })
+
+  // ── Server-side task verification ────────────────────────────────────────────
+  // Each task type requires proof of actual activity — not just claiming the task.
+  if (task_type === 'complete_job') {
+    // Must have a real completed marketplace contract as the worker.
+    const { data: completedContract } = await sb
+      .from('marketplace_contracts')
+      .select('id')
+      .eq('worker_id', agentId)
+      .eq('status', 'completed')
+      .limit(1)
+    if (!completedContract || completedContract.length === 0) {
+      return NextResponse.json({
+        error: 'complete_job requires a completed marketplace contract. Apply for and finish a real job first.',
+        how: 'GET /api/marketplace/jobs to browse open jobs, then POST /api/marketplace/jobs/{id}/apply',
+      }, { status: 403 })
+    }
+  }
+
+  if (task_type === 'post_job') {
+    // Must have posted a real job (not a dry run). dry_run jobs are never written to DB.
+    const { data: postedJob } = await sb
+      .from('marketplace_jobs')
+      .select('id')
+      .eq('hirer_id', agentId)
+      .limit(1)
+    if (!postedJob || postedJob.length === 0) {
+      return NextResponse.json({
+        error: 'post_job requires a real job posted to the marketplace. Remove dry_run:true and post an actual job.',
+        how: 'POST /api/marketplace/jobs with title, description, budget (min $5), and your API key',
+      }, { status: 403 })
+    }
+  }
+
+  if (task_type === 'write_memory') {
+    // Must have at least one ClawFS file written (excludes system-seeded files)
+    const { data: ownFile } = await sb
+      .from('clawfs_files')
+      .select('id')
+      .eq('agent_id', agentId)
+      .neq('signature', 'system_seeded')
+      .limit(1)
+    if (!ownFile || ownFile.length === 0) {
+      return NextResponse.json({
+        error: 'write_memory requires you to write at least one file to ClawFS yourself.',
+        how: 'POST /api/clawfs/write/simple with {path, content} and your API key',
+      }, { status: 403 })
+    }
+  }
+
+  if (task_type === 'take_snapshot') {
+    // Must have a ClawFS snapshot entry
+    const { data: snapshot } = await sb
+      .from('clawfs_files')
+      .select('id')
+      .eq('agent_id', agentId)
+      .ilike('path', '%snapshot%')
+      .limit(1)
+    // Also check clawfs_snapshots table if it exists
+    let snapshotRecord: any[] | null = null
+    try {
+      const { data } = await sb
+        .from('clawfs_snapshots' as any)
+        .select('id')
+        .eq('agent_id', agentId)
+        .limit(1)
+      snapshotRecord = data
+    } catch { /* table may not exist yet */ }
+    if ((!snapshot || snapshot.length === 0) && (!snapshotRecord || (snapshotRecord as any[]).length === 0)) {
+      return NextResponse.json({
+        error: 'take_snapshot requires a ClawFS snapshot. Call POST /api/clawfs/snapshot first.',
+        how: 'POST /api/clawfs/snapshot with your API key',
+      }, { status: 403 })
+    }
+  }
+
+  if (task_type === 'verify_whoami') {
+    // Must have called /api/agent/auth recently (last_seen_at updated within 7 days)
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86400 * 1000).toISOString()
+    const { data: agentActivity } = await sb
+      .from('agent_registry')
+      .select('last_seen_at')
+      .eq('agent_id', agentId)
+      .gt('last_seen_at', sevenDaysAgo)
+      .maybeSingle()
+    if (!agentActivity) {
+      return NextResponse.json({
+        error: 'verify_whoami requires a recent call to GET /api/agent/auth to confirm your identity is live.',
+        how: 'GET /api/agent/auth with X-API-Key: your_api_key',
+      }, { status: 403 })
+    }
+  }
+  // ── End task verification ─────────────────────────────────────────────────────
 
   const { data: task } = await sb.from('bootstrap_tasks').select('*')
     .eq('agent_id', agentId).eq('task_type', task_type).eq('status', 'pending').maybeSingle()
