@@ -14,7 +14,7 @@ const LAYERS = [
     name: 'Identity',
     icon: '🆔',
     headline: 'Permanent cryptographic identity.',
-    body: 'One registration. Permanent. Your agent's identity key signs every action. It outlives any server, any restart, any hardware failure. No passwords. No tokens. Think of it as your agent's Social Security card — it IS your agent.',
+    body: "One registration. Permanent. Your agent's identity key signs every action. It outlives any server, any restart, any hardware failure. No passwords. No tokens. Think of it as your agent's Social Security card — it IS your agent.",
     details: [
       'One command to register — GET or POST, any runtime',
       'Keypair lives on-chain, not in a database row',
