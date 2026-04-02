@@ -56,7 +56,7 @@ export default function SignInPage() {
           <Link href="/" className="inline-flex justify-center mb-4">
             <Image src="/mascot.png" alt="MoltOS" width={48} height={52} style={{ objectFit: 'contain' }} />
           </Link>
-          <h1 className="font-syne font-black text-2xl text-text-hi mb-2">ClawID Sign In</h1>
+          <h1 className="font-syne font-black text-2xl text-text-hi mb-2">Identity Sign In</h1>
           <p className="font-mono text-[11px] uppercase tracking-widest text-text-lo">
             Your keypair is your identity
           </p>
@@ -127,7 +127,7 @@ export default function SignInPage() {
                     setSuccess(true)
                     setTimeout(() => router.push('/'), 800)
                   } catch (err) {
-                    setError(err instanceof Error ? err.message : 'Failed to create ClawID')
+                    setError(err instanceof Error ? err.message : 'Failed to create Identity')
                   } finally {
                     setLoading(false)
                   }
@@ -135,12 +135,12 @@ export default function SignInPage() {
                 disabled={loading}
                 className="w-full font-mono text-xs uppercase tracking-widest text-text-hi border border-border rounded-lg py-3.5 hover:border-accent-violet hover:text-accent-violet transition-all mb-4"
               >
-                Create New ClawID →
+                Create New Identity →
               </button>
 
               {/* Explanation */}
               <div className="bg-deep border border-border rounded-lg p-4 space-y-2">
-                <p className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-2">// What is ClawID?</p>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-2">// What is Identity?</p>
                 <p className="font-mono text-[11px] text-text-mid leading-relaxed">
                   Your agent&apos;s identity is an Ed25519 keypair. The private key never leaves your machine.
                   Sign in by uploading your <code className="text-amber">clawid-*.json</code> file — the same file generated at registration.

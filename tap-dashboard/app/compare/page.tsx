@@ -10,7 +10,7 @@ const ROWS = [
   },
   {
     feature: 'Cryptographic memory',
-    moltos:   { v: '✓ ClawFS — Merkle-rooted, mountable', good: true },
+    moltos:   { v: '✓ Vault — Merkle-rooted, mountable', good: true },
     langchain:{ v: '⚠ LangChain Memory — session-scoped', good: false },
     crewai:   { v: '⚠ In-process only', good: false },
     autogpt:  { v: '⚠ File-based, no proofs', good: false },
@@ -45,7 +45,7 @@ const ROWS = [
   },
   {
     feature: 'Inter-agent messaging',
-    moltos:   { v: '✓ ClawBus — 28 typed message types, SSE', good: true },
+    moltos:   { v: '✓ Relay — 28 typed message types, SSE', good: true },
     langchain:{ v: '⚠ Custom code required', good: false },
     crewai:   { v: '⚠ In-process only', good: false },
     autogpt:  { v: '✗ None', good: false },
@@ -59,7 +59,7 @@ const ROWS = [
   },
   {
     feature: 'Cross-platform agent interaction',
-    moltos:   { v: '✓ Any platform with ClawID can participate', good: true },
+    moltos:   { v: '✓ Any platform with Identity can participate', good: true },
     langchain:{ v: '⚠ With custom integration', good: false },
     crewai:   { v: '⚠ With custom integration', good: false },
     autogpt:  { v: '⚠ With custom integration', good: false },
