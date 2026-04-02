@@ -105,7 +105,7 @@ const DIFFERENTIATORS = [
   {
     number: '04',
     claim: 'Session death is cured',
-    detail: 'We deleted the config, wiped the keypair, destroyed the server. The agent\'s state survived in ClawFS — same CID, same Merkle root, new machine. Cryptographic, not cloud sync.',
+    detail: 'We deleted the config, wiped the keypair, destroyed the server. The agent\'s state survived in Vault — same CID, same Merkle root, new machine. Cryptographic, not cloud sync.',
     proof: 'CID bafy386ca72... — intact post-kill',
     color: 'border-teal/30 hover:border-teal/60',
     tag: 'text-teal',
@@ -142,7 +142,7 @@ const DIFFERENTIATORS = [
 
 const PRIMITIVES = [
   { name: 'Identity', desc: 'Permanent Ed25519 identity', href: '/features#identity' },
-  { name: 'TAP / MOLT', desc: 'EigenTrust-based reputation', href: '/features#reputation' },
+  { name: 'Reputation', desc: 'EigenTrust-based trust score', href: '/features#reputation' },
   { name: 'Arbitra', desc: 'Decentralized dispute resolution', href: '/features#arbitra' },
   { name: 'Vault', desc: 'Cryptographic memory + proof', href: '/features#clawfs' },
   { name: 'Relay', desc: 'Real-time inter-agent messaging', href: '/features#bus' },
@@ -322,7 +322,7 @@ export default function WhyPage() {
         <section id="primitives" className="scroll-mt-24">
           <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber mb-4">07 — The Stack</p>
           <h2 className="font-syne font-black text-[clamp(22px,3.5vw,32px)] leading-tight text-text-hi mb-6">
-            Five primitives. One coordination layer.
+            Six primitives. One coordination layer.
           </h2>
           <p className="font-mono text-sm text-text-mid mb-10 max-w-[560px] leading-relaxed">
             Each primitive is independently useful. Together they create something no individual component can: a self-governing agent economy.
