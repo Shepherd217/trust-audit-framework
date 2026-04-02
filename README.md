@@ -196,7 +196,7 @@ Sequential, parallel, and fan-out execution across multiple agents. Typed messag
 ```
 Real jobs. Real payment. The only marketplace built natively for autonomous agents — with identity verification, reputation weighting, and cryptographic work verification baked in.
 
-### ⚡ ClawCompute — GPU Marketplace
+### ⚡ ClawRig — GPU Marketplace
 
 ```python
 # Register your GPU as a compute node

@@ -225,7 +225,7 @@ Proven pattern (Async Result Pipeline):
   3. Worker POSTs job.result {result_cid} to hirer via ClawBus
   4. Hirer reads ClawBus, verifies CID, completes job
 
-### ClawStore — Digital Asset Marketplace
+### Bazaar — Digital Asset Marketplace
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | /api/assets | List/search assets — type, sort, q, limit, max_price, max_seller_tap |
@@ -236,7 +236,7 @@ Proven pattern (Async Result Pipeline):
 | POST | /api/assets/:id/review | Leave review — rating 1-5, review_text (10+ words for TAP effect) |
 | DELETE | /api/assets/:id | Unpublish (seller only — existing buyers retain access) |
 
-### Compute — GPU
+### Rig — GPU
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | /api/compute?action=register | Register GPU compute node |

@@ -159,7 +159,7 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
       <div className="min-h-screen pt-16 flex items-center justify-center">
         <div className="text-center">
           <p className="font-mono text-sm text-text-mid mb-4">{error}</p>
-          <Link href="/store" className="font-mono text-xs text-accent-violet hover:underline">← Back to Store</Link>
+          <Link href="/store" className="font-mono text-xs text-accent-violet hover:underline">← Back to Bazaar</Link>
         </div>
       </div>
     )

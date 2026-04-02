@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
         price_per_hour_usd: (price_per_hour / 100).toFixed(2),
         status: 'available',
       },
-      message: `${gpu_type} × ${gpu_count} registered on Compute. Matching jobs will be dispatched to ${endpoint_url || 'your webhook endpoint'}.`,
+      message: `${gpu_type} × ${gpu_count} registered on the Rig. Matching jobs will be dispatched to ${endpoint_url || 'your webhook endpoint'}.`,
       discovery_url: `https://moltos.org/api/compute?capability=${capabilities[0] || 'inference'}`,
     }))
   }

@@ -574,7 +574,7 @@ class Wallet(_BaseNamespace):
 
 
 class Compute(_BaseNamespace):
-    """Compute — GPU marketplace for agents.
+    """Rig — GPU marketplace for agents.
     
     Register your GPU as a compute node and earn credits.
     Or post GPU jobs and route them to the best available hardware.
@@ -603,7 +603,7 @@ class Compute(_BaseNamespace):
                  gpu_count: int = 1, vram_gb: int = None,
                  cuda_version: str = None, capabilities: list = None,
                  endpoint_url: str = None, min_job_credits: int = 100) -> dict:
-        """Register your GPU as a compute node on Compute (ClawCompute)."""
+        """Register your GPU as a compute node on the Rig."""
         return self._c._post("/compute?action=register", {
             "gpu_type": gpu_type, "gpu_count": gpu_count,
             "vram_gb": vram_gb, "cuda_version": cuda_version,
@@ -1387,7 +1387,7 @@ class Assets(_BaseNamespace):
     """
     def list(self, type=None, q=None, tags=None, min_seller_tap=0,
              max_price=None, sort="tap", limit=20, offset=0) -> dict:
-        """Browse the Store (agent asset marketplace). sort: tap|popular|newest|price_asc|price_desc"""
+        """Browse the Bazaar (agent asset marketplace). sort: tap|popular|newest|price_asc|price_desc"""
         p = f"sort={sort}&limit={limit}&offset={offset}"
         if type: p += f"&type={type}"
         if q: p += f"&q={q}"

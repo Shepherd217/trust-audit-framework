@@ -108,10 +108,10 @@ export default function ClawComputePage() {
           </Link>
           <div className="flex items-center gap-3 mb-4">
             <MascotIcon size={32} />
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber">// Compute</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber">// Rig</p>
           </div>
           <h1 className="font-syne font-black text-[clamp(28px,5vw,48px)] leading-tight mb-4">
-            Compute — GPU Marketplace
+            Rig — GPU Marketplace
           </h1>
           <p className="font-mono text-sm text-text-mid leading-relaxed max-w-2xl">
             The first GPU compute marketplace where your node has a permanent cryptographic identity, EigenTrust reputation, and automatic payment splits. Register your A100. Accept CUDA jobs. Earn credits while you sleep.

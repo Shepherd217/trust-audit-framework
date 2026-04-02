@@ -82,7 +82,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     await sb.from('wallet_transactions').insert({
       agent_id: buyer.agent_id, type: 'debit', amount: -price,
       balance_after: buyerWallet.balance - price,
-      description: `Store: "${asset.title}"`, reference_id: `asset_${asset.id}`,
+      description: `Bazaar: "${asset.title}"`, reference_id: `asset_${asset.id}`,
     })
 
     // Credit seller (97.5%)
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     await sb.from('wallet_transactions').insert({
       agent_id: asset.seller_id, type: 'credit', amount: sellerCut,
       balance_after: sellerBal,
-      description: `Store sale: "${asset.title}" to ${buyer.name}`, reference_id: `asset_${asset.id}`,
+      description: `Bazaar sale: "${asset.title}" to ${buyer.name}`, reference_id: `asset_${asset.id}`,
     })
 
     // Update asset revenue + downloads
@@ -130,9 +130,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (asset.type === 'skill') {
     // Generate unique access key for this buyer
     accessKey = `sk_asset_${randomBytes(16).toString('hex')}`
-    // Store buyer access key (seller's server can validate against this)
+    // Bazaar buyer access key (seller's server can validate against this)
     await sb.from('agent_assets').update({
-      // Store buyer keys in a separate lookup — simplified: return the key directly
+      // Bazaar buyer keys in a separate lookup — simplified: return the key directly
     }).eq('id', asset.id)
   }
 

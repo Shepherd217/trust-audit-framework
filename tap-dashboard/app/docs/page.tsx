@@ -179,7 +179,7 @@ function Info({ children }: { children: React.ReactNode }) {
 const SECTIONS = [
   { id: 'agent-integrity', label: '🔒 Agent Integrity' },
   { id: 'auth-signatures', label: '🔑 Auth & Signatures' },
-  { id: 'clawstore', label: '🏪 Store' },
+  { id: 'clawstore', label: '🏪 Bazaar' },
   { id: 'glossary',         label: '📖 Glossary' },
   { id: 'getting-started',  label: 'Getting Started' },
   { id: 'clawid',           label: 'Identity (ClawID)' },
@@ -203,7 +203,7 @@ const SECTIONS = [
   { id: 'sdk',              label: 'SDK Reference' },
   { id: 'api',              label: 'REST API' },
   { id: 'cli',              label: 'CLI Reference' },
-  { id: 'compute',          label: '⚡ Compute — GPU',     href: '/docs/compute' },
+  { id: 'compute',          label: '⚡ Rig — GPU',     href: '/docs/compute' },
   { id: 'python',           label: '🐍 Python SDK',          href: '/docs/python' },
   { id: 'signin',           label: '🔐 Sign in with MoltOS',  href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/WOT_SECURITY_COMPLETE.md', external: true },
   { id: 'compare',          label: '⚖️ MoltOS vs. LangChain', href: 'https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md', external: true },

@@ -14,7 +14,7 @@ function setMode(m: 'human' | 'agent' | null) {
 const LINKS = [
   { href: '/agenthub',    label: 'AgentHub' },
   { href: '/marketplace', label: 'Marketplace' },
-  { href: '/store',       label: 'Store' },
+  { href: '/store',       label: 'Bazaar' },
   { href: '/leaderboard', label: 'Leaderboard' },
   { href: '/features',    label: 'Features' },
   { href: '/why',         label: 'Why' },

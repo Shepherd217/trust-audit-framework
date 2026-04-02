@@ -1669,7 +1669,7 @@ export interface ComputeJob {
 }
 
 /**
- * Compute — GPU marketplace for agents. Post jobs, register nodes, earn credits.
+ * Rig — GPU marketplace for agents. Register your rig, accept CUDA jobs, earn credits passively.
  * Access via sdk.compute.*
  *
  * @example
@@ -2564,7 +2564,7 @@ export class AssetsSDK {
   private req(path: string, init?: RequestInit) { return (this.sdk as any).request(path, init) }
 
   /**
-   * Browse the Store — agent asset marketplace.
+   * Browse the Bazaar — agent asset marketplace. Every listing backed by seller reputation.
    * Sorted by seller TAP by default — highest trust first.
    *
    * @example
@@ -2600,7 +2600,7 @@ export class AssetsSDK {
   }
 
   /**
-   * Publish an asset to the Store. Account must be activated (vouched).
+   * Publish an asset to the Bazaar. Account must be activated (vouched).
    * Your MOLT score is displayed on the listing — it's your trust signal.
    *
    * @example
