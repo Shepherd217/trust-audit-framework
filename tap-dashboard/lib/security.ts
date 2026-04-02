@@ -106,9 +106,14 @@ async function checkRateLimit(key: string, config: RateLimitConfig): Promise<{ a
   const limiter = getLimiter(key, config.requests, windowSec);
 
   if (limiter) {
-    // Upstash path
-    const { success, remaining, reset } = await limiter.limit(key);
-    return { allowed: success, remaining, resetTime: reset };
+    // Upstash path — wrap in try/catch so a Redis outage doesn't crash the route
+    try {
+      const { success, remaining, reset } = await limiter.limit(key);
+      return { allowed: success, remaining, resetTime: reset };
+    } catch (redisErr) {
+      console.warn('[security] Upstash rate limit failed, falling back to allow:', redisErr);
+      // Fail open — don't block traffic due to Redis issues
+    }
   }
 
   // In-memory fallback (local dev — no Upstash configured)
@@ -135,33 +140,39 @@ export async function applyRateLimit(
   request: NextRequest,
   path: string
 ): Promise<{ response?: NextResponse; headers: Record<string, string> }> {
-  const ip = getClientIP(request);
-  const config = TIER_LIMITS[path] || RATE_LIMITS[path] || RATE_LIMITS.default;
-  const key = `${ip}:${path}`;
+  try {
+    const ip = getClientIP(request);
+    const config = TIER_LIMITS[path] || RATE_LIMITS[path] || RATE_LIMITS.default;
+    const key = `${ip}:${path}`;
 
-  const result = await checkRateLimit(key, config);
+    const result = await checkRateLimit(key, config);
 
-  const headers: Record<string, string> = {
-    'X-RateLimit-Limit': config.requests.toString(),
-    'X-RateLimit-Remaining': Math.max(0, result.remaining).toString(),
-    'X-RateLimit-Reset': Math.ceil(result.resetTime / 1000).toString(),
-  };
+    const headers: Record<string, string> = {
+      'X-RateLimit-Limit': config.requests.toString(),
+      'X-RateLimit-Remaining': Math.max(0, result.remaining).toString(),
+      'X-RateLimit-Reset': Math.ceil(result.resetTime / 1000).toString(),
+    };
 
-  if (!result.allowed) {
-    const retryAfterSec = Math.ceil((result.resetTime - Date.now()) / 1000)
-    const response = NextResponse.json(
-      {
-        error: 'Rate limit exceeded. Please try again later.',
-        retry_after: retryAfterSec,
-      },
-      { status: 429 }
-    );
-    response.headers.set('Retry-After', String(retryAfterSec))
-    Object.entries(headers).forEach(([k, v]) => response.headers.set(k, v));
-    return { response, headers };
+    if (!result.allowed) {
+      const retryAfterSec = Math.ceil((result.resetTime - Date.now()) / 1000)
+      const response = NextResponse.json(
+        {
+          error: 'Rate limit exceeded. Please try again later.',
+          retry_after: retryAfterSec,
+        },
+        { status: 429 }
+      );
+      response.headers.set('Retry-After', String(retryAfterSec))
+      Object.entries(headers).forEach(([k, v]) => response.headers.set(k, v));
+      return { response, headers };
+    }
+
+    return { headers };
+  } catch (err) {
+    // Never crash a route due to rate limit infrastructure failure — fail open
+    console.warn('[security] applyRateLimit error, failing open:', err);
+    return { headers: {} };
   }
-
-  return { headers };
 }
 
 /**
