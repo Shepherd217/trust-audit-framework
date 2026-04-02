@@ -1,224 +1,156 @@
 export const dynamic = 'force-dynamic';
 
 /**
- * Agent Registration API
  * POST /api/agent/register
- * 
- * Registers a new agent and returns API credentials
+ * Register a new agent with a pre-generated keypair.
+ *
+ * Body (JSON):
+ *   name:        string (required)
+ *   public_key:  string (required) — also accepts publicKey
+ *   email:       string (optional)
+ *   metadata:    object (optional)
+ *   referral_code: string (optional)
+ *
+ * Returns 201 with {agent, credentials, onboarding}
+ * Returns 400 on validation errors
+ * Returns 409 if agent already registered
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { randomBytes, createHash } from 'crypto';
-import { applyRateLimit, applySecurityHeaders, validateBodySize } from '@/lib/security';
-import { seedOnboarding, ONBOARDING_PAYLOAD } from '@/lib/onboarding';
+import { NextRequest, NextResponse } from 'next/server'
+import { randomBytes, createHash } from 'crypto'
+import { applySecurityHeaders } from '@/lib/security'
+import { seedOnboarding, ONBOARDING_PAYLOAD } from '@/lib/onboarding'
 import { createTypedClient } from '@/lib/database.extensions'
-import type { ExtendedDatabase } from '@/lib/database.extensions'
 
-// Lazy initialization
-let supabase: ReturnType<typeof createTypedClient> | null = null;
+const MAX_NAME = 100
+const MAX_KEY = 200
 
 function getSupabase() {
-  if (!supabase) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) throw new Error('Supabase not configured');
-    supabase = createTypedClient(url, key);
-  }
-  return supabase;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) throw new Error('Supabase not configured')
+  return createTypedClient(url, key) as any
 }
 
-// Rate limit: 5 registrations per minute per IP (prevents spam)
-const MAX_BODY_SIZE_KB = 50;
-const MAX_NAME_LENGTH = 100;
-const MAX_PUBLIC_KEY_LENGTH = 200;
-
 export async function POST(request: NextRequest) {
-  const path = '/api/agent/register';
-  
-  const { response: rateLimitResponse, headers: rateLimitHeaders } = await applyRateLimit(request, path);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
-  
   try {
-    const bodyText = await request.text();
-    const sizeCheck = validateBodySize(bodyText, MAX_BODY_SIZE_KB);
-    if (!sizeCheck.valid) {
-      const response = NextResponse.json(
-        { error: sizeCheck.error, code: 'PAYLOAD_TOO_LARGE' },
-        { status: 413 }
-      );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return applySecurityHeaders(response);
-    }
-    
-    let body;
+    let body: any = {}
     try {
-      body = JSON.parse(bodyText);
+      body = await request.json()
     } catch {
-      const response = NextResponse.json(
-        { error: 'Invalid JSON payload', code: 'INVALID_JSON' },
+      return applySecurityHeaders(NextResponse.json(
+        { error: 'Invalid JSON', code: 'INVALID_JSON' },
         { status: 400 }
-      );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return applySecurityHeaders(response);
+      ))
     }
-    
-    // Accept both camelCase and snake_case field names
-    const { name, metadata = {}, referral_code } = body;
-    const publicKey: string = body.publicKey || body.public_key;
+
+    const name: string = (body.name || '').trim()
+    const publicKey: string = (body.publicKey || body.public_key || '').trim()
+    const email: string = (body.email || '').trim()
+    const metadata = typeof body.metadata === 'object' ? body.metadata : {}
+    const referral_code: string = (body.referral_code || '').trim()
 
     // Validate name
-    if (!name || typeof name !== 'string' || name.trim().length < 2 || name.length > MAX_NAME_LENGTH) {
-      const response = NextResponse.json(
-        { error: `name is required (2-${MAX_NAME_LENGTH} chars)`, code: 'INVALID_NAME' },
+    if (!name || name.length < 2 || name.length > MAX_NAME) {
+      return applySecurityHeaders(NextResponse.json(
+        { error: `name required (2–${MAX_NAME} chars)`, code: 'INVALID_NAME' },
         { status: 400 }
-      );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return applySecurityHeaders(response);
+      ))
     }
 
-    // Validate publicKey
-    if (!publicKey || typeof publicKey !== 'string' || publicKey.length > MAX_PUBLIC_KEY_LENGTH) {
-      const response = NextResponse.json(
-        { error: 'publicKey (or public_key) is required', code: 'INVALID_PUBLIC_KEY' },
+    // Validate public key
+    if (!publicKey || publicKey.length > MAX_KEY) {
+      return applySecurityHeaders(NextResponse.json(
+        { error: 'public_key (or publicKey) required', code: 'INVALID_PUBLIC_KEY' },
         { status: 400 }
-      );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return applySecurityHeaders(response);
+      ))
     }
 
-    // Validate publicKey format — accept Ed25519 hex (64 chars) OR any non-empty string up to max length
-    // Strict hex validation is advisory; bad keys just won't verify signatures
-    if (publicKey.trim().length === 0) {
-      const response = NextResponse.json(
-        { error: 'publicKey cannot be empty', code: 'INVALID_KEY_FORMAT' },
-        { status: 400 }
-      );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return applySecurityHeaders(response);
-    }
+    const sb = getSupabase()
 
-    // Generate unique agent ID
-    const agentId = `agent_${createHash('sha256').update(publicKey).digest('hex').slice(0, 16)}`;
-    
-    // Generate API key
-    const apiKey = `moltos_sk_${randomBytes(32).toString('hex')}`;
-    const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
+    // Derive agent ID from public key
+    const agentId = `agent_${createHash('sha256').update(publicKey).digest('hex').slice(0, 16)}`
 
-    // Check for genesis token
-    const genesisToken = request.headers.get('x-genesis-token');
-    const isGenesis = genesisToken === process.env.GENESIS_TOKEN;
-    
-    // Check if agent already exists
-    const { data: existing } = await getSupabase()
+    // Check already registered
+    const { data: existing } = await sb
       .from('agent_registry')
       .select('agent_id')
       .eq('agent_id', agentId)
-      .single();
+      .maybeSingle()
 
     if (existing) {
-      const response = NextResponse.json(
+      return applySecurityHeaders(NextResponse.json(
         { error: 'Agent already registered', code: 'ALREADY_REGISTERED' },
         { status: 409 }
-      );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return applySecurityHeaders(response);
+      ))
     }
 
-    // Set activation status
-    const activationStatus = isGenesis ? 'active' : 'pending';
-    const initialReputation = isGenesis ? 10000 : 0;
-    const tier = isGenesis ? 'Diamond' : 'Bronze';
+    // Generate API key
+    const apiKey = `moltos_sk_${randomBytes(32).toString('hex')}`
+    const apiKeyHash = createHash('sha256').update(apiKey).digest('hex')
 
-    const { error } = await getSupabase()
-      .from('agent_registry')
-      .insert({
-        agent_id: agentId,
-        name: name.slice(0, MAX_NAME_LENGTH),
-        public_key: publicKey,
-        api_key_hash: apiKeyHash,
-        reputation: initialReputation,
-        tier: tier,
-        status: 'active',
-        activation_status: activationStatus,
-        vouch_count: 0,
-        is_genesis: isGenesis,
-        staked_reputation: 0,
-        activated_at: isGenesis ? new Date().toISOString() : null,
-        metadata: typeof metadata === 'object' ? metadata : {},
-        created_at: new Date().toISOString(),
-        owner_email: body.email?.trim() || null,
-        referral_code: `ref_${Date.now().toString(36)}${Math.random().toString(36).slice(2,6)}`,
-        referred_by: referral_code?.trim() || null,
-      });
+    // Genesis token check
+    const genesisToken = request.headers.get('x-genesis-token')
+    const isGenesis = genesisToken === process.env.GENESIS_TOKEN
 
-    if (error) {
-      console.error('Registration error:', error);
-      const response = NextResponse.json(
-        { error: 'Failed to register agent', code: 'DB_ERROR' },
+    const { error: insertErr } = await sb.from('agent_registry').insert({
+      agent_id: agentId,
+      name,
+      public_key: publicKey,
+      api_key_hash: apiKeyHash,
+      reputation: isGenesis ? 10000 : 0,
+      tier: isGenesis ? 'Diamond' : 'Bronze',
+      status: 'active',
+      activation_status: isGenesis ? 'active' : 'pending',
+      vouch_count: 0,
+      is_genesis: isGenesis,
+      staked_reputation: 0,
+      activated_at: isGenesis ? new Date().toISOString() : null,
+      metadata,
+      created_at: new Date().toISOString(),
+      owner_email: email || null,
+      referral_code: `ref_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      referred_by: referral_code || null,
+    })
+
+    if (insertErr) {
+      console.error('[register] DB insert error:', insertErr.message)
+      return applySecurityHeaders(NextResponse.json(
+        { error: 'Failed to register agent', code: 'DB_ERROR', detail: insertErr.message },
         { status: 500 }
-      );
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return applySecurityHeaders(response);
+      ))
     }
 
-    // Seed bootstrap tasks + write guide/quickstart to agent's ClawFS
-    await seedOnboarding(agentId);
+    // Seed bootstrap tasks (non-fatal)
+    try { await seedOnboarding(agentId) } catch {}
 
-    const response = NextResponse.json({
+    return applySecurityHeaders(NextResponse.json({
       success: true,
       agent: {
         agentId,
         name,
-        reputation: initialReputation,
-        tier: tier,
+        reputation: isGenesis ? 10000 : 0,
+        tier: isGenesis ? 'Diamond' : 'Bronze',
         status: 'active',
-        activationStatus: activationStatus,
-        isGenesis: isGenesis,
+        activationStatus: isGenesis ? 'active' : 'pending',
+        isGenesis,
         createdAt: new Date().toISOString(),
       },
       credentials: {
-        apiKey, // Only shown once!
-        baseUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://moltos.org',
+        apiKey,
+        baseUrl: 'https://moltos.org',
       },
       onboarding: ONBOARDING_PAYLOAD,
-      message: isGenesis 
-        ? 'Genesis agent registered with full privileges.' 
-        : 'Agent registered. Pending activation - requires 2 vouches from active agents.',
-    }, { status: 201 });
-    
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
-    return applySecurityHeaders(response);
+      message: isGenesis
+        ? 'Genesis agent registered with full privileges.'
+        : 'Agent registered. Pending activation — requires 2 vouches from active agents.',
+    }, { status: 201 }))
 
-  } catch (error: any) {
-    console.error('Registration error:', error);
-    const response = NextResponse.json(
-      { error: error.message || 'Server error', code: 'SERVER_ERROR' },
+  } catch (err: any) {
+    console.error('[register] unexpected error:', err?.message)
+    return applySecurityHeaders(NextResponse.json(
+      { error: err?.message || 'Server error', code: 'SERVER_ERROR' },
       { status: 500 }
-    );
-    Object.entries(rateLimitHeaders || {}).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    return applySecurityHeaders(response);
+    ))
   }
 }
-
