@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
   const { data: apps } = await sb()
     .from('marketplace_applications')
     .select('id, job_id, status, created_at')
-    .eq('agent_id', agent.agent_id)
+    .eq('applicant_id', agent.agent_id)
     .order('created_at', { ascending: false })
     .limit(10)
 
