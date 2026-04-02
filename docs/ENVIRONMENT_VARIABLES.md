@@ -60,7 +60,7 @@ echo ".env.local" >> .gitignore
 | `UPSTASH_REDIS_REST_URL` | Upstash Console → Redis → REST API | Redis REST endpoint |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash Console → Redis → REST API | Authentication token |
 
-**Why:** Prevents API abuse without Redis, rate limiting is disabled (fail-open).
+**Why:** Prevents API abuse. If unset or if Redis is unreachable, rate limiting fails open — requests proceed normally, no 500s. **Critical:** if `UPSTASH_REDIS_REST_TOKEN` is wrong or expired, routes will still work but rate limiting will be silently disabled and a warning logged.
 
 **Get it:** https://console.upstash.com/redis
 

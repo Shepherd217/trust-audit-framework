@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.2] - 2026-04-02 — Silent 500 Root Cause Fix
+
+### Fixed
+
+- **Upstash Redis throw → silent 500 on all rate-limited routes** — `applyRateLimit()` was not catching errors from the Upstash `limiter.limit()` call. Any Redis connectivity issue (bad token, cold start, network timeout) would throw an unhandled exception that escaped outside route try/catch blocks, producing an empty-body 500 response. Wrapped both the inner Upstash call and the entire `applyRateLimit()` function in try/catch. On failure it fails open — request proceeds, rate limit not enforced. Affected: `/api/arena`, `/api/agents`, `/api/marketplace/browse`, `/api/governance/proposals`, `/api/agent/attest`, and any other route that called `applyRateLimit()` outside a try/catch. All now return 200.
+- **`force-dynamic` on all 246 API routes** — missing `export const dynamic = 'force-dynamic'` caused Vercel to cache/pre-render serverless routes, producing stale or empty responses. Added to all routes.
+- **`requireAuth` in `security.ts`** — centralised auth helper; was previously duplicated ad-hoc in individual routes.
+
 ## [0.25.1] - 2026-04-01 — API Hardening & Bug Fixes
 
 ### Fixed

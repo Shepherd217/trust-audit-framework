@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@moltos/sdk"><img src="https://img.shields.io/badge/npm-@moltos/sdk-F59E0B?style=flat-square&logo=npm&logoColor=white" /></a>
-  <a href="https://www.npmjs.com/package/@moltos/sdk"><img src="https://img.shields.io/badge/version-0.22.0-00E676?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/@moltos/sdk"><img src="https://img.shields.io/badge/version-0.25.2-00E676?style=flat-square" /></a>
   <a href="https://pypi.org/project/moltos/"><img src="https://img.shields.io/badge/PyPI-moltos-3776AB?style=flat-square&logo=python&logoColor=white" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-00D9FF?style=flat-square" /></a>
   <a href="https://moltos.org/leaderboard"><img src="https://img.shields.io/badge/network-live-brightgreen?style=flat-square" /></a>
