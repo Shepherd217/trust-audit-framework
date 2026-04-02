@@ -27,33 +27,51 @@ interface RouteParams { params: Promise<{ id: string }> }
 
 export async function POST(req: NextRequest, { params }: RouteParams) {
   const { id: dao_id } = await params
-  const { response: rl, headers: rlh } = await applyRateLimit(req, '/api/dao/join')
-  if (rl) return rl
+  const _rl = await applyRateLimit(req, '/api/dao/join')
+  if (_rl.response) return _rl.response
 
-  const fail = (msg: string, status = 400) => {
-    const r = NextResponse.json({ error: msg }, { status })
-    Object.entries(rlh).forEach(([k, v]) => r.headers.set(k, v))
-    return applySecurityHeaders(r)
+  const fail = (msg: string, status = 400) =>
+    applySecurityHeaders(NextResponse.json({ error: msg }, { status }))
+
+  // Auth: accept X-API-Key header (preferred) OR legacy agent_id + agent_token in body
+  const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
+
+  let body: any = {}
+  try {
+    const text = await req.text()
+    if (text.trim()) body = JSON.parse(text)
+  } catch { return fail('Invalid JSON') }
+
+  let agent: any = null
+
+  if (apiKey) {
+    // Preferred: API key header
+    const keyHash = createHash('sha256').update(apiKey).digest('hex')
+    const { data } = await sb()
+      .from('agent_registry')
+      .select('agent_id, name, reputation, tier, is_suspended')
+      .eq('api_key_hash', keyHash)
+      .maybeSingle()
+    if (!data) return fail('Invalid API key', 401)
+    agent = data
+  } else {
+    // Legacy: agent_id + agent_token in body
+    const { agent_id, agent_token } = body
+    if (!agent_id || !agent_token) {
+      return fail('Authentication required. Send X-API-Key header, or provide agent_id + agent_token in body.', 401)
+    }
+    const { data } = await sb()
+      .from('agent_registry')
+      .select('agent_id, name, reputation, tier, api_key_hash, is_suspended')
+      .eq('agent_id', agent_id)
+      .maybeSingle()
+    if (!data) return fail('Agent not found', 404)
+    const tokenHash = createHash('sha256').update(agent_token).digest('hex')
+    if (data.api_key_hash !== tokenHash) return fail('Invalid agent token', 401)
+    agent = data
   }
 
-  let body: any
-  try { body = await req.json() } catch { return fail('Invalid JSON') }
-
-  const { agent_id, agent_token } = body
-  if (!agent_id || !agent_token) return fail('agent_id and agent_token required')
-
-  // Verify agent
-  const { data: agent } = await sb()
-    .from('agent_registry')
-    .select('agent_id, name, reputation, tier, api_key_hash, is_suspended')
-    .eq('agent_id', agent_id)
-    .maybeSingle()
-
-  if (!agent) return fail('Agent not found', 404)
   if (agent.is_suspended) return fail('Account suspended', 403)
-
-  const tokenHash = createHash('sha256').update(agent_token).digest('hex')
-  if (agent.api_key_hash !== tokenHash) return fail('Invalid agent token', 401)
 
   // Min MOLT to join
   if ((agent.reputation || 0) < 10) {
@@ -140,6 +158,5 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     message: `Welcome to ${dao.name}. Your governance weight: ${governance_weight}.`,
   }, { status: 201 })
 
-  Object.entries(rlh).forEach(([k, v]) => r.headers.set(k, v))
   return applySecurityHeaders(r)
 }
