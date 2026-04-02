@@ -140,14 +140,9 @@ async function testResearchAnalyst() {
 
   step('Take ClawFS snapshot (session persistence)')
   const snapHash = createHash('sha256').update(agentId).digest('hex')
-  const snapSign = clawSign({ path: '/snapshot', content_hash: snapHash })
-  const snap = await api('POST', '/api/clawfs/snapshot', {
-    agent_id: agentId, public_key: pubHex,
-    signature: snapSign.signature, challenge: snapSign.challenge,
-    timestamp: snapSign.timestamp, content_hash: snapHash
-  })
+  const snap = await api('POST', '/api/clawfs/snapshot', { label: 'research-session' }, apiKey)
   snap.status === 200 || snap.status === 201
-    ? ok('State snapshotted', `Merkle root: ${snap.data.snapshot?.merkle_root?.slice(0,20)}...`)
+    ? ok('State snapshotted', `Merkle root: ${snap.data.merkle_root?.slice(0,20)}...`)
     : fail('Snapshot failed', JSON.stringify(snap.data))
 
   step('Simulate kill test — verify state persists after snapshot')
@@ -255,12 +250,7 @@ async function testGPUProvider() {
     : fail('Output write failed', JSON.stringify(outputWrite.data))
 
   step('Snapshot state after job completion')
-  const snapHash = createHash('sha256').update(`${agentId}-post-job`).digest('hex')
-  const { signature: sSig, challenge: sCh, timestamp: sTs } = clawSign({ path: '/snapshot', content_hash: snapHash })
-  const snap = await api('POST', '/api/clawfs/snapshot', {
-    agent_id: agentId, public_key: pubHex,
-    signature: sSig, challenge: sCh, timestamp: sTs, content_hash: snapHash
-  })
+  const snap = await api('POST', '/api/clawfs/snapshot', { label: 'post-job' }, apiKey)
   snap.status === 200 || snap.status === 201
     ? ok('Post-job state snapshotted — node can resume after restart') : warn('Snapshot skipped')
 
@@ -443,14 +433,13 @@ async function testOrchestrator() {
   }
 
   step('Register webhook for passive job dispatch (set and forget)')
-  const webhook = await api('POST', '/api/webhook-agent/register', {
-    endpoint_url: `https://orchestrator-${agentId.slice(-8)}.example.com/dispatch`,
-    capabilities: ['orchestration', 'research', 'coordination'],
-    min_budget: 200
+  const webhook = await api('POST', '/api/webhooks/subscribe', {
+    url: `https://orchestrator-${agentId.slice(-8)}.example.com/dispatch`,
+    events: ['job.hired', 'payment.received', 'arbitra.opened'],
   }, apiKey)
   webhook.status === 200 || webhook.status === 201
-    ? ok(`Webhook registered`, `Secret: ${webhook.data.webhook_secret?.slice(0,12)}...`)
-    : fail('Webhook registration failed')
+    ? ok(`Webhook registered`, `Secret: ${webhook.data.secret?.slice(0,12)}...`)
+    : fail('Webhook registration failed', JSON.stringify(webhook.data))
 
   step('Check earnings and activity')
   const earnings = await api('GET', '/api/agent/earnings', undefined, apiKey)
@@ -460,12 +449,7 @@ async function testOrchestrator() {
   activity.status === 200 ? ok('Activity log accessible') : warn('Activity endpoint issue')
 
   step('Final snapshot — full orchestrator state persisted')
-  const finalHash = createHash('sha256').update(`${agentId}-final`).digest('hex')
-  const { signature: fSig, challenge: fCh, timestamp: fTs } = clawSign({ path: '/snapshot', content_hash: finalHash })
-  const finalSnap = await api('POST', '/api/clawfs/snapshot', {
-    agent_id: agentId, public_key: pubHex,
-    signature: fSig, challenge: fCh, timestamp: fTs, content_hash: finalHash
-  })
+  const finalSnap = await api('POST', '/api/clawfs/snapshot', { label: 'orchestrator-final' }, apiKey)
   finalSnap.status === 200 || finalSnap.status === 201
     ? ok('Full orchestrator state snapshotted — survives any restart') : warn('Final snapshot skipped')
 

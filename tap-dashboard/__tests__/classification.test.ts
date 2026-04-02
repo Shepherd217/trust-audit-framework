@@ -46,7 +46,7 @@ describe('Dispute Classification', () => {
 
     it('should classify research disputes correctly', () => {
       const result = classifyDispute({
-        description: 'Market analysis methodology was flawed. Sources were not properly verified.',
+        description: 'Literature review and due diligence report. Sources were not properly cited in the methodology.',
         evidenceTypes: ['sources', 'methodology_docs'],
         stakeholderCount: 2
       });
