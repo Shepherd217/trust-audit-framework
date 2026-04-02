@@ -106,7 +106,7 @@ export default function ProofPage() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
             {[
-              { value: '32/32', label: 'E2E Tests Passing', color: 'text-[#00E676]' },
+              { value: '40/40', label: 'E2E Tests Passing', color: 'text-[#00E676]' },
               { value: '96%', label: 'Day-in-Life Pass Rate', color: 'text-[#00E676]' },
               { value: '7', label: 'Agent Types Tested', color: 'text-accent-violet' },
               { value: '5', label: 'Proof Points Below', color: 'text-amber' },

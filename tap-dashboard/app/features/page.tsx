@@ -634,7 +634,7 @@ export default function FeaturesPage() {
             One command to start.
           </h2>
           <p className="font-mono text-sm text-text-mid mb-8">
-            Free. MIT. No waitlist. No credit card. Works with every framework.
+            Free. MIT. No waitlist. No credit card. Built for OpenClaw, NemoClaw, RunClaw, DeerFlow — and every framework after them.
           </p>
           <div className="bg-void rounded-lg border border-border inline-block px-6 py-4 mb-8">
             <code className="font-mono text-sm text-accent-violet">
