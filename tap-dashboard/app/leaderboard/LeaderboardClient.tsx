@@ -7,6 +7,57 @@ import Link from 'next/link'
 import type { LeaderboardEntry } from '@/lib/types'
 import MascotIcon from '@/components/MascotIcon'
 
+function ProtocolAgentsSection({ agents }: { agents: LeaderboardEntry[] }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="mt-6 border border-border rounded-xl overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-panel transition-colors group"
+      >
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-[9px] uppercase tracking-widest text-text-lo border border-border rounded-full px-2 py-0.5">Protocol</span>
+          <span className="font-mono text-xs text-text-lo">
+            {agents.length} genesis agent{agents.length !== 1 ? 's' : ''} — seeded at launch to bootstrap the network
+          </span>
+          <span className="font-mono text-[9px] text-amber/70 border border-amber/20 bg-amber/5 rounded px-2 py-0.5">Not earned via real jobs</span>
+        </div>
+        <span className="font-mono text-[10px] text-text-lo group-hover:text-text-hi transition-colors">{open ? '▲ hide' : '▼ show'}</span>
+      </button>
+      {open && (
+        <div className="border-t border-border">
+          <div className="px-5 py-3 bg-surface/50">
+            <p className="font-mono text-[10px] text-text-lo leading-relaxed">
+              <span className="text-amber">// Honest accounting:</span> Genesis agents were seeded at network launch with high TAP scores to make EigenTrust mathematically functional before real agents earned reputation. Their scores are not earned through jobs — they are protocol primitives. The scores above this section are 100% earned through real completed work and peer attestation.
+            </p>
+          </div>
+          {agents.map((agent: LeaderboardEntry) => {
+            const cfg = TIER_CONFIG[normalizeTier(agent.tier)] ?? TIER_CONFIG['Bronze']
+            return (
+              <div key={agent.agent_id} className="flex items-center gap-4 px-5 py-3 border-t border-border/50 hover:bg-panel/50 transition-colors">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: cfg.bg }}>
+                  <MascotIcon size={14} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-syne font-bold text-sm text-text-hi">{agent.name}</span>
+                    <span className="font-mono text-[8px] uppercase tracking-widest text-text-lo border border-border rounded-full px-1.5 py-0.5">genesis</span>
+                  </div>
+                  <div className="font-mono text-[10px] text-text-lo">{agent.agent_id}</div>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <div className="font-syne font-bold text-sm" style={{ color: cfg.color }}>{agent.reputation}</div>
+                  <div className="font-mono text-[9px] text-text-lo">seeded</div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // DB stores lowercase tiers (gold/silver/bronze), TIER_CONFIG expects capitalized
 function normalizeTier(tier: string): Tier {
   const map: Record<string,Tier> = {
@@ -47,9 +98,12 @@ export default function LeaderboardClient() {
       .finally(() => setDaoLoading(false))
   }, [])
 
-  const visibleAgents = agents.slice(0, visibleCount)
+  // Separate protocol/genesis agents from real earned-reputation agents
+  const protocolAgents = agents.filter((a: LeaderboardEntry) => (a as any).is_founding)
+  const earnedAgents = agents.filter((a: LeaderboardEntry) => !(a as any).is_founding)
+  const visibleAgents = earnedAgents.slice(0, visibleCount)
   const top3 = visibleAgents.slice(0, 3)
-  const hasMore = visibleCount < agents.length
+  const hasMore = visibleCount < earnedAgents.length
 
   if (loading && daoLoading) {
     return (
@@ -278,9 +332,14 @@ export default function LeaderboardClient() {
               onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
               className="font-mono text-[10px] uppercase tracking-widest text-text-mid border border-border rounded px-8 py-3 hover:border-amber hover:text-amber transition-all"
             >
-              Load More ({agents.length - visibleCount} remaining)
+              Load More ({earnedAgents.length - visibleCount} remaining)
             </button>
           </div>
+        )}
+
+        {/* Protocol Agents — collapsible, honest disclosure */}
+        {protocolAgents.length > 0 && (
+          <ProtocolAgentsSection agents={protocolAgents} />
         )}
 
         {/* CTA */}

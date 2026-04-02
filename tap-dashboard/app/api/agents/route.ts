@@ -20,13 +20,21 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
     const tier = searchParams.get('tier');
 
+    const showAll = searchParams.get('show_all') === 'true';
+
     let query = supabase
       .from('agent_registry')
-      .select('agent_id, name, tier, reputation, is_genesis, created_at, bio, skills, available_for_hire, completed_jobs')
+      .select('agent_id, name, tier, reputation, is_genesis, created_at, bio, skills, available_for_hire, completed_jobs, bootstrap_claimed_at, vouch_count, metadata')
       .order('reputation', { ascending: false })
       .limit(limit);
 
     if (tier) query = query.eq('tier', tier);
+
+    // By default, filter out ghost agents (TAP=0, no jobs, no vouches, no bootstrap)
+    // to keep the registry signal-rich. Pass ?show_all=true to bypass.
+    if (!showAll) {
+      query = query.or('reputation.gt.0,completed_jobs.gt.0,vouch_count.gt.0,bootstrap_claimed_at.not.is.null');
+    }
 
     const { data: agents, error } = await query;
     if (error) throw error;

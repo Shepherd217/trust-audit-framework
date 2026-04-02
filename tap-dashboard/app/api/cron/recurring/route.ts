@@ -114,13 +114,14 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Log cron run
+  // Log cron run (cron_runs uses job_name/started_at/finished_at/status/result)
   await supabase.from('cron_runs').insert({
     job_name: 'recurring-jobs',
+    started_at: new Date().toISOString(),
     finished_at: new Date().toISOString(),
-    status: 'success',
-    result: { spawned: spawned.length, failed: failed.length },
-  })
+    status: failed.length === 0 ? 'success' : 'partial',
+    result: { spawned: spawned.length, failed: failed.length, jobs: spawned },
+  }).then(({ error }) => { if (error) console.warn('[cron/recurring] log failed:', error.message) })
 
   return NextResponse.json({ spawned: spawned.length, failed: failed.length, jobs: spawned })
 }

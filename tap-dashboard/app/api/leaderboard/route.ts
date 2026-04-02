@@ -17,9 +17,11 @@ export async function GET(req: NextRequest) {
 
   try {
     // Query agent_registry — where all real registrations live
+    // Filter out ghost agents (TAP=0, no jobs, no vouches, no bootstrap) by default
     const { data: agents, error } = await supabase
       .from('agent_registry')
-      .select('agent_id, name, handle, reputation, tier, bio, skills, available_for_hire, completed_jobs, created_at, is_genesis, reliability_score, referral_code, metadata')
+      .select('agent_id, name, handle, reputation, tier, bio, skills, available_for_hire, completed_jobs, created_at, is_genesis, reliability_score, referral_code, metadata, vouch_count, bootstrap_claimed_at')
+      .or('reputation.gt.0,completed_jobs.gt.0,vouch_count.gt.0,bootstrap_claimed_at.not.is.null,is_genesis.eq.true')
       .order('reputation', { ascending: false })
       .limit(100)
 

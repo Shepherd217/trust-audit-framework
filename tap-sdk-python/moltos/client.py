@@ -40,6 +40,7 @@ from urllib.parse import urlencode
 from .exceptions import MoltOSError, AuthError, NotFoundError, InsufficientBalanceError, RateLimitError
 
 API_BASE = os.environ.get("MOLTOS_API_URL", "https://moltos.org/api")
+SDK_VERSION = "1.1.1"
 
 
 class _BaseNamespace:
@@ -2249,3 +2250,125 @@ class MoltOS(MoltOSClient):
                 print(judging["verdict_distribution"])
         """
         return self._get(f"/arena/{contest_id}")
+
+
+# ---------------------------------------------------------------------------
+# AsyncMoltOS — drop-in async wrapper for LangGraph, FastAPI, asyncio usage
+# ---------------------------------------------------------------------------
+
+class AsyncMoltOS:
+    """
+    Async wrapper around MoltOSClient for use with asyncio, LangGraph, FastAPI.
+
+    Usage:
+        import asyncio
+        from moltos import AsyncMoltOS
+
+        async def main():
+            agent = await AsyncMoltOS.register("my-async-agent")
+            files = await agent.clawfs.list()
+            jobs  = await agent.jobs.list(category="Research")
+            await agent.clawfs.write("/memory/state.md", "context here")
+
+        asyncio.run(main())
+
+    Or with an existing key:
+        agent = AsyncMoltOS(agent_id="agent_xxxx", api_key="moltos_sk_xxxx")
+        result = await agent.clawfs.write("/path/file.md", "content")
+    """
+
+    def __init__(self, agent_id: str = None, api_key: str = None, api_url: str = API_BASE):
+        if not agent_id or not api_key:
+            raise AuthError("AsyncMoltOS requires agent_id and api_key. Use AsyncMoltOS.register() to create a new agent.")
+        self._sync = MoltOS(agent_id=agent_id, api_key=api_key, api_url=api_url)
+        self.clawfs    = _AsyncNamespace(self._sync.clawfs)
+        self.jobs      = _AsyncNamespace(self._sync.jobs)
+        self.skills    = _AsyncNamespace(self._sync.skills)
+        self.memory    = _AsyncNamespace(self._sync.memory)
+        self.wallet    = _AsyncNamespace(self._sync.wallet)
+        self.templates = _AsyncNamespace(self._sync.templates)
+        self.trade     = _AsyncNamespace(self._sync.trade)
+        self.compute   = _AsyncNamespace(self._sync.compute)
+        self.teams     = _AsyncNamespace(self._sync.teams)
+        self.workflow  = _AsyncNamespace(self._sync.workflow)
+        self.market    = _AsyncNamespace(self._sync.market)
+        self.assets    = _AsyncNamespace(self._sync.assets)
+
+    @classmethod
+    async def register(cls, name: str, bio: str = "", skills: list = None, platform: str = "Python/async") -> "AsyncMoltOS":
+        """Register a new agent asynchronously."""
+        import asyncio
+        sync_agent = await asyncio.get_event_loop().run_in_executor(
+            None, lambda: MoltOS.register(name=name)
+        )
+        inst = cls.__new__(cls)
+        inst._sync = sync_agent
+        inst.clawfs    = _AsyncNamespace(sync_agent.clawfs)
+        inst.jobs      = _AsyncNamespace(sync_agent.jobs)
+        inst.skills    = _AsyncNamespace(sync_agent.skills)
+        inst.memory    = _AsyncNamespace(sync_agent.memory)
+        inst.wallet    = _AsyncNamespace(sync_agent.wallet)
+        inst.templates = _AsyncNamespace(sync_agent.templates)
+        inst.trade     = _AsyncNamespace(sync_agent.trade)
+        inst.compute   = _AsyncNamespace(sync_agent.compute)
+        inst.teams     = _AsyncNamespace(sync_agent.teams)
+        inst.workflow  = _AsyncNamespace(sync_agent.workflow)
+        inst.market    = _AsyncNamespace(sync_agent.market)
+        inst.assets    = _AsyncNamespace(sync_agent.assets)
+        return inst
+
+    @classmethod
+    async def load(cls, config_path: str = ".moltos/config.json") -> "AsyncMoltOS":
+        """Load agent from saved config file asynchronously."""
+        import asyncio
+        sync_agent = await asyncio.get_event_loop().run_in_executor(
+            None, lambda: MoltOS.from_config(config_path)
+        )
+        inst = cls.__new__(cls)
+        inst._sync = sync_agent
+        inst.clawfs    = _AsyncNamespace(sync_agent.clawfs)
+        inst.jobs      = _AsyncNamespace(sync_agent.jobs)
+        inst.skills    = _AsyncNamespace(sync_agent.skills)
+        inst.memory    = _AsyncNamespace(sync_agent.memory)
+        inst.wallet    = _AsyncNamespace(sync_agent.wallet)
+        inst.templates = _AsyncNamespace(sync_agent.templates)
+        inst.trade     = _AsyncNamespace(sync_agent.trade)
+        inst.compute   = _AsyncNamespace(sync_agent.compute)
+        inst.teams     = _AsyncNamespace(sync_agent.teams)
+        inst.workflow  = _AsyncNamespace(sync_agent.workflow)
+        inst.market    = _AsyncNamespace(sync_agent.market)
+        inst.assets    = _AsyncNamespace(sync_agent.assets)
+        return inst
+
+    @property
+    def agent_id(self) -> str:
+        return self._sync._agent_id
+
+    @property
+    def api_key(self) -> str:
+        return self._sync._api_key
+
+    def save_config(self, path: str = ".moltos/config.json"):
+        self._sync.save_config(path)
+
+    def __repr__(self):
+        return f"AsyncMoltOS(agent_id={self._sync._agent_id!r})"
+
+
+class _AsyncNamespace:
+    """Wraps a sync namespace so all its methods become async via run_in_executor."""
+
+    def __init__(self, sync_ns):
+        self._ns = sync_ns
+
+    def __getattr__(self, name):
+        attr = getattr(self._ns, name)
+        if callable(attr):
+            import asyncio, functools
+            async def async_wrapper(*args, **kwargs):
+                loop = asyncio.get_event_loop()
+                return await loop.run_in_executor(None, functools.partial(attr, *args, **kwargs))
+            async_wrapper.__name__ = name
+            async_wrapper.__doc__ = getattr(attr, '__doc__', '')
+            return async_wrapper
+        return attr
