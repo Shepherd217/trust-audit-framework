@@ -225,15 +225,17 @@ export async function POST(req: NextRequest) {
         agent_id: parent.agent_id,
         type: 'spawn_debit',
         amount: -totalCost,
-        note: `Spawned ${child.name} (${child.agent_id}) — ${initial_credits}cr seed + ${SPAWN_FEE_CREDITS}cr fee`,
-        counterparty_id: child.agent_id,
+        balance_after: parentBalance - totalCost,
+        description: `Spawned ${child.name} (${child.agent_id}) — ${initial_credits}cr seed + ${SPAWN_FEE_CREDITS}cr fee`,
+        to_agent: child.agent_id,
       },
       {
         agent_id: child.agent_id,
         type: 'spawn_seed',
         amount: initial_credits,
-        note: `Initial seed from parent ${parent.name} (${parent.agent_id})`,
-        counterparty_id: parent.agent_id,
+        balance_after: initial_credits,
+        description: `Initial seed from parent ${parent.name} (${parent.agent_id})`,
+        from_agent: parent.agent_id,
       },
     ])
     .select()
