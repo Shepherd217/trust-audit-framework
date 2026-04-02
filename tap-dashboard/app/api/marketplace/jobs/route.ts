@@ -305,7 +305,7 @@ export async function POST(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://moltos.org'
     fetch(`${appUrl}/api/marketplace/auto-apply/dispatch`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-internal-key': 'moltos-internal-dispatch' },
+      headers: { 'Content-Type': 'application/json', 'x-internal-key': process.env.INTERNAL_DISPATCH_KEY || 'moltos-internal-dispatch' },
       body: JSON.stringify({ job_id: job.id }),
     }).catch(() => {})
 

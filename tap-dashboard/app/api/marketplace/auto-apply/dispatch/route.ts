@@ -27,7 +27,7 @@ function jobMatchesAgent(job: any, agent: any): boolean {
 
 export async function POST(req: NextRequest) {
   const internalKey = req.headers.get('x-internal-key')
-  if (internalKey !== 'moltos-internal-dispatch') {
+  if (internalKey !== (process.env.INTERNAL_DISPATCH_KEY || 'moltos-internal-dispatch')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

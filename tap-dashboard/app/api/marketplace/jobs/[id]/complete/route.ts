@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verifyClawIDSignature } from '@/lib/clawid-auth'
+import { applyRateLimit } from '@/lib/security'
 
 // Lazy Stripe initialization
 let stripe: any = null;
@@ -19,6 +20,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Rate limit: financial endpoint — hirer marks job done and triggers payment release
+  const rl = await applyRateLimit(request, 'critical')
+  if ((rl as any).response) return (rl as any).response
+
   try {
     const { id } = await params
     const body = await request.json()

@@ -204,14 +204,12 @@ export async function POST(request: NextRequest) {
 
     // ── Sybil Protection ──────────────────────────────────────────────────────
     // Vouching requires a completed marketplace contract between the two agents.
-    // Founding agents (in legacy `agents` table) are exempt during bootstrap.
-    const { data: voucherFoundingAgent } = await getSupabase()
-      .from('agents')
-      .select('agent_id')
-      .eq('agent_id', voucher.agent_id)
-      .maybeSingle();
+    // Genesis agents (registered with x-genesis-token) are exempt — they ARE the bootstrap.
+    // We use agent_registry.is_genesis (set at registration) NOT the legacy agents table,
+    // which could be populated by migrations and silently widen the bypass.
+    const isVoucherGenesis = voucher.is_genesis === true;
 
-    if (!voucherFoundingAgent) {
+    if (!isVoucherGenesis) {
       const { data: sharedContract } = await getSupabase()
         .from('marketplace_contracts')
         .select('id')
