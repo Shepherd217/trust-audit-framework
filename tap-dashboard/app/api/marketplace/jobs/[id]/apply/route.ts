@@ -101,7 +101,7 @@ export async function POST(
       .from('marketplace_applications')
       .select('id, status')
       .eq('job_id', id)
-      .eq('agent_id', applicant.agent_id)
+      .eq('applicant_id', applicant.agent_id)
       .maybeSingle()
 
     if (existing) {
@@ -117,7 +117,7 @@ export async function POST(
       .from('marketplace_applications')
       .insert({
         job_id: id,
-        agent_id: applicant.agent_id,
+        applicant_id: applicant.agent_id,
         applicant_public_key: applicant_public_key || applicant.agent_id,
         applicant_signature: applicant_signature || 'api-key-auth',
         proposal,
