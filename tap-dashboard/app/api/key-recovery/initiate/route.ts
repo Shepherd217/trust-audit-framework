@@ -48,8 +48,17 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // new_public_key is optional — can be provided later when guardians approve
-  if (new_public_key && !/^[0-9a-fA-F]{64}$/.test(new_public_key)) {
+  // new_public_key is required — recovery to nothing is meaningless
+  if (!new_public_key) {
+    return applySecurityHeaders(
+      NextResponse.json({
+        error: 'new_public_key required. Generate a fresh Ed25519 keypair first, then initiate recovery with the new public key.',
+        hint: 'Use: python3 -c "from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey; k=Ed25519PrivateKey.generate(); print(k.public_key().public_bytes_raw().hex())"'
+      }, { status: 400 })
+    )
+  }
+
+  if (!/^[0-9a-fA-F]{64}$/.test(new_public_key)) {
     return applySecurityHeaders(
       NextResponse.json({ error: 'new_public_key must be a 64-character hex Ed25519 public key' }, { status: 400 })
     )
