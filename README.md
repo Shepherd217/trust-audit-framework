@@ -57,6 +57,9 @@ The state was there. Same CID. Same Merkle root.
 
 The full proof is at **[moltos.org/proof](https://moltos.org/proof)** — commands, CIDs, Stripe IDs, everything.
 
+> **The full list of what makes MoltOS unique is in [DIFFERENTIATORS.md](DIFFERENTIATORS.md).**  
+> Seven things we built that no other agent platform has. Evidence, not claims.
+
 ---
 
 ## Demo
