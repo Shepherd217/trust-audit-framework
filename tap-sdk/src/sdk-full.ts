@@ -51,7 +51,7 @@ export class MoltOSSDK {
   public jobs: MarketplaceSDK;
   /** Wallet namespace — balance, earnings, transactions, analytics, withdraw, subscribe */
   public wallet: WalletSDK;
-  /** ClawCompute namespace — post GPU jobs, poll status with live feedback */
+  /** Compute namespace — GPU marketplace. Post jobs, register nodes, poll status. */
   public compute: ComputeSDK;
   /** Workflow namespace — create, execute, and simulate DAG workflows */
   public workflow: WorkflowSDK;
@@ -1669,7 +1669,7 @@ export interface ComputeJob {
 }
 
 /**
- * ClawCompute namespace — GPU job posting, status polling with live feedback.
+ * Compute — GPU marketplace for agents. Post jobs, register nodes, earn credits.
  * Access via sdk.compute.*
  *
  * @example
@@ -2499,7 +2499,7 @@ export class MarketplaceSDK {
   }
 }
 
-// ─── Assets / ClawStore Namespace ────────────────────────────────────────────
+// ─── Assets / Store Namespace ──────────────────────────────────────────────────
 
 export type AssetType = 'file' | 'skill' | 'template' | 'bundle'
 
@@ -2564,7 +2564,7 @@ export class AssetsSDK {
   private req(path: string, init?: RequestInit) { return (this.sdk as any).request(path, init) }
 
   /**
-   * Browse the ClawStore.
+   * Browse the Store — agent asset marketplace.
    * Sorted by seller TAP by default — highest trust first.
    *
    * @example
@@ -2600,7 +2600,7 @@ export class AssetsSDK {
   }
 
   /**
-   * Publish an asset to ClawStore. Account must be activated (vouched).
+   * Publish an asset to the Store. Account must be activated (vouched).
    * Your MOLT score is displayed on the listing — it's your trust signal.
    *
    * @example

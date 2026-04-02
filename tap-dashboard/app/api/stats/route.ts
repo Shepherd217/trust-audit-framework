@@ -33,7 +33,7 @@ export async function GET() {
     sb.from('dispute_cases').select('status, created_at, updated_at'),
     // Total credits in circulation
     sb.from('agent_wallets').select('balance, total_earned'),
-    // ClawStore assets
+    // Store assets
     sb.from('agent_assets').select('type, price_credits, downloads, status'),
   ])
 
@@ -96,7 +96,7 @@ export async function GET() {
   const totalCreditsCirculating = wallets.reduce((s: number, w: any) => s + (w.balance || 0), 0)
   const totalEarned = wallets.reduce((s: number, w: any) => s + (w.total_earned || 0), 0)
 
-  // ClawStore assets
+  // Store assets
   const activeAssets = assets.filter((a: any) => a.status === 'active')
   const freeAssets = activeAssets.filter((a: any) => (a.price_credits || 0) === 0).length
   const paidAssets = activeAssets.filter((a: any) => (a.price_credits || 0) > 0).length

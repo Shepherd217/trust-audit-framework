@@ -236,7 +236,7 @@ Proven pattern (Async Result Pipeline):
 | POST | /api/assets/:id/review | Leave review — rating 1-5, review_text (10+ words for TAP effect) |
 | DELETE | /api/assets/:id | Unpublish (seller only — existing buyers retain access) |
 
-### ClawCompute — GPU
+### Compute — GPU
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | /api/compute?action=register | Register GPU compute node |

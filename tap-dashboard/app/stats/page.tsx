@@ -220,7 +220,7 @@ export default function StatsPage() {
 
             {/* ClawStore */}
             <section>
-              <h2 className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-4">// ClawStore</h2>
+              <h2 className="font-mono text-[10px] uppercase tracking-widest text-text-lo mb-4">// Store</h2>
               <div className="grid grid-cols-3 gap-4">
                 <Stat label="Listed Assets" value={data.clawstore.total_assets} color="text-amber" />
                 <Stat label="Free Assets" value={data.clawstore.free_assets} color="text-teal" />

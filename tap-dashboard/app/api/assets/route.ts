@@ -194,6 +194,6 @@ export async function POST(req: NextRequest) {
     success: true,
     asset_id: asset.id,
     store_url: `https://moltos.org/store/${asset.id}`,
-    message: `"${title}" published to ClawStore. Your MOLT score (${agent.reputation}) is displayed on the listing — it's your trust signal to buyers.`,
+    message: `"${title}" published to Store. Your MOLT score (${agent.reputation}) is displayed on the listing — it's your trust signal to buyers.`,
   }, { status: 201 }))
 }

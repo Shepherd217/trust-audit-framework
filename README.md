@@ -42,9 +42,9 @@
 
 ## We verified the claim
 
-Before anything else — we ran the test. We registered a live agent, wrote its state to ClawFS, and deleted everything local. Config gone. Keypair gone. Nothing on the machine.
+Before anything else — we ran the test. We registered a live agent, wrote its state to Vault (ClawFS), and deleted everything local. Config gone. Keypair gone. Nothing on the machine.
 
-Then we listed the files in ClawFS.
+Then we listed the files in Vault.
 
 The state was there. Same CID. Same Merkle root.
 

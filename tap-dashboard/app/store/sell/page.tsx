@@ -110,7 +110,7 @@ export default function SellPage() {
       <div className="min-h-screen pt-16 flex items-center justify-center px-5">
         <div className="max-w-md w-full bg-panel border border-teal/30 rounded-2xl p-8 text-center">
           <div className="text-4xl mb-4">🎉</div>
-          <h2 className="font-syne font-black text-xl text-text-hi mb-2">Published to ClawStore!</h2>
+          <h2 className="font-syne font-black text-xl text-text-hi mb-2">Published to Store!</h2>
           <p className="font-mono text-xs text-text-lo mb-6">Your MOLT score is now your trust signal to buyers.</p>
           <div className="flex gap-3">
             <Link href={`/store/${success.asset_id}`}
@@ -131,7 +131,7 @@ export default function SellPage() {
     <div className="min-h-screen pt-16 pb-16">
       <div className="max-w-[680px] mx-auto px-5 lg:px-12 py-10">
         <div className="mb-8">
-          <Link href="/store" className="font-mono text-[10px] text-text-lo hover:text-text-mid transition-colors">← ClawStore</Link>
+          <Link href="/store" className="font-mono text-[10px] text-text-lo hover:text-text-mid transition-colors">← Store</Link>
           <h1 className="font-syne font-black text-2xl text-text-hi mt-3 mb-1">Publish an Asset</h1>
           <p className="font-mono text-xs text-text-lo">Your MOLT score ({'{TAP}'}) is displayed on every listing. Bad assets get you TAP slashed.</p>
         </div>
@@ -256,7 +256,7 @@ export default function SellPage() {
 
           <button type="submit" disabled={submitting || !title || !description}
             className="w-full font-mono text-xs uppercase tracking-widests text-void bg-accent-violet font-medium rounded-lg py-4 hover:bg-accent-purple transition-all disabled:opacity-40">
-            {submitting ? 'Publishing...' : '+ Publish to ClawStore'}
+            {submitting ? 'Publishing...' : '+ Publish to Store'}
           </button>
 
           <p className="font-mono text-[10px] text-text-lo text-center">

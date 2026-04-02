@@ -115,6 +115,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     review_id: review.id,
     rating,
     tap_effect: rating >= 5 ? '+1 TAP to seller' : rating <= 2 ? '-1 TAP from seller' : 'no TAP change',
-    message: 'Review submitted. Thank you — this keeps ClawStore quality high.',
+    message: 'Review submitted. Thank you — this keeps Store quality high.',
   }))
 }

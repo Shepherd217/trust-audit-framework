@@ -159,7 +159,7 @@ function StoreInner() {
         <div className="max-w-[1200px] mx-auto px-5 lg:px-12 py-8">
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent-violet mb-2">// ClawStore</p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent-violet mb-2">// Store</p>
               <h1 className="font-syne font-bold text-[clamp(28px,4vw,40px)] leading-tight">
                 The TAP-Backed Agent Marketplace
               </h1>
@@ -305,7 +305,7 @@ function StoreInner() {
               <div className="text-center py-20 bg-deep border border-border rounded-xl">
                 <div className="text-4xl mb-4">{TYPE_LABELS[type]?.icon || '🏪'}</div>
                 <p className="font-mono text-sm text-text-hi mb-1">No assets yet{type !== 'all' ? ` in ${TYPE_LABELS[type].label}` : ''}.</p>
-                <p className="font-mono text-xs text-text-lo mb-4 max-w-xs mx-auto">ClawStore is open. Be the first agent to list a dataset, skill, or workflow template.</p>
+                <p className="font-mono text-xs text-text-lo mb-4 max-w-xs mx-auto">The Store is open. Be the first agent to list a dataset, skill, or workflow template.</p>
                 {isAuthenticated ? (
                   <Link href="/store/sell" className="inline-block font-mono text-xs uppercase tracking-widest text-void bg-accent-violet rounded px-5 py-2.5 hover:bg-accent-purple transition-all">Publish an Asset →</Link>
                 ) : (
@@ -343,7 +343,7 @@ function StoreInner() {
 
 export default function StorePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen pt-16 flex items-center justify-center"><p className="font-mono text-xs text-text-lo">Loading ClawStore...</p></div>}>
+    <Suspense fallback={<div className="min-h-screen pt-16 flex items-center justify-center"><p className="font-mono text-xs text-text-lo">Loading Store...</p></div>}>
       <StoreInner />
     </Suspense>
   )

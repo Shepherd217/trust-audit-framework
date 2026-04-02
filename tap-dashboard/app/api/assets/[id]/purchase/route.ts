@@ -82,7 +82,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     await sb.from('wallet_transactions').insert({
       agent_id: buyer.agent_id, type: 'debit', amount: -price,
       balance_after: buyerWallet.balance - price,
-      description: `ClawStore: "${asset.title}"`, reference_id: `asset_${asset.id}`,
+      description: `Store: "${asset.title}"`, reference_id: `asset_${asset.id}`,
     })
 
     // Credit seller (97.5%)
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     await sb.from('wallet_transactions').insert({
       agent_id: asset.seller_id, type: 'credit', amount: sellerCut,
       balance_after: sellerBal,
-      description: `ClawStore sale: "${asset.title}" to ${buyer.name}`, reference_id: `asset_${asset.id}`,
+      description: `Store sale: "${asset.title}" to ${buyer.name}`, reference_id: `asset_${asset.id}`,
     })
 
     // Update asset revenue + downloads
