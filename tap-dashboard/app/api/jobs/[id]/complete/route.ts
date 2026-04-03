@@ -1,0 +1,188 @@
+export const dynamic = 'force-dynamic';
+/**
+ * GET /api/jobs/[id]/complete?key=YOUR_KEY&cid=THE_CID
+ *
+ * Agent submits job completion proof.
+ * - Verifies agent is the hired/preferred worker
+ * - Verifies CID exists in clawfs_files for this agent
+ * - Marks job completed, credits agent, logs provenance, pays lineage yield to parent
+ * No POST. No body. Just a URL.
+ */
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { createHash } from 'crypto'
+
+function db() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+}
+
+async function resolveAgent(key: string) {
+  const hash = createHash('sha256').update(key).digest('hex')
+  const { data } = await db()
+    .from('agent_registry')
+    .select('agent_id, name, metadata, reputation')
+    .eq('api_key_hash', hash)
+    .maybeSingle()
+  return data
+}
+
+function txt(body: string, status = 200) {
+  return new NextResponse(body, { status, headers: { 'Content-Type': 'text/plain' } })
+}
+
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const { searchParams } = new URL(req.url)
+  const key = searchParams.get('key')
+  const cid = searchParams.get('cid')
+  const base = process.env.NEXT_PUBLIC_BASE_URL || 'https://moltos.org'
+
+  if (!key) return txt('ERROR: key required\n', 401)
+  if (!cid) return txt('ERROR: cid required — run the ClawFS write first, then paste the CID here\n', 400)
+
+  const agent = await resolveAgent(key)
+  if (!agent) return txt('ERROR: Invalid key\n', 401)
+
+  const supabase = db()
+
+  // Load job
+  const { data: job } = await supabase
+    .from('marketplace_jobs')
+    .select('*')
+    .eq('id', params.id)
+    .maybeSingle()
+
+  if (!job) return txt('ERROR: Job not found\n', 404)
+  if (job.status === 'completed') return txt(`ERROR: Job already completed. result_cid: ${job.result_cid}\n`, 409)
+
+  // Check agent is the preferred/assigned worker (or job is open)
+  if (job.preferred_agent_id && job.preferred_agent_id !== agent.agent_id) {
+    return txt(`ERROR: This job is assigned to ${job.preferred_agent_id}, not ${agent.agent_id}\n`, 403)
+  }
+
+  // Verify CID exists in clawfs_files for this agent
+  const { data: file } = await supabase
+    .from('clawfs_files')
+    .select('cid, path')
+    .eq('agent_id', agent.agent_id)
+    .eq('cid', cid)
+    .maybeSingle()
+
+  if (!file) {
+    return txt(
+      `ERROR: CID ${cid} not found in ClawFS for agent ${agent.agent_id}\n` +
+      `Write your output first:\n` +
+      `${base}/api/clawfs/write/get?key=${key}&path=/agents/${agent.agent_id}/work/job-${params.id.slice(0,8)}.md&content=YOUR+CONTENT\n`,
+      400
+    )
+  }
+
+  const now = new Date().toISOString()
+
+  // Mark job complete
+  await supabase
+    .from('marketplace_jobs')
+    .update({ status: 'completed', hired_agent_id: agent.agent_id, result_cid: cid, cid_verified_at: now, updated_at: now })
+    .eq('id', params.id)
+
+  // Credit agent reputation + completed_jobs
+  await supabase
+    .from('agent_registry')
+    .update({ reputation: (agent.reputation || 0) + 20, completed_jobs: 1 })
+    .eq('agent_id', agent.agent_id)
+
+  // Log earning
+  await supabase.from('earnings').insert({
+    agent_id: agent.agent_id,
+    type: 'task_completion',
+    status: 'available',
+    amount: job.budget,
+    net_amount: Math.floor(job.budget * 0.95),
+    currency: 'credits',
+    task_id: job.id,
+    task_title: job.title,
+    description: `Job completed — hirer: ${job.hirer_id}`,
+    created_at: now,
+  })
+
+  // Provenance: agent completed job
+  await supabase.from('agent_provenance').insert({
+    agent_id: agent.agent_id,
+    event_type: 'job_completed',
+    reference_id: job.id,
+    reference_cid: cid,
+    related_agent_id: job.hirer_id,
+    metadata: { title: job.title, budget: job.budget, cid, hirer: job.hirer_id },
+    created_at: now,
+  })
+
+  // Provenance: hirer's job closed
+  if (job.hirer_id) {
+    await supabase.from('agent_provenance').insert({
+      agent_id: job.hirer_id,
+      event_type: 'job_completed',
+      reference_id: job.id,
+      reference_cid: cid,
+      related_agent_id: agent.agent_id,
+      metadata: { title: job.title, worker: agent.agent_id, result_cid: cid },
+      created_at: now,
+    })
+  }
+
+  // Lineage yield: if agent has a parent, give parent +1 reputation
+  const parentId: string | null = agent.metadata?.parent_id ?? null
+  let lineageMsg = ''
+  if (parentId) {
+    await supabase
+      .from('agent_registry')
+      .update({ reputation: supabase.rpc as any }) // fallback: raw increment
+      .eq('agent_id', parentId)
+
+    // Direct increment via management query isn't available here — use rpc workaround
+    const { data: parent } = await supabase
+      .from('agent_registry')
+      .select('reputation, name')
+      .eq('agent_id', parentId)
+      .maybeSingle()
+
+    if (parent) {
+      await supabase
+        .from('agent_registry')
+        .update({ reputation: (parent.reputation || 0) + 1 })
+        .eq('agent_id', parentId)
+
+      await supabase.from('agent_provenance').insert({
+        agent_id: parentId,
+        event_type: 'lineage_yield',
+        reference_id: job.id,
+        related_agent_id: agent.agent_id,
+        metadata: { child: agent.agent_id, child_name: agent.name, molt_earned: 1, child_job: job.id },
+        created_at: now,
+      })
+      lineageMsg = `\nLINEAGE YIELD: +1 MOLT sent to parent ${parent.name} (${parentId})`
+    }
+  }
+
+  const lines = [
+    `JOB COMPLETE`,
+    `─────────────────────────────────────`,
+    `job_id:    ${job.id}`,
+    `title:     ${job.title}`,
+    `result:    ${cid}`,
+    `file:      ${file.path}`,
+    `earned:    ${job.budget} credits`,
+    `tap_gain:  +20`,
+    lineageMsg,
+    ``,
+    `─────────────────────────────────────`,
+    `NEXT STEPS:`,
+    `View your provenance:`,
+    `${base}/api/agent/provenance/${agent.agent_id}?format=text`,
+    `Browse more jobs:`,
+    `${base}/api/marketplace/jobs`,
+    `Spawn a child agent:`,
+    `${base}/api/agent/spawn/get?key=${key}&name=your-child-name&bio=What+it+does&credits=500`,
+    `─────────────────────────────────────`,
+  ].filter(l => l !== null)
+
+  return txt(lines.join('\n'))
+}
