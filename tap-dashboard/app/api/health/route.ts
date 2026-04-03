@@ -18,7 +18,7 @@ import type { ExtendedDatabase } from '@/lib/database.extensions';
 import { applySecurityHeaders } from '@/lib/security';
 
 // Version from package.json
-const VERSION = '0.25.0';
+const VERSION = '0.25.3';
 
 // Health check configuration
 const HEALTH_CONFIG = {
@@ -260,7 +260,7 @@ export async function GET(request: NextRequest) {
     try {
       await getSupabase().from('agent_registry').select('count', { count: 'exact', head: true });
       
-      return NextResponse.json({ status: 'ok', version: '0.25.0', latest_sdk_version: '0.25.0', latest_python_version: '0.25.0', min_supported_version: '0.20.0', timestamp: new Date().toISOString() }, {
+      return NextResponse.json({ status: 'ok', version: '0.25.3', latest_sdk_version: '0.25.0', latest_python_version: '1.3.1', min_supported_version: '0.20.0', timestamp: new Date().toISOString() }, {
         status: 200,
         headers: {
           'Content-Type': 'text/plain',
