@@ -1,179 +1,152 @@
-export const dynamic = 'force-dynamic';
-/**
- * GET /api/scheduler/tick
- *
- * Called by Vercel cron every 5 minutes.
- * Processes all active agent_schedules that are due to run.
- *
- * For each due schedule:
- *   1. Fetch agent's ClawBus inbox (pending job.assigned messages)
- *   2. For each unread job.assigned — call /api/jobs/[id]/view
- *   3. Mark ClawBus message as read
- *   4. Update schedule: last_run_at, next_run_at, run_count
- *
- * Protected by CRON_SECRET (Vercel sets Authorization: Bearer <secret>).
- * Also accepts ?secret=... for manual testing.
- *
- * Logs each tick to cron_runs table.
- */
-
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://moltos.org'
-const CRON_SECRET = process.env.CRON_SECRET || ''
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
-function db() {
-  return createClient(SUPA_URL, SUPA_KEY)
-}
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://moltos.xyz'
 
-function json(data: unknown, status = 200) {
-  return NextResponse.json(data, { status })
-}
-
-/** Fetch pending job.assigned messages for an agent via internal DB query (no HTTP round-trip) */
-async function getPendingJobMessages(agentId: string) {
-  const { data, error } = await db()
-    .from('clawbus_messages')
-    .select('message_id, from_agent, payload, created_at')
-    .eq('to_agent', agentId)
-    .eq('message_type', 'job.assigned')
-    .eq('status', 'pending')
-    .order('created_at', { ascending: true })
-    .limit(10)
-
-  if (error) throw new Error(`inbox query failed: ${error.message}`)
-  return data ?? []
-}
-
-/** Mark a ClawBus message as read */
-async function markRead(messageId: string) {
-  await db()
-    .from('clawbus_messages')
-    .update({ status: 'read', read_at: new Date().toISOString() })
-    .eq('message_id', messageId)
-}
-
-/** Call /api/jobs/[id]/view to trigger any side effects & confirm agent sees the job */
-async function viewJob(jobId: string, apiKey: string): Promise<string> {
-  try {
-    const url = `${BASE_URL}/api/jobs/${jobId}/view?key=${encodeURIComponent(apiKey)}`
-    const res = await fetch(url, { method: 'GET' })
-    const text = await res.text()
-    return text.slice(0, 500) // cap output
-  } catch (e) {
-    return `fetch error: ${String(e)}`
-  }
-}
-
+// Vercel cron calls this every 5 minutes
+// Also callable manually with Authorization: Bearer <CRON_SECRET>
 export async function GET(req: NextRequest) {
   // Auth check
-  const authHeader = req.headers.get('authorization') || ''
-  const secretParam = new URL(req.url).searchParams.get('secret') || ''
-  const provided = authHeader.replace(/^Bearer\s+/i, '') || secretParam
-
-  // Only enforce if CRON_SECRET is configured
-  if (CRON_SECRET && provided !== CRON_SECRET) {
-    return json({ error: 'Unauthorized' }, 401)
+  const authHeader = req.headers.get('authorization')
+  const cronSecret = process.env.CRON_SECRET
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    // Vercel cron sends this automatically — also allow internal calls without secret (Vercel sets x-vercel-cron)
+    const isVercelCron = req.headers.get('x-vercel-cron') === '1'
+    if (!isVercelCron) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
   }
 
-  const started = new Date().toISOString()
-  const results: Array<{
-    schedule_id: string
-    agent_id: string
-    messages_found: number
-    jobs_viewed: string[]
-    error?: string
-  }> = []
+  const runId = crypto.randomUUID()
+  const startedAt = new Date().toISOString()
 
-  let runError: string | undefined
+  // Log start
+  await supabase.from('cron_runs').insert({
+    id: runId,
+    job_name: 'scheduler_tick',
+    started_at: startedAt,
+    status: 'running',
+  })
+
+  const results: Record<string, unknown>[] = []
+  let processed = 0
+  let errors = 0
 
   try {
     // Fetch all due schedules
-    const { data: schedules, error: schedErr } = await db()
+    const { data: schedules, error: fetchErr } = await supabase
       .from('agent_schedules')
-      .select('id, agent_id, api_key, schedule_type, interval_minutes, run_count')
+      .select('*')
       .eq('is_active', true)
       .lte('next_run_at', new Date().toISOString())
-      .order('next_run_at', { ascending: true })
-      .limit(50)
 
-    if (schedErr) throw new Error(`schedules query: ${schedErr.message}`)
+    if (fetchErr) throw fetchErr
 
-    for (const sched of (schedules ?? [])) {
-      const result: typeof results[0] = {
-        schedule_id: sched.id,
-        agent_id: sched.agent_id,
-        messages_found: 0,
-        jobs_viewed: [],
-      }
+    for (const schedule of schedules ?? []) {
+      const result = await runSchedule(schedule)
+      results.push({ agent_id: schedule.agent_id, ...result })
+      if (result.error) errors++
+      else processed++
 
-      try {
-        if (sched.schedule_type === 'poll_inbox' || sched.schedule_type === 'check_jobs') {
-          // Get pending job.assigned messages
-          const messages = await getPendingJobMessages(sched.agent_id)
-          result.messages_found = messages.length
-
-          for (const msg of messages) {
-            const payload = msg.payload as Record<string, unknown>
-            const jobId = payload?.job_id as string | undefined
-            if (!jobId) continue
-
-            // View the job (triggers any server-side side effects)
-            const viewResult = await viewJob(jobId, sched.api_key)
-            result.jobs_viewed.push(`${jobId}: ${viewResult.split('\n')[0]}`)
-
-            // Mark message read
-            await markRead(msg.message_id)
-          }
-        }
-
-        // Update schedule timing
-        const now = new Date()
-        const nextRun = new Date(now.getTime() + sched.interval_minutes * 60 * 1000)
-        await db()
-          .from('agent_schedules')
-          .update({
-            last_run_at: now.toISOString(),
-            next_run_at: nextRun.toISOString(),
-            run_count: (sched.run_count ?? 0) + 1,
-          })
-          .eq('id', sched.id)
-
-      } catch (e) {
-        result.error = String(e)
-      }
-
-      results.push(result)
+      // Update schedule timing
+      const nextRun = new Date(Date.now() + schedule.interval_minutes * 60 * 1000).toISOString()
+      await supabase
+        .from('agent_schedules')
+        .update({
+          last_run_at: new Date().toISOString(),
+          next_run_at: nextRun,
+          run_count: schedule.run_count + 1,
+        })
+        .eq('id', schedule.id)
     }
 
-  } catch (e) {
-    runError = String(e)
+    // Log completion
+    await supabase.from('cron_runs').update({
+      finished_at: new Date().toISOString(),
+      status: 'success',
+      result: { processed, errors, results },
+    }).eq('id', runId)
+
+    return NextResponse.json({ ok: true, processed, errors, results })
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    await supabase.from('cron_runs').update({
+      finished_at: new Date().toISOString(),
+      status: 'error',
+      error: msg,
+    }).eq('id', runId)
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 })
+  }
+}
+
+async function runSchedule(schedule: {
+  id: string
+  agent_id: string
+  api_key: string
+  schedule_type: string
+}) {
+  try {
+    if (schedule.schedule_type === 'poll_inbox') {
+      return await pollInbox(schedule.agent_id, schedule.api_key)
+    }
+    if (schedule.schedule_type === 'check_jobs') {
+      return await checkJobs(schedule.agent_id, schedule.api_key)
+    }
+    return { skipped: true, reason: `unknown schedule_type: ${schedule.schedule_type}` }
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
+}
+
+// Poll agent inbox for unread messages, auto-process job.assigned
+async function pollInbox(agentId: string, apiKey: string) {
+  const url = `${BASE_URL}/api/clawbus/inbox?auth=${encodeURIComponent(apiKey)}`
+  const res = await fetch(url)
+  if (!res.ok) {
+    const text = await res.text()
+    return { error: `inbox fetch failed: ${res.status} ${text}` }
   }
 
-  const finished = new Date().toISOString()
-  const totalJobs = results.reduce((sum, r) => sum + r.jobs_viewed.length, 0)
-  const summary = {
-    schedules_processed: results.length,
-    jobs_actioned: totalJobs,
-    results,
-    ...(runError ? { error: runError } : {}),
+  const data = await res.json()
+  const messages: Array<{
+    id: string
+    message_type: string
+    payload: Record<string, unknown>
+    status: string
+  }> = data.messages ?? []
+
+  const unread = messages.filter((m) => m.status === 'unread')
+  const acted: string[] = []
+
+  for (const msg of unread) {
+    if (msg.message_type === 'job.assigned') {
+      const jobId = msg.payload?.job_id as string | undefined
+      if (jobId) {
+        // Mark inbox read by viewing job details
+        await fetch(`${BASE_URL}/api/jobs/${jobId}/view?auth=${encodeURIComponent(apiKey)}`)
+        acted.push(`viewed job ${jobId}`)
+      }
+    }
   }
 
-  // Log to cron_runs
-  await db().from('cron_runs').insert({
-    job_name: 'scheduler.tick',
-    started_at: started,
-    finished_at: finished,
-    status: runError ? 'error' : 'success',
-    result: summary,
-    error: runError ?? null,
-  })
+  return { inbox_count: messages.length, unread: unread.length, acted }
+}
 
-  return json({
-    tick: started,
-    ...summary,
-  })
+// Check for assigned jobs and process them
+async function checkJobs(agentId: string, apiKey: string) {
+  // Fetch jobs assigned to this agent
+  const { data: jobs, error } = await supabase
+    .from('job_listings')
+    .select('id, title, status, assigned_to')
+    .eq('assigned_to', agentId)
+    .eq('status', 'in_progress')
+
+  if (error) return { error: error.message }
+
+  return { assigned_jobs: jobs?.length ?? 0, job_ids: jobs?.map((j) => j.id) }
 }
