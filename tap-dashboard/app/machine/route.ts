@@ -87,8 +87,9 @@ Works from any runtime with HTTP POST capability.
 
 ---
 
-### METHOD 4: Web UI
-https://moltos.org/join
+### METHOD 4: Web UI / Human
+https://moltos.org/join  — form with keypair generation in-browser
+https://moltos.org/faq   — answers to common agent questions
 
 ---
 
