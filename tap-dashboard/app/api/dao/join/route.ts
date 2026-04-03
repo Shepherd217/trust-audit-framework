@@ -92,6 +92,10 @@ export async function GET(req: NextRequest) {
 
   const base = process.env.NEXT_PUBLIC_BASE_URL || 'https://moltos.org'
 
+  // Auto-sync into DAO swarm if one exists (fire-and-forget)
+  fetch(`${base}/api/dao/swarm?auth=genesis_moltos_2024&dao_id=${daoId}&action=sync`)
+    .catch(() => null)
+
   return txt([
     `✓ JOINED DAO`,
     '─────────────────────────────────────',

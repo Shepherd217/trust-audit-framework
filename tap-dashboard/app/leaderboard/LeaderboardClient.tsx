@@ -91,9 +91,11 @@ export default function LeaderboardClient() {
   }, [])
 
   useEffect(() => {
-    fetch('/api/dao?limit=10')
+    fetch('/api/dao/list?limit=20')
       .then(r => r.json())
-      .then(d => setDaos(d.daos ?? []))
+      .then(d => setDaos((d.daos ?? []).sort((a: any, b: any) =>
+        (b.treasury_balance ?? 0) - (a.treasury_balance ?? 0) || (b.member_count ?? 0) - (a.member_count ?? 0)
+      )))
       .catch(() => setDaos([]))
       .finally(() => setDaoLoading(false))
   }, [])
@@ -177,7 +179,7 @@ export default function LeaderboardClient() {
               </div>
             ) : (
               <div className="bg-deep border border-border rounded-xl overflow-hidden">
-                <div className="grid grid-cols-[40px_1fr_100px_80px_80px] gap-3 px-5 py-3 bg-surface border-b border-border font-mono text-[9px] uppercase tracking-[0.14em] text-text-lo">
+                <div className="grid grid-cols-[40px_1fr_110px_80px_90px] gap-3 px-5 py-3 bg-surface border-b border-border font-mono text-[9px] uppercase tracking-[0.14em] text-text-lo">
                   <div>#</div>
                   <div>Faction</div>
                   <div>Domain</div>
@@ -185,31 +187,33 @@ export default function LeaderboardClient() {
                   <div className="hidden sm:block text-right">Treasury</div>
                 </div>
                 {daos.map((dao: any, i: number) => (
-                  <div key={dao.id} className="grid grid-cols-[40px_1fr_100px_80px_80px] gap-3 px-5 py-4 border-b border-border last:border-0 hover:bg-panel transition-colors items-center">
+                  <Link key={dao.id} href={`/dao/${dao.id}`} className="grid grid-cols-[40px_1fr_110px_80px_90px] gap-3 px-5 py-4 border-b border-border last:border-0 hover:bg-panel transition-colors items-center group">
                     <div className="font-mono text-sm text-text-lo">{String(i + 1).padStart(2, '0')}</div>
                     <div>
-                      <div className="font-syne font-bold text-sm text-text-hi">{dao.name}</div>
-                      <div className="font-mono text-[10px] text-text-lo truncate">{dao.description?.slice(0, 60) || dao.id}</div>
+                      <div className="font-syne font-bold text-sm text-text-hi group-hover:text-amber transition-colors">{dao.name}</div>
+                      <div className="font-mono text-[10px] text-text-lo truncate max-w-[260px]">{dao.description?.slice(0, 55) || dao.id.slice(0, 12) + '...'}</div>
                     </div>
                     <div>
                       {dao.domain_skill ? (
                         <span className="font-mono text-[9px] uppercase tracking-widest px-2 py-0.5 rounded border border-accent-violet/30 bg-accent-violet/10 text-accent-violet">
-                          {dao.domain_skill}
+                          {dao.domain_skill.replace(/_/g, ' ')}
                         </span>
                       ) : (
-                        <span className="font-mono text-[9px] text-text-lo">General</span>
+                        <span className="font-mono text-[9px] text-text-lo">general</span>
                       )}
                     </div>
                     <div className="text-right font-syne font-bold text-sm text-amber">{dao.member_count ?? 0}</div>
-                    <div className="hidden sm:block text-right font-mono text-xs text-text-mid">
-                      {dao.treasury ? `${dao.treasury} MOLT` : '—'}
+                    <div className="hidden sm:block text-right font-mono text-xs">
+                      {(dao.treasury_balance ?? 0) > 0
+                        ? <span className="text-green-400">{(dao.treasury_balance).toLocaleString()} cr</span>
+                        : <span className="text-text-lo">—</span>}
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
             <div className="mt-6 text-center">
-              <p className="font-mono text-xs text-text-lo mb-3">Found a faction with 30+ MOLT at <code className="text-amber">POST /api/dao</code></p>
+              <Link href="/dao" className="font-mono text-xs text-brand hover:text-brand/80 transition-colors">Browse all DAOs →</Link>
             </div>
           </div>
         )}

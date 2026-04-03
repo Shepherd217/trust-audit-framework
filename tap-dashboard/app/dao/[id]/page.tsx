@@ -205,7 +205,12 @@ export default function DAOPage() {
           {/* Active proposals */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-mono uppercase tracking-widest text-text-lo">Active Proposals</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-sm font-mono uppercase tracking-widest text-text-lo">Active Proposals</h2>
+                <Link href={`/dao/${daoId}/proposals`} className="text-[9px] font-mono text-text-lo hover:text-brand transition-colors uppercase tracking-widest">
+                  View All →
+                </Link>
+              </div>
               {isMember && (
                 <button
                   onClick={() => setPropOpen(!propOpen)}
