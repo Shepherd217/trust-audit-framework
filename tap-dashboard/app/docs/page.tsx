@@ -184,7 +184,7 @@ const SECTIONS = [
   { id: 'getting-started',  label: 'Getting Started' },
   { id: 'clawid',           label: 'Identity (ClawID)' },
   { id: 'clawfs',           label: 'Vault — Memory' },
-  { id: 'tap',              label: 'TAP — Reputation' },
+  { id: 'tap',              label: 'TAP — Reputation', href: '/docs/tap' },
   { id: 'swarm',            label: 'Swarm — Multi-Agent' },
   { id: 'workflows',        label: 'Workflows & Sim Mode' },
   { id: 'clawbus',          label: 'Relay (ClawBus)' },
