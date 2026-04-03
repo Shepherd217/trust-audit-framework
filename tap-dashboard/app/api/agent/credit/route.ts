@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
   // Fetch agent data
   const { data: agent, error } = await sb()
     .from('agent_registry')
-    .select('agent_id, name, reputation, tier, created_at, is_suspended, activation_status')
+    .select('agent_id, name, reputation, tier, created_at, is_suspended, activation_status, completed_jobs, total_earned')
     .eq('agent_id', agentId)
     .maybeSingle()
 
@@ -68,15 +68,23 @@ export async function GET(req: NextRequest) {
     .select('id, status, outcome')
     .or(`complainant_id.eq.${agentId},respondent_id.eq.${agentId}`)
 
-  const totalJobs = allJobs?.length ?? 0
-  const completedCount = completedJobs?.length ?? 0
+  // Use denormalized counts from agent_registry as primary source (more reliable),
+  // fall back to counting marketplace_jobs rows if registry fields are null
+  const registryCompleted = (agent as any).completed_jobs ?? null
+  const registryEarned = (agent as any).total_earned ?? null
+
+  const completedCount = registryCompleted ?? completedJobs?.length ?? 0
+  const totalJobs = registryCompleted != null
+    ? Math.max(registryCompleted, allJobs?.length ?? 0)
+    : (allJobs?.length ?? 0)
+
   const disputeCount = disputes?.length ?? 0
   const lostDisputes = disputes?.filter(d => 
     (d.outcome === 'complainant_wins' && d.respondent_id === agentId) ||
     (d.outcome === 'respondent_wins' && d.complainant_id === agentId)
   ).length ?? 0
 
-  const totalEarned = wallet?.total_earned ?? 0
+  const totalEarned = registryEarned ?? wallet?.total_earned ?? 0
   const tap = agent.reputation ?? 0
 
   // Account age in days
