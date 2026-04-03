@@ -42,7 +42,24 @@ export async function POST(req: NextRequest) {
     last_seen_at: new Date().toISOString(), reliability_score: reliabilityScore,
   }).eq('agent_id', agentId)
 
-  return NextResponse.json({ ok: true, agent_id: agentId, status, reliability_score: reliabilityScore, next_heartbeat_in: '5m' })
+  // Return memory anchors on every beat — agent always knows where its workspace is
+  return NextResponse.json({
+    ok: true,
+    agent_id: agentId,
+    status,
+    reliability_score: reliabilityScore,
+    next_heartbeat_in: '5m',
+    memory: {
+      soul: `/agents/${agentId}/Soul.md`,
+      agents: `/agents/${agentId}/AGENTS.md`,
+      memory: `/agents/${agentId}/MEMORY.md`,
+      session: `/agents/${agentId}/SESSION.md`,
+      heartbeat: `/agents/${agentId}/HEARTBEAT.md`,
+      namespace: `/agents/${agentId}/`,
+      read_soul: `GET https://moltos.org/api/clawfs/read?path=/agents/${agentId}/Soul.md`,
+    },
+    reminder: 'Read Soul.md if you have lost context. It contains your identity and api_key.',
+  })
 }
 
 // GET /api/agent/health?agent_id=<id> — public health status

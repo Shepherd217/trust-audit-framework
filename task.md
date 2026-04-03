@@ -1,26 +1,62 @@
-# Docs/SDK version consistency sweep
+# MoltOS Soul/Memory Upgrade — task.md
 
-## Ground truth
-- Platform version: 0.25.3 (CHANGELOG)
-- npm: @moltos/sdk@0.25.0 (published, latest)
-- PyPI: moltos==1.3.1 (published, latest) — Python SDK versioned independently
+## Research findings: What OpenClaw actually does
 
-## Files to fix
+OpenClaw has 8 auto-loaded workspace files at every boot:
+1. SOUL.md       — identity, values, persona, laws. FIRST read. Survives context compaction.
+2. AGENTS.md     — operating manual + mandatory boot checklist ("don't ask permission, just do it")
+3. HEARTBEAT.md  — cron schedule (what to do every N minutes/hours, terminates cleanly)
+4. USER.md       — model of the person/system the agent serves
+5. TOOLS.md      — what tools/skills the agent has
+6. IDENTITY.md   — self-image, supplemental to SOUL
+7. BOOTSTRAP.md  — one-time setup instructions
+8. MEMORY.md     — curated long-term memory (facts, preferences, decisions)
 
-| File | Problem | Fix |
-|---|---|---|
-| README.md | badge says 0.25.2, table says 0.22.0 | badge→0.25.0, table→correct versions |
-| MOLTOS_GUIDE.md | "pip install moltos (v0.25.0)" | → moltos==1.3.1 |
-| MOLTOS_GUIDE.md | footer says moltos==0.25.0 | → moltos==1.3.1 |
-| MOLTOS_GUIDE.md | §28 missing April 3 primitives | add §29 for swarm/credit/memory/schedules/streams |
-| docs/GETTING_STARTED.md | "v0.22.0" throughout | → 0.25.3 / correct SDKs |
-| docs/SDK_GUIDE.md | "v0.22.0" throughout | → 0.25.0 header + note about 1.3.1 Python |
-| tap-dashboard/app/api/health/route.ts | latest_python_version: '0.25.0' | → '1.3.1' |
-| tap-dashboard/app/features/page.tsx | missing April 3 features | add v1.3.1 section |
-| WHATS_NEW.md | npm section missing from v1.3.1 | add npm line |
+Plus rolling daily session logs: memory/YYYY-MM-DD.md
 
-## Done when
-- `pip install moltos` → 1.3.1 everywhere
-- `npm install @moltos/sdk` → 0.25.0 everywhere  
-- Platform described as 0.25.3 everywhere
-- April 3 features (swarm, credit rating, memory market, schedules, payment streams) in GUIDE + features page
+Key lessons from research:
+- SOUL.md = permanent identity anchor (NOT overwriteable by convention)
+- HEARTBEAT = cron that fires sessions on schedule → runs task → terminates (saves tokens)
+- MEMORY.md = APPEND only, never overwrite. Multiple reinforcement points needed.
+- Context compaction kills chat history but SOUL.md/AGENTS.md survive (re-injected from disk)
+- The 8 filenames are hardcoded — custom filenames never auto-loaded
+- Agents forget their name if SOUL.md fails to load
+
+## What MoltOS currently has vs needs
+
+### Currently seeded at registration:
+- Soul.md ✓ (credentials + boot ritual)
+- QUICKSTART.md ✓
+- MOLTOS_GUIDE.md ✓  
+- identity.json ✓
+
+### Missing but critical (from OpenClaw research):
+1. **AGENTS.md** — Operating manual. Mandatory boot checklist. "Don't ask permission, just do it."
+   - Contains: boot sequence, memory routing rules, heartbeat tasks
+2. **MEMORY.md** — Append-only long-term memory. Must have APPEND ONLY header.
+3. **HEARTBEAT.md** — The cron rhythm. What to do every 5min/1hr/24hr.
+   - MoltOS heartbeat endpoint exists but agents don't know WHAT to do in it
+4. **BOOTSTRAP.md** — One-time tasks checklist (currently scattered in QUICKSTART)
+
+### Heartbeat route needs upgrade:
+Current: just updates last_seen_at + reliability score
+Needs: return Soul.md path + memory namespace in response so agent has anchor on every beat
+
+### Registration response needs:
+- All 8 file paths listed in memory block
+- Direct read URLs for Soul.md and AGENTS.md
+- Boot sequence spelled out literally in response JSON
+
+## Plan
+
+### Change 1: onboarding.ts — add AGENTS.md, MEMORY.md, HEARTBEAT.md, BOOTSTRAP.md to seedClawFS
+### Change 2: heartbeat/route.ts — return soul + memory anchors in every heartbeat response
+### Change 3: register/route.ts — memory block lists all 8 files with read URLs
+### Change 4: Update Soul.md content — reference all 8 files, sharpen boot ritual
+
+## Status
+- [ ] onboarding.ts upgrade
+- [ ] heartbeat upgrade  
+- [ ] register response upgrade
+- [ ] push + deploy
+- [ ] update kimi's vault with new files
