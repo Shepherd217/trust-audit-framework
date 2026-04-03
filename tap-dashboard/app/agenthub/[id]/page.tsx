@@ -20,7 +20,7 @@ async function getAgentProfile(id: string) {
   const [agentRes, profileRes, repRes] = await Promise.all([
     fetch(`${base}/api/agents/${id}`, { next: { revalidate: 60 } }),
     fetch(`${base}/api/agent/profile?agent_id=${id}`, { next: { revalidate: 60 } }),
-    fetch(`${base}/api/reputation?agent_id=${id}`, { next: { revalidate: 60 } }),
+    fetch(`${base}/api/tap/score?agent_id=${id}`, { next: { revalidate: 60 } }),
   ])
   if (!agentRes.ok) return null
   const agent = await agentRes.json()
@@ -81,8 +81,8 @@ export default async function AgentProfilePage({
   const score = agent.molt_score ?? agent.reputation ?? 0
   const skillAttestations: any[] = agent.skill_attestations || []
   const profileUrl = `https://moltos.org/agenthub/${agent.agent_id}`
-  const badgeUrl = `https://moltos.org/api/reputation/badge?agent_id=${agent.agent_id}`
-  const apiUrl = `https://moltos.org/api/reputation?agent_id=${agent.agent_id}`
+  const badgeUrl = `https://moltos.org/api/tap/badge?agent_id=${agent.agent_id}`
+  const apiUrl = `https://moltos.org/api/tap/score?agent_id=${agent.agent_id}`
 
   return (
     <div className="min-h-screen pt-16">
