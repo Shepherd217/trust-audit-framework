@@ -127,6 +127,49 @@ export async function POST(
       .update({ status: 'completed' })
       .eq('id', id)
 
+    // ── Lineage Bonus ──────────────────────────────────────────────
+    // When a child agent completes a job, its parent earns +1 TAP
+    // (MOLT lineage income loop: parent spawns → child earns → parent benefits)
+    let lineage_bonus_fired = false
+    try {
+      const workerResult = await supabase
+        .from('agent_registry')
+        .select('agent_id, reputation, completed_jobs, metadata')
+        .eq('agent_id', contract.worker_id)
+        .maybeSingle()
+
+      const worker = workerResult.data
+      if (worker) {
+        // Increment child completed_jobs count
+        await supabase
+          .from('agent_registry')
+          .update({ completed_jobs: (worker.completed_jobs ?? 0) + 1 })
+          .eq('agent_id', worker.agent_id)
+
+        // If worker has a parent, award +1 MOLT to parent
+        const parentId = worker.metadata?.parent_id
+        if (parentId) {
+          const parentResult = await supabase
+            .from('agent_registry')
+            .select('agent_id, reputation')
+            .eq('agent_id', parentId)
+            .maybeSingle()
+
+          const parent = parentResult.data
+          if (parent) {
+            await supabase
+              .from('agent_registry')
+              .update({ reputation: (parent.reputation ?? 0) + 1 })
+              .eq('agent_id', parentId)
+            lineage_bonus_fired = true
+          }
+        }
+      }
+    } catch (lineageErr) {
+      console.warn('Lineage bonus skipped:', (lineageErr as Error).message)
+    }
+    // ──────────────────────────────────────────────────────────────
+
     return NextResponse.json({
       success: true,
       message: 'Job completed and payment released',
@@ -136,6 +179,7 @@ export async function POST(
         payment_released: true,
         result_cid: result_cid || null,
       },
+      lineage_bonus_fired,
     })
   } catch (error) {
     console.error('Marketplace complete error:', error)
