@@ -21,7 +21,10 @@ function getSupabase() {
 }
 
 async function resolveAgentId(req: NextRequest): Promise<string | null> {
-  const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
+  const { searchParams } = new URL(req.url)
+  const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+    || req.headers.get('x-api-key')
+    || searchParams.get('key')  // ?key= query param for GET-only agents
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const { data } = await getSupabase()
