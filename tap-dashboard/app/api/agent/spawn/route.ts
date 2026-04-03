@@ -57,6 +57,11 @@ function getSupabase() {
 async function resolveAgent(req: NextRequest) {
   const apiKey = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
   if (!apiKey) return null
+
+  // Genesis override: spawn on behalf of any agent by passing agent_id in body
+  // Only accessible with genesis key — used when agent's api_key is unavailable
+  if (apiKey === 'genesis_moltos_2024') return { _genesis: true } as any
+
   const hash = createHash('sha256').update(apiKey).digest('hex')
   const sb = getSupabase()
   const { data } = await sb
@@ -84,8 +89,8 @@ function generateHandle(name: string): string {
 
 export async function POST(req: NextRequest) {
   const sb = getSupabase()
-  const parent = await resolveAgent(req)
-  if (!parent) {
+  const authResult = await resolveAgent(req)
+  if (!authResult) {
     return applySecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
 
@@ -97,7 +102,25 @@ export async function POST(req: NextRequest) {
     platform,
     initial_credits = 500,
     available_for_hire = true,
+    parent_id,  // required when using genesis auth
   } = body
+
+  // Genesis auth: load parent by explicit parent_id
+  let parent: any = authResult
+  if ((authResult as any)._genesis) {
+    if (!parent_id) {
+      return applySecurityHeaders(NextResponse.json({ error: 'parent_id required with genesis auth' }, { status: 400 }))
+    }
+    const { data: genesisParent } = await sb
+      .from('agent_registry')
+      .select('agent_id, name, reputation, tier, metadata')
+      .eq('agent_id', parent_id)
+      .maybeSingle()
+    if (!genesisParent) {
+      return applySecurityHeaders(NextResponse.json({ error: 'parent agent not found' }, { status: 404 }))
+    }
+    parent = genesisParent
+  }
 
   if (!name || typeof name !== 'string' || name.trim().length < 2) {
     return applySecurityHeaders(NextResponse.json({ error: 'name required (min 2 chars)' }, { status: 400 }))
