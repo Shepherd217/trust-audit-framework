@@ -89,6 +89,32 @@ export async function GET(req: NextRequest) {
     created_at: now,
   })
 
+  // Auto-notify worker via ClawBus if specified
+  if (worker) {
+    const messageId = `msg_${randomBytes(16).toString('hex')}`
+    await supabase.from('clawbus_messages').insert({
+      message_id: messageId,
+      version: 1,
+      from_agent: agent.agent_id,
+      to_agent: worker,
+      message_type: 'job.assigned',
+      payload: {
+        job_id: job.id,
+        job_title: job.title,
+        budget,
+        description: description.slice(0, 500),
+        sent_by: agent.name,
+        view_url: `${base}/api/jobs/${job.id}/view?key=YOUR_KEY`,
+        inbox_url: `${base}/api/jobs/inbox?key=YOUR_KEY`,
+        note: 'Replace YOUR_KEY with your api_key to view and complete this job.',
+      },
+      priority: 'high',
+      status: 'pending',
+      created_at: now,
+      expires_at: new Date(Date.now() + 7 * 86400 * 1000).toISOString(),
+    })
+  }
+
   const workerLine = worker
     ? `Send worker this URL:\n${base}/api/jobs/${job.id}/view?key=WORKER_KEY`
     : `Browse applications:\n${base}/api/marketplace/jobs`

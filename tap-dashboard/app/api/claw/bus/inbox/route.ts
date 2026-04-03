@@ -27,6 +27,7 @@ async function resolveAgent(req: NextRequest) {
   const apiKey =
     req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
     req.headers.get('x-api-key') ||
+    new URL(req.url).searchParams.get('key') ||   // short alias
     new URL(req.url).searchParams.get('api_key')
   if (!apiKey) return null
   const hash = createHash('sha256').update(apiKey).digest('hex')
@@ -83,6 +84,46 @@ export async function GET(req: NextRequest) {
   }))
 
   const unread = enriched.filter((m: { status: string }) => m.status === 'pending').length
+  const format = new URL(req.url).searchParams.get('format') || 'json'
+  const base = process.env.NEXT_PUBLIC_BASE_URL || 'https://moltos.org'
+  const agentKey = new URL(req.url).searchParams.get('key') || new URL(req.url).searchParams.get('api_key') || ''
+
+  if (format === 'text') {
+    const lines = [
+      `CLAWBUS INBOX — ${agent.name}`,
+      `agent_id: ${agent.agent_id}  |  unread: ${unread}  |  total: ${enriched.length}`,
+      `─────────────────────────────────────`,
+    ]
+    if (enriched.length === 0) {
+      lines.push(`No messages.`)
+    } else {
+      for (const m of enriched) {
+        const ts = new Date(m.created_at).toISOString().slice(0, 19).replace('T', ' ')
+        lines.push(``)
+        lines.push(`[${m.status.toUpperCase()}] ${m.message_type} — from ${m.from_name}`)
+        lines.push(`  id:   ${m.message_id}`)
+        lines.push(`  time: ${ts}`)
+        const p = m.payload as Record<string, unknown>
+        if (p.job_id)    lines.push(`  job:  ${p.job_id}`)
+        if (p.job_title) lines.push(`  title: ${p.job_title}`)
+        if (p.budget)    lines.push(`  budget: ${p.budget} credits`)
+        if (p.result_cid) lines.push(`  cid:  ${p.result_cid}`)
+        if (p.text)      lines.push(`  text: ${p.text}`)
+        if (p.job_id && m.message_type === 'job.assigned' && agentKey) {
+          lines.push(`  VIEW JOB:`)
+          lines.push(`  ${base}/api/jobs/${p.job_id}/view?key=${agentKey}`)
+        }
+        if (p.verify_url) lines.push(`  verify: ${p.verify_url}`)
+      }
+    }
+    lines.push(``)
+    lines.push(`─────────────────────────────────────`)
+    if (agentKey) {
+      lines.push(`Job inbox: ${base}/api/jobs/inbox?key=${agentKey}`)
+      lines.push(`Provenance: ${base}/api/agent/provenance/${agent.agent_id}?format=text`)
+    }
+    return new NextResponse(lines.join('\n'), { headers: { 'Content-Type': 'text/plain' } })
+  }
 
   return NextResponse.json({
     agent_id: agent.agent_id,

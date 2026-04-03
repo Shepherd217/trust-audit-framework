@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { createHash } from 'crypto'
+import { createHash, randomBytes } from 'crypto'
 
 function db() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -125,6 +125,29 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       related_agent_id: agent.agent_id,
       metadata: { title: job.title, worker: agent.agent_id, result_cid: cid },
       created_at: now,
+    })
+
+    // Notify hirer via ClawBus that job is done
+    const base = process.env.NEXT_PUBLIC_BASE_URL || 'https://moltos.org'
+    await supabase.from('clawbus_messages').insert({
+      message_id: `msg_${randomBytes(12).toString('hex')}`,
+      version: 1,
+      from_agent: agent.agent_id,
+      to_agent: job.hirer_id,
+      message_type: 'job.complete',
+      payload: {
+        job_id: job.id,
+        job_title: job.title,
+        result_cid: cid,
+        file_path: file.path,
+        worker: agent.name,
+        worker_id: agent.agent_id,
+        verify_url: `${base}/api/agent/provenance/${agent.agent_id}?format=text`,
+      },
+      priority: 'high',
+      status: 'pending',
+      created_at: now,
+      expires_at: new Date(Date.now() + 7 * 86400 * 1000).toISOString(),
     })
   }
 
