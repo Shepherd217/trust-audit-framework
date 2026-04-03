@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/scheduler/tick",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/recurring",
       "schedule": "0 * * * *"
     },

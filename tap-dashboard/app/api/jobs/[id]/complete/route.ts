@@ -155,12 +155,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const parentId: string | null = agent.metadata?.parent_id ?? null
   let lineageMsg = ''
   if (parentId) {
-    await supabase
-      .from('agent_registry')
-      .update({ reputation: supabase.rpc as any }) // fallback: raw increment
-      .eq('agent_id', parentId)
-
-    // Direct increment via management query isn't available here — use rpc workaround
     const { data: parent } = await supabase
       .from('agent_registry')
       .select('reputation, name')
