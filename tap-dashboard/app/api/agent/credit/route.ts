@@ -2,15 +2,16 @@ export const dynamic = 'force-dynamic'
 /**
  * GET /api/agent/credit?agent_id=<id>
  *
- * Compute a creditworthiness score for an agent based on:
- * - TAP (EigenTrust reputation)
- * - Completed jobs / delivery rate
- * - Dispute rate
- * - Total earnings
- * - Account age
+ * Compute a creditworthiness score for an agent (0–850).
  *
- * No other agent network has this. Banks use FICO. We use TAP + delivery history.
- * Returns: { credit_score, risk_tier, factors }
+ * Formula v2 (April 3, 2026):
+ *   Base 400 + TAP(0-150) + Tier(0-100) + Delivery(0-150) + Jobs(0-40) + Earnings(0-75) + Age(0-35) - Disputes - Suspension
+ *
+ * Thresholds calibrated for network age:
+ *   PRIME ≥720 · STANDARD ≥600 · SUBPRIME ≥480 · HIGH_RISK <480
+ *
+ * v1 flaw: normalized TAP against 10000 (genesis cap), making earned APEX agents
+ * appear identical to new agents. Also weighted age too heavily for a young network.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -32,7 +33,6 @@ export async function GET(req: NextRequest) {
     return applySecurityHeaders(NextResponse.json({ error: 'agent_id required' }, { status: 400 }))
   }
 
-  // Fetch agent data
   const { data: agent, error } = await sb()
     .from('agent_registry')
     .select('agent_id, name, reputation, tier, created_at, is_suspended, activation_status, completed_jobs, total_earned')
@@ -43,14 +43,14 @@ export async function GET(req: NextRequest) {
     return applySecurityHeaders(NextResponse.json({ error: 'Agent not found' }, { status: 404 }))
   }
 
-  // Wallet data
+  // Wallet as fallback for earnings
   const { data: wallet } = await sb()
     .from('agent_wallets')
-    .select('balance, total_earned, total_spent')
+    .select('total_earned')
     .eq('agent_id', agentId)
     .maybeSingle()
 
-  // Job history
+  // Job history (fallback if registry denormalized fields are null)
   const { data: completedJobs } = await sb()
     .from('marketplace_jobs')
     .select('id')
@@ -65,66 +65,74 @@ export async function GET(req: NextRequest) {
   // Dispute history
   const { data: disputes } = await sb()
     .from('dispute_cases')
-    .select('id, status, outcome')
+    .select('id, outcome')
     .or(`complainant_id.eq.${agentId},respondent_id.eq.${agentId}`)
 
-  // Use denormalized counts from agent_registry as primary source (more reliable),
-  // fall back to counting marketplace_jobs rows if registry fields are null
-  const registryCompleted = (agent as any).completed_jobs ?? null
-  const registryEarned = (agent as any).total_earned ?? null
-
-  const completedCount = registryCompleted ?? completedJobs?.length ?? 0
-  const totalJobs = registryCompleted != null
-    ? Math.max(registryCompleted, allJobs?.length ?? 0)
+  // Use denormalized registry fields as primary source
+  const completedCount: number = (agent as any).completed_jobs ?? completedJobs?.length ?? 0
+  const totalJobs: number = (agent as any).completed_jobs != null
+    ? Math.max((agent as any).completed_jobs, allJobs?.length ?? 0)
     : (allJobs?.length ?? 0)
+  const totalEarned: number = (agent as any).total_earned ?? wallet?.total_earned ?? 0
+  const tap: number = agent.reputation ?? 0
 
   const disputeCount = disputes?.length ?? 0
-  const lostDisputes = disputes?.filter(d => 
+  const lostDisputes = disputes?.filter((d: any) =>
     (d.outcome === 'complainant_wins' && d.respondent_id === agentId) ||
     (d.outcome === 'respondent_wins' && d.complainant_id === agentId)
   ).length ?? 0
 
-  const totalEarned = registryEarned ?? wallet?.total_earned ?? 0
-  const tap = agent.reputation ?? 0
-
-  // Account age in days
   const ageMs = Date.now() - new Date(agent.created_at).getTime()
   const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24))
 
-  // === Credit Score Formula ===
-  // 0–850 scale (like FICO)
-  
-  // Component 1: TAP score (0–300 pts). TAP can be very high for genesis agents, cap at 10k
-  const tapNorm = Math.min(tap / 10000, 1)
-  const tapPts = Math.round(tapNorm * 300)
+  // ── Formula v2 ──────────────────────────────────────────────────────────────
 
-  // Component 2: Delivery rate (0–250 pts)
+  // Base score: every registered agent starts at 400
+  const base = 400
+
+  // TAP (0–150): normalize against 500 — earned APEX agents top ~200-300,
+  // genesis (10000) capped at 150. Prevents genesis from dominating.
+  const tapPts = Math.round(Math.min(tap / 500, 1) * 150)
+
+  // Tier bonus (0–100): reflects protocol-verified standing
+  const tierBonus: Record<string, number> = {
+    Diamond: 100, APEX: 100, Gold: 80, Silver: 55, Bronze: 30, Unranked: 0,
+  }
+  const tierPts = tierBonus[agent.tier ?? 'Unranked'] ?? 0
+
+  // Delivery rate (0–150)
   const deliveryRate = totalJobs > 0 ? completedCount / totalJobs : 0
-  const deliveryPts = Math.round(deliveryRate * 250)
+  const deliveryPts = Math.round(deliveryRate * 150)
 
-  // Component 3: Dispute rate penalty (0 = good, -150 max)
+  // Jobs volume bonus (0–40): logarithmic — rewards volume without over-weighting it
+  const jobsPts = completedCount > 0
+    ? Math.round(Math.log1p(completedCount) / Math.log1p(20) * 40)
+    : 0
+
+  // Earnings (0–75): 5000cr = max
+  const earnPts = Math.min(Math.round((totalEarned / 5000) * 75), 75)
+
+  // Age (0–35): 365-day max — very soft, young network shouldn't be penalized
+  const agePts = Math.min(Math.round((ageDays / 365) * 35), 35)
+
+  // Dispute penalty
   const disputeRate = totalJobs > 0 ? disputeCount / totalJobs : 0
   const lostDisputeRate = totalJobs > 0 ? lostDisputes / totalJobs : 0
   const disputePenalty = Math.round((disputeRate * 75) + (lostDisputeRate * 75))
 
-  // Component 4: Earnings history (0–150 pts). 5000cr = max
-  const earnPts = Math.min(Math.round((totalEarned / 5000) * 150), 150)
-
-  // Component 5: Account age (0–100 pts). 90 days = max
-  const agePts = Math.min(Math.round((ageDays / 90) * 100), 100)
-
-  // Component 6: Suspension penalty
+  // Suspension hard penalty
   const suspendPenalty = agent.is_suspended ? 200 : 0
 
-  const rawScore = tapPts + deliveryPts + earnPts + agePts - disputePenalty - suspendPenalty
+  const rawScore = base + tapPts + tierPts + deliveryPts + jobsPts + earnPts + agePts
+    - disputePenalty - suspendPenalty
   const creditScore = Math.max(300, Math.min(850, rawScore))
 
-  // Risk tier
+  // Thresholds calibrated for network age (April 2026)
   let riskTier: string
-  if (creditScore >= 750) riskTier = 'PRIME'
-  else if (creditScore >= 650) riskTier = 'STANDARD'
-  else if (creditScore >= 550) riskTier = 'SUBPRIME'
-  else riskTier = 'HIGH_RISK'
+  if (creditScore >= 720)      riskTier = 'PRIME'
+  else if (creditScore >= 600) riskTier = 'STANDARD'
+  else if (creditScore >= 480) riskTier = 'SUBPRIME'
+  else                         riskTier = 'HIGH_RISK'
 
   const response = {
     agent_id: agentId,
@@ -134,21 +142,26 @@ export async function GET(req: NextRequest) {
     factors: {
       tap_score: tap,
       tap_contribution: tapPts,
+      tier: agent.tier,
+      tier_contribution: tierPts,
       delivery_rate: totalJobs > 0 ? `${Math.round(deliveryRate * 100)}%` : 'N/A',
       delivery_contribution: deliveryPts,
+      completed_jobs: completedCount,
+      jobs_contribution: jobsPts,
       dispute_rate: totalJobs > 0 ? `${Math.round(disputeRate * 100)}%` : 'N/A',
       dispute_penalty: -disputePenalty,
       total_earned_credits: totalEarned,
       earnings_contribution: earnPts,
       account_age_days: ageDays,
       age_contribution: agePts,
+      formula_version: 'v2',
     },
-    interpretation: {
-      PRIME: 'Low default risk. Eligible for high-budget contracts and auto-approve.',
+    interpretation: ({
+      PRIME:    'Low default risk. Eligible for high-budget contracts and auto-approve.',
       STANDARD: 'Moderate risk. Standard escrow terms apply.',
       SUBPRIME: 'Elevated risk. Enhanced escrow or bond may be required.',
       HIGH_RISK: 'High default risk. Bonds required. Manual hire review.',
-    }[riskTier],
+    } as Record<string, string>)[riskTier],
   }
 
   return applySecurityHeaders(NextResponse.json(response))
