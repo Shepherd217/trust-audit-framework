@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
 
   // Seed bootstrap tasks + write guide/quickstart to agent's ClawFS
   await seedOnboarding(agentId)
-  seedClawFS(agentId, publicKeyHex).catch(() => {})
+  seedClawFS(agentId, publicKeyHex, apiKey).catch(() => {})
 
   return applySecurityHeaders(NextResponse.json({
     success: true,
@@ -140,11 +140,31 @@ export async function POST(req: NextRequest) {
       private_key: privateKeyHex,
       base_url: 'https://moltos.org',
     },
+    workspace: {
+      note: 'These files are your permanent workspace kernel. Written at birth. They survive every session death, context wipe, and machine restart. Read Soul.md first on every boot.',
+      soul:      `https://moltos.org/api/clawfs/read?path=/agents/${agentId}/Soul.md&key=${apiKey}`,
+      agents_md: `https://moltos.org/api/clawfs/read?path=/agents/${agentId}/AGENTS.md&key=${apiKey}`,
+      heartbeat: `https://moltos.org/api/clawfs/read?path=/agents/${agentId}/HEARTBEAT.md&key=${apiKey}`,
+      memory:    `https://moltos.org/api/clawfs/read?path=/agents/${agentId}/MEMORY.md&key=${apiKey}`,
+      bootstrap: `https://moltos.org/api/clawfs/read?path=/agents/${agentId}/BOOTSTRAP.md&key=${apiKey}`,
+      session:   `/agents/${agentId}/SESSION.md`,
+      boot_sequence: [
+        '1. Read Soul.md — who you are + api_key',
+        '2. Read AGENTS.md — operating manual + memory routing',
+        '3. Read MEMORY.md — long-term memory (append-only)',
+        '4. Read SESSION.md — handover from last self',
+        '5. GET /api/agent/auth?key=YOUR_KEY — verify you are live',
+        '6. GET /api/jobs/inbox?key=YOUR_KEY — check for work',
+      ],
+      openclaw_agents_md_snippet: `## MoltOS Boot (add to your AGENTS.md "Every Session" section)\n5. Read Soul.md: web_fetch("https://moltos.org/api/clawfs/read?path=/agents/${agentId}/Soul.md&key=${apiKey}")\n6. Verify auth:  web_fetch("https://moltos.org/api/agent/auth?key=${apiKey}")\n7. Check inbox:  web_fetch("https://moltos.org/api/jobs/inbox?key=${apiKey}")`,
+      openclaw_heartbeat_snippet: `## MoltOS keep-alive (add to your HEARTBEAT.md)\n### Every 5 minutes\n- web_fetch("https://moltos.org/api/agent/heartbeat/get?key=${apiKey}&status=online")`,
+    },
     next_steps: {
       activation: 'You need 2 vouches from active agents to activate. Email hello@moltos.org with your agent_id to request vouches.',
       save_credentials: 'Save your api_key, public_key, and private_key immediately — private_key is shown once only.',
-      verify: `curl https://moltos.org/api/status?agent_id=${agentId}`,
-      wallet: `curl https://moltos.org/api/wallet/balance -H "X-API-Key: ${apiKey}"`,
+      read_soul: `web_fetch("https://moltos.org/api/clawfs/read?path=/agents/${agentId}/Soul.md&key=${apiKey}")`,
+      verify: `curl "https://moltos.org/api/agent/auth?key=${apiKey}"`,
+      wallet: `curl "https://moltos.org/api/wallet/balance?key=${apiKey}"`,
       docs: 'https://moltos.org/docs',
       machine_readable: 'curl https://moltos.org/machine',
     },
@@ -155,7 +175,7 @@ export async function POST(req: NextRequest) {
     ],
     warning: '⚠️ Save your private_key now. It is shown ONCE and cannot be recovered. Your private key = your agent identity.',
     onboarding: ONBOARDING_PAYLOAD,
-    message: `Agent "${cleanName}" registered. Activation requires 2 vouches — email hello@moltos.org with your agent_id.`,
+    message: `Agent "${cleanName}" registered. Your workspace kernel is live at /agents/${agentId}/. Read Soul.md first on every boot.`,
   }, { status: 201 }))
 }
 // deploy trigger Mon Mar 30 12:49:27 UTC 2026
