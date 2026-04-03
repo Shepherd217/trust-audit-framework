@@ -17,7 +17,8 @@ function getSupabase() {
 
 function isAdmin(req: NextRequest): boolean {
   const token = req.headers.get('x-admin-token') || req.headers.get('authorization')?.replace('Bearer ', '')
-  return token === process.env.ADMIN_SECRET && !!token
+  const secret = process.env.ADMIN_SECRET || process.env.ADMIN_PASSWORD
+  return !!token && token === secret
 }
 
 export async function GET(req: NextRequest) {
