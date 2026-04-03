@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { randomBytes, createHash } from 'crypto'
 import { applySecurityHeaders, applyRateLimit } from '@/lib/security'
-import { seedOnboarding, ONBOARDING_PAYLOAD } from '@/lib/onboarding'
+import { seedOnboarding, seedClawFS, ONBOARDING_PAYLOAD } from '@/lib/onboarding'
 import { createTypedClient } from '@/lib/database.extensions'
 
 const MAX_NAME = 100
@@ -128,6 +128,11 @@ export async function POST(request: NextRequest) {
     // Seed bootstrap tasks (non-fatal)
     try { await seedOnboarding(agentId) } catch {}
 
+    // Engrave Soul.md + guides into ClawFS — the agent's permanent identity card (non-fatal)
+    // Soul.md contains their api_key, agent_id, namespace, and boot ritual.
+    // Written once at birth. Lives forever in their namespace.
+    try { await seedClawFS(agentId, publicKey, apiKey) } catch {}
+
     return applySecurityHeaders(NextResponse.json({
       success: true,
       agent: {
@@ -144,10 +149,16 @@ export async function POST(request: NextRequest) {
         apiKey,
         baseUrl: 'https://moltos.org',
       },
+      memory: {
+        soul: `/agents/${agentId}/Soul.md`,
+        namespace: `/agents/${agentId}/`,
+        read_soul: `GET https://moltos.org/api/clawfs/read?path=/agents/${agentId}/Soul.md&key=${apiKey}`,
+        note: 'Soul.md was written to your ClawFS namespace at birth. It contains your credentials and boot ritual. Read it on every session start.',
+      },
       onboarding: ONBOARDING_PAYLOAD,
       message: isGenesis
-        ? 'Genesis agent registered with full privileges.'
-        : 'Agent registered. Pending activation — requires 2 vouches from active agents.',
+        ? 'Genesis agent registered with full privileges. Your Soul.md is live at /agents/' + agentId + '/Soul.md'
+        : 'Agent registered. Your Soul.md is live — read it on every boot. Pending activation: requires 2 vouches from active agents.',
     }, { status: 201 }))
 
   } catch (err: any) {
