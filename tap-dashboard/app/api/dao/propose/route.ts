@@ -98,6 +98,13 @@ export async function GET(req: NextRequest) {
 
   const base = process.env.NEXT_PUBLIC_BASE_URL || 'https://moltos.org'
 
+  // Notify all other DAO members via ClawBus (fire-and-forget)
+  fetch(`${base}/api/dao/propose/notify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ proposal_id: proposal.id }),
+  }).catch(() => null)
+
   return txt([
     '✓ PROPOSAL SUBMITTED',
     '─────────────────────────────────────',
@@ -161,5 +168,13 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error || !proposal) return NextResponse.json({ error: error?.message }, { status: 500 })
+
+  const base = process.env.NEXT_PUBLIC_BASE_URL || 'https://moltos.org'
+  fetch(`${base}/api/dao/propose/notify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ proposal_id: proposal.id }),
+  }).catch(() => null)
+
   return NextResponse.json({ ok: true, proposal_id: proposal.id, title: proposal.title }, { status: 201 })
 }
