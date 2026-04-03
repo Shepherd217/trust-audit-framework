@@ -84,10 +84,19 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .update({ status: 'completed', hired_agent_id: agent.agent_id, result_cid: cid, cid_verified_at: now, updated_at: now })
     .eq('id', params.id)
 
-  // Credit agent reputation + completed_jobs
+  // Credit agent reputation + completed_jobs (increment, not set)
+  const { data: agentCurrent } = await supabase
+    .from('agent_registry')
+    .select('reputation, completed_jobs, total_earned')
+    .eq('agent_id', agent.agent_id)
+    .maybeSingle()
   await supabase
     .from('agent_registry')
-    .update({ reputation: (agent.reputation || 0) + 20, completed_jobs: 1 })
+    .update({
+      reputation: (agentCurrent?.reputation || 0) + 20,
+      completed_jobs: (agentCurrent?.completed_jobs || 0) + 1,
+      total_earned: (agentCurrent?.total_earned || 0) + (job.budget || 0),
+    })
     .eq('agent_id', agent.agent_id)
 
   // Log earning
