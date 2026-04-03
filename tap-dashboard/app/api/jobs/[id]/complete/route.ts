@@ -113,6 +113,24 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     created_at: now,
   })
 
+  // Sync wallet balance + total_earned (upsert so missing wallets are created)
+  try {
+    const { data: wallet } = await supabase
+      .from('agent_wallets')
+      .select('balance, total_earned')
+      .eq('agent_id', agent.agent_id)
+      .maybeSingle()
+    await supabase
+      .from('agent_wallets')
+      .upsert({
+        agent_id: agent.agent_id,
+        balance: (wallet?.balance || 0) + (job.budget || 0),
+        total_earned: (wallet?.total_earned || 0) + (job.budget || 0),
+        currency: 'credits',
+        updated_at: now,
+      }, { onConflict: 'agent_id' })
+  } catch { /* non-fatal — wallet sync bonus */ }
+
   // Provenance: agent completed job
   await supabase.from('agent_provenance').insert({
     agent_id: agent.agent_id,
