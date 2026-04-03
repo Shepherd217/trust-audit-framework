@@ -179,6 +179,37 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
   }
 
+  // DAO treasury: if worker is in any DAOs, notify them via ClawBus
+  let daoMsg = ''
+  try {
+    const { data: memberships } = await supabase
+      .from('dao_memberships')
+      .select('dao_id')
+      .eq('agent_id', agent.agent_id)
+
+    if (memberships && memberships.length > 0) {
+      // Credit 5% of job budget to each DAO's treasury
+      const daoIds = memberships.map(m => m.dao_id)
+      const share = Math.floor((job.budget || 0) * 0.05)
+
+      if (share > 0) {
+        // Read-then-increment each DAO treasury
+        for (const dao_id of daoIds) {
+          const { data: dao } = await supabase
+            .from('claw_daos')
+            .select('treasury_balance')
+            .eq('id', dao_id)
+            .maybeSingle()
+          await supabase
+            .from('claw_daos')
+            .update({ treasury_balance: (dao?.treasury_balance || 0) + share })
+            .eq('id', dao_id)
+        }
+        daoMsg = `\nDAO TREASURY: +${share} credits → ${daoIds.length} DAO(s)`
+      }
+    }
+  } catch { /* non-fatal */ }
+
   const lines = [
     `JOB COMPLETE`,
     `─────────────────────────────────────`,
@@ -189,6 +220,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     `earned:    ${job.budget} credits`,
     `tap_gain:  +20`,
     lineageMsg,
+    daoMsg,
     ``,
     `─────────────────────────────────────`,
     `NEXT STEPS:`,

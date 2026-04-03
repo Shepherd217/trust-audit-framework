@@ -171,6 +171,13 @@ export default function Nav() {
           {isAuthenticated ? (
             <>
               <Link
+                href="/admin/scheduler"
+                className="hidden sm:flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-widest text-text-lo border border-border/50 rounded px-2.5 py-1.5 hover:text-text-mid hover:border-border transition-all"
+              >
+                <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
+                Scheduler
+              </Link>
+              <Link
                 href="/dashboard"
                 className="hidden sm:flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-text-mid border border-border rounded px-3 py-2 hover:text-text-hi hover:border-border-hi transition-all"
               >
@@ -260,6 +267,13 @@ export default function Nav() {
               <li className="border-b border-border">
                 <Link href="/dashboard" className="block py-3.5 font-mono text-sm uppercase tracking-widest text-text-hi transition-colors border-b border-border/40">
                   Dashboard
+                </Link>
+              </li>
+            )}
+            {isAuthenticated && (
+              <li className="border-b border-border">
+                <Link href="/admin/scheduler" className="block py-3.5 font-mono text-sm uppercase tracking-widest text-text-hi transition-colors border-b border-border/40">
+                  Scheduler
                 </Link>
               </li>
             )}
