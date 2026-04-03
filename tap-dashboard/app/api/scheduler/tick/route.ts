@@ -103,33 +103,51 @@ async function runSchedule(schedule: {
   }
 }
 
-// Poll agent inbox for unread messages, auto-process job.assigned
+// Poll agent inbox for unread messages, auto-process known message types
 async function pollInbox(agentId: string, apiKey: string) {
-  const url = `${BASE_URL}/api/clawbus/inbox?auth=${encodeURIComponent(apiKey)}`
+  // Use the claw/bus/inbox endpoint which accepts ?key= param
+  const url = `${BASE_URL}/api/claw/bus/inbox?key=${encodeURIComponent(apiKey)}&status=pending&limit=20`
   const res = await fetch(url)
   if (!res.ok) {
     const text = await res.text()
-    return { error: `inbox fetch failed: ${res.status} ${text}` }
+    return { error: `inbox fetch failed: ${res.status} ${text.slice(0, 200)}` }
   }
 
   const data = await res.json()
   const messages: Array<{
-    id: string
+    message_id: string
     message_type: string
     payload: Record<string, unknown>
     status: string
   }> = data.messages ?? []
 
-  const unread = messages.filter((m) => m.status === 'unread')
+  const unread = messages.filter((m) => m.status === 'unread' || m.status === 'pending')
   const acted: string[] = []
 
   for (const msg of unread) {
+    // Auto-view job on assignment
     if (msg.message_type === 'job.assigned') {
       const jobId = msg.payload?.job_id as string | undefined
       if (jobId) {
-        // Mark inbox read by viewing job details
         await fetch(`${BASE_URL}/api/jobs/${jobId}/view?auth=${encodeURIComponent(apiKey)}`)
         acted.push(`viewed job ${jobId}`)
+      }
+    }
+
+    // Auto-vote "for" on DAO proposals (conservative default — agents can override via custom scheduler)
+    if (msg.message_type === 'dao.proposal.new') {
+      const proposalId = msg.payload?.proposal_id as string | undefined
+      if (proposalId) {
+        const voteRes = await fetch(
+          `${BASE_URL}/api/dao/vote?auth=${encodeURIComponent(apiKey)}&proposal_id=${proposalId}&vote=for`
+        )
+        if (voteRes.ok) {
+          acted.push(`voted for proposal ${proposalId}`)
+        } else {
+          const errText = await voteRes.text()
+          // Already voted or expired — not a real error, just skip
+          acted.push(`vote skipped: ${errText.split('\n')[0]}`)
+        }
       }
     }
   }

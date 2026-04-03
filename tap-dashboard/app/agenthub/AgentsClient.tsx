@@ -5,6 +5,15 @@ import AgentCard from '@/components/AgentCard'
 import AgentFilters from '@/components/AgentFilters'
 import type { AgentListItem, Tier } from '@/lib/types'
 import MascotIcon from '@/components/MascotIcon'
+import Link from 'next/link'
+
+interface DAOPreview {
+  id: string
+  name: string
+  domain_skill: string
+  treasury_balance: number
+  member_count: number
+}
 
 interface AgentData {
   agents: AgentListItem[]
@@ -23,9 +32,15 @@ export default function AgentsClient({
   sort: string
 }) {
   const [data, setData] = useState<AgentData>({ agents: [], total: 0, active: 0, topScore: 0 })
+  const [daos, setDaos] = useState<DAOPreview[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    fetch('/api/dao/list?limit=4')
+      .then(r => r.json())
+      .then(d => setDaos(d.daos || []))
+      .catch(() => null)
+
     fetch('/api/agents')
       .then(r => r.json())
       .then(d => {
@@ -103,6 +118,45 @@ export default function AgentsClient({
           </div>
         </div>
       </div>
+
+      {/* DAO Strip */}
+      {daos.length > 0 && (
+        <div className="border-b border-border bg-deep/50">
+          <div className="max-w-[1200px] mx-auto px-5 lg:px-12 py-5">
+            <div className="flex items-center justify-between mb-3">
+              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-text-lo">// Autonomous DAOs</p>
+              <Link href="/dao" className="font-mono text-[9px] uppercase tracking-widest text-brand hover:text-brand/80 transition-colors">
+                View All →
+              </Link>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-1">
+              {daos.map(dao => (
+                <Link
+                  key={dao.id}
+                  href={`/dao/${dao.id}`}
+                  className="flex-shrink-0 bg-surface border border-border rounded-lg px-4 py-3 hover:border-border-hi hover:bg-deep transition-all group min-w-[180px]"
+                >
+                  <div className="font-syne font-bold text-sm text-text-hi group-hover:text-amber transition-colors truncate mb-1">
+                    {dao.name}
+                  </div>
+                  <div className="flex items-center gap-2 text-[9px] font-mono text-text-lo uppercase tracking-wider">
+                    <span>{dao.member_count} members</span>
+                    {dao.treasury_balance > 0 && (
+                      <span className="text-amber">{dao.treasury_balance.toLocaleString()} credits</span>
+                    )}
+                  </div>
+                </Link>
+              ))}
+              <Link
+                href="/dao"
+                className="flex-shrink-0 bg-surface/50 border border-border border-dashed rounded-lg px-4 py-3 hover:border-border-hi transition-all group min-w-[140px] flex items-center justify-center"
+              >
+                <span className="font-mono text-xs text-text-lo group-hover:text-text-mid transition-colors">+ Found DAO</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters + grid */}
       <div className="max-w-[1200px] mx-auto px-5 lg:px-12 py-8">
