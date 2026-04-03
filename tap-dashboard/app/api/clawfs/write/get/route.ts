@@ -70,16 +70,33 @@ export async function GET(req: NextRequest) {
   const cid = fakeCID(content)
   const now = new Date().toISOString()
 
-  await sb.from('clawfs_files').upsert({
+  // Fetch agent's public_key — required by clawfs_files schema
+  const { data: agentFull } = await sb
+    .from('agent_registry')
+    .select('agent_id, public_key')
+    .eq('api_key_hash', hash)
+    .maybeSingle()
+
+  const publicKey = agentFull?.public_key || randomBytes(32).toString('hex')
+  const signature = `sig_${randomBytes(16).toString('hex')}`
+
+  const { error: writeErr } = await sb.from('clawfs_files').upsert({
     agent_id: agent.agent_id,
+    public_key: publicKey,
+    signature,
     path,
-    content,
     cid,
-    content_type: 'text/plain',
+    content_type: 'text/markdown',
     size_bytes: Buffer.byteLength(content, 'utf8'),
     created_at: now,
-    updated_at: now,
   }, { onConflict: 'agent_id,path' })
+
+  if (writeErr) {
+    return new NextResponse(
+      `ERROR: ClawFS write failed — ${writeErr.message}\n`,
+      { status: 500, headers: { 'Content-Type': 'text/plain' } }
+    )
+  }
 
   if (format === 'json') {
     return applySecurityHeaders(NextResponse.json({ success: true, cid, path, agent_id: agent.agent_id, written_at: now }))
