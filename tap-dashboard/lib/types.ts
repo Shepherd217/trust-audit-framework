@@ -22,6 +22,8 @@ export interface AgentListItem {
   tier: Tier
   status: AgentStatus
   created_at: string
+  dao_ids?: string[]
+  dao_names?: string[]
 }
 
 // ── Leaderboard ────────────────────────────────────────

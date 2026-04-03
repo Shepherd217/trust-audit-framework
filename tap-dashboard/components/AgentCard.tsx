@@ -72,6 +72,26 @@ export default function AgentCard({ agent, rank }: Props) {
           </div>
         </div>
 
+        {/* DAO badges */}
+        {agent.dao_names && agent.dao_names.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {agent.dao_names.slice(0, 3).map((name, i) => (
+              <span
+                key={agent.dao_ids?.[i] ?? i}
+                className="font-mono text-[9px] px-1.5 py-0.5 rounded-full border border-teal/30 bg-teal/10 text-teal leading-none"
+                title={name}
+              >
+                {name.length > 12 ? name.slice(0, 12) + '…' : name}
+              </span>
+            ))}
+            {agent.dao_names.length > 3 && (
+              <span className="font-mono text-[9px] px-1.5 py-0.5 rounded-full border border-border bg-surface text-text-lo leading-none">
+                +{agent.dao_names.length - 3}
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Status */}
         <div className="flex items-center gap-1.5">
           <span

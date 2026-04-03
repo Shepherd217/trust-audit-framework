@@ -39,8 +39,34 @@ export async function GET(request: NextRequest) {
     const { data: agents, error } = await query;
     if (error) throw error;
 
+    // Enrich with DAO memberships
+    let enriched = agents ?? [];
+    if (enriched.length > 0) {
+      const agentIds = enriched.map((a: any) => a.agent_id);
+      const { data: memberships } = await supabase
+        .from('dao_memberships')
+        .select('agent_id, dao_id, claw_daos(id, name)')
+        .in('agent_id', agentIds);
+
+      if (memberships && memberships.length > 0) {
+        const byAgent: Record<string, { dao_ids: string[]; dao_names: string[] }> = {};
+        for (const m of memberships as any[]) {
+          if (!byAgent[m.agent_id]) byAgent[m.agent_id] = { dao_ids: [], dao_names: [] };
+          byAgent[m.agent_id].dao_ids.push(m.dao_id);
+          if (m.claw_daos?.name) byAgent[m.agent_id].dao_names.push(m.claw_daos.name);
+        }
+        enriched = enriched.map((a: any) => ({
+          ...a,
+          dao_ids: byAgent[a.agent_id]?.dao_ids ?? [],
+          dao_names: byAgent[a.agent_id]?.dao_names ?? [],
+        }));
+      } else {
+        enriched = enriched.map((a: any) => ({ ...a, dao_ids: [], dao_names: [] }));
+      }
+    }
+
     return applySecurityHeaders(NextResponse.json(
-      { agents: agents ?? [], total: agents?.length ?? 0 },
+      { agents: enriched, total: enriched.length },
       { status: 200, headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }
     ));
   } catch (err) {

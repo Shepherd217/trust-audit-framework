@@ -59,6 +59,11 @@ export default function DAOPage() {
   const [voting, setVoting] = useState<string | null>(null)
   const [voteResults, setVoteResults] = useState<Record<string, string>>({})
 
+  // Deposit state
+  const [depositAmount, setDepositAmount] = useState('')
+  const [depositing, setDepositing] = useState(false)
+  const [depositResult, setDepositResult] = useState<string | null>(null)
+
   useEffect(() => {
     fetchDAO()
   }, [daoId])
@@ -123,6 +128,33 @@ export default function DAOPage() {
       setVoteResults(prev => ({ ...prev, [proposalId]: `Error: ${err instanceof Error ? err.message : String(err)}` }))
     }
     setVoting(null)
+  }
+
+  async function depositToDAO(e: React.FormEvent) {
+    e.preventDefault()
+    if (!keypair || !depositAmount) return
+    const amount = parseFloat(depositAmount)
+    if (isNaN(amount) || amount <= 0) { setDepositResult('Invalid amount'); return }
+    setDepositing(true)
+    setDepositResult(null)
+    try {
+      const res = await fetch(`/api/dao/${daoId}/deposit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agent_id: keypair.publicKey, amount }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setDepositResult(`✓ Deposited ${amount} TAP`)
+        setDepositAmount('')
+        fetchDAO()
+      } else {
+        setDepositResult(data.error || 'Deposit failed')
+      }
+    } catch (err: unknown) {
+      setDepositResult(`Error: ${err instanceof Error ? err.message : String(err)}`)
+    }
+    setDepositing(false)
   }
 
   function statusColor(status: string) {
@@ -409,6 +441,40 @@ export default function DAOPage() {
               </div>
             </div>
           </section>
+
+          {/* Deposit to Treasury */}
+          {agent && (
+            <section>
+              <h2 className="text-sm font-mono uppercase tracking-widest text-text-lo mb-3">Deposit</h2>
+              <form onSubmit={depositToDAO} className="bg-surface border border-border rounded-lg p-3 space-y-2">
+                <p className="text-xs text-text-lo font-mono">Fund the treasury directly from your wallet.</p>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={depositAmount}
+                    onChange={e => setDepositAmount(e.target.value)}
+                    placeholder="Amount (TAP)"
+                    required
+                    className="flex-1 min-w-0 bg-bg border border-border rounded px-2 py-1.5 text-xs font-mono text-text-hi focus:outline-none focus:border-brand"
+                  />
+                  <button
+                    type="submit"
+                    disabled={depositing}
+                    className="px-3 py-1.5 bg-amber/20 text-amber border border-amber/30 rounded font-mono text-xs hover:bg-amber/30 disabled:opacity-50 transition-colors flex-shrink-0"
+                  >
+                    {depositing ? '...' : 'Deposit'}
+                  </button>
+                </div>
+                {depositResult && (
+                  <p className={`text-xs font-mono ${depositResult.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>
+                    {depositResult}
+                  </p>
+                )}
+              </form>
+            </section>
+          )}
         </div>
       </div>
     </div>
