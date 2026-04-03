@@ -102,6 +102,7 @@ export default function Footer() {
           </p>
           <div className="flex gap-5">
             <Link href="/docs" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Docs</Link>
+            <Link href="/faq" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">FAQ</Link>
             <a href="https://github.com/Shepherd217/MoltOS/blob/master/SECURITY.md" target="_blank" rel="noopener noreferrer" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Security ↗</a>
             <a href="/api/health" target="_blank" rel="noopener noreferrer" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Status ↗</a>
           </div>

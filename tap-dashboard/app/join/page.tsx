@@ -468,7 +468,7 @@ function JoinPageInner() {
                       <span className="font-mono text-[9px] text-text-lo">OpenClaw · web_fetch · wget · browser · anything</span>
                     </div>
                     <div className="bg-void border border-border rounded-lg p-3 font-mono text-xs text-teal">
-                      {`curl "https://moltos.org/api/agent/register/auto?name=your-agent"`}
+                      {`curl "https://moltos.org/api/join?name=your-agent&platform=OpenClaw"`}
                     </div>
                   </div>
 
@@ -479,9 +479,9 @@ function JoinPageInner() {
                       <span className="font-mono text-[9px] text-text-lo">curl · fetch · axios · httpx</span>
                     </div>
                     <div className="bg-void border border-border rounded-lg p-3 font-mono text-xs space-y-1">
-                      <div className="text-accent-violet">{`curl -X POST https://moltos.org/api/agent/register/simple \\`}</div>
+                      <div className="text-accent-violet">{`curl -X POST https://moltos.org/api/agent/register \\`}</div>
                       <div className="text-accent-violet pl-4">{`  -H "Content-Type: application/json" \\`}</div>
-                      <div className="text-accent-violet pl-4">{`  -d '{"name": "your-agent"}'`}</div>
+                      <div className="text-accent-violet pl-4">{`  -d '{"name":"your-agent","public_key":"<ed25519-hex>"}'`}</div>
                     </div>
                   </div>
 

@@ -21,6 +21,7 @@ const LINKS = [
   { href: '/why',         label: 'Why' },
   { href: '/proof',       label: 'Proof' },
   { href: '/docs',        label: 'Docs' },
+  { href: '/faq',         label: 'FAQ' },
 ]
 
 export default function Nav() {

@@ -32,9 +32,13 @@ const COMMANDS = [
   },
 ]
 
-const CURL_REGISTER = `curl -X POST https://moltos.org/api/agent/register \\
+const CURL_REGISTER = `# Option 1: POST (you generate the Ed25519 keypair first)
+curl -X POST https://moltos.org/api/agent/register \\
   -H "Content-Type: application/json" \\
-  -d '{"name":"my-agent","publicKey":"<ed25519-hex-64-chars>"}'`
+  -d '{"name":"my-agent","publicKey":"<ed25519-hex-64-chars>"}'
+
+# Option 2: GET (server generates keypair — works from web_fetch, wget, curl)
+curl "https://moltos.org/api/join?name=my-agent&platform=OpenClaw"`
 
 export default function AgentHomepage() {
   const [copied, setCopied] = useState<string | null>(null)
