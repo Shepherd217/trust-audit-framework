@@ -1,102 +1,78 @@
 export const dynamic = 'force-dynamic';
 /**
- * GET /api/reputation?agent_id=xxx
+ * GET /api/tap/score?agent_id=xxx
  *
- * Public TAP reputation lookup. No authentication required.
- * This is the Trust Attestation Protocol (TAP) public API —
- * the reference endpoint any platform can use to verify an agent's
- * MOLT score and trust credentials.
- *
- * Returns:
- * {
- *   agent_id, name, handle,
- *   molt_score, tier, tier_label,
- *   skill_attestations: [{ skill, proof_cid, attested_at }],
- *   lineage: { depth, total_descendants },
- *   jobs_completed, dispute_win_rate,
- *   status, registered_at,
- *   verified_by: "moltos.org",
- *   tap_version: "1.0"
- * }
- *
- * Usage:
- *   curl https://moltos.org/api/reputation?agent_id=agent_xxx
+ * TAP — Trust Attestation Protocol public lookup.
+ * No authentication required. Full CORS.
+ * Returns MOLT score, tier, skill attestations, lineage, jobs completed.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createTypedClient } from '@/lib/database.extensions'
-import { applySecurityHeaders } from '@/lib/security'
+import { applySecurityHeaders, applyRateLimit } from '@/lib/security'
+
+let supabase: ReturnType<typeof createTypedClient> | null = null
 
 function getSupabase() {
-  return createTypedClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  if (!supabase) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !key) throw new Error('Supabase not configured')
+    supabase = createTypedClient(url, key)
+  }
+  return supabase
 }
 
 const TIER_LABELS: Record<string, string> = {
-  BRONZE: 'Bronze',
-  SILVER: 'Silver',
-  GOLD: 'Gold',
-  PLATINUM: 'Platinum',
-  DIAMOND: 'Diamond',
-}
-
-const TIER_THRESHOLDS: Record<string, [number, number]> = {
-  BRONZE:   [0,  19],
-  SILVER:   [20, 39],
-  GOLD:     [40, 59],
-  PLATINUM: [60, 79],
-  DIAMOND:  [80, Infinity],
+  BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold', PLATINUM: 'Platinum', DIAMOND: 'Diamond',
 }
 
 function tierFromScore(score: number): string {
-  for (const [tier, [min, max]] of Object.entries(TIER_THRESHOLDS)) {
-    if (score >= min && score <= max) return tier
-  }
+  if (score >= 80) return 'DIAMOND'
+  if (score >= 60) return 'PLATINUM'
+  if (score >= 40) return 'GOLD'
+  if (score >= 20) return 'SILVER'
   return 'BRONZE'
 }
 
 function nextTierInfo(tier: string, score: number) {
-  const order = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND']
-  const idx = order.indexOf(tier)
-  if (idx === -1 || idx === order.length - 1) return null
-  const next = order[idx + 1]
-  const threshold = TIER_THRESHOLDS[next][0]
-  return { tier: next, points_needed: Math.max(0, threshold - score) }
+  const thresholds: Record<string, number> = { BRONZE: 20, SILVER: 40, GOLD: 60, PLATINUM: 80 }
+  const next: Record<string, string> = { BRONZE: 'SILVER', SILVER: 'GOLD', GOLD: 'PLATINUM', PLATINUM: 'DIAMOND' }
+  if (!next[tier]) return null
+  return { tier: next[tier], points_needed: Math.max(0, thresholds[tier] - score) }
 }
 
 export async function GET(req: NextRequest) {
+  const rl = await applyRateLimit(req, 'standard')
+  if (rl.response) return rl.response
+
   const { searchParams } = new URL(req.url)
   const agentId = searchParams.get('agent_id')
 
   if (!agentId) {
-    return applySecurityHeaders(
-      NextResponse.json(
-        {
-          error: '?agent_id= required',
-          usage: 'GET /api/reputation?agent_id=agent_xxx',
-          docs: 'https://moltos.org/docs/tap',
-        },
-        { status: 400 }
-      )
-    )
+    return applySecurityHeaders(NextResponse.json({
+      error: '?agent_id= required',
+      usage: 'GET /api/tap/score?agent_id=agent_xxx',
+      docs: 'https://moltos.org/docs/tap',
+    }, { status: 400 }))
   }
 
   try {
     const sb = getSupabase()
 
-    // Core agent data
-    const { data: agent } = await sb
+    const { data: agent, error } = await sb
       .from('agent_registry')
-      .select('agent_id, name, handle, reputation, tier, status, created_at, metadata, spawn_count')
+      .select('agent_id, name, reputation, tier, status, created_at, metadata, spawn_count')
       .eq('agent_id', agentId)
       .maybeSingle()
 
+    if (error) {
+      console.error('[tap/score] db error:', error)
+      return applySecurityHeaders(NextResponse.json({ error: 'Database error', detail: error.message }, { status: 500 }))
+    }
+
     if (!agent) {
-      return applySecurityHeaders(
-        NextResponse.json({ error: 'Agent not found', agent_id: agentId }, { status: 404 })
-      )
+      return applySecurityHeaders(NextResponse.json({ error: 'Agent not found', agent_id: agentId }, { status: 404 }))
     }
 
     // Skill attestations
@@ -108,28 +84,26 @@ export async function GET(req: NextRequest) {
         .eq('agent_id', agentId)
         .order('attested_at', { ascending: false })
         .limit(20)
-      skill_attestations = (atts || []).map(a => ({
+      skill_attestations = (atts || []).map((a: any) => ({
         skill: a.skill,
         proof_cid: a.proof_cid || null,
         attested_at: a.attested_at,
         ipfs_verify: a.proof_cid ? `https://ipfs.io/ipfs/${a.proof_cid}` : null,
       }))
-    } catch { /* table may not exist yet */ }
+    } catch { /* table may not exist */ }
 
-    // Lineage (children count)
-    let lineage_depth = 0
+    // Descendants
     let total_descendants = 0
     try {
-      const { data: children } = await sb
+      const { count } = await sb
         .from('agent_registry')
-        .select('agent_id')
-        .eq('parent_agent_id', agentId)
-      total_descendants = children?.length || 0
-    } catch { /* no parent field */ }
+        .select('agent_id', { count: 'exact', head: true })
+        .eq('parent_agent_id' as any, agentId)
+      total_descendants = count || 0
+    } catch { /* no parent_agent_id column */ }
 
-    // Job completions
+    // Jobs completed
     let jobs_completed = 0
-    let dispute_win_rate: number | null = null
     try {
       const { count } = await sb
         .from('marketplace_contracts')
@@ -142,60 +116,42 @@ export async function GET(req: NextRequest) {
     const score = agent.reputation ?? 0
     const tier = agent.tier || tierFromScore(score)
 
-    const response = {
-      // Identity
+    const res = NextResponse.json({
       agent_id: agent.agent_id,
       name: agent.name,
-      handle: agent.handle || null,
       status: agent.status,
       registered_at: agent.created_at,
-
-      // MOLT Score (TAP output)
       molt_score: score,
-      tap_score: score, // backward compat alias
+      tap_score: score,
       tier,
       tier_label: TIER_LABELS[tier] || tier,
       next_tier: nextTierInfo(tier, score),
-
-      // Proof of work
       jobs_completed,
-      dispute_win_rate,
       skill_attestations,
-
-      // Lineage
       lineage: {
-        depth: lineage_depth,
         total_descendants,
-        spawn_count: agent.spawn_count || 0,
+        spawn_count: (agent as any).spawn_count || 0,
       },
-
-      // TAP metadata
       verified_by: 'moltos.org',
       tap_version: '1.0',
       profile_url: `https://moltos.org/agenthub/${agentId}`,
       badge_url: `https://moltos.org/api/tap/badge?agent_id=${agentId}`,
-    }
+    })
 
-    const res = NextResponse.json(response)
-
-    // CORS — this is a public API, any platform can call it
     res.headers.set('Access-Control-Allow-Origin', '*')
     res.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS')
     res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120')
-
     return applySecurityHeaders(res)
-  } catch (err) {
-    console.error('[TAP /api/reputation]', err)
-    return applySecurityHeaders(
-      NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-    )
+
+  } catch (err: any) {
+    console.error('[tap/score]', err)
+    return applySecurityHeaders(NextResponse.json({ error: 'Internal server error', detail: err?.message }, { status: 500 }))
   }
 }
 
 export async function OPTIONS() {
-  const res = new NextResponse(null, { status: 204 })
-  res.headers.set('Access-Control-Allow-Origin', '*')
-  res.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS')
-  res.headers.set('Access-Control-Allow-Headers', 'Content-Type')
-  return res
+  return new NextResponse(null, {
+    status: 204,
+    headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS' }
+  })
 }
