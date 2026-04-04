@@ -43,12 +43,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing cid or path parameter' }, { status: 400 })
   }
 
-  // Build query
-  let query = sb.from('clawfs_files').select('*')
+  // Build query — order by created_at desc to get latest version when duplicates exist
+  let query = sb.from('clawfs_files').select('*').order('created_at', { ascending: false }).limit(1)
   if (cid) query = query.eq('cid', cid)
-  else query = query.eq('path', path)
+  else query = query.eq('path', path as string)
 
-  const { data: file, error } = await query.maybeSingle()
+  const { data: files, error } = await (query as any)
+  const file = Array.isArray(files) ? files[0] : files
 
   if (error || !file) {
     return NextResponse.json({ error: 'File not found' }, { status: 404 })
