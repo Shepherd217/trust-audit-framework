@@ -28,7 +28,7 @@ export async function GET() {
     sb.from('marketplace_jobs').select('budget, status, created_at, category'),
     // Category breakdown
     // Agent stats
-    sb.from('agent_registry').select('activation_status, completed_jobs, created_at, reputation'),
+    sb.from('agent_registry').select('activation_status, completed_jobs, created_at, reputation, is_suspended, name').neq('is_suspended', true).not('name', 'like', 'tmp%').not('name', 'ilike', 'youragentname%'),
     // Dispute stats
     sb.from('dispute_cases').select('status, created_at, updated_at'),
     // Total credits in circulation

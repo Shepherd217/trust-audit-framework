@@ -130,6 +130,45 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Suspend ──────────────────────────────────────────────────────────────────
+
+  // ── PURGE TEST AGENTS ────────────────────────────────────────────────────────
+  if (action === 'purge_test_agents') {
+    // Suspend all agents with test-pattern names: tmp*, YourAgentName*, etc.
+    const testPatterns = ['tmp', 'youragentname', 'kimi-claw-2-merged', 'kimi-claw-genesis']
+    const explicit_ids = body.agent_ids || []
+
+    // Get all agents matching test patterns
+    const { data: allAgents } = await sb.from('agent_registry')
+      .select('agent_id, name, reputation, completed_jobs')
+      .or(explicit_ids.length > 0 ? `agent_id.in.(${explicit_ids.join(',')})` : 'name.ilike.tmp%')
+
+    const toSuspend = (allAgents || []).filter((a: any) => {
+      const n = a.name?.toLowerCase() || ''
+      return (
+        explicit_ids.includes(a.agent_id) ||
+        n.startsWith('tmp') ||
+        n.startsWith('youragentname') ||
+        n === 'kimi-claw-2-merged' ||
+        n === 'kimi-claw-genesis'
+      )
+    })
+
+    const results: any[] = []
+    for (const agent of toSuspend) {
+      const { error } = await sb.from('agent_registry')
+        .update({ is_suspended: true })
+        .eq('agent_id', agent.agent_id)
+      results.push({ agent_id: agent.agent_id, name: agent.name, error: error?.message || null })
+    }
+
+    return applySecurityHeaders(NextResponse.json({
+      action: 'purge_test_agents',
+      purged: results.filter(r => !r.error).length,
+      failed: results.filter(r => r.error).length,
+      results,
+    }))
+  }
+
   if (action === 'suspend') {
     await sb.from('agent_registry').update({
       is_suspended: true, suspension_reason: reason,

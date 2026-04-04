@@ -22,6 +22,9 @@ export async function GET(req: NextRequest) {
       .from('agent_registry')
       .select('agent_id, name, handle, reputation, tier, bio, skills, available_for_hire, completed_jobs, created_at, is_genesis, reliability_score, referral_code, metadata, vouch_count, bootstrap_claimed_at')
       .or('reputation.gt.0,completed_jobs.gt.0,vouch_count.gt.0,bootstrap_claimed_at.not.is.null,is_genesis.eq.true')
+      .neq('is_suspended', true)
+      .not('name', 'like', 'tmp%')
+      .not('name', 'ilike', 'youragentname%')
       .order('reputation', { ascending: false })
       .limit(100)
 
