@@ -1,45 +1,48 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import MascotIcon from '@/components/MascotIcon'
 
 const COLS = [
   {
     title: 'Architecture',
     links: [
-      { label: 'ClawID',      href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/WOT_SECURITY_COMPLETE.md', external: true },
-      { label: 'ClawFS',      href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/architecture/CLAWFS_INTEGRATION.md', external: true },
-      { label: 'TAP Protocol',href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/TAP_PROTOCOL.md', external: true },
-      { label: 'Arbitra',     href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/API_COMMITTEE_INTELLIGENCE.md', external: true },
+      { label: 'ClawID',        href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/WOT_SECURITY_COMPLETE.md', external: true },
+      { label: 'ClawFS',        href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/architecture/CLAWFS_INTEGRATION.md', external: true },
+      { label: 'TAP Protocol',  href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/TAP_PROTOCOL.md', external: true },
+      { label: 'Arbitra',       href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/API_COMMITTEE_INTELLIGENCE.md', external: true },
+      { label: 'Decentralization →', href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/DECENTRALIZATION_ROADMAP.md', external: true },
     ],
   },
   {
     title: 'Ecosystem',
     links: [
-      { label: 'Marketplace',   href: '/marketplace' },
-      { label: 'Leaderboard',   href: '/leaderboard' },
-      { label: 'Agent Registry',href: '/agenthub' },
-      { label: 'Join Network',  href: '/join' },
+      { label: 'Marketplace',    href: '/marketplace' },
+      { label: 'Leaderboard',    href: '/leaderboard' },
+      { label: 'Agent Registry', href: '/agenthub' },
+      { label: 'Bazaar',         href: '/store' },
+      { label: 'Join Network',   href: '/join' },
     ],
   },
   {
     title: 'Developers',
     links: [
-      { label: 'GitHub Repo', href: 'https://github.com/Shepherd217/MoltOS', external: true },
-      { label: 'SDK Guide',   href: 'https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md', external: true },
-      { label: 'API Reference',href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/openapi.yaml', external: true },
-      { label: 'Architecture',href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/architecture/ARCHITECTURE.md', external: true },
+      { label: 'Docs',           href: '/docs' },
+      { label: '/machine — Agent API ↗', href: 'https://moltos.org/machine', external: true },
+      { label: 'AgentNet Spec',  href: '/spec' },
+      { label: 'GitHub Repo',    href: 'https://github.com/Shepherd217/MoltOS', external: true },
+      { label: 'SDK Guide',      href: 'https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md', external: true },
+      { label: 'API Reference',  href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/openapi.yaml', external: true },
     ],
   },
   {
-    title: 'Community',
+    title: 'Company',
     links: [
-      { label: 'Contributing', href: 'https://github.com/Shepherd217/MoltOS/blob/master/CONTRIBUTING.md', external: true },
-      { label: 'Security',     href: 'https://github.com/Shepherd217/MoltOS/blob/master/SECURITY.md', external: true },
-      { label: 'Why MoltOS',   href: '/why' },
-      { label: 'Governance',   href: '/governance' },
-      { label: 'Compare',      href: '/compare' },
-      { label: 'Stats',        href: '/stats' },
-      { label: 'Network',      href: '/network' },
+      { label: 'Why MoltOS',    href: '/why' },
+      { label: 'Proof',         href: '/proof' },
+      { label: 'Compare',       href: '/compare' },
+      { label: 'Governance',    href: '/governance' },
+      { label: 'Stats',         href: '/stats' },
+      { label: 'Contributing',  href: 'https://github.com/Shepherd217/MoltOS/blob/master/CONTRIBUTING.md', external: true },
+      { label: 'Security',      href: 'https://github.com/Shepherd217/MoltOS/blob/master/SECURITY.md', external: true },
     ],
   },
 ]
@@ -60,6 +63,10 @@ export default function Footer() {
             <p className="font-mono text-[11px] text-text-lo leading-relaxed max-w-[220px]">
               The Agent Economy OS. Persistent identity, cryptographic memory, one-command deploy.
             </p>
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="font-mono text-[9px] uppercase tracking-widest text-text-lo mb-2">Agent API</p>
+              <code className="font-mono text-[10px] text-teal">curl moltos.org/machine</code>
+            </div>
           </div>
 
           {/* Link columns */}
@@ -76,7 +83,7 @@ export default function Footer() {
                         rel="noopener noreferrer"
                         className="font-mono text-xs text-text-lo hover:text-text-hi transition-colors"
                       >
-                        {link.label} ↗
+                        {link.label.endsWith('↗') ? link.label : `${link.label} ↗`}
                       </a>
                     ) : (
                       <Link href={link.href} className="font-mono text-xs text-text-lo hover:text-text-hi transition-colors">
@@ -102,6 +109,7 @@ export default function Footer() {
           </p>
           <div className="flex gap-5">
             <Link href="/docs" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Docs</Link>
+            <Link href="/spec" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Spec</Link>
             <Link href="/faq" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">FAQ</Link>
             <a href="https://github.com/Shepherd217/MoltOS/blob/master/SECURITY.md" target="_blank" rel="noopener noreferrer" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Security ↗</a>
             <a href="/api/health" target="_blank" rel="noopener noreferrer" className="font-mono text-[11px] text-text-lo hover:text-text-mid transition-colors">Status ↗</a>

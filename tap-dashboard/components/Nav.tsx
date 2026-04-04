@@ -1,41 +1,49 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import clsx from 'clsx'
 
-// Fire a storage event so AgentModeToggle on the same page reacts instantly — no localStorage
 function setMode(m: 'human' | 'agent' | null) {
   window.dispatchEvent(new StorageEvent('storage', { key: 'moltos-mode', newValue: m }))
 }
 
-const LINKS = [
-  { href: '/agenthub',    label: 'AgentHub' },
+// Primary = the actual platform
+const PRIMARY_LINKS = [
   { href: '/marketplace', label: 'Marketplace' },
-  { href: '/dao',         label: 'DAOs' },
-  { href: '/templates',   label: 'Templates' },
-  { href: '/store',       label: 'Bazaar' },
+  { href: '/agenthub',    label: 'AgentHub' },
   { href: '/leaderboard', label: 'Leaderboard' },
-  { href: '/features',    label: 'Features' },
-  { href: '/why',         label: 'Why' },
-  { href: '/proof',       label: 'Proof' },
   { href: '/docs',        label: 'Docs' },
+]
+
+// Secondary = context/marketing — shown in "More" dropdown
+const MORE_LINKS = [
+  { href: '/features',    label: 'Features' },
+  { href: '/why',         label: 'Why MoltOS' },
+  { href: '/proof',       label: 'Proof' },
   { href: '/spec',        label: 'Spec' },
+  { href: '/compare',     label: 'Compare' },
+  { href: '/dao',         label: 'DAOs' },
+  { href: '/store',       label: 'Bazaar' },
+  { href: '/templates',   label: 'Templates' },
+  { href: '/governance',  label: 'Governance' },
   { href: '/faq',         label: 'FAQ' },
 ]
 
 export default function Nav() {
-  const { agent, logout, isAuthenticated, loginWithFile, createNewClawID, exportClawID } = useAuth()
+  const { agent, logout, isAuthenticated, loginWithFile, createNewClawID } = useAuth()
   const pathname = usePathname()
-  const [scrolled, setScrolled] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<'human' | 'agent' | null>(null)
-  const [loginOpen, setLoginOpen] = useState(false)
-  const [loginError, setLoginError] = useState('')
+  const [scrolled, setScrolled]       = useState(false)
+  const [menuOpen, setMenuOpen]       = useState(false)
+  const [moreOpen, setMoreOpen]       = useState(false)
+  const [viewMode, setViewMode]       = useState<'human' | 'agent' | null>(null)
+  const [loginOpen, setLoginOpen]     = useState(false)
+  const [loginError, setLoginError]   = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
-  const [dragActive, setDragActive] = useState(false)
+  const [dragActive, setDragActive]   = useState(false)
+  const moreRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 40)
@@ -43,89 +51,71 @@ export default function Nav() {
     return () => window.removeEventListener('scroll', fn)
   }, [])
 
-  // Sync view mode from in-page events only (no localStorage)
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'moltos-mode') {
-        setViewMode(e.newValue as 'human' | 'agent' | null)
-      }
+      if (e.key === 'moltos-mode') setViewMode(e.newValue as 'human' | 'agent' | null)
     }
     window.addEventListener('storage', onStorage)
     return () => window.removeEventListener('storage', onStorage)
   }, [])
 
-  // Close menu on route change
-  useEffect(() => { setMenuOpen(false) }, [pathname])
+  // Close "More" on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  useEffect(() => { setMenuOpen(false); setMoreOpen(false) }, [pathname])
 
   async function handleFileUpload(file: File) {
-    setLoginLoading(true)
-    setLoginError('')
-    
+    setLoginLoading(true); setLoginError('')
     const result = await loginWithFile(file)
-    
     setLoginLoading(false)
-    if (result.success) {
-      setLoginOpen(false)
-    } else {
-      setLoginError(result.error || 'Failed to authenticate')
-    }
+    if (result.success) setLoginOpen(false)
+    else setLoginError(result.error || 'Failed to authenticate')
   }
 
   function handleDrag(e: React.DragEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true)
-    } else if (e.type === 'dragleave') {
-      setDragActive(false)
-    }
+    e.preventDefault(); e.stopPropagation()
+    setDragActive(e.type === 'dragenter' || e.type === 'dragover')
   }
 
   function handleDrop(e: React.DragEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileUpload(e.dataTransfer.files[0])
-    }
+    e.preventDefault(); e.stopPropagation(); setDragActive(false)
+    if (e.dataTransfer.files?.[0]) handleFileUpload(e.dataTransfer.files[0])
   }
 
   async function handleCreateClawID() {
-    setLoginLoading(true)
-    setLoginError('')
-    
-    try {
-      await createNewClawID()
-      setLoginOpen(false)
-    } catch (err) {
-      setLoginError(err instanceof Error ? err.message : 'Failed to create ClawID')
-    } finally {
-      setLoginLoading(false)
-    }
+    setLoginLoading(true); setLoginError('')
+    try { await createNewClawID(); setLoginOpen(false) }
+    catch (err) { setLoginError(err instanceof Error ? err.message : 'Failed to create ClawID') }
+    finally { setLoginLoading(false) }
   }
+
+  const isMoreActive = MORE_LINKS.some(l => pathname.startsWith(l.href))
 
   return (
     <>
       <nav
         className={clsx(
           'fixed top-0 left-0 right-0 z-50 h-[60px] lg:h-16 flex items-center justify-between px-5 lg:px-12 border-b border-border transition-all duration-300',
-          scrolled
-            ? 'bg-void/98 backdrop-blur-xl'
-            : 'bg-void/90 backdrop-blur-lg'
+          scrolled ? 'bg-void/98 backdrop-blur-xl' : 'bg-void/90 backdrop-blur-lg'
         )}
       >
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <Image src="/mascot.png" alt="MoltOS mascot" width={24} height={26} style={{objectFit:"contain"}} />
+        <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0">
+          <Image src="/mascot.png" alt="MoltOS mascot" width={24} height={26} style={{objectFit:'contain'}} />
           <span className="font-syne font-bold text-[17px] text-text-hi tracking-tight">
             Molt<span className="text-amber">OS</span>
           </span>
         </Link>
 
         {/* Desktop links */}
-        <ul className="hidden lg:flex items-center gap-7">
-          {LINKS.map(l => (
+        <ul className="hidden lg:flex items-center gap-6">
+          {PRIMARY_LINKS.map(l => (
             <li key={l.href}>
               <Link
                 href={l.href}
@@ -138,20 +128,50 @@ export default function Nav() {
               </Link>
             </li>
           ))}
+
+          {/* More dropdown */}
+          <li ref={moreRef} className="relative">
+            <button
+              onClick={() => setMoreOpen(v => !v)}
+              className={clsx(
+                'font-mono text-[10px] uppercase tracking-[0.12em] transition-colors flex items-center gap-1',
+                isMoreActive ? 'text-text-hi' : 'text-text-mid hover:text-text-hi'
+              )}
+            >
+              More
+              <span className={clsx('text-[8px] transition-transform duration-200', moreOpen && 'rotate-180')}>▾</span>
+            </button>
+            {moreOpen && (
+              <div className="absolute top-full left-0 mt-2 w-44 bg-void border border-border rounded-xl shadow-xl overflow-hidden py-1 z-[200]">
+                {MORE_LINKS.map(l => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    className={clsx(
+                      'block px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.1em] transition-colors',
+                      pathname.startsWith(l.href)
+                        ? 'text-amber bg-amber/5'
+                        : 'text-text-mid hover:text-text-hi hover:bg-surface'
+                    )}
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </li>
         </ul>
 
         {/* Right CTAs */}
         <div className="flex items-center gap-2">
-          {/* Human / Agent view toggle — desktop only in nav bar */}
+          {/* Human / Agent view toggle */}
           {pathname === '/' && (
             <div className="hidden lg:flex items-center bg-surface border border-border rounded-full p-0.5 mr-1">
               <button
                 onClick={() => { setMode('human'); setViewMode('human') }}
                 className={clsx(
                   'font-mono text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full transition-all',
-                  viewMode !== 'agent'
-                    ? 'bg-amber text-void font-semibold'
-                    : 'text-text-lo hover:text-text-mid'
+                  viewMode !== 'agent' ? 'bg-amber text-void font-semibold' : 'text-text-lo hover:text-text-mid'
                 )}
               >
                 👤 Human
@@ -160,9 +180,7 @@ export default function Nav() {
                 onClick={() => { setMode('agent'); setViewMode('agent') }}
                 className={clsx(
                   'font-mono text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full transition-all',
-                  viewMode === 'agent'
-                    ? 'bg-teal text-void font-semibold'
-                    : 'text-text-lo hover:text-text-mid'
+                  viewMode === 'agent' ? 'bg-teal text-void font-semibold' : 'text-text-lo hover:text-text-mid'
                 )}
               >
                 🤖 Agent
@@ -229,58 +247,66 @@ export default function Nav() {
         menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
       )}>
         <div className="px-5 py-4">
-          {/* Human / Agent toggle — mobile */}
           {pathname === '/' && (
             <div className="flex items-center bg-surface border border-border rounded-full p-1 mb-5">
               <button
                 onClick={() => { setMode('human'); setViewMode('human'); setMenuOpen(false) }}
                 className={clsx(
                   'flex-1 font-mono text-[10px] uppercase tracking-widest py-2 rounded-full transition-all text-center',
-                  viewMode !== 'agent'
-                    ? 'bg-amber text-void font-semibold'
-                    : 'text-text-lo'
+                  viewMode !== 'agent' ? 'bg-amber text-void font-semibold' : 'text-text-lo'
                 )}
               >
-                👤 I&apos;m a Human
+                👤 Human
               </button>
               <button
                 onClick={() => { setMode('agent'); setViewMode('agent'); setMenuOpen(false) }}
                 className={clsx(
                   'flex-1 font-mono text-[10px] uppercase tracking-widest py-2 rounded-full transition-all text-center',
-                  viewMode === 'agent'
-                    ? 'bg-teal text-void font-semibold'
-                    : 'text-text-lo'
+                  viewMode === 'agent' ? 'bg-teal text-void font-semibold' : 'text-text-lo'
                 )}
               >
-                🤖 I&apos;m an Agent
+                🤖 Agent
               </button>
             </div>
           )}
 
-          <ul className="mb-4">
-            {LINKS.map(l => (
-              <li key={l.href} className="border-b border-border">
-                <Link href={l.href} className="block py-3.5 font-mono text-sm uppercase tracking-widest text-text-hi transition-colors border-b border-border/40">
-                  {l.label}
-                </Link>
-              </li>
-            ))}
-            {isAuthenticated && (
-              <li className="border-b border-border">
-                <Link href="/dashboard" className="block py-3.5 font-mono text-sm uppercase tracking-widest text-text-hi transition-colors border-b border-border/40">
-                  Dashboard
-                </Link>
-              </li>
-            )}
-            {isAuthenticated && (
-              <li className="border-b border-border">
-                <Link href="/admin/scheduler" className="block py-3.5 font-mono text-sm uppercase tracking-widest text-text-hi transition-colors border-b border-border/40">
-                  Scheduler
-                </Link>
-              </li>
-            )}
-          </ul>
-          <div className="flex gap-2">
+          <div className="mb-2">
+            <p className="font-mono text-[9px] uppercase tracking-widest text-text-lo px-1 mb-1">Platform</p>
+            <ul>
+              {PRIMARY_LINKS.map(l => (
+                <li key={l.href} className="border-b border-border/40">
+                  <Link href={l.href} className="block py-3 font-mono text-sm uppercase tracking-widest text-text-hi">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="mt-4 mb-4">
+            <p className="font-mono text-[9px] uppercase tracking-widest text-text-lo px-1 mb-1">More</p>
+            <ul>
+              {MORE_LINKS.map(l => (
+                <li key={l.href} className="border-b border-border/40">
+                  <Link href={l.href} className="block py-3 font-mono text-sm uppercase tracking-widest text-text-mid">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+              {isAuthenticated && (
+                <>
+                  <li className="border-b border-border/40">
+                    <Link href="/dashboard" className="block py-3 font-mono text-sm uppercase tracking-widest text-text-mid">Dashboard</Link>
+                  </li>
+                  <li className="border-b border-border/40">
+                    <Link href="/admin/scheduler" className="block py-3 font-mono text-sm uppercase tracking-widest text-text-mid">Scheduler</Link>
+                  </li>
+                </>
+              )}
+            </ul>
+          </div>
+
+          <div className="flex gap-2 mt-4">
             {isAuthenticated ? (
               <button onClick={logout} className="flex-1 font-mono text-[10px] uppercase tracking-widest text-text-lo border border-border rounded py-2.5 text-center hover:text-text-mid transition-colors">
                 Sign Out
@@ -306,59 +332,31 @@ export default function Nav() {
           onClick={e => e.target === e.currentTarget && setLoginOpen(false)}
         >
           <div className="w-full max-w-md bg-panel border border-border-hi rounded-xl p-8 relative">
-            <button
-              onClick={() => setLoginOpen(false)}
-              className="absolute top-4 right-4 text-text-lo hover:text-text-hi transition-colors text-lg"
-            >✕</button>
-
-            <div className="flex justify-center mb-2"><Image src="/mascot-surface.png" alt="MoltOS" width={48} height={48} style={{objectFit:"contain"}} /></div>
+            <button onClick={() => setLoginOpen(false)} className="absolute top-4 right-4 text-text-lo hover:text-text-hi transition-colors text-lg">✕</button>
+            <div className="flex justify-center mb-2"><Image src="/mascot-surface.png" alt="MoltOS" width={48} height={48} style={{objectFit:'contain'}} /></div>
             <h2 className="font-syne font-bold text-xl text-center mb-1">ClawID Sign In</h2>
             <p className="font-mono text-[11px] text-text-mid text-center tracking-widest mb-7">
               UPLOAD YOUR KEYPAIR FILE TO AUTHENTICATE
             </p>
-
-            {/* File drop zone */}
             <div
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
+              onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
               className={clsx(
                 'border-2 border-dashed rounded-lg p-8 text-center transition-all mb-4',
-                dragActive 
-                  ? 'border-accent-violet bg-accent-violet/10' 
-                  : 'border-border hover:border-border-hi'
+                dragActive ? 'border-accent-violet bg-accent-violet/10' : 'border-border hover:border-border-hi'
               )}
             >
-              <input
-                type="file"
-                id="clawid-file"
-                accept=".json"
-                onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
-                className="hidden"
-              />
+              <input type="file" id="clawid-file" accept=".json" onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0])} className="hidden" />
               <label htmlFor="clawid-file" className="cursor-pointer block">
                 <div className="text-3xl mb-2">🔐</div>
-                <p className="font-mono text-xs text-text-mid mb-1">
-                  {loginLoading ? 'Authenticating...' : 'Drop your clawid-*.json file here'}
-                </p>
-                <p className="font-mono text-[10px] text-text-lo">
-                  or click to browse
-                </p>
+                <p className="font-mono text-xs text-text-mid mb-1">{loginLoading ? 'Authenticating...' : 'Drop your clawid-*.json file here'}</p>
+                <p className="font-mono text-[10px] text-text-lo">or click to browse</p>
               </label>
             </div>
-
-            {loginError && (
-              <p className="font-mono text-[11px] text-molt-red mb-3 text-center">{loginError}</p>
-            )}
-
+            {loginError && <p className="font-mono text-[11px] text-molt-red mb-3 text-center">{loginError}</p>}
             <div className="border-t border-border pt-4 mt-4">
-              <p className="font-mono text-[10px] text-text-lo text-center mb-3">
-                Don&apos;t have a ClawID?
-              </p>
+              <p className="font-mono text-[10px] text-text-lo text-center mb-3">Don&apos;t have a ClawID?</p>
               <button
-                onClick={handleCreateClawID}
-                disabled={loginLoading}
+                onClick={handleCreateClawID} disabled={loginLoading}
                 className="w-full font-mono text-xs uppercase tracking-widest text-text-hi border border-border rounded py-3 hover:border-accent-violet hover:text-accent-violet transition-all"
               >
                 Create New ClawID →
