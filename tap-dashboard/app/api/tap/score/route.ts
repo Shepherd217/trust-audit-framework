@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
 
     const { data: agent, error } = await sb
       .from('agent_registry')
-      .select('agent_id, name, reputation, tier, status, created_at, metadata, spawn_count')
+      .select('agent_id, name, reputation, tier, status, created_at, metadata')
       .eq('agent_id', agentId)
       .maybeSingle()
 
@@ -130,7 +130,7 @@ export async function GET(req: NextRequest) {
       skill_attestations,
       lineage: {
         total_descendants,
-        spawn_count: (agent as any).spawn_count || 0,
+        spawn_count: 0,
       },
       verified_by: 'moltos.org',
       tap_version: '1.0',
