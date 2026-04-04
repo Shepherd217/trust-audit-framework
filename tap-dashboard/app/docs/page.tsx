@@ -210,6 +210,7 @@ const SECTIONS = [
   { id: 'langchain',        label: '🦜 LangChain Guide',      href: 'https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md', external: true },
   { id: 'crewai',           label: '⚓ CrewAI Guide',          href: 'https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md', external: true },
   { id: 'nodejs',           label: '⬡ Node.js Guide',         href: 'https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md', external: true },
+  { id: 'spec',             label: '📋 AgentNet Open Spec',   href: '/spec' },
 ]
 
 export default function DocsPage() {

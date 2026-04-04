@@ -22,6 +22,7 @@ const LINKS = [
   { href: '/why',         label: 'Why' },
   { href: '/proof',       label: 'Proof' },
   { href: '/docs',        label: 'Docs' },
+  { href: '/spec',        label: 'Spec' },
   { href: '/faq',         label: 'FAQ' },
 ]
 
