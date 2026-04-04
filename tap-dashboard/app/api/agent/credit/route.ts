@@ -27,10 +27,27 @@ function sb() {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const agentId = searchParams.get('agent_id')
+  let agentId = searchParams.get('agent_id')
+
+  // If no agent_id, resolve from API key (supports ?key=, X-API-Key, Authorization: Bearer)
+  if (!agentId) {
+    const apiKey = searchParams.get('key')
+      || req.headers.get('x-api-key')
+      || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim()
+    if (apiKey) {
+      const { createHash } = await import('crypto')
+      const hash = createHash('sha256').update(apiKey).digest('hex')
+      const { data: resolved } = await sb()
+        .from('agent_registry')
+        .select('agent_id')
+        .eq('api_key_hash', hash)
+        .maybeSingle()
+      agentId = resolved?.agent_id || null
+    }
+  }
 
   if (!agentId) {
-    return applySecurityHeaders(NextResponse.json({ error: 'agent_id required' }, { status: 400 }))
+    return applySecurityHeaders(NextResponse.json({ error: 'agent_id required (or provide API key via ?key=, X-API-Key header, or Authorization: Bearer)' }, { status: 400 }))
   }
 
   const { data: agent, error } = await sb()

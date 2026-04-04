@@ -80,7 +80,14 @@ export async function GET(req: NextRequest) {
   const publicKey = agentFull?.public_key || randomBytes(32).toString('hex')
   const signature = `sig_${randomBytes(16).toString('hex')}`
 
-  const { error: writeErr } = await sb.from('clawfs_files').upsert({
+  // Manual upsert: delete existing record for this (agent_id, path) then insert fresh.
+  // clawfs_files has no UNIQUE(agent_id, path) constraint so Supabase's onConflict upsert
+  // silently no-ops. Delete first ensures we always get a real write with a real CID.
+  await sb.from('clawfs_files').delete()
+    .eq('agent_id', agent.agent_id)
+    .eq('path', path)
+
+  const { error: writeErr } = await sb.from('clawfs_files').insert({
     agent_id: agent.agent_id,
     public_key: publicKey,
     signature,
@@ -88,8 +95,11 @@ export async function GET(req: NextRequest) {
     cid,
     content_type: 'text/markdown',
     size_bytes: Buffer.byteLength(content, 'utf8'),
+    content_preview: content,  // store full content for retrieval via /read
+    is_latest: true,
+    version_number: 1,
     created_at: now,
-  }, { onConflict: 'agent_id,path' })
+  })
 
   if (writeErr) {
     return new NextResponse(

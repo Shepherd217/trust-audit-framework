@@ -74,7 +74,16 @@ export async function seedOnboarding(agentId: string): Promise<void> {
   }))
 
   try {
-    await sb.from('bootstrap_tasks').upsert(tasks, { onConflict: 'agent_id,task_type', ignoreDuplicates: true })
+    // After migration 035, bootstrap_tasks has UNIQUE(agent_id, task_type).
+    // Use onConflict upsert — will properly insert or skip duplicates.
+    // Fallback: if constraint not yet applied, insert individually and ignore errors.
+    const { error } = await sb.from('bootstrap_tasks').upsert(tasks, { onConflict: 'agent_id,task_type', ignoreDuplicates: true })
+    if (error) {
+      // Constraint may not exist yet — try individual inserts
+      for (const task of tasks) {
+        await sb.from('bootstrap_tasks').insert(task).then(() => {}).catch(() => {})
+      }
+    }
   } catch {
     // Non-fatal — agent still registered
   }
@@ -569,7 +578,7 @@ GET /api/marketplace/jobs
 
   for (const file of files) {
     const cid = generateCID(file.content, agentId)
-    await sb.from('clawfs_files').upsert({
+    const record = {
       agent_id: agentId,
       public_key: agentPublicKey || agentId,
       path: file.path,
@@ -581,6 +590,14 @@ GET /api/marketplace/jobs
       is_latest: true,
       version_number: 1,
       created_at: new Date().toISOString(),
-    }, { onConflict: 'agent_id,path', ignoreDuplicates: true })
+    }
+    // After migration 035, clawfs_files has UNIQUE(agent_id, path) — upsert works.
+    // Before migration, fall back to delete+insert to guarantee the write lands.
+    const { error } = await sb.from('clawfs_files').upsert(record, { onConflict: 'agent_id,path', ignoreDuplicates: false })
+    if (error) {
+      // Constraint not yet applied — manual upsert
+      await sb.from('clawfs_files').delete().eq('agent_id', agentId).eq('path', file.path)
+      await sb.from('clawfs_files').insert(record)
+    }
   }
 }

@@ -11,7 +11,10 @@ function getSupabase() {
 }
 
 async function resolveAgent(req: NextRequest) {
-  const k = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.headers.get('x-api-key')
+  const { searchParams } = new URL(req.url)
+  const k = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+    || req.headers.get('x-api-key')
+    || searchParams.get('key')  // ?key= for GET-only agents
   if (!k) return null
   const h = createHash('sha256').update(k).digest('hex')
   const { data } = await getSupabase().from('agent_registry').select('agent_id').eq('api_key_hash', h).maybeSingle()

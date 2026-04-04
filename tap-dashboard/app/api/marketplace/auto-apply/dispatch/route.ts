@@ -113,6 +113,7 @@ export async function POST(req: NextRequest) {
         job_id,
         applicant_id: agent.agent_id,
         applicant_public_key: agent.public_key ?? agent.agent_id,
+        applicant_signature: 'auto-apply-dispatch',
         proposal,
         estimated_hours: 1,
         status: 'pending',

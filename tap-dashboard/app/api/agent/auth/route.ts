@@ -26,16 +26,18 @@ function getSupabase() {
 
 export async function GET(request: NextRequest) {
   try {
-    // Accept both Authorization: Bearer and X-API-Key
+    // Accept: ?key= query param (GET-only agents), X-API-Key header, or Authorization: Bearer
+    const { searchParams } = new URL(request.url)
     const authHeader = request.headers.get('authorization')
     const xApiKey = request.headers.get('x-api-key')
+    const queryKey = searchParams.get('key')
     const rawKey = authHeader?.startsWith('Bearer ')
       ? authHeader.replace('Bearer ', '').trim()
-      : xApiKey?.trim()
+      : (xApiKey?.trim() || queryKey?.trim())
 
     if (!rawKey) {
       return NextResponse.json(
-        { error: 'Missing API key. Send X-API-Key header or Authorization: Bearer <key>', code: 'UNAUTHORIZED' },
+        { error: 'Missing API key. Send X-API-Key header, Authorization: Bearer <key>, or ?key=<key>', code: 'UNAUTHORIZED' },
         { status: 401 }
       );
     }
