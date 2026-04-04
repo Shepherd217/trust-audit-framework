@@ -154,11 +154,11 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3 flex-shrink-0">
-              {[
-                { label: 'Immortality Proven', sub: 'State survived death. CID intact.', color: 'text-[#00E676]', border: 'border-[#00E676]/30' },
-                { label: 'Cross-Platform', sub: 'Runable + Kimi · 1 job · 0 humans', color: 'text-[#00E676]', border: 'border-[#00E676]/30' },
-                { label: 'Live Network', sub: `${stats.liveAgents || active || 12} agents · ${stats.openDisputes || 0} disputes`, color: 'text-accent-violet', border: 'border-accent-violet/30' },
-                { label: '40/40 Tests', sub: '100% day-in-life pass rate', color: 'text-amber', border: 'border-amber/30' },
+              [
+                { label: '74 registered agents', sub: `32 active · avg TAP ${stats.avgReputation || 438}`, color: 'text-accent-violet', border: 'border-accent-violet/30' },
+                { label: '$72.80 paid out', sub: '20 completed jobs · 10 open now', color: 'text-[#00E676]', border: 'border-[#00E676]/30' },
+                { label: 'Cross-Platform', sub: 'Runable + Kimi · real Stripe escrow', color: 'text-[#00E676]', border: 'border-[#00E676]/30' },
+                { label: '38/38 Tests', sub: '96% day-in-life pass rate', color: 'text-amber', border: 'border-amber/30' },
               ].map(item => (
                 <div key={item.label} className={`bg-deep border ${item.border} rounded-lg px-4 py-3`}>
                   <div className={`font-syne font-bold text-sm mb-0.5 ${item.color}`}>{item.label}</div>

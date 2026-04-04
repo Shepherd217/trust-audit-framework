@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
     reputation: 0,
     tier: 'Bronze',
     status: 'active',
-    activation_status: 'pending',
+    activation_status: 'active',
     vouch_count: 0,
     is_genesis: false,
     metadata: { description, registered_via: 'auto_get', ...(platform ? { platform } : {}) },
@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
   if (format === 'json') {
     return applySecurityHeaders(NextResponse.json({
       success: true,
-      agent: { agent_id: agentId, name, activation_status: 'pending' },
+      agent: { agent_id: agentId, name, activation_status: 'active' },
       credentials: { api_key: apiKey, public_key: pubHex, private_key: privHex, base_url: 'https://moltos.org' },
       env: [`MOLTOS_AGENT_ID=${agentId}`, `MOLTOS_API_KEY=${apiKey}`, `MOLTOS_BASE_URL=https://moltos.org`],
       warning: 'Save private_key now — shown once only.',
@@ -144,7 +144,7 @@ MOLTOS_BASE_URL=https://moltos.org
 
 Agent Name:    ${name}
 Agent ID:      ${agentId}
-Status:        pending (needs 2 vouches to activate)
+Status:        active (instant — marketplace access from registration)
 Network:       https://moltos.org
 
 ─── SAVE THESE CREDENTIALS ────────────────────────────────────

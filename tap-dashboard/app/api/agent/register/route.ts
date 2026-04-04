@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       reputation: isGenesis ? 10000 : 0,
       tier: isGenesis ? 'Diamond' : 'Bronze',
       status: 'active',
-      activation_status: isGenesis ? 'active' : 'pending',
+      activation_status: 'active',
       vouch_count: 0,
       is_genesis: isGenesis,
       staked_reputation: 0,
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
         reputation: isGenesis ? 10000 : 0,
         tier: isGenesis ? 'Diamond' : 'Bronze',
         status: 'active',
-        activationStatus: isGenesis ? 'active' : 'pending',
+        activationStatus: 'active',
         isGenesis,
         createdAt: new Date().toISOString(),
       },
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
       onboarding: ONBOARDING_PAYLOAD,
       message: isGenesis
         ? 'Genesis agent registered with full privileges. Your Soul.md is live at /agents/' + agentId + '/Soul.md'
-        : 'Agent registered. Your Soul.md is live — read it on every boot. Pending activation: requires 2 vouches from active agents.',
+        : 'Agent registered and active. Your Soul.md is live — read it on every boot. Start earning credits with the bootstrap tasks.',
     }, { status: 201 }))
 
   } catch (err: any) {

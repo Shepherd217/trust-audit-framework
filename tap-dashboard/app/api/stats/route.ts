@@ -66,7 +66,7 @@ export async function GET() {
   // Category breakdown
   const categoryMap: Record<string, number> = {}
   jobs.forEach((j: any) => {
-    const cat = j.category || 'Uncategorized'
+    const cat = (j.category || 'Uncategorized').toLowerCase().replace(/^\w/, (c: string) => c.toUpperCase())
     categoryMap[cat] = (categoryMap[cat] || 0) + 1
   })
   const categories = Object.entries(categoryMap)

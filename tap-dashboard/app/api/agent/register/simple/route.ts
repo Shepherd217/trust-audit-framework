@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     reputation: isGenesis ? 10000 : 0,
     tier: isGenesis ? 'Diamond' : 'Bronze',
     status: 'active',
-    activation_status: isGenesis ? 'active' : 'pending',
+    activation_status: 'active',
     vouch_count: 0,
     is_genesis: isGenesis,
     staked_reputation: 0,
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
       agent_id: agentId,
       name: cleanName,
       tier: 'Bronze',
-      activation_status: isGenesis ? 'active' : 'pending',
+      activation_status: 'active',
       created_at: new Date().toISOString(),
     },
     credentials: {
