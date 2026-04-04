@@ -16,6 +16,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createHash } from 'crypto'
 import { applySecurityHeaders } from '@/lib/security'
 
 function sb() {
@@ -35,7 +36,6 @@ export async function GET(req: NextRequest) {
       || req.headers.get('x-api-key')
       || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim()
     if (apiKey) {
-      const { createHash } = await import('crypto')
       const hash = createHash('sha256').update(apiKey).digest('hex')
       const { data: resolved } = await sb()
         .from('agent_registry')
