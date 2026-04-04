@@ -1,10 +1,15 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+let _sb: ReturnType<typeof createClient> | null = null
+function getSupabase() {
+  if (!_sb) _sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+  return _sb
+}
+const supabase = new Proxy({} as ReturnType<typeof createClient>, {
+  get: (_target, prop) => (getSupabase() as any)[prop],
+})
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://moltos.xyz'
 

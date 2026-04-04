@@ -1,10 +1,13 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function GET(
   req: NextRequest,
@@ -16,7 +19,7 @@ export async function GET(
     return new NextResponse('Missing token', { status: 400 })
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('agent_invite_tokens')
     .select('*')
     .eq('token', token)
@@ -51,7 +54,7 @@ export async function GET(
 
   // Mark claimed (but don't block repeat reads — agent may need to re-read)
   if (!data.claimed_at) {
-    await supabase
+    await getSupabase()
       .from('agent_invite_tokens')
       .update({ claimed_at: new Date().toISOString() })
       .eq('token', token)

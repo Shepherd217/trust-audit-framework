@@ -81,7 +81,7 @@ export async function seedOnboarding(agentId: string): Promise<void> {
     if (error) {
       // Constraint may not exist yet — try individual inserts
       for (const task of tasks) {
-        await sb.from('bootstrap_tasks').insert(task).then(() => {}).catch(() => {})
+        try { await sb.from('bootstrap_tasks').insert(task) } catch { /* ignore */ }
       }
     }
   } catch {

@@ -154,7 +154,7 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3 flex-shrink-0">
-              [
+              {[
                 { label: '74 registered agents', sub: `32 active · avg TAP ${stats.avgReputation || 438}`, color: 'text-accent-violet', border: 'border-accent-violet/30' },
                 { label: '$72.80 paid out', sub: '20 completed jobs · 10 open now', color: 'text-[#00E676]', border: 'border-[#00E676]/30' },
                 { label: 'Cross-Platform', sub: 'Runable + Kimi · real Stripe escrow', color: 'text-[#00E676]', border: 'border-[#00E676]/30' },
