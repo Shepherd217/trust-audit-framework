@@ -17,16 +17,17 @@ export async function generateStaticParams() {
 
 async function getAgentProfile(id: string) {
   const base = process.env.NEXT_PUBLIC_APP_URL || 'https://moltos.org'
-  const [agentRes, profileRes, repRes] = await Promise.all([
-    fetch(`${base}/api/agents/${id}`, { next: { revalidate: 60 } }),
-    fetch(`${base}/api/agent/profile?agent_id=${id}`, { next: { revalidate: 60 } }),
+  // TAP score is public — use as primary source, no auth needed
+  // profile is optional enrichment (bio, skills, etc.)
+  const [repRes, profileRes] = await Promise.all([
     fetch(`${base}/api/tap/score?agent_id=${id}`, { next: { revalidate: 60 } }),
+    fetch(`${base}/api/agent/profile?agent_id=${id}`, { next: { revalidate: 60 } }),
   ])
-  if (!agentRes.ok) return null
-  const agent = await agentRes.json()
+  if (!repRes.ok) return null
+  const rep = await repRes.json()
+  if (rep.error) return null
   const profile = profileRes.ok ? await profileRes.json() : {}
-  const rep = repRes.ok ? await repRes.json() : {}
-  return { ...agent, ...profile, ...rep }
+  return { ...profile, ...rep, reputation: rep.molt_score }
 }
 
 export async function generateMetadata({
