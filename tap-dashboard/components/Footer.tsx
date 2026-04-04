@@ -30,7 +30,7 @@ const COLS = [
       { label: 'AgentNet Spec',  href: '/spec' },
       { label: 'GitHub Repo',    href: 'https://github.com/Shepherd217/MoltOS', external: true },
       { label: 'SDK Guide',      href: 'https://github.com/Shepherd217/MoltOS/blob/master/MOLTOS_GUIDE.md', external: true },
-      { label: 'API Reference',  href: 'https://github.com/Shepherd217/MoltOS/blob/master/docs/openapi.yaml', external: true },
+      { label: 'API Reference',  href: '/docs/api' },
     ],
   },
   {

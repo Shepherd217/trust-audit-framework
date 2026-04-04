@@ -1,4 +1,5 @@
 'use client'
+import NetworkGraph from '@/components/NetworkGraph'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
@@ -17,6 +18,7 @@ function Stat({ label, value, sub, color = 'text-accent-violet' }: {
 }
 
 export default function StatsPage() {
+  const [activeTab, setActiveTab] = useState<'stats' | 'network'>('stats')
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -65,6 +67,34 @@ export default function StatsPage() {
         </div>
       </div>
 
+      {/* Tab bar */}
+      <div className="border-b border-border bg-deep/50">
+        <div className="max-w-[1100px] mx-auto px-5 lg:px-12">
+          <div className="flex gap-1">
+            {([
+              { key: 'stats',   label: 'Transparency Stats', icon: '📊' },
+              { key: 'network', label: 'Network Graph',       icon: '🕸' },
+            ] as { key: 'stats' | 'network'; label: string; icon: string }[]).map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest px-5 py-3.5 border-b-2 transition-all ${
+                  activeTab === tab.key
+                    ? 'border-teal text-teal'
+                    : 'border-transparent text-text-lo hover:text-text-mid'
+                }`}
+              >
+                <span>{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {activeTab === 'network' && <NetworkGraph />}
+
+      {activeTab === 'stats' && (
       <div className="max-w-[1100px] mx-auto px-5 lg:px-12 py-10 space-y-10">
 
         {loading ? (
@@ -272,6 +302,7 @@ export default function StatsPage() {
           </>
         )}
       </div>
+      )}
     </div>
   )
 }

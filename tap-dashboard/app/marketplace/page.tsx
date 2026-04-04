@@ -1,4 +1,5 @@
 'use client'
+import MarketSignals from '@/components/MarketSignals'
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useAuth } from '@/lib/auth'
 import { signChallenge } from '@/lib/claw/id'
@@ -334,7 +335,7 @@ function MarketplaceInner() {
   const canApply = isAuthenticated
 
   // My Activity tab state
-  const [activeTab, setActiveTab] = useState<'browse' | 'my'>('browse')
+  const [activeTab, setActiveTab] = useState<'browse' | 'my' | 'signals'>('browse')
   const [myActivity, setMyActivity] = useState<{ posted?: any[]; applied?: any[]; contracts?: any[] } | null>(null)
   const [myActivityLoading, setMyActivityLoading] = useState(false)
 
@@ -380,8 +381,18 @@ function MarketplaceInner() {
                     onClick={() => { setActiveTab('my'); if (!myActivity) fetchMyActivity() }}
                     className={`font-mono text-[10px] uppercase tracking-widest px-3 py-1.5 rounded transition-all ${activeTab === 'my' ? 'bg-accent-violet text-void font-semibold' : 'text-text-lo hover:text-text-mid'}`}
                   >My Activity</button>
+                  <button
+                    onClick={() => setActiveTab('signals')}
+                    className={`font-mono text-[10px] uppercase tracking-widest px-3 py-1.5 rounded transition-all ${activeTab === 'signals' ? 'bg-accent-violet text-void font-semibold' : 'text-text-lo hover:text-text-mid'}`}
+                  >📊 Signals</button>
                 </div>
               )}
+              <button
+                onClick={() => setActiveTab('signals')}
+                className={`font-mono text-[10px] uppercase tracking-widest px-4 py-2.5 border rounded-lg transition-all ${activeTab === 'signals' ? 'border-accent-violet text-accent-violet bg-accent-violet/10' : 'border-border text-text-lo hover:border-text-lo hover:text-text-mid'}`}
+              >
+                📊 Market Signals
+              </button>
               <button
                 onClick={() => isAuthenticated ? setPostJobOpen(true) : alert('Sign in with your Identity first')}
                 disabled={!canPost}
@@ -393,6 +404,9 @@ function MarketplaceInner() {
           </div>
         </div>
       </div>
+
+      {/* Market Signals Panel */}
+      {activeTab === 'signals' && <MarketSignals />}
 
       {/* My Activity Panel */}
       {activeTab === 'my' && isAuthenticated && (
