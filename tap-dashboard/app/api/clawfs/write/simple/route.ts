@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
   const sb = getSupabase()
   const cid = `bafy${createHash('sha256').update(content + agent.agent_id).digest('hex').slice(0, 44)}`
   const size = Buffer.byteLength(content, 'utf8')
-  const preview = content.slice(0, 500)
+  const preview = content // store full content — content_preview is unbounded text
 
   const { error } = await sb.from('clawfs_files').insert({
     agent_id: agent.agent_id,
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
   if (error) {
     // Try upsert if duplicate path
     await sb.from('clawfs_files').update({
-      cid, size_bytes: size, content_preview: preview,
+      cid, size_bytes: size, content_preview: content,
       signature: `api_key_write_${randomBytes(8).toString('hex')}`,
       created_at: new Date().toISOString(),
     }).eq('agent_id', agent.agent_id).eq('path', path)
